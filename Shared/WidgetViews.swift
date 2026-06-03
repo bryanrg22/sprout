@@ -292,7 +292,11 @@ struct CompanionView: View {
                 WMacroBar(label: "Protein", value: snap.protein, target: snap.proteinTarget, color: Theme.protein)
                 WMacroBar(label: "Carbs", value: snap.carbs, target: snap.carbsTarget, color: Theme.carbs)
                 WMacroBar(label: "Fat", value: snap.fat, target: snap.fatTarget, color: Theme.fat)
-                HStack(spacing: 14) {
+                // Four glance stats: calories first (the headline number), then steps, water,
+                // and the day-streak flame. Tighter spacing + per-stat auto-shrink so all four
+                // fit the narrow column without truncating.
+                HStack(spacing: 8) {
+                    wMiniStat("fork.knife", "\(Int(snap.caloriesEaten.rounded()))", Theme.calories)
                     wMiniStat("figure.walk", "\(snap.steps)", Theme.info)
                     wMiniStat("drop.fill", "\(Int(snap.waterOz.rounded())) oz", Theme.water)
                     if snap.streak > 0 {
@@ -308,16 +312,17 @@ struct CompanionView: View {
 
     /// A compact glance stat (icon + value) for the row beneath the macro bars.
     private func wMiniStat(_ icon: String, _ value: String, _ color: Color) -> some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 12.5, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(Theme.textSecondary)
         }
         .lineLimit(1)
+        .minimumScaleFactor(0.7)        // shrink to fit four stats in the narrow column
     }
 }
 

@@ -6,11 +6,25 @@ import SwiftData
 struct FoodLogView: View {
     @Bindable var profile: UserProfile
     @Environment(\.modelContext) private var context
+    /// Shared bus so a food's long-press can hand a topic to the coach.
+    @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
 
     @Query(sort: \FoodEntry.date, order: .reverse) private var food: [FoodEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
+    @Query private var water: [WaterEntry]
 
     @State private var sheet: FoodSheet?
+    @State private var showWaterSheet = false
+    /// The meal a chosen add-flow should log into (set when she taps a meal's "＋" or
+    /// an empty meal row). `nil` for a top-level add → defaults to the current time's meal.
+    @State private var preferredMeal: MealType?
+    @State private var showMealChooser = false
+    /// Tapping a logged food opens it in a detail card; long-press / detail "Edit" opens
+    /// the editor. `pendingEditFromDetail` bridges the two sheets so the editor opens only
+    /// after the detail card has dismissed (avoids a sheet-over-sheet race).
+    @State private var detailEntry: FoodEntry?
+    @State private var editingEntry: FoodEntry?
+    @State private var pendingEditFromDetail: FoodEntry?
     @State private var addTick = 0
     @State private var deleteTick = 0
     @State private var navTick = 0
@@ -29,7 +43,7 @@ struct FoodLogView: View {
     @State private var showDatePicker = false
 
     private enum FoodSheet: Identifiable {
-        case photo, barcode, search, manual, recents, label
+        case photo, barcode, manual, recents, label
         var id: Int { hashValue }
     }
 
@@ -68,7 +82,7 @@ struct FoodLogView: View {
     /// Entries for the selected day (same-day comparison ignores time-of-day, so
     /// real-timestamped entries and midnight-stamped past entries both match).
     private var dayEntries: [FoodEntry] { food.filter { cal.isDate($0.date, inSameDayAs: selectedDay) } }
-    private var consumed: Double { dayEntries.reduce(0) { $0 + $1.calories } }
+    private var consumed: Double { dayEntries.reduce(0) { $0 + $1.totalCalories } }
     private var basisWeight: Double {
         TrendCalculator.currentTrend(weights) ?? (profile.startWeightLbs > 0 ? profile.startWeightLbs : 150)
     }
@@ -103,6 +117,10 @@ struct FoodLogView: View {
                 VStack(spacing: Theme.Space.md) {
                     dayNav
                     summaryCard
+                    // Water belongs in Nutrients too — quick-add your bottle or tap for custom.
+                    if isViewingToday {
+                        waterCard
+                    }
                     // Smart, data-grounded food picks for the current meal. Only on today
                     // (suggestions are forward-looking for the current slot; they'd be
                     // meaningless while browsing a past day). The section self-manages its
@@ -125,17 +143,40 @@ struct FoodLogView: View {
             .scrollIndicators(.hidden)
             // A subtle one-shot celebration for the first food logged today.
             .overlay(ConfettiBurst(trigger: firstLogConfetti).ignoresSafeArea())
-            .navigationTitle("Food")
+            .navigationTitle("Nutrients")
             .toolbar { ToolbarItem(placement: .primaryAction) { addMenu } }
+            .sheet(isPresented: $showWaterSheet) { WaterLogSheet(profile: profile) }
             .sheet(item: $sheet) { which in
                 switch which {
-                case .photo:   PhotoFoodFlow(date: selectedDay)
-                case .barcode: BarcodeScanView(date: selectedDay)
-                case .search:  FoodSearchView(date: selectedDay)
-                case .manual:  AddFoodSheet(date: selectedDay)
-                case .recents: RecentFoodsSheet(date: selectedDay)
-                case .label:   LabelScanView(date: selectedDay)
+                case .photo:   PhotoFoodFlow(date: selectedDay, preferredMeal: preferredMeal)
+                case .barcode: BarcodeScanView(date: selectedDay, preferredMeal: preferredMeal)
+                case .manual:  AddFoodSheet(draft: FoodDraft(meal: preferredMeal ?? MealTime.current()), date: selectedDay)
+                case .recents: RecentFoodsSheet(date: selectedDay, preferredMeal: preferredMeal)
+                case .label:   LabelScanView(date: selectedDay, preferredMeal: preferredMeal)
                 }
+            }
+            // Tap a logged food → detail card. Its "Edit" defers to here so the editor
+            // opens cleanly once the card has dismissed.
+            .sheet(item: $detailEntry, onDismiss: {
+                if let entry = pendingEditFromDetail {
+                    pendingEditFromDetail = nil
+                    editingEntry = entry
+                }
+            }) { entry in
+                FoodDetailView(entry: entry, coachName: profile.coachName,
+                               onEdit: { pendingEditFromDetail = entry })
+            }
+            .sheet(item: $editingEntry) { entry in
+                AddFoodSheet(editing: entry)
+            }
+            // Tapping a meal's "＋" (or an empty meal row) routes the add into THAT meal.
+            .confirmationDialog(mealChooserTitle, isPresented: $showMealChooser, titleVisibility: .visible) {
+                Button("Snap or describe a meal") { open(.photo, for: preferredMeal) }
+                Button("Scan barcode") { open(.barcode, for: preferredMeal) }
+                Button("Scan a label") { open(.label, for: preferredMeal) }
+                Button("Recents & favorites") { open(.recents, for: preferredMeal) }
+                Button("Add manually") { open(.manual, for: preferredMeal) }
+                Button("Cancel", role: .cancel) {}
             }
             .sheet(isPresented: $showDatePicker) { dayPickerSheet }
             .sensoryFeedback(.success, trigger: addTick)
@@ -241,6 +282,50 @@ struct FoodLogView: View {
 
     // MARK: Empty states
 
+    // MARK: - Water (Nutrients tab)
+
+    private var waterToday: Double {
+        water.filter { Calendar.current.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz }
+    }
+    private var waterContainerOz: Double { profile.waterContainerOz > 0 ? profile.waterContainerOz : 16.9 }
+
+    /// Water card on the Nutrients tab: the "＋" quick-adds your bottle; tapping the card
+    /// opens `WaterLogSheet` to log a custom amount or change your bottle's size.
+    private var waterCard: some View {
+        HStack(spacing: Theme.Space.md) {
+            ZStack {
+                Circle().fill(Theme.water.opacity(0.15)).frame(width: 40, height: 40)
+                Image(systemName: "drop.fill").foregroundStyle(Theme.water)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Water")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Text("\(Int(waterToday.rounded())) of \(Int(profile.waterTargetOz.rounded())) oz today")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer(minLength: 0)
+            Button {
+                context.insert(WaterEntry(amountOz: waterContainerOz))
+                try? context.save()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(Theme.water)
+                    .frame(width: 32, height: 32)
+                    .background(Theme.water.opacity(0.15), in: Circle())
+                    .overlay(Circle().strokeBorder(Theme.water.opacity(0.30), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add one \(profile.waterContainerLabel) of water")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardElevated()
+        .contentShape(Rectangle())
+        .onTapGesture { showWaterSheet = true }
+    }
+
     /// Today, nothing logged yet — warm + inviting, with a gently breathing
     /// strawberry to make the blank slate feel friendly rather than empty.
     private var todayEmptyState: some View {
@@ -251,7 +336,7 @@ struct FoodLogView: View {
                     .frame(width: 76, height: 76)
                 Text("🍓")
                     .font(.system(size: 40))
-                    .breathing()
+                    .frame(width: 76, height: 76)
             }
             Text("Nothing logged yet — what's first? 🍓")
                 .font(.headline)
@@ -270,7 +355,6 @@ struct FoodLogView: View {
                 Button { open(.photo) }   label: { Label("Snap or describe a meal", systemImage: "camera.fill") }
                 Button { open(.barcode) } label: { Label("Scan barcode", systemImage: "barcode.viewfinder") }
                 Button { open(.label) }   label: { Label("Scan a label", systemImage: "doc.text.viewfinder") }
-                Button { open(.search) }  label: { Label("Search foods", systemImage: "magnifyingglass") }
                 Button { open(.manual) }  label: { Label("Add manually", systemImage: "square.and.pencil") }
             } label: {
                 Label("Log your first bite", systemImage: "plus.circle.fill")
@@ -323,7 +407,6 @@ struct FoodLogView: View {
             Button { open(.photo) }   label: { Label("Snap or describe a meal", systemImage: "camera.fill") }
             Button { open(.barcode) } label: { Label("Scan barcode", systemImage: "barcode.viewfinder") }
             Button { open(.label) }   label: { Label("Scan a label", systemImage: "doc.text.viewfinder") }
-            Button { open(.search) }  label: { Label("Search foods", systemImage: "magnifyingglass") }
             Button { open(.manual) }  label: { Label("Add manually", systemImage: "square.and.pencil") }
         } label: {
             Image(systemName: "plus.circle.fill")
@@ -333,9 +416,16 @@ struct FoodLogView: View {
         .accessibilityLabel("Add food")
     }
 
-    private func open(_ which: FoodSheet) {
+    /// Opens an add-flow, optionally targeting a specific meal (otherwise the flow
+    /// picks the meal from the time of day).
+    private func open(_ which: FoodSheet, for meal: MealType? = nil) {
         addTick += 1
+        preferredMeal = meal
         sheet = which
+    }
+
+    private var mealChooserTitle: String {
+        preferredMeal.map { "Add to \($0.label)" } ?? "Add food"
     }
 
     // MARK: Summary
@@ -438,22 +528,43 @@ struct FoodLogView: View {
 
     private func mealCard(_ meal: MealType) -> some View {
         let items = entries(for: meal)
-        let subtotal = items.reduce(0) { $0 + $1.calories }
+        let subtotal = items.reduce(0) { $0 + $1.totalCalories }
         return VStack(alignment: .leading, spacing: Theme.Space.sm) {
             mealHeader(meal, subtotal: subtotal, isEmpty: items.isEmpty)
 
             if items.isEmpty {
-                Text(emptyMealPrompt(meal))
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.textSecondary)
+                // Tappable: drops straight into adding for THIS meal (was inert text).
+                Button {
+                    preferredMeal = meal
+                    showMealChooser = true
+                } label: {
+                    HStack(spacing: Theme.Space.sm) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.brand)
+                        Text(emptyMealPrompt(meal))
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.textSecondary)
+                        Spacer(minLength: 0)
+                    }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, Theme.Space.xs)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add to \(meal.label)")
             } else {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, entry in
                     if index > 0 {
                         Divider().background(Theme.divider)
                     }
-                    FoodRow(entry: entry, delete: { delete(entry) })
+                    FoodRow(
+                        entry: entry,
+                        onOpen: { detailEntry = entry },
+                        onEdit: { editingEntry = entry },
+                        onDelete: { delete(entry) },
+                        onAskVita: { askVita?.ask(askVitaTopic(for: entry)) }
+                    )
                 }
             }
         }
@@ -472,26 +583,40 @@ struct FoodLogView: View {
 
     private func mealHeader(_ meal: MealType, subtotal: Double, isEmpty: Bool) -> some View {
         HStack(spacing: Theme.Space.sm) {
-            Image(systemName: meal.systemImage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.brand)
-                .frame(width: 30, height: 30)
-                .background(Theme.brandSoft, in: RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
-            Text(meal.label)
-                .font(.headline)
-                .foregroundStyle(Theme.textPrimary)
-            Spacer()
-            HStack(spacing: 3) {
-                Text("\(Int(subtotal.rounded()))")
-                    .font(.subheadline.weight(.semibold)).monospacedDigit()
-                    .foregroundStyle(isEmpty ? Theme.textSecondary : Theme.textPrimary)
-                    .contentTransition(.numericText())
-                    .animation(.spring(response: 0.5, dampingFraction: 0.85), value: subtotal)
-                Text("kcal").font(.caption).foregroundStyle(Theme.textSecondary)
+            HStack(spacing: Theme.Space.sm) {
+                Image(systemName: meal.systemImage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.brand)
+                    .frame(width: 30, height: 30)
+                    .background(Theme.brandSoft, in: RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
+                Text(meal.label)
+                    .font(.headline)
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                HStack(spacing: 3) {
+                    Text("\(Int(subtotal.rounded()))")
+                        .font(.subheadline.weight(.semibold)).monospacedDigit()
+                        .foregroundStyle(isEmpty ? Theme.textSecondary : Theme.textPrimary)
+                        .contentTransition(.numericText())
+                        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: subtotal)
+                    Text("kcal").font(.caption).foregroundStyle(Theme.textSecondary)
+                }
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(meal.label), \(Int(subtotal.rounded())) calories")
+
+            // Quick add straight into this meal.
+            Button {
+                preferredMeal = meal
+                showMealChooser = true
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.brand)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add to \(meal.label)")
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(meal.label), \(Int(subtotal.rounded())) calories")
     }
 
     // MARK: Mutations
@@ -512,8 +637,12 @@ struct FoodLogView: View {
 /// normally. Owns a private `appeared` flag so only the new row animates.
 private struct FoodRow: View {
     let entry: FoodEntry
-    let delete: () -> Void
+    var onOpen: () -> Void
+    var onEdit: () -> Void
+    var onDelete: () -> Void
+    var onAskVita: () -> Void
 
+    @Environment(AskVitaCenter.self) private var askVitaCenter: AskVitaCenter?
     @State private var appeared = false
 
     /// A row is "fresh" if it was created within the last few seconds — i.e. she
@@ -526,44 +655,49 @@ private struct FoodRow: View {
     private var popActive: Bool { isFresh ? appeared : true }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: Theme.Space.sm) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.name)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Theme.textPrimary)
-                    .lineLimit(1)
-                if !entry.servingDescription.isEmpty {
-                    Text(entry.servingDescription)
-                        .font(.caption).foregroundStyle(Theme.textSecondary)
+        // The whole row is one tappable control → the detail card. The trailing
+        // chevron signals it's actionable (the old "−" read as "subtract" and was
+        // the only affordance — confusing). Delete/Edit/Ask Vita live in the long-press.
+        Button(action: onOpen) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.Space.sm) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.name)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.textPrimary)
                         .lineLimit(1)
+                    if !entry.servingDescription.isEmpty {
+                        Text(entry.servingDescription)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
+                            .lineLimit(1)
+                    }
                 }
+                Spacer(minLength: Theme.Space.sm)
+                Text("\(Int(entry.totalCalories.rounded()))")
+                    .font(.subheadline).monospacedDigit()
+                    .foregroundStyle(Theme.textSecondary)
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Theme.textSecondary.opacity(0.4))
             }
-            Spacer(minLength: Theme.Space.sm)
-            Text("\(Int(entry.calories.rounded()))")
-                .font(.subheadline).monospacedDigit()
-                .foregroundStyle(Theme.textSecondary)
-            // Explicit delete affordance — `.swipeActions` is inert outside a List,
-            // so we provide a real tappable control (plus the long-press context menu).
-            Button(action: delete) {
-                Image(systemName: "minus.circle.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.textSecondary.opacity(0.6))
-            }
-            .buttonStyle(.plain)
-            .accessibilityHidden(true)
+            .padding(.vertical, Theme.Space.xs)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, Theme.Space.xs)
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
         // Only the just-added row pops in; others appear instantly.
         .popIn(popActive)
         .onAppear { appeared = true }
         .contextMenu {
-            Button(role: .destructive, action: delete) {
-                Label("Delete", systemImage: "trash")
+            Button(action: onOpen) { Label("View details", systemImage: "info.circle") }
+            Button(action: onEdit) { Label("Edit", systemImage: "pencil") }
+            if askVitaCenter != nil {
+                Button(action: onAskVita) { Label("Ask Vita about this", systemImage: "sparkles") }
             }
+            Button(role: .destructive, action: onDelete) { Label("Delete", systemImage: "trash") }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(entry.name), \(Int(entry.calories.rounded())) calories")
-        .accessibilityAction(named: "Delete") { delete() }
+        .accessibilityLabel("\(entry.name), \(Int(entry.totalCalories.rounded())) calories")
+        .accessibilityHint("Opens details")
+        .accessibilityAction(named: "Edit", onEdit)
+        .accessibilityAction(named: "Delete", onDelete)
     }
 }

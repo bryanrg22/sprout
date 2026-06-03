@@ -55,6 +55,13 @@ protocol BuddySyncService: Sendable {
     /// Fetch my buddy's latest snapshot, or `nil` if they haven't published one yet
     /// (or we're not linked).
     func fetchBuddySnapshot() async throws -> BuddySnapshotPayload?
+
+    /// The buddy this device is currently linked to, restored from LOCAL persistence —
+    /// `nil` when not linked. Read synchronously (and nonisolated) so the UI can show the
+    /// paired state immediately on launch instead of resetting to the pairing screen and
+    /// re-discovering over the network. The CloudKit backend persists this in `UserDefaults`;
+    /// the mock derives it from its stored linked code.
+    var linkedBuddyID: String? { get }
 }
 
 /// Plain, `Sendable` + `Codable` transport form of a buddy snapshot. Mirrors the

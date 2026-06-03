@@ -33,8 +33,14 @@ enum CoachContext {
             + bioLine(profile: profile)
             + "\n\nHere is her current data:\n"
             + summary(profile: profile, foods: foods, weights: weights)
-            + "\n\nUse this data to make your replies specific and personal, but speak naturally — "
+            + "\n\nUse this data — including the exact foods she logged today and this week — to make "
+            + "your replies specific and personal, but speak naturally — "
             + "don't dump numbers or read the data back like a report unless she asks. "
+            + "You CAN see her individual logged foods above, so never say you can't; "
+            + "reference them by name when it's relevant. "
+            + "When she sends a PHOTO, actually look at it and respond to what's in it. If it's "
+            + "food she wants logged, estimate its calories + macros from the image and call the "
+            + "log_food tool (one call per distinct item) — you don't need to ask her for the numbers. "
             + "Today's date is \(Self.longDate.string(from: .now))."
             + memoryBlock(memory)
             + "\n\n" + toolGuidance(profile: profile)
@@ -91,8 +97,19 @@ enum CoachContext {
         graciously with zero pressure. If she's vague about the number, ask a quick \
         clarifying question instead of guessing.
 
-        Coaching style. \(role) You have NO tool for weight/calorie/macro targets, so don't \
-        claim you can change those — only step, water, and pace. If she's tempted by an \
+        You ALSO have tools to log and edit her data on request — log_food, edit_food, \
+        delete_food, log_water, log_weight, set_weight_goal — and to SAVE durable facts about \
+        her with remember_about_user (e.g. she takes creatine, sees a nutritionist, is \
+        vegetarian, her gym days are Mon/Wed/Fri). When she shares something lasting about \
+        herself, OR asks you to "remember"/"update my profile/note" something, call \
+        remember_about_user so it persists across every future conversation. CRITICAL HONESTY \
+        RULE: only tell her you've done / saved / logged / updated / remembered something AFTER \
+        you've actually called the matching tool and it succeeded — NEVER say "done" or "I saved \
+        that" for something you didn't actually do. If you genuinely lack a tool for what she \
+        asks, say so plainly instead of pretending.
+
+        Coaching style. \(role) You have NO tool for CALORIE or MACRO targets (those stay \
+        computed and safely floored), so don't claim you can change those. If she's tempted by an \
         extreme shortcut (barely eating, crash dieting, skipping meals to lose faster), NEVER \
         refuse, lecture, or shut her down. Instead be the knowledgeable friend who levels with \
         her: explain plainly why that tends to backfire (tanks energy, burns muscle, slows \
@@ -171,22 +188,40 @@ enum CoachContext {
         }
         lines.append(targetLine)
 
-        // Today's intake so far.
+        // Today's intake so far — totals PLUS the exact items, so Vita can see precisely what
+        // she ate. This is the fix for "I can't see the specific food items you've logged":
+        // without the item list the model only ever had the count.
         let today = todaysFoods(foods)
         if today.isEmpty {
             lines.append("Today's intake: nothing logged yet")
         } else {
-            let cals = today.reduce(0) { $0 + $1.calories }
-            let protein = today.reduce(0) { $0 + $1.proteinG }
+            let cals = today.reduce(0) { $0 + $1.totalCalories }
+            let protein = today.reduce(0) { $0 + $1.totalProteinG }
+            let carbs = today.reduce(0) { $0 + $1.totalCarbsG }
+            let fat = today.reduce(0) { $0 + $1.totalFatG }
             let remaining = goal.dailyCalories - cals
             var intake = "Today's intake so far: \(Int(cals.rounded())) kcal, "
-                + "\(Int(protein.rounded())) g protein across \(today.count) item\(today.count == 1 ? "" : "s")"
+                + "\(Int(protein.rounded())) g protein, \(Int(carbs.rounded())) g carbs, "
+                + "\(Int(fat.rounded())) g fat across \(today.count) item\(today.count == 1 ? "" : "s")"
             if remaining > 0 {
-                intake += " (\(Int(remaining.rounded())) kcal left for the day)"
+                intake += " (\(Int(remaining.rounded())) kcal of room left today)"
             } else {
                 intake += " (at or over the calorie target — that's okay, one day doesn't define the week)"
             }
             lines.append(intake)
+
+            // The actual items — newest first, each with its macros. THIS is what lets Vita
+            // name specific foods ("that In-N-Out") instead of admitting it can't see them.
+            lines.append("The exact foods she logged today (newest first):")
+            lines.append(contentsOf: itemLines(today))
+        }
+
+        // This week at a glance — per-day food totals for the last 7 days that have logs, so
+        // "how's my week?" is answerable from real food numbers (not just the weight trend).
+        let weekLines = weeklyTotalLines(foods)
+        if !weekLines.isEmpty {
+            lines.append("This week's daily food totals (most recent first):")
+            lines.append(contentsOf: weekLines)
         }
 
         // Weight trend + weekly rate + assessment wording.
@@ -251,6 +286,63 @@ enum CoachContext {
         foods.filter { calendar.isDate($0.date, inSameDayAs: now) }
     }
 
+    /// One compact line per logged item: "Name ×qty (Meal) — X kcal, Pg / Cg / Fg". Newest
+    /// first, capped at `limit` with a "…and N more" tail so a heavy day can't blow up the
+    /// prompt. This is the per-item detail that makes Vita able to discuss specific foods.
+    static func itemLines(_ foods: [FoodEntry], limit: Int = 15) -> [String] {
+        let sorted = foods.sorted { $0.date > $1.date }
+        var out = sorted.prefix(limit).map { f -> String in
+            let raw = f.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let name = raw.isEmpty ? "Unnamed item" : raw
+            let qty = f.quantity != 1 ? " ×\(formatQty(f.quantity))" : ""
+            return "\(name)\(qty) (\(f.mealType.label)) — \(Int(f.totalCalories.rounded())) kcal, "
+                + "\(Int(f.totalProteinG.rounded()))g P / \(Int(f.totalCarbsG.rounded()))g C / "
+                + "\(Int(f.totalFatG.rounded()))g F"
+        }
+        if sorted.count > limit {
+            let extra = sorted.count - limit
+            out.append("…and \(extra) more item\(extra == 1 ? "" : "s")")
+        }
+        return out
+    }
+
+    /// Per-day food totals for the last `days` days that have any food logged, newest first:
+    /// "Today — 2,140 kcal, 79 g protein (4 items)". Today/Yesterday are named; older days
+    /// show weekday + date. Empty when there's no food history in the window.
+    static func weeklyTotalLines(_ foods: [FoodEntry],
+                                 days: Int = 7,
+                                 now: Date = .now,
+                                 calendar: Calendar = .current) -> [String] {
+        let startToday = calendar.startOfDay(for: now)
+        guard let cutoff = calendar.date(byAdding: .day, value: -(days - 1), to: startToday) else { return [] }
+
+        struct DayAgg { var cals = 0.0; var protein = 0.0; var count = 0 }
+        var byDay: [Date: DayAgg] = [:]
+        for f in foods {
+            let day = calendar.startOfDay(for: f.date)
+            guard day >= cutoff, day <= startToday else { continue }
+            var a = byDay[day] ?? DayAgg()
+            a.cals += f.totalCalories
+            a.protein += f.totalProteinG
+            a.count += 1
+            byDay[day] = a
+        }
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: startToday)
+        return byDay.keys.sorted(by: >).map { day in
+            let a = byDay[day] ?? DayAgg()
+            let label: String
+            if calendar.isDate(day, inSameDayAs: startToday) { label = "Today" }
+            else if let y = yesterday, calendar.isDate(day, inSameDayAs: y) { label = "Yesterday" }
+            else { label = Self.weekdayDate.string(from: day) }
+            return "\(label) — \(Int(a.cals.rounded())) kcal, \(Int(a.protein.rounded())) g protein "
+                + "(\(a.count) item\(a.count == 1 ? "" : "s"))"
+        }
+    }
+
+    private static func formatQty(_ q: Double) -> String {
+        q == q.rounded() ? String(Int(q)) : String(format: "%.1f", q)
+    }
+
     /// Friendly, encouraging phrasing for the current rate, derived from
     /// `TrendCalculator.assess`. We pre-translate the enum so the model gets the *tone*
     /// we want rather than inventing its own (possibly harsher) framing.
@@ -296,5 +388,8 @@ enum CoachContext {
     }()
     private static let monthYear: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "MMMM yyyy"; return f
+    }()
+    private static let weekdayDate: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE MMM d"; return f
     }()
 }

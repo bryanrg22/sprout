@@ -9,6 +9,8 @@ struct BarcodeScanView: View {
 
     /// The day to log the resulting entry to.
     let date: Date
+    /// When set (she tapped a specific meal), the result lands in this meal.
+    var preferredMeal: MealType? = nil
 
     @State private var manualCode: String = ""
     @State private var phase: Phase = .idle
@@ -175,29 +177,14 @@ struct BarcodeScanView: View {
     private func addManually() {
         let trimmed = manualCode.trimmingCharacters(in: .whitespaces)
         draft = FoodDraft(
-            meal: MealTime.current(),
+            meal: preferredMeal ?? MealTime.current(),
             source: .manual,
             barcode: trimmed.isEmpty ? nil : trimmed
         )
     }
 
     private func makeDraft(from p: OFFProduct) -> FoodDraft {
-        let name = [p.brand, p.name]
-            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-        return FoodDraft(
-            name: name.isEmpty ? p.name : name,
-            meal: MealTime.current(),
-            servingDescription: p.servingDescription,
-            quantity: 1,
-            calories: p.caloriesPerServing,
-            proteinG: p.proteinG,
-            carbsG: p.carbsG,
-            fatG: p.fatG,
-            source: .barcode,
-            barcode: p.barcode
-        )
+        FoodDraft(from: p, meal: preferredMeal ?? MealTime.current(), source: .barcode)
     }
 }
 

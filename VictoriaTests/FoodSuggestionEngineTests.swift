@@ -311,4 +311,49 @@ final class FoodSuggestionEngineTests: XCTestCase {
         XCTAssertTrue(p.contains("The user"))
         XCTAssertTrue(p.lowercased().contains("no clear pattern"))
     }
+
+    // MARK: - "Already eaten today" (stops the 2nd-Muscle-Milk repeat)
+
+    func testEatenTodayCapturesOnlyTodaysItems() {
+        let ctx = FoodSuggestionEngine.makeContext(
+            name: "Bryan", direction: .gain,
+            calorieTarget: 2700, proteinTarget: 100,
+            caloriesEatenToday: 200, proteinEatenToday: 40,
+            foods: [
+                food("Muscle Milk", daysAgo: 0, protein: 40),   // today → eaten
+                food("Chicken bowl", daysAgo: 1, protein: 40),  // yesterday → NOT eaten today
+            ],
+            now: now())
+        XCTAssertEqual(ctx.eatenToday, ["Muscle Milk"])
+        let p = FoodSuggestionEngine.renderPrompt(ctx)
+        XCTAssertTrue(p.contains("ALREADY eaten these today: Muscle Milk"))
+        XCTAssertTrue(p.lowercased().contains("do not re-suggest"))
+    }
+
+    func testEatenTodayDedupesCaseInsensitively() {
+        let ctx = FoodSuggestionEngine.makeContext(
+            name: "V", direction: .lose,
+            calorieTarget: 1800, proteinTarget: 130,
+            caloriesEatenToday: 300, proteinEatenToday: 30,
+            foods: [
+                food("Eggs", daysAgo: 0, protein: 12),
+                food("eggs", daysAgo: 0, protein: 12),   // same day, different case
+            ],
+            now: now())
+        XCTAssertEqual(ctx.eatenToday.count, 2)                       // raw list keeps both
+        let p = FoodSuggestionEngine.renderPrompt(ctx)
+        XCTAssertTrue(p.contains("ALREADY eaten these today:"))
+        XCTAssertFalse(p.lowercased().contains("eggs, eggs"))         // collapsed to one
+    }
+
+    func testNoEatenTodayLineWhenNothingLoggedToday() {
+        let ctx = FoodSuggestionEngine.makeContext(
+            name: "V", direction: .lose,
+            calorieTarget: 1800, proteinTarget: 130,
+            caloriesEatenToday: 0, proteinEatenToday: 0,
+            foods: [food("Latte", daysAgo: 2, protein: 8)],   // only old history
+            now: now())
+        XCTAssertTrue(ctx.eatenToday.isEmpty)
+        XCTAssertFalse(FoodSuggestionEngine.renderPrompt(ctx).contains("ALREADY eaten"))
+    }
 }

@@ -62,8 +62,20 @@ struct SmartSuggestionsView: View {
         }
     }
 
-    /// Drives `.task(id:)` — the current meal slot plus the manual reload counter.
-    private var taskKey: String { "\(currentSlot.rawValue)#\(reloadTick)" }
+    /// Drives `.task(id:)` — per-user, the meal slot, the food signature (so a new log/edit/
+    /// delete is the ONLY thing that regenerates), and the manual reload counter.
+    private var taskKey: String { "\(userToken)#\(currentSlot.rawValue)#\(foodSignature)#\(reloadTick)" }
+
+    /// Per-user scoping so picks never leak between profiles on a shared device.
+    private var userToken: String { profile.id.uuidString }
+
+    /// A token of TODAY's logged foods (count + total calories). It changes only when she logs,
+    /// edits, or deletes a food — the single trigger for regenerating picks. Identical across
+    /// mere re-opens of the tab, so those serve the cache and never call the AI.
+    private var foodSignature: String {
+        let today = foods.filter { Calendar.current.isDateInToday($0.date) }
+        return "\(today.count)x\(Int(today.reduce(0.0) { $0 + $1.totalCalories }.rounded()))"
+    }
 
     // MARK: - Header
 
@@ -257,8 +269,8 @@ struct SmartSuggestionsView: View {
     private var todaysFoods: [FoodEntry] {
         foods.filter { calendar.isDate($0.date, inSameDayAs: .now) }
     }
-    private var caloriesEatenToday: Double { todaysFoods.reduce(0) { $0 + $1.calories } }
-    private var proteinEatenToday: Double { todaysFoods.reduce(0) { $0 + $1.proteinG } }
+    private var caloriesEatenToday: Double { todaysFoods.reduce(0) { $0 + $1.totalCalories } }
+    private var proteinEatenToday: Double { todaysFoods.reduce(0) { $0 + $1.totalProteinG } }
 
     /// Map the profile's pace direction onto the engine's decoupled `Direction`.
     private var direction: FoodSuggestionEngine.Direction {
@@ -285,10 +297,12 @@ struct SmartSuggestionsView: View {
             return
         }
 
-        // 2) Fresh cache for this slot? Show it and skip the network. (The refresh button
-        //    clears the cache before bumping the tick, so it always regenerates.)
-        if let cached = readCache(for: slot) {
-            phase = .loaded(cached)
+        // 2) Cache for this slot generated against the SAME food state? Reuse it and skip the
+        //    network. A new log/edit/delete changes `foodSignature`, which is the only thing
+        //    that forces a fresh call — every plain re-open of the tab serves this cache.
+        //    (The refresh button clears the cache before bumping the tick to force a regen.)
+        if let cached = readCache(for: slot), cached.signature == foodSignature {
+            phase = .loaded(cached.suggestions)
             return
         }
 
@@ -340,18 +354,23 @@ struct SmartSuggestionsView: View {
     /// Cache key for a given slot today: "vita.foodpicks.<yyyy-MM-dd>.<slot>". A new day or
     /// a new meal slot is a fresh key, so suggestions naturally roll over without a timer.
     private func cacheKey(for slot: FoodSuggestionEngine.MealSlot) -> String {
-        "vita.foodpicks.\(Self.dayStamp.string(from: .now)).\(slot.rawValue)"
+        "vita.foodpicks.\(userToken).\(Self.dayStamp.string(from: .now)).\(slot.rawValue)"
     }
 
-    private func readCache(for slot: FoodSuggestionEngine.MealSlot) -> [Suggestion]? {
+    /// Cached picks plus the food signature they were generated for, so we reuse them only
+    /// while the logged-food state is unchanged.
+    private struct CachedPicks: Codable { let signature: String; let suggestions: [Suggestion] }
+
+    private func readCache(for slot: FoodSuggestionEngine.MealSlot) -> CachedPicks? {
         guard let data = UserDefaults.standard.data(forKey: cacheKey(for: slot)),
-              let decoded = try? JSONDecoder().decode([Suggestion].self, from: data),
-              !decoded.isEmpty else { return nil }
+              let decoded = try? JSONDecoder().decode(CachedPicks.self, from: data),
+              !decoded.suggestions.isEmpty else { return nil }
         return decoded
     }
 
     private func writeCache(_ suggestions: [Suggestion], for slot: FoodSuggestionEngine.MealSlot) {
-        guard let data = try? JSONEncoder().encode(suggestions) else { return }
+        let payload = CachedPicks(signature: foodSignature, suggestions: suggestions)
+        guard let data = try? JSONEncoder().encode(payload) else { return }
         UserDefaults.standard.set(data, forKey: cacheKey(for: slot))
     }
 

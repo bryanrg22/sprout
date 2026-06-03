@@ -149,8 +149,8 @@ struct WeeklyReflectionCard: View {
         let stepGoal = profile.dailyStepGoal
 
         func sameDay(_ a: Date, _ b: Date) -> Bool { calendar.isDate(a, inSameDayAs: b) }
-        func dayCalories(_ d: Date) -> Double { food.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.calories } }
-        func dayProtein(_ d: Date) -> Double  { food.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.proteinG } }
+        func dayCalories(_ d: Date) -> Double { food.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.totalCalories } }
+        func dayProtein(_ d: Date) -> Double  { food.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.totalProteinG } }
         func dayWater(_ d: Date) -> Double    { water.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.amountOz } }
         func daySteps(_ d: Date) -> Int       { steps.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.count } }
         func dayLogged(_ d: Date) -> Bool {

@@ -9,9 +9,21 @@ struct SettingsView: View {
     @Bindable var profile: UserProfile
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
+    /// Holds the just-generated backup file so a share sheet can present it.
+    @State private var exportItem: ExportItem?
+
+    private struct ExportItem: Identifiable { let id = UUID(); let url: URL }
 
     // Weight history, used to derive the current trend for live target math.
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
+
+    #if DEBUG
+    /// Status line for the dev-only CloudKit schema seeder (see `developerSection`).
+    @State private var seedStatus: String?
+    /// Multi-line result of the dev-only CloudKit diagnostic.
+    @State private var diagStatus: String?
+    #endif
 
     /// Current weight for target math: smoothed trend, falling back to start weight.
     private var currentWeightLbs: Double {
@@ -38,6 +50,10 @@ struct SettingsView: View {
                 aiSection
                 connectionsSection
                 buddySection
+                #if DEBUG
+                developerSection
+                #endif
+                dataSection
                 aboutSection
             }
             .scrollContentBackground(.hidden)
@@ -52,6 +68,31 @@ struct SettingsView: View {
             }
         }
         .tint(Theme.brand)
+        .sheet(item: $exportItem) { item in
+            ActivityShareSheet(items: [item.url])
+        }
+    }
+
+    // MARK: - Your data
+
+    private var dataSection: some View {
+        Section {
+            Button {
+                if let url = DataExport.makeBackup(context: context, profile: profile) {
+                    exportItem = ExportItem(url: url)
+                }
+            } label: {
+                row(icon: "square.and.arrow.up") {
+                    Text("Export a backup")
+                        .foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                }
+            }
+        } header: {
+            sectionHeader("Your data")
+        } footer: {
+            footer("Saves everything you've logged to a file you can keep or AirDrop to yourself. Your data lives only on this phone — a backup means a reinstall can never lose it.")
+        }
     }
 
     // MARK: - Profile header
@@ -187,6 +228,14 @@ struct SettingsView: View {
                 AppIconPickerView()
             } label: {
                 navRow(icon: "app.badge.fill", title: "App Icon")
+            }
+
+            // Which pixel character is your companion (and your buddy avatar).
+            row(icon: "person.crop.circle.fill") {
+                Picker("Companion", selection: $profile.companionAvatar) {
+                    Text("Victoria").tag(CompanionAvatar.victoria)
+                    Text("Bryan").tag(CompanionAvatar.bryan)
+                }
             }
 
             row(icon: "sparkles") {
@@ -410,16 +459,87 @@ struct SettingsView: View {
         .listRowBackground(Theme.card)
     }
 
+    #if DEBUG
+    // MARK: - Developer (DEBUG only)
+
+    /// One-tap CloudKit schema seeder. Run **once on a real iPhone** (not the Simulator —
+    /// the buddy service uses a local mock there) to register every buddy record type +
+    /// field in CloudKit's *Development* schema, so you can add the two `Nudge` indexes and
+    /// Deploy to Production. See `BuddyViewModel.seedCloudKitSchemaForDev`.
+    private var developerSection: some View {
+        Section {
+            Button {
+                seedStatus = "Seeding…"
+                Task { seedStatus = await BuddyViewModel().seedCloudKitSchemaForDev() }
+            } label: {
+                row(icon: "icloud.and.arrow.up.fill") {
+                    Text("Seed CloudKit Schema")
+                        .foregroundStyle(Theme.textPrimary)
+                }
+            }
+            if let seedStatus {
+                Text(seedStatus)
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+
+            Button {
+                diagStatus = "Running CloudKit diagnostic…"
+                Task { diagStatus = await BuddyViewModel().diagnoseCloudKitForDev() }
+            } label: {
+                row(icon: "stethoscope") {
+                    Text("Diagnose CloudKit")
+                        .foregroundStyle(Theme.textPrimary)
+                }
+            }
+            if let diagStatus {
+                Text(diagStatus)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(Theme.textSecondary)
+                    .textSelection(.enabled)
+            }
+        } header: {
+            sectionHeader("Developer")
+        } footer: {
+            footer("Run on a real iPhone. Seed registers the buddy record types in CloudKit Development; Diagnose shows the EXACT iCloud/CloudKit error the buddy flow otherwise hides. (No-op in the Simulator.)")
+        }
+        .listRowBackground(Theme.card)
+    }
+    #endif
+
     // MARK: - About
+
+    /// Hidden diagnostics gate: 7 taps on the version line opens the log viewer
+    /// (so we can pull field logs without exposing anything to the user).
+    @State private var diagTapCount = 0
+    @State private var showDiagnostics = false
 
     private var aboutSection: some View {
         Section {
-            Text("Estimates only — not medical advice.")
-                .font(.footnote)
-                .foregroundStyle(Theme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .listRowBackground(Color.clear)
+            VStack(spacing: 6) {
+                Text("Estimates only — not medical advice.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.textSecondary)
+                Text(versionLine)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textSecondary.opacity(0.7))
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        diagTapCount += 1
+                        if diagTapCount >= 7 { diagTapCount = 0; showDiagnostics = true }
+                    }
+                    .accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .listRowBackground(Color.clear)
         }
+        .sheet(isPresented: $showDiagnostics) { DiagnosticsView() }
+    }
+
+    private var versionLine: String {
+        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "Sprout \(v) (\(b))"
     }
 
     // MARK: - Row helpers

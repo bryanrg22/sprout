@@ -8,10 +8,10 @@ options:
 
 settings:
   base:
-    MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "1.8"
+    CURRENT_PROJECT_VERSION: "9"
     SWIFT_VERSION: "5.0"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "C924TNC23B"
     CODE_SIGN_STYLE: Automatic
     SWIFT_EMIT_LOC_STRINGS: YES
 
@@ -49,14 +49,14 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconPanda AppIconVictoria AppIconBryan"
-        CURRENT_PROJECT_VERSION: "1"
-        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "9"
+        MARKETING_VERSION: "1.8"
         INFOPLIST_KEY_CFBundleDisplayName: Sprout
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
         INFOPLIST_KEY_NSCameraUsageDescription: "Sprout uses the camera so you can snap a photo of your meal and get an instant calorie and macro estimate."
-        INFOPLIST_KEY_NSHealthShareUsageDescription: "Sprout reads your weight from Apple Health so your trend stays in sync."
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "Sprout reads your weight and step count from Apple Health so your trend and daily activity stay in sync."
         INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Sprout saves the weigh-ins you log to Apple Health so your data lives in one place."
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Sprout lets you pick a meal photo from your library to estimate its calories and macros."
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Sprout uses your location to suggest healthy food options near you when you're out."
@@ -84,8 +84,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.widgets
         PRODUCT_NAME: VictoriaWidgets
         TARGETED_DEVICE_FAMILY: "1"
-        CURRENT_PROJECT_VERSION: "1"
-        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "9"
+        MARKETING_VERSION: "1.8"
 
   VictoriaTests:
     type: bundle.unit-test

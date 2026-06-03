@@ -121,7 +121,13 @@ final class CloudKitSyncService: BuddySyncService {
     // it can address records without a SwiftData dependency. They're set by `link`.
 
     private let myUserID: String
-    private var buddyUserID: String?
+    /// The linked buddy's id. Persisted to `UserDefaults` on every change (see `didSet`) and
+    /// restored in `init`, so a pairing SURVIVES app relaunch instead of resetting to the
+    /// pairing screen. (Previously this lived only in memory — the cause of "we keep getting
+    /// un-paired after closing the app.")
+    private var buddyUserID: String? {
+        didSet { Self.persistLinkedBuddy(buddyUserID, myUserID: myUserID) }
+    }
     /// The pairing code I've announced (owner side) — lets me poll the record to discover a
     /// buddy who claims it. Set by `publishMyPairingCode`.
     private var myPublishedCode: String?
@@ -144,6 +150,26 @@ final class CloudKitSyncService: BuddySyncService {
     init(myUserID: String) {
         self.myUserID = myUserID
         self.container = CKContainer(identifier: Self.containerIdentifier)
+        // Restore a previously-linked buddy so the pairing survives app relaunch.
+        // (Property observers don't fire during init, so this read won't re-persist.)
+        self.buddyUserID = UserDefaults.standard.string(forKey: Self.linkKey(myUserID))
+    }
+
+    // MARK: - Link persistence (survives relaunch)
+
+    private nonisolated static func linkKey(_ myUserID: String) -> String { "buddy.ck.linkedTo.\(myUserID)" }
+
+    private nonisolated static func persistLinkedBuddy(_ id: String?, myUserID: String) {
+        let key = linkKey(myUserID)
+        if let id, !id.isEmpty { UserDefaults.standard.set(id, forKey: key) }
+        else { UserDefaults.standard.removeObject(forKey: key) }
+    }
+
+    /// The linked buddy id, read straight from local persistence — `nil` ⇒ not linked.
+    /// `nonisolated` so the UI can check it synchronously at launch to restore the paired
+    /// state without a network round-trip.
+    nonisolated var linkedBuddyID: String? {
+        UserDefaults.standard.string(forKey: Self.linkKey(myUserID))
     }
 
     // MARK: Availability gate
@@ -214,17 +240,28 @@ final class CloudKitSyncService: BuddySyncService {
     /// until then it just no-ops and retries. Dashboard: the `Nudge.toUserID` field must
     /// be QUERYABLE for the subscription's predicate (same index the inbox query needs).
     private func ensureNudgeSubscription() async {
-        let key = "buddy.ck.subscribed.\(myUserID)"
+        // v2 bumps the subscription so devices that had the old static-text one recreate it
+        // with the DYNAMIC body below ("Victoria: You've got this 💚" / "🎉 Victoria hit her
+        // goal!") pulled from the nudge's own `text` field, instead of a generic line.
+        let key = "buddy.ck.subscribed.v2.\(myUserID)"
         guard !UserDefaults.standard.bool(forKey: key) else { return }
+
+        // Remove the old static-text subscription first, so a nudge can't double-notify.
+        try? await database.deleteSubscription(withID: "nudges-to-\(myUserID)")
+
         let predicate = NSPredicate(format: "%K == %@", Field.toUserID, myUserID)
         let subscription = CKQuerySubscription(
             recordType: RecordType.nudge,
             predicate: predicate,
-            subscriptionID: "nudges-to-\(myUserID)",
+            subscriptionID: "nudges-to-\(myUserID)-v2",
             options: [.firesOnRecordCreation])
         let info = CKSubscription.NotificationInfo()
         info.title = "Vita 💛"
-        info.alertBody = "Your buddy just sent you a nudge"
+        // Show the ACTUAL nudge message on the lock screen. `alertLocalizationKey "%@"`
+        // with the `text` record field as the arg fills the push body from the nudge itself
+        // — so both hand-sent nudges and the auto goal-celebrations read naturally.
+        info.alertLocalizationKey = "%@"
+        info.alertLocalizationArgs = [Field.text]
         info.soundName = "default"
         info.shouldBadge = true
         subscription.notificationInfo = info
@@ -285,7 +322,14 @@ final class CloudKitSyncService: BuddySyncService {
         } else {
             let ownerID = record[Field.ownerUserID] as? String
             if ownerID == myUserID {
-                // I already own this code — nothing to change.
+                // I already own this code. If my buddy has already accepted it, ADOPT them —
+                // this is how the code-OWNER links by entering their own code (e.g. after the
+                // other person paired first). Without this the owner would no-op and stay
+                // unpaired forever.
+                if let claimant = record[Field.buddyUserID] as? String,
+                   !claimant.isEmpty, claimant != myUserID {
+                    buddyUserID = claimant
+                }
                 return
             }
             // Second arrival: claim the pairing and remember who I'm now linked to.
@@ -449,6 +493,146 @@ final class CloudKitSyncService: BuddySyncService {
             throw BuddySyncError.cloudKitUnavailable
         }
     }
+
+    #if DEBUG
+    // MARK: - Dev-only schema seeder
+
+    /// DEV-ONLY one-tap schema seeder. Writes one record of **every** buddy record type —
+    /// carrying **every field the app ever sets** — into the **Development** CloudKit schema,
+    /// so all types + fields auto-register. This lets you add the two `Nudge` indexes and
+    /// **Deploy Schema Changes → Production** without first needing a live two-device pairing.
+    ///
+    /// Why this is necessary: CloudKit auto-creates schema on write in *Development* only —
+    /// **never** in Production. Production schema arrives solely via a deploy, and a deploy can
+    /// only carry fields that already exist in Development. So every field the app writes in
+    /// *any* flow must be seeded here, or that write later fails in Production. In particular
+    /// `BuddyPairing.buddyUserID` is only written when a buddy *claims* a code — solo use never
+    /// writes it, so without this seeder the real claim/save would fail in Production.
+    ///
+    /// Only the **schema** (types/fields/indexes) deploys to Production — never the records —
+    /// so these dummy Development rows need no cleanup and can never reach Production.
+    ///
+    /// Keep the field list in sync with `publish(mySnapshot:)` / `sendNudge` / `link`.
+    func debugSeedSchema() async throws {
+        try await ensureAvailable()
+
+        // 1) BuddyPairing — pairingCode + ownerUserID (announce) AND buddyUserID (claim path).
+        let pairing = CKRecord(recordType: RecordType.pairing,
+                               recordID: CKRecord.ID(recordName: "pairing-SEEDSEED"))
+        pairing[Field.pairingCode] = "SEEDSEED" as CKRecordValue
+        pairing[Field.ownerUserID] = "seed-owner" as CKRecordValue
+        pairing[Field.buddyUserID] = "seed-buddy" as CKRecordValue
+        _ = try await database.save(pairing)
+
+        // 2) BuddySnapshot — every field publish(mySnapshot:) writes (typed dummies; the
+        //    field TYPE is fixed by this first write, so types must match the real writes).
+        let snap = CKRecord(recordType: RecordType.snapshot,
+                            recordID: CKRecord.ID(recordName: "snapshot-seed-owner"))
+        snap[Field.ownerUserID]      = "seed-owner" as CKRecordValue
+        snap[Field.displayName]      = "Seed" as CKRecordValue
+        snap[Field.dayStreak]        = 0 as CKRecordValue
+        snap[Field.characterMoodRaw] = BuddyCharacterMood.happy.rawValue as CKRecordValue
+        snap[Field.loggedToday]      = 0 as CKRecordValue
+        snap[Field.lastActive]       = Date(timeIntervalSince1970: 0) as CKRecordValue
+        snap[Field.stepsToday]       = 0 as CKRecordValue
+        snap[Field.stepGoal]         = 0 as CKRecordValue
+        snap[Field.waterToday]       = 0.0 as CKRecordValue
+        snap[Field.waterGoal]        = 0.0 as CKRecordValue
+        snap[Field.workedOutToday]   = 0 as CKRecordValue
+        snap[Field.sharesFullData]   = 0 as CKRecordValue
+        snap[Field.trendWeightLbs]   = 0.0 as CKRecordValue
+        snap[Field.goalWeightLbs]    = 0.0 as CKRecordValue
+        snap[Field.weeklyRateLbs]    = 0.0 as CKRecordValue
+        snap[Field.caloriesEaten]    = 0.0 as CKRecordValue
+        snap[Field.calorieTarget]    = 0.0 as CKRecordValue
+        snap[Field.proteinEaten]     = 0.0 as CKRecordValue
+        snap[Field.proteinTarget]    = 0.0 as CKRecordValue
+        snap[Field.todayFoods]       = "" as CKRecordValue
+        _ = try await database.save(snap)
+
+        // 3) Nudge — the only type needing Dashboard indexes (toUserID Queryable,
+        //    createdAt Sortable). Seed all six fields.
+        let nudge = CKRecord(recordType: RecordType.nudge,
+                             recordID: CKRecord.ID(recordName: "nudge-seed"))
+        nudge[Field.fromUserID] = "seed-owner" as CKRecordValue
+        nudge[Field.toUserID]   = "seed-buddy" as CKRecordValue
+        nudge[Field.kindRaw]    = NudgeKind.cheer.rawValue as CKRecordValue
+        nudge[Field.text]       = "seed" as CKRecordValue
+        nudge[Field.createdAt]  = Date(timeIntervalSince1970: 0) as CKRecordValue
+        nudge[Field.isRead]     = 0 as CKRecordValue
+        _ = try await database.save(nudge)
+    }
+
+    /// DEV-ONLY CloudKit diagnostic for Settings → "Diagnose CloudKit". Reports the iCloud
+    /// account status and attempts a REAL public-DB write + read on this device, surfacing the
+    /// EXACT CloudKit error — which the live buddy flow otherwise hides behind a soft
+    /// `.cloudKitUnavailable`. `accountStatus` is environment-independent, so a failure here
+    /// points at the iCloud account/entitlement regardless of Dev vs Production.
+    func debugDiagnose() async -> String {
+        var out = "Container:\n\(Self.containerIdentifier)\n\n"
+
+        // 1) iCloud account status — the same gate `ensureAvailable()` checks first.
+        do {
+            let status = try await container.accountStatus()
+            let label: String
+            switch status {
+            case .available:              label = "✅ available"
+            case .noAccount:              label = "❌ NO iCloud account signed in"
+            case .restricted:             label = "❌ restricted (parental/MDM)"
+            case .couldNotDetermine:      label = "⚠️ could not determine"
+            case .temporarilyUnavailable: label = "⚠️ temporarily unavailable"
+            @unknown default:             label = "⚠️ unknown (\(status.rawValue))"
+            }
+            out += "iCloud account: \(label)\n"
+            if status != .available {
+                out += "\n→ THIS is the blocker. Settings → tap your name → make sure you're "
+                     + "signed into iCloud (and iCloud Drive is on), then retry."
+                return out
+            }
+        } catch {
+            out += "iCloud account check threw: \(Self.errLine(error))\n"
+                 + "→ Likely an entitlement/provisioning issue with the iCloud capability."
+            return out
+        }
+
+        // 2) Real public-DB write — exactly what publishing a pairing code does.
+        let id = CKRecord.ID(recordName: "diag-\(myUserID)")
+        let rec = CKRecord(recordType: RecordType.pairing, recordID: id)
+        rec[Field.pairingCode] = "DIAG" as CKRecordValue
+        rec[Field.ownerUserID] = myUserID as CKRecordValue
+        do {
+            _ = try await database.save(rec)
+            out += "Public DB write: ✅ OK\n"
+        } catch {
+            out += "Public DB WRITE: ❌ \(Self.errLine(error))\n"
+                 + "→ This is why pairing fails — your code can't be published."
+            return out
+        }
+
+        // 3) Read it back — exactly what claiming a buddy's code does.
+        do {
+            _ = try await database.record(for: id)
+            out += "Public DB read: ✅ OK\n"
+        } catch {
+            out += "Public DB READ: ❌ \(Self.errLine(error))\n"
+                 + "→ Writing works but reading a code doesn't."
+            return out
+        }
+
+        out += "\n✅ Account + read/write all work on THIS device/environment.\n"
+             + "If TestFlight pairing still fails, it's Production-specific — check CloudKit "
+             + "Dashboard → Production → Security Roles."
+        return out
+    }
+
+    /// Compact one-line description of a (possibly CloudKit) error, for diagnostics.
+    private static func errLine(_ error: Error) -> String {
+        if let ck = error as? CKError {
+            return "CKError \(ck.errorCode) (\(ck.code)) — \(ck.localizedDescription)"
+        }
+        return error.localizedDescription
+    }
+    #endif
 
     // MARK: - Record <-> model mapping
 

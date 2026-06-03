@@ -205,6 +205,12 @@ final class LocalMockSyncService: BuddySyncService {
 
     // MARK: - Linked-state helpers
 
+    /// Protocol: the linked buddy id, read from persistence so the UI restores the paired
+    /// state at launch. The mock simulates a single buddy.
+    nonisolated var linkedBuddyID: String? {
+        (defaults.string(forKey: Key.linkedCode)?.isEmpty == false) ? "mock-buddy" : nil
+    }
+
     private var isLinked: Bool {
         (defaults.string(forKey: Key.linkedCode)?.isEmpty == false)
     }

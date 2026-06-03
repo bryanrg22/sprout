@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// The AI coach chat — "Vita", a warm, supportive conversation grounded in the
 /// user's real data (targets, today's intake, weight trend, streak) via `CoachContext`.
@@ -27,6 +28,15 @@ struct CoachView: View {
     /// Held in transient @State (not SwiftData) because it carries the raw assistant
     /// `content` blocks needed to continue the API turn, and only matters mid-interaction.
     @State private var pendingTool: PendingTool?
+    /// A transient "X done · Undo" banner shown after an auto-applied quick log.
+    @State private var undoToast: UndoToast?
+    @State private var undoTask: Task<Void, Never>?
+    /// A photo the user has attached to the next message (downscaled). Shows as a preview
+    /// over the input until sent; Vita receives it as an image block so she can SEE it.
+    @State private var attachedImage: UIImage?
+    @State private var showPhotoOptions = false
+    @State private var showCamera = false
+    @State private var showLibrary = false
     @FocusState private var inputFocused: Bool
 
     /// "Ask Vita about this": set when the user long-pressed a component on another screen.
@@ -52,6 +62,9 @@ struct CoachView: View {
     /// Because that long-term layer now backs us, the verbatim window can be tighter (16) than
     /// the old 24, keeping cost/latency down without losing the thread.
     private static let maxHistoryMessages = 16
+    /// Max chained tool round-trips per user message (auto-apply + invalid retries). Past this
+    /// we stop advertising tools so the model must finalize — bounds cost/latency/runaway.
+    private static let maxToolDepth = 5
 
     private var coachName: String { profile.coachName.isEmpty ? "Vita" : profile.coachName }
 
@@ -80,8 +93,25 @@ struct CoachView: View {
                     }
 
                     conversation
-
-                    inputArea
+                }
+                // Pin the input bar as a bottom safe-area INSET rather than a VStack child.
+                // This is the fix for the watchdog freeze (0x8BADF00D) on send: in a plain
+                // VStack the keyboard SHRINKS the whole stack, which resizes the message
+                // ScrollView's frame, which fights the auto-scroll into a non-converging
+                // layout loop that pins the main thread until iOS kills the app. As a
+                // safe-area inset, the keyboard adjusts the scroll view's CONTENT INSET
+                // smoothly instead of resizing its frame — no loop. (Diagnosed from a field
+                // log: `coach send` → 17s → process relaunch, no reply, no error = a hang.)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: 0) {
+                        if let toast = undoToast {
+                            UndoBanner(summary: toast.summary, onUndo: performUndo)
+                                .padding(.horizontal, Theme.Space.md)
+                                .padding(.bottom, Theme.Space.xs)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                        inputArea
+                    }
                 }
 
                 // Celebrate a confirmed positive change (a kind little reward).
@@ -163,9 +193,10 @@ struct CoachView: View {
                 .padding(.bottom, Theme.Space.sm)
             }
             .scrollDismissesKeyboard(.interactively)
-            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: messages.count)
-            .animation(.easeInOut(duration: 0.2), value: isSending)
-            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: pendingTool != nil)
+            // NOTE: broad `.animation(_:value:)` on the ScrollView was removed — it animated
+            // EVERY change in the scroll view (including the keyboard-avoidance inset) and,
+            // combined with the auto-scroll on send, drove a non-converging view-graph update
+            // (the watchdog freeze). Insert/transition animations are handled locally instead.
             .onChange(of: messages.count) { scrollToBottom(proxy) }
             .onChange(of: isSending) { scrollToBottom(proxy) }
             .onChange(of: pendingTool != nil) { scrollToBottom(proxy) }
@@ -194,11 +225,16 @@ struct CoachView: View {
         } else {
             target = messages.last.map { AnyHashable($0.id) } ?? AnyHashable(Self.typingID)
         }
-        let scroll = { proxy.scrollTo(target, anchor: .bottom) }
-        if animated {
-            withAnimation(.easeOut(duration: 0.25)) { scroll() }
-        } else {
-            scroll()
+        // Defer to the next runloop tick so the scroll never runs *inside* the in-progress
+        // SwiftUI transaction (the message insert + keyboard dismiss that fire together on
+        // send). Scrolling mid-transaction recurses the view-graph update and pins the main
+        // thread at 100% CPU → the watchdog kill (0x8BADF00D) the user hit on send.
+        DispatchQueue.main.async {
+            if animated {
+                withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(target, anchor: .bottom) }
+            } else {
+                proxy.scrollTo(target, anchor: .bottom)
+            }
         }
     }
 
@@ -218,7 +254,23 @@ struct CoachView: View {
                 .padding(.bottom, 2)
             }
 
+            if let img = attachedImage {
+                attachmentPreview(img)
+            }
+
             HStack(alignment: .bottom, spacing: Theme.Space.sm) {
+                Button { showPhotoOptions = true } label: {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.brand)
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(Theme.cardRaised))
+                }
+                .buttonStyle(.plain)
+                .disabled(isSending || pendingTool != nil)
+                .opacity(isSending || pendingTool != nil ? 0.5 : 1)
+                .accessibilityLabel("Attach a photo")
+
                 TextField("Message \(coachName)…", text: $draft, axis: .vertical)
                     .font(.body)
                     .foregroundStyle(Theme.textPrimary)
@@ -282,17 +334,65 @@ struct CoachView: View {
             .ignoresSafeArea(edges: .bottom)
         )
         .sensoryFeedback(.impact(weight: .light), trigger: sendTrigger)
+        .confirmationDialog("Add a photo", isPresented: $showPhotoOptions, titleVisibility: .visible) {
+            if ImagePicker.cameraAvailable {
+                Button("Take Photo") { showCamera = true }
+            }
+            Button("Choose from Library") { showLibrary = true }
+            Button("Cancel", role: .cancel) {}
+        }
+        .sheet(isPresented: $showCamera) {
+            ImagePicker(sourceType: .camera) { attach($0) }
+                .ignoresSafeArea()
+        }
+        .sheet(isPresented: $showLibrary) {
+            PhotoLibraryPicker(selectionLimit: 1) { imgs in imgs.first.map(attach) }
+                .ignoresSafeArea()
+        }
+    }
+
+    /// A thumbnail of the pending photo, with an ✕ to remove it, shown above the input.
+    private func attachmentPreview(_ image: UIImage) -> some View {
+        HStack {
+            ZStack(alignment: .topTrailing) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                Button {
+                    withAnimation(.easeOut(duration: 0.15)) { attachedImage = nil }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.white, .black.opacity(0.6))
+                }
+                .buttonStyle(.plain)
+                .offset(x: 7, y: -7)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, Theme.Space.md)
+        .transition(.opacity)
     }
 
     private var canSend: Bool {
-        !isSending && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !isSending
+            && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || attachedImage != nil)
+    }
+
+    /// Store a picked photo (downscaled) as the pending attachment shown over the input.
+    private func attach(_ image: UIImage) {
+        attachedImage = image.downscaled(maxEdge: 768)
     }
 
     // MARK: - Sending
 
     private func send(text rawText: String) {
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isSending else { return }
+        // JPEG of any attached (already-downscaled) photo. A message may be image-only.
+        let imageData = attachedImage?.jpegData(compressionQuality: 0.6)
+        guard (!text.isEmpty || imageData != nil), !isSending else { return }
 
         // Fire haptic feedback for the primary action.
         sendTrigger += 1
@@ -306,13 +406,18 @@ struct CoachView: View {
         // A brand-new message supersedes any unanswered tool proposal.
         pendingTool = nil
         if text == draft.trimmingCharacters(in: .whitespacesAndNewlines) { draft = "" }
-        inputFocused = false
+        // Keep the keyboard up after send (chat-standard, like Messages). Dismissing it here —
+        // while the message inserts AND the list auto-scrolls — was the freeze trigger: the
+        // keyboard-avoidance safe-area animation fought the scroll/relayout into a runaway
+        // view-graph update (watchdog 0x8BADF00D). The quick-prompt + Ask-Vita paths never
+        // raise the keyboard, which is exactly why ONLY typing-then-send froze.
 
         // Insert the user's message and persist immediately so it shows even if the
         // network call fails.
-        let userMessage = ChatMessage(role: "user", content: text)
+        let userMessage = ChatMessage(role: "user", content: text, imageData: imageData)
         context.insert(userMessage)
         try? context.save()
+        attachedImage = nil   // consumed into the message
 
         // Build the history from everything *except* the canned welcome seed. We map to
         // the client's `Msg` (content is a plain String here).
@@ -320,8 +425,16 @@ struct CoachView: View {
         var recent = Array(messages.filter { !$0.isSystemSeed }.suffix(Self.maxHistoryMessages))
         // The Messages API requires the conversation to start on a user turn.
         while let first = recent.first, first.roleRaw != "user" { recent.removeFirst() }
-        let history: [AnthropicClient.Msg] = recent
-            .map { AnthropicClient.Msg(role: $0.roleRaw, content: $0.content) }
+        // A message with a photo becomes a multimodal content array (image + optional text)
+        // so Vita can actually SEE it; text-only messages stay plain strings.
+        let history: [AnthropicClient.Msg] = recent.map { m in
+            if let data = m.imageData {
+                var blocks: [[String: Any]] = [AnthropicClient.imageBlock(data)]
+                if !m.content.isEmpty { blocks.append(AnthropicClient.textBlock(m.content)) }
+                return AnthropicClient.Msg(role: m.roleRaw, content: blocks)
+            }
+            return AnthropicClient.Msg(role: m.roleRaw, content: m.content)
+        }
 
         // Snapshot the system prompt + tool schemas now (on the main actor, off SwiftData).
         // `coachMemory()` reads/creates the single memory row; `CoachContext.system` folds its
@@ -330,19 +443,23 @@ struct CoachView: View {
                                          memory: coachMemory())
         let tools = CoachTools.schemas(for: profile)
 
+        Diagnostics.shared.log("coach send: \(text.count) chars, \(history.count) history msgs", .coach)
         isSending = true
         Task {
             do {
                 let client = try AnthropicClient()
                 let turn = try await client.chatWithTools(system: system, messages: history, tools: tools)
+                Diagnostics.shared.log("coach reply ok: \(turn.text.count) chars, tool=\(turn.toolUse?.name ?? "none")", .coach)
                 await MainActor.run { handle(turn: turn, history: history) }
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {
+                    Diagnostics.shared.log("coach: missing API key", .coach)
                     showMissingKeyBanner = true
                     isSending = false
                 }
             } catch {
                 await MainActor.run {
+                    Diagnostics.shared.log("coach error: \(error)", .error)
                     errorBanner = friendlyError(error)
                     isSending = false
                 }
@@ -354,7 +471,8 @@ struct CoachView: View {
 
     /// Process an assistant turn that may include text and/or a tool request.
     @MainActor
-    private func handle(turn: AnthropicClient.ChatTurn, history: [AnthropicClient.Msg]) {
+    private func handle(turn: AnthropicClient.ChatTurn, history: [AnthropicClient.Msg], depth: Int = 0) {
+        Diagnostics.shared.log("coach: rendering reply (\(turn.text.count) chars, tool=\(turn.toolUse != nil))", .coach)
         // Persist any prose the assistant included so the conversation reads naturally,
         // whether or not a tool was also requested.
         let trimmed = turn.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -383,21 +501,39 @@ struct CoachView: View {
         // request (out-of-range, bad pace) is bounced straight back to the model as a
         // tool_result error so it can recover in-conversation — the user never sees a
         // confirm for something we can't safely do.
-        switch CoachTools.parse(name: toolUse.name, input: toolUse.input, profile: profile) {
+        // `todaysFoods` lets the edit/delete tools resolve "the latte" to a specific row;
+        // it's harmless for the settings tools (which ignore it).
+        switch CoachTools.parse(name: toolUse.name, input: toolUse.input, profile: profile,
+                                todaysFoods: CoachContext.todaysFoods(foods)) {
         case .invalid(let reason):
             continueTurn(history: history,
                          assistantContent: turn.assistantContent,
                          toolUseId: toolUse.id,
                          resultText: reason,
-                         isError: true)
+                         isError: true,
+                         depth: depth + 1)
 
-        case .ok(let request):
-            // DO NOT apply yet. Surface a one-tap confirm; apply happens only on "Yes".
+        case .ok(let request) where request.requiresConfirm:
+            // Destructive or goal-changing → DO NOT apply yet. Surface a one-tap confirm.
             pendingTool = PendingTool(request: request,
                                       toolUseId: toolUse.id,
                                       assistantContent: turn.assistantContent,
                                       history: history)
             isSending = false
+
+        case .ok(let request):
+            // A quick, reversible log → apply immediately and offer an Undo, then tell the
+            // model so it replies warmly. The depth cap bounds a chain ("log my breakfast").
+            let applied = CoachTools.applyReturningUndo(request, to: profile, context: context)
+            if let undo = applied.undo {
+                showUndoToast(summary: request.confirmSummary, undo: undo)
+            }
+            continueTurn(history: history,
+                         assistantContent: turn.assistantContent,
+                         toolUseId: toolUse.id,
+                         resultText: "Applied. \(applied.message)",
+                         isError: false,
+                         depth: depth + 1)
         }
     }
 
@@ -415,7 +551,8 @@ struct CoachView: View {
                      assistantContent: pending.assistantContent,
                      toolUseId: pending.toolUseId,
                      resultText: "Applied. \(resultText)",
-                     isError: false)
+                     isError: false,
+                     depth: 0)
     }
 
     /// User tapped "Not now": tell the coach the change was declined so it bows out kindly.
@@ -430,7 +567,32 @@ struct CoachView: View {
                      toolUseId: pending.toolUseId,
                      resultText: "The user decided not to make this change right now. "
                                + "Nothing was changed. Respond warmly and without any pressure.",
-                     isError: false)
+                     isError: false,
+                     depth: 0)
+    }
+
+    /// Show the "done · Undo" banner for a just-applied quick log, auto-dismissing after a few
+    /// seconds. A new toast replaces any prior one (we keep only the most recent action).
+    @MainActor
+    private func showUndoToast(summary: String, undo: @escaping @MainActor () -> Void) {
+        undoTask?.cancel()
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            undoToast = UndoToast(summary: summary, undo: undo)
+        }
+        undoTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.25)) { undoToast = nil }
+        }
+    }
+
+    /// Reverse the last auto-applied change and dismiss the banner.
+    @MainActor
+    private func performUndo() {
+        undoTask?.cancel()
+        undoToast?.undo()
+        sendTrigger += 1   // a little haptic for the revert
+        withAnimation(.easeOut(duration: 0.2)) { undoToast = nil }
     }
 
     /// Send the assistant turn + a tool_result back to continue the conversation, then
@@ -440,7 +602,8 @@ struct CoachView: View {
                               assistantContent: [[String: Any]],
                               toolUseId: String,
                               resultText: String,
-                              isError: Bool) {
+                              isError: Bool,
+                              depth: Int) {
         // history already ends with the user's triggering message; append the assistant's
         // tool_use turn, then our tool_result, exactly as the Messages API requires.
         let continued = history
@@ -451,7 +614,8 @@ struct CoachView: View {
 
         let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
                                          memory: coachMemory())
-        let tools = CoachTools.schemas(for: profile)
+        // Once we've chained enough tools, stop offering them so the model must finalize.
+        let tools = depth >= Self.maxToolDepth ? [] : CoachTools.schemas(for: profile)
 
         isSending = true
         Task {
@@ -460,7 +624,7 @@ struct CoachView: View {
                 // Keep tools available so a follow-up tool call is still possible, but the
                 // common case is a plain warm reply.
                 let turn = try await client.chatWithTools(system: system, messages: continued, tools: tools)
-                await MainActor.run { handle(turn: turn, history: continued) }
+                await MainActor.run { handle(turn: turn, history: continued, depth: depth) }
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {
                     showMissingKeyBanner = true
@@ -577,9 +741,20 @@ struct CoachView: View {
     // MARK: - Banners
 
     private var missingKeyBanner: some View {
-        inlineBanner(text: "I'm ready to chat once you add your AI key in More → AI 💚",
+        inlineBanner(text: missingKeyMessage,
                      tint: Theme.brand,
                      systemImage: "key.fill")
+    }
+
+    /// Vita runs on Claude (chatWithTools is Anthropic-only). If the user is on OpenAI or only
+    /// has an OpenAI key saved, they HAVE added a key — so say specifically that Vita needs an
+    /// Anthropic one, instead of the confusing generic "add your AI key".
+    private var missingKeyMessage: String {
+        if !KeychainStore.hasAPIKey(for: .anthropic)
+            && (AIConfig.provider == .openai || KeychainStore.hasAPIKey(for: .openai)) {
+            return "\(coachName) runs on Claude — add an Anthropic key in More → AI 💚"
+        }
+        return "I'm ready to chat once you add your AI key in More → AI 💚"
     }
 
     private func inlineBanner(text: String, tint: Color, systemImage: String) -> some View {
@@ -648,23 +823,33 @@ private struct MessageRow: View {
     }
 
     private var bubble: some View {
-        Text(Self.styled(message.content))
-            .font(.body)
-            .foregroundStyle(message.isUser ? Theme.background : Theme.textPrimary)
-            .padding(.horizontal, Theme.Space.md)
-            .padding(.vertical, 11)
-            .background(bubbleBackground)
-            .clipShape(BubbleShape(isUser: message.isUser))
-            .overlay(
-                BubbleShape(isUser: message.isUser)
-                    .strokeBorder(message.isUser ? Color.clear : Color.white.opacity(0.06),
-                                  lineWidth: 1)
-            )
-            .shadow(color: Color.black.opacity(message.isUser ? 0.2 : 0.25),
-                    radius: 6, x: 0, y: 3)
-            .textSelection(.enabled)
-            .accessibilityLabel(message.isUser ? "You said" : "\(coachName) said")
-            .accessibilityValue(message.content)
+        VStack(alignment: .leading, spacing: 0) {
+            if let data = message.imageData, let ui = UIImage(data: data) {
+                Image(uiImage: ui)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: 240, maxHeight: 280)
+            }
+            if !message.content.isEmpty {
+                Text(Self.styled(message.content))
+                    .font(.body)
+                    .foregroundStyle(message.isUser ? Theme.background : Theme.textPrimary)
+                    .padding(.horizontal, Theme.Space.md)
+                    .padding(.vertical, 11)
+            }
+        }
+        .background(bubbleBackground)
+        .clipShape(BubbleShape(isUser: message.isUser))
+        .overlay(
+            BubbleShape(isUser: message.isUser)
+                .strokeBorder(message.isUser ? Color.clear : Color.white.opacity(0.06),
+                              lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(message.isUser ? 0.2 : 0.25),
+                radius: 6, x: 0, y: 3)
+        .textSelection(.enabled)
+        .accessibilityLabel(message.isUser ? "You said" : "\(coachName) said")
+        .accessibilityValue(message.imageData != nil ? "\(message.content) (photo attached)" : message.content)
     }
 
     @ViewBuilder private var bubbleBackground: some View {
@@ -816,6 +1001,49 @@ private struct PendingTool {
     /// The conversation history up to and including the user's triggering message —
     /// what we replay (plus the assistant turn + tool_result) to continue.
     let history: [AnthropicClient.Msg]
+}
+
+/// A just-applied, reversible action: the human summary to show + the closure that undoes it.
+private struct UndoToast {
+    let summary: String
+    let undo: @MainActor () -> Void
+}
+
+/// The transient "✓ {summary} · Undo" banner shown above the input after an auto-applied log.
+private struct UndoBanner: View {
+    let summary: String
+    var onUndo: () -> Void
+
+    var body: some View {
+        HStack(spacing: Theme.Space.sm) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.positive)
+            Text(capitalizedSummary)
+                .font(.subheadline)
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: Theme.Space.sm)
+            Button(action: onUndo) {
+                Text("Undo")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Theme.brand)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, Theme.Space.md)
+        .padding(.vertical, 11)
+        .background(Theme.cardRaised, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).strokeBorder(Color.white.opacity(0.06)))
+        .shadow(color: .black.opacity(0.22), radius: 10, x: 0, y: 4)
+    }
+
+    /// The action summary reads like "log Chicken bowl …"; show it sentence-cased.
+    private var capitalizedSummary: String {
+        guard let first = summary.first else { return summary }
+        return first.uppercased() + summary.dropFirst()
+    }
 }
 
 // MARK: - Inline tool-confirm card ("Want me to set your step goal to 12,000?")

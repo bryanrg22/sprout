@@ -24,10 +24,10 @@ struct DashboardView: View {
 
     // MARK: Derived
     private var todayFood: [FoodEntry] { allFood.filter { Calendar.current.isDateInToday($0.date) } }
-    private var consumed: Double { todayFood.reduce(0) { $0 + $1.calories } }
-    private var protein: Double { todayFood.reduce(0) { $0 + $1.proteinG } }
-    private var carbs: Double { todayFood.reduce(0) { $0 + $1.carbsG } }
-    private var fat: Double { todayFood.reduce(0) { $0 + $1.fatG } }
+    private var consumed: Double { todayFood.reduce(0) { $0 + $1.totalCalories } }
+    private var protein: Double { todayFood.reduce(0) { $0 + $1.totalProteinG } }
+    private var carbs: Double { todayFood.reduce(0) { $0 + $1.totalCarbsG } }
+    private var fat: Double { todayFood.reduce(0) { $0 + $1.totalFatG } }
 
     private var trendWeight: Double? { TrendCalculator.currentTrend(weights) }
     private var basisWeight: Double { trendWeight ?? (profile.startWeightLbs > 0 ? profile.startWeightLbs : 150) }
@@ -69,7 +69,7 @@ struct DashboardView: View {
 
     // Per-day totals used for the streak helpers.
     private func dayProtein(_ day: Date) -> Double {
-        allFood.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }.reduce(0) { $0 + $1.proteinG }
+        allFood.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }.reduce(0) { $0 + $1.totalProteinG }
     }
     private func dayWater(_ day: Date) -> Double {
         water.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }.reduce(0) { $0 + $1.amountOz }
@@ -418,6 +418,8 @@ struct DashboardView: View {
     private var containersDoneToday: Int { Int((waterToday / containerOz).rounded()) }
     private var containerGoal: Int { profile.waterGoalContainers }
 
+    @State private var showWaterSheet = false
+
     private var waterCard: some View {
         VStack(alignment: .leading, spacing: Theme.Space.sm) {
             HStack {
@@ -461,9 +463,13 @@ struct DashboardView: View {
                 }
                 Spacer(minLength: 0)
             }
+            // Tap the ring/numbers to log a custom amount or change your bottle size.
+            .contentShape(Rectangle())
+            .onTapGesture { showWaterSheet = true }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardElevated()
+        .sheet(isPresented: $showWaterSheet) { WaterLogSheet(profile: profile) }
     }
 
     // MARK: Macros

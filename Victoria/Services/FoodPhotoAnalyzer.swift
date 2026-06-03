@@ -80,13 +80,24 @@ struct FoodPhotoAnalyzer {
     ]
 
     static func analyze(imageData: Data, userNote: String?) async throws -> Estimate {
-        let client = try AnthropicClient()
-        var prompt = "Estimate the calories and macros for this meal."
+        try await analyze(imagesData: [imageData], userNote: userNote)
+    }
+
+    /// Estimate ONE meal that may be spread across several photos (different items,
+    /// plates, or angles). All images go in a single request so the model returns one
+    /// combined total rather than us summing separate guesses.
+    static func analyze(imagesData: [Data], userNote: String?) async throws -> Estimate {
+        var prompt: String
+        if imagesData.count > 1 {
+            prompt = "These \(imagesData.count) photos all show the SAME meal (different items or angles). "
+                + "Identify every distinct food across them WITHOUT double-counting an item that appears in more "
+                + "than one photo, and return ONE combined estimate for the whole meal."
+        } else {
+            prompt = "Estimate the calories and macros for this meal."
+        }
         if let n = userNote, !n.isEmpty { prompt += " The user adds: \"\(n)\"." }
-        let content: [[String: Any]] = [
-            AnthropicClient.imageBlock(imageData),
-            AnthropicClient.textBlock(prompt),
-        ]
+        var content: [[String: Any]] = imagesData.map { AnthropicClient.imageBlock($0) }
+        content.append(AnthropicClient.textBlock(prompt))
         return try await run(system: system, content: content)
     }
 

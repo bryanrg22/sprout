@@ -26,6 +26,10 @@ struct AIProviderSettingsView: View {
 
     @State private var saveTick = 0
 
+    /// Live result of pinging the API to confirm the saved key actually authenticates.
+    @State private var keyCheck: KeyCheck = .idle
+    private enum KeyCheck: Equatable { case idle, checking, ok, failed(String) }
+
     var body: some View {
         Form {
             providerSection
@@ -87,12 +91,20 @@ struct AIProviderSettingsView: View {
             row(icon: keyStored ? "checkmark.circle.fill" : "circle.dashed",
                 tint: keyStored ? Theme.positive : Theme.textSecondary) {
                 LabeledContent("Status") {
-                    Text(keyStored ? "Connected" : "Not connected")
+                    Text(keyStored ? "Saved" : "Not saved")
                         .foregroundStyle(keyStored ? Theme.positive : Theme.textSecondary)
                 }
             }
 
+            keyCheckRow
+
             if keyStored {
+                Button(action: verifyKey) {
+                    Label("Verify key works", systemImage: "checkmark.shield.fill")
+                        .foregroundStyle(Theme.brand)
+                }
+                .disabled(keyCheck == .checking)
+
                 Button(role: .destructive, action: removeKey) {
                     Label("Remove key", systemImage: "trash")
                 }
@@ -155,7 +167,63 @@ struct AIProviderSettingsView: View {
     private func loadForSelectedProvider() {
         keyStored = KeychainStore.hasAPIKey(for: provider)
         keyDraft = ""
+        keyCheck = .idle
         modelDraft = AIConfig.modelOverride(for: provider, tier: .coach) ?? ""
+    }
+
+    // MARK: - Key verification
+
+    /// Live result of the API ping confirming the saved key works.
+    @ViewBuilder private var keyCheckRow: some View {
+        switch keyCheck {
+        case .idle:
+            EmptyView()
+        case .checking:
+            row(icon: "arrow.triangle.2.circlepath", tint: Theme.textSecondary) {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Checking your key…").foregroundStyle(Theme.textSecondary)
+                }
+            }
+        case .ok:
+            row(icon: "checkmark.seal.fill", tint: Theme.positive) {
+                Text("Key works — Vita's ready 💚").foregroundStyle(Theme.positive)
+            }
+        case .failed(let msg):
+            row(icon: "exclamationmark.triangle.fill", tint: .red) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Key didn't work").foregroundStyle(.red)
+                    Text(msg).font(.caption).foregroundStyle(Theme.textSecondary)
+                }
+            }
+        }
+    }
+
+    /// Ping the selected provider's API to confirm the SAVED key authenticates. Auto-runs
+    /// after Save and on the manual "Verify key works" button.
+    private func verifyKey() {
+        guard KeychainStore.hasAPIKey(for: provider) else { return }
+        keyCheck = .checking
+        let selected = provider
+        Task {
+            do {
+                switch selected {
+                case .anthropic: try await AnthropicClient().validate()
+                case .openai:    try await OpenAIClient().validate()
+                }
+                keyCheck = .ok
+                saveTick += 1
+            } catch {
+                keyCheck = .failed(Self.friendlyMessage(error))
+            }
+        }
+    }
+
+    private static func friendlyMessage(_ error: Error) -> String {
+        if case AIConfig.AIError.badResponse(let m) = error { return String(m.prefix(180)) }
+        if case AIConfig.AIError.missingKey = error { return "No key saved yet." }
+        if error is URLError { return "Couldn't reach the server — check your connection, then tap Verify again." }
+        return error.localizedDescription
     }
 
     private func saveKey() {
@@ -165,12 +233,14 @@ struct AIProviderSettingsView: View {
         keyDraft = ""
         keyStored = KeychainStore.hasAPIKey(for: provider)
         saveTick += 1
+        verifyKey()   // immediately confirm the saved key actually authenticates
     }
 
     private func removeKey() {
         KeychainStore.setAPIKey(nil, for: provider)
         keyDraft = ""
         keyStored = KeychainStore.hasAPIKey(for: provider)
+        keyCheck = .idle
         saveTick += 1
     }
 

@@ -98,8 +98,12 @@ struct CompanionNeed: Identifiable {
     }
 
     let kind: Kind
-    /// 0...1, where 1 means "this need is fully met (or exceeded)".
+    /// 0...1 (clamped) — drives the ring FILL + "met" styling (a ring can't overfill).
     let fraction: Double
+    /// The TRUE ratio, UNCAPPED — so the % label can read past 100% (e.g. 135% water),
+    /// which carries real information a flat "100%" hides. Defaults to `fraction` for any
+    /// caller that doesn't supply it.
+    var rawFraction: Double = 0
 
     var id: String { kind.rawValue }
 
@@ -210,10 +214,12 @@ enum CompanionEngine {
         let proFrac   = clamp01(safeRatio(protein, proteinTarget))
         let waterFrac = clamp01(safeRatio(waterOz, waterTargetOz))
 
+        // `fraction` stays clamped (ring fill + happy mood never "overflow"); `rawFraction`
+        // is the true uncapped ratio so the % label can show past 100% (e.g. 135% water).
         let needs = [
-            CompanionNeed(kind: .food,    fraction: calFrac),
-            CompanionNeed(kind: .protein, fraction: proFrac),
-            CompanionNeed(kind: .water,   fraction: waterFrac)
+            CompanionNeed(kind: .food,    fraction: calFrac,   rawFraction: safeRatio(caloriesEaten, calorieTarget)),
+            CompanionNeed(kind: .protein, fraction: proFrac,   rawFraction: safeRatio(protein, proteinTarget)),
+            CompanionNeed(kind: .water,   fraction: waterFrac, rawFraction: safeRatio(waterOz, waterTargetOz))
         ]
 
         let mood = mood(calFrac: calFrac,

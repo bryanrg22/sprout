@@ -65,7 +65,7 @@ struct AnthropicClient {
                        messages: [Msg],
                        tools: [[String: Any]],
                        model: String = AIConfig.chatModel,
-                       maxTokens: Int = 1024) async throws -> ChatTurn {
+                       maxTokens: Int = 1500) async throws -> ChatTurn {
         var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
@@ -91,6 +91,13 @@ struct AnthropicClient {
            let name = block["name"] as? String {
             let input = (block["input"] as? [String: Any]) ?? [:]
             toolUse = ToolUse(id: id, name: name, input: input)
+        }
+
+        // If the turn was cut off at max_tokens MID-tool-use, the tool_use block can be
+        // incomplete — echoing it back in `continueTurn` would 400 the next request. Drop it
+        // so we surface the prose instead; she can re-ask and it'll come through whole.
+        if (json["stop_reason"] as? String) == "max_tokens", toolUse != nil {
+            toolUse = nil
         }
 
         return ChatTurn(text: text, toolUse: toolUse, assistantContent: content)
@@ -158,6 +165,20 @@ struct AnthropicClient {
         ["type": "text", "text": text]
     }
 
+    // MARK: - Key validation
+    /// Lightweight key check for Settings → "Verify key". Sends a 1-token request whose only
+    /// purpose is to confirm the stored key authenticates with Anthropic. Throws
+    /// `.badResponse` carrying Anthropic's own message (e.g. "invalid x-api-key") on a bad key,
+    /// and `.missingKey` (from `init`) if none is stored. Goes through `send` directly so a
+    /// clamped/empty reply can never read as a failure — we only care that auth succeeded.
+    func validate() async throws {
+        _ = try await send([
+            "model": AIProvider.anthropic.defaultCoachModel,
+            "max_tokens": 1,
+            "messages": [["role": "user", "content": "ping"]],
+        ])
+    }
+
     // MARK: - Networking
     private func send(_ body: [String: Any]) async throws -> [String: Any] {
         var req = URLRequest(url: AIConfig.baseURL.appendingPathComponent("v1/messages"))
@@ -175,6 +196,7 @@ struct AnthropicClient {
         let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         guard (200..<300).contains(http.statusCode) else {
             let msg = ((json["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"
+            Diagnostics.shared.log("anthropic HTTP \(http.statusCode): \(msg)", .ai)
             throw AIConfig.AIError.badResponse(msg)
         }
         return json
