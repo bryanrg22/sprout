@@ -43,7 +43,7 @@ struct FoodLogView: View {
     @State private var showDatePicker = false
 
     private enum FoodSheet: Identifiable {
-        case photo, barcode, manual, recents, label
+        case photo, scan, manual, recents
         var id: Int { hashValue }
     }
 
@@ -149,10 +149,9 @@ struct FoodLogView: View {
             .sheet(item: $sheet) { which in
                 switch which {
                 case .photo:   PhotoFoodFlow(date: selectedDay, preferredMeal: preferredMeal)
-                case .barcode: BarcodeScanView(date: selectedDay, preferredMeal: preferredMeal)
+                case .scan:    ScanView(date: selectedDay, preferredMeal: preferredMeal)
                 case .manual:  AddFoodSheet(draft: FoodDraft(meal: preferredMeal ?? MealTime.current()), date: selectedDay)
                 case .recents: RecentFoodsSheet(date: selectedDay, preferredMeal: preferredMeal)
-                case .label:   LabelScanView(date: selectedDay, preferredMeal: preferredMeal)
                 }
             }
             // Tap a logged food → detail card. Its "Edit" defers to here so the editor
@@ -172,8 +171,7 @@ struct FoodLogView: View {
             // Tapping a meal's "＋" (or an empty meal row) routes the add into THAT meal.
             .confirmationDialog(mealChooserTitle, isPresented: $showMealChooser, titleVisibility: .visible) {
                 Button("Snap or describe a meal") { open(.photo, for: preferredMeal) }
-                Button("Scan barcode") { open(.barcode, for: preferredMeal) }
-                Button("Scan a label") { open(.label, for: preferredMeal) }
+                Button("Scan") { open(.scan, for: preferredMeal) }
                 Button("Recents & favorites") { open(.recents, for: preferredMeal) }
                 Button("Add manually") { open(.manual, for: preferredMeal) }
                 Button("Cancel", role: .cancel) {}
@@ -353,8 +351,7 @@ struct FoodLogView: View {
             Menu {
                 Button { open(.recents) } label: { Label("Recents & favorites", systemImage: "clock.arrow.circlepath") }
                 Button { open(.photo) }   label: { Label("Snap or describe a meal", systemImage: "camera.fill") }
-                Button { open(.barcode) } label: { Label("Scan barcode", systemImage: "barcode.viewfinder") }
-                Button { open(.label) }   label: { Label("Scan a label", systemImage: "doc.text.viewfinder") }
+                Button { open(.scan) }    label: { Label("Scan", systemImage: "barcode.viewfinder") }
                 Button { open(.manual) }  label: { Label("Add manually", systemImage: "square.and.pencil") }
             } label: {
                 Label("Log your first bite", systemImage: "plus.circle.fill")
@@ -405,8 +402,7 @@ struct FoodLogView: View {
         Menu {
             Button { open(.recents) } label: { Label("Recents & favorites", systemImage: "clock.arrow.circlepath") }
             Button { open(.photo) }   label: { Label("Snap or describe a meal", systemImage: "camera.fill") }
-            Button { open(.barcode) } label: { Label("Scan barcode", systemImage: "barcode.viewfinder") }
-            Button { open(.label) }   label: { Label("Scan a label", systemImage: "doc.text.viewfinder") }
+            Button { open(.scan) }    label: { Label("Scan", systemImage: "barcode.viewfinder") }
             Button { open(.manual) }  label: { Label("Add manually", systemImage: "square.and.pencil") }
         } label: {
             Image(systemName: "plus.circle.fill")

@@ -1,15 +1,20 @@
 import SwiftUI
 import VisionKit
 
-/// Nutrition-label logging: point the camera at a packaged food's **Nutrition
-/// Facts** panel, OCR the text, parse calories + macros, then confirm in
-/// `AddFoodSheet`. This is the LABEL path for foods that lack a usable barcode
-/// (the barcode path lives in `BarcodeScanView`).
+/// One unified "Scan" that auto-detects whether the camera is pointed at a
+/// **barcode** or a **Nutrition Facts** label, in a single camera session.
 ///
-/// Mirrors `BarcodeScanView`: a `DataScannerViewController` wrapped in a
-/// `UIViewControllerRepresentable`, gated by device availability, with a warm
-/// manual fallback for devices without a usable camera (e.g. the Simulator).
-struct LabelScanView: View {
+/// Disambiguation is **barcode-first**: a `DataScannerViewController` recognizes
+/// both `.barcode` and `.text` at once, and the moment a barcode appears in frame
+/// we treat the scan as a barcode (look it up on Open Food Facts → `AddFoodSheet`
+/// with source `.barcode`, which shows the "how many servings?" prompt). Only when
+/// NO barcode is present do we fall to the label path: we keep reading text, and
+/// once enough nutrition text is detected to parse confidently we surface a
+/// "Use this label" affordance so a stray word never triggers a bogus draft.
+///
+/// Replaces the two former single-purpose views (`BarcodeScanView` +
+/// `LabelScanView`); their lookup and parsing logic is ported here unchanged.
+struct ScanView: View {
     @Environment(\.dismiss) private var dismiss
 
     /// The day to log the resulting entry to.
@@ -17,7 +22,18 @@ struct LabelScanView: View {
     /// When set (she tapped a specific meal), the result lands in this meal.
     var preferredMeal: MealType? = nil
 
+    @State private var manualCode: String = ""
+    @State private var phase: Phase = .idle
     @State private var draft: FoodDraft?
+    @State private var message: String?
+    /// The latest confident label parse, held back until she taps "Use this label"
+    /// (so a stray word doesn't auto-fire a label draft, and a barcode can still win).
+    @State private var pendingLabel: FoodDraft?
+
+    private enum Phase: Equatable {
+        case idle          // scanning / waiting for input
+        case looking       // barcode network lookup in flight
+    }
 
     /// DataScanner needs a supported device, camera permission, and availability.
     private var scannerUsable: Bool {
@@ -28,11 +44,12 @@ struct LabelScanView: View {
         NavigationStack {
             content
                 .background(Theme.background)
-                .navigationTitle("Scan Label")
+                .navigationTitle("Scan")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") { dismiss() }
+                            .disabled(phase == .looking)
                     }
                 }
         }
@@ -43,10 +60,15 @@ struct LabelScanView: View {
 
     @ViewBuilder
     private var content: some View {
-        if scannerUsable {
-            scannerView
-        } else {
-            manualView
+        switch phase {
+        case .looking:
+            lookingView
+        case .idle:
+            if scannerUsable {
+                scannerView
+            } else {
+                manualView
+            }
         }
     }
 
@@ -54,15 +76,32 @@ struct LabelScanView: View {
 
     private var scannerView: some View {
         VStack(spacing: 0) {
-            LabelTextScannerRepresentable { lines in
-                handle(lines)
-            }
+            ScanRepresentable(
+                onBarcode: { code in lookup(code) },
+                onText: { lines in handleText(lines) }
+            )
             .overlay(alignment: .top) {
-                Text("Point at the Nutrition Facts panel")
+                Text("Point at a barcode or nutrition label")
                     .font(.subheadline.weight(.semibold))
                     .padding(10)
                     .background(.ultraThinMaterial, in: Capsule())
                     .padding(.top, 16)
+            }
+            // Once we've read enough of a Nutrition Facts panel to parse it, offer a
+            // tap to use it. Held behind a button so a stray word can't trigger a
+            // label draft, and so a barcode that appears later still takes priority.
+            .overlay(alignment: .bottom) {
+                if pendingLabel != nil {
+                    Button {
+                        draft = pendingLabel
+                    } label: {
+                        Label("Use this label", systemImage: "doc.text.viewfinder")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.primary)
+                    .padding(.horizontal)
+                    .padding(.bottom, 16)
+                }
             }
 
             scannerFooter
@@ -71,10 +110,14 @@ struct LabelScanView: View {
 
     private var scannerFooter: some View {
         VStack(spacing: 8) {
-            Text("Hold steady — we'll read the calories and macros automatically.")
+            Text("Hold steady — point at a barcode, or a Nutrition Facts panel to read calories and macros.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
+            Text("Can't scan it? Type the barcode number below.")
+                .font(.caption)
+                .foregroundStyle(Theme.textSecondary)
+            manualField
             Button {
                 addManually()
             } label: {
@@ -92,47 +135,114 @@ struct LabelScanView: View {
     private var manualView: some View {
         ScrollView {
             VStack(spacing: 18) {
-                Image(systemName: "doc.text.viewfinder")
+                Image(systemName: "barcode.viewfinder")
                     .font(.system(size: 48))
                     .foregroundStyle(Theme.accent)
-                Text("Scan a Nutrition Facts label")
+                Text("Enter the barcode")
                     .font(.title3.weight(.semibold))
-                    .multilineTextAlignment(.center)
-                Text("Live scanning isn't available here, but you can type the values from the label yourself.")
+                Text("Live scanning isn't available here, but you can type the number printed under the barcode — or add the item yourself.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
+                manualField
+                if let message {
+                    Text(message)
+                        .font(.callout)
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
                 Button {
                     addManually()
                 } label: {
-                    Label("Enter the values", systemImage: "square.and.pencil")
+                    Label("Add it myself instead", systemImage: "square.and.pencil")
                 }
-                .buttonStyle(.primary)
                 .padding(.top, 4)
             }
             .padding()
         }
     }
 
+    private var manualField: some View {
+        HStack {
+            TextField("e.g. 0123456789012", text: $manualCode)
+                .keyboardType(.numberPad)
+                .padding(12)
+                .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Button("Look up") {
+                let trimmed = manualCode.trimmingCharacters(in: .whitespaces)
+                if !trimmed.isEmpty { lookup(trimmed) }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
+            .disabled(manualCode.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+    }
+
+    // MARK: - Looking up
+
+    private var lookingView: some View {
+        VStack(spacing: 16) {
+            ProgressView().controlSize(.large)
+            Text("Looking it up…")
+                .font(.headline)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     // MARK: - Logic
 
-    /// Called with the latest batch of recognized text lines. We try to parse a
-    /// full panel; the first time we get a confident parse (at least calories),
-    /// we present the confirm sheet. Until then we keep scanning silently.
-    private func handle(_ lines: [String]) {
-        guard draft == nil else { return }
+    /// Barcode path: look the code up on Open Food Facts, then present the confirm
+    /// sheet (source `.barcode`, so the servings prompt appears). A barcode always
+    /// wins over any in-progress label read — once we're here the session is stopped.
+    private func lookup(_ code: String) {
+        guard phase != .looking else { return }
+        phase = .looking
+        message = nil
+        pendingLabel = nil
+        Task {
+            do {
+                let product = try await OpenFoodFactsService.product(barcode: code)
+                await MainActor.run {
+                    if let product {
+                        draft = makeDraft(from: product)
+                    } else {
+                        phase = .idle
+                        message = "We couldn't find that one. You can type the code again or add it yourself."
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    phase = .idle
+                    message = "Lookup didn't work just now. Check your connection, or add it yourself."
+                }
+            }
+        }
+    }
+
+    /// Label path: called with the latest accumulated text lines while scanning.
+    /// We try to parse a full panel; the first time we get a confident parse (at
+    /// least calories) we stage it behind the "Use this label" button rather than
+    /// presenting immediately. Until then we keep scanning silently.
+    private func handleText(_ lines: [String]) {
+        guard draft == nil, pendingLabel == nil, phase == .idle else { return }
         if var parsed = Self.parseNutritionLabel(lines) {
             parsed.meal = preferredMeal ?? parsed.meal
-            draft = parsed
+            pendingLabel = parsed
         }
     }
 
     /// Open the confirm sheet with an empty manual draft so she can type it in.
     private func addManually() {
+        let trimmed = manualCode.trimmingCharacters(in: .whitespaces)
         draft = FoodDraft(
             meal: preferredMeal ?? MealTime.current(),
-            source: .manual
+            source: .manual,
+            barcode: trimmed.isEmpty ? nil : trimmed
         )
+    }
+
+    private func makeDraft(from p: OFFProduct) -> FoodDraft {
+        FoodDraft(from: p, meal: preferredMeal ?? MealTime.current(), source: .barcode)
     }
 
     // MARK: - Parsing
@@ -391,20 +501,22 @@ struct LabelScanView: View {
     }
 }
 
-// MARK: - DataScanner wrapper (text mode)
+// MARK: - DataScanner wrapper (barcode + text)
 
-/// Wraps `DataScannerViewController` in **text** mode and streams the currently
-/// recognized text lines to the caller. Unlike the barcode wrapper (which fires
-/// once on the first stable code), a label has many lines that fill in over a few
-/// frames, so we keep reporting the accumulated set until the caller is satisfied.
-/// Callers must check availability before presenting.
-private struct LabelTextScannerRepresentable: UIViewControllerRepresentable {
+/// Wraps `DataScannerViewController` recognizing **both** 1D grocery barcodes and
+/// text in one session. Disambiguation is **barcode-first**: any frame containing a
+/// barcode fires `onBarcode` once and stops the session; otherwise the accumulated
+/// text transcripts are streamed via `onText` for label parsing. A label's rows fill
+/// in over several frames, so we accumulate distinct lines rather than only
+/// forwarding the latest frame. Callers must check availability before presenting.
+private struct ScanRepresentable: UIViewControllerRepresentable {
+    let onBarcode: (String) -> Void
     let onText: ([String]) -> Void
 
     func makeUIViewController(context: Context) -> DataScannerViewController {
         let scanner = DataScannerViewController(
-            recognizedDataTypes: [.text()],
-            qualityLevel: .accurate,
+            recognizedDataTypes: [.barcode(symbologies: [.ean13, .ean8, .upce]), .text()],
+            qualityLevel: .balanced,
             recognizesMultipleItems: true,
             isHighFrameRateTrackingEnabled: false,
             isHighlightingEnabled: false
@@ -421,27 +533,53 @@ private struct LabelTextScannerRepresentable: UIViewControllerRepresentable {
         uiViewController.stopScanning()
     }
 
-    func makeCoordinator() -> Coordinator { Coordinator(onText: onText) }
+    func makeCoordinator() -> Coordinator { Coordinator(onBarcode: onBarcode, onText: onText) }
 
     final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+        let onBarcode: (String) -> Void
         let onText: ([String]) -> Void
-        /// All distinct transcripts seen so far, in first-seen order. A panel's
-        /// rows often appear across consecutive frames, so we accumulate rather
-        /// than only forwarding the latest frame's items.
+        /// Set once a barcode has fired, so we never double-handle or keep streaming
+        /// text after we've committed to the barcode path.
+        private var handled = false
+        /// All distinct text transcripts seen so far, in first-seen order. A panel's
+        /// rows often appear across consecutive frames, so we accumulate rather than
+        /// only forwarding the latest frame's items.
         private var seen: [String] = []
         private var seenSet: Set<String> = []
 
-        init(onText: @escaping ([String]) -> Void) { self.onText = onText }
+        init(onBarcode: @escaping (String) -> Void, onText: @escaping ([String]) -> Void) {
+            self.onBarcode = onBarcode
+            self.onText = onText
+        }
 
         func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem], allItems: [RecognizedItem]) {
-            ingest(allItems)
+            handle(allItems, in: dataScanner)
         }
 
         func dataScanner(_ dataScanner: DataScannerViewController, didUpdate updatedItems: [RecognizedItem], allItems: [RecognizedItem]) {
-            ingest(allItems)
+            handle(allItems, in: dataScanner)
         }
 
-        private func ingest(_ items: [RecognizedItem]) {
+        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
+            handle([item], in: dataScanner)
+        }
+
+        /// Barcode-first: if any item in the batch is a barcode, commit to the barcode
+        /// path immediately (stop scanning, fire once). Otherwise ingest text lines.
+        private func handle(_ items: [RecognizedItem], in scanner: DataScannerViewController) {
+            guard !handled else { return }
+            for case let .barcode(barcode) in items {
+                if let value = barcode.payloadStringValue, !value.isEmpty {
+                    handled = true
+                    scanner.stopScanning()
+                    onBarcode(value)
+                    return
+                }
+            }
+            ingestText(items)
+        }
+
+        private func ingestText(_ items: [RecognizedItem]) {
             var changed = false
             for case let .text(text) in items {
                 let value = text.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -458,5 +596,5 @@ private struct LabelTextScannerRepresentable: UIViewControllerRepresentable {
 }
 
 #Preview {
-    LabelScanView(date: .now)
+    ScanView(date: .now)
 }
