@@ -10,6 +10,8 @@ import SwiftData
 struct RecentFoodsSheet: View {
     /// The day the re-logged entry should land on (matches the day FoodLogView is viewing).
     let date: Date
+    /// When set (she tapped a specific meal), a food picked here lands in that meal.
+    var preferredMeal: MealType? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
@@ -21,9 +23,22 @@ struct RecentFoodsSheet: View {
     @State private var logTick = 0
     @State private var starTick = 0
 
+    // Database search (replaces the old standalone "Search foods" sheet): typing in the
+    // search bar queries Open Food Facts; picking a result opens the confirm sheet.
+    @State private var query = ""
+    @State private var searchResults: [OFFProduct] = []
+    @State private var searchPhase: SearchPhase = .idle
+    @State private var searchTask: Task<Void, Never>?
+    @State private var draft: FoodDraft?
+
+    private enum SearchPhase { case idle, searching, results, failed }
+
     /// How many distinct recent foods to surface. Enough to cover her usual rotation
     /// without turning the list into a wall.
     private let recentLimit = 15
+
+    private var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var isSearching: Bool { !trimmedQuery.isEmpty }
 
     // MARK: Derived lists
 
@@ -59,7 +74,9 @@ struct RecentFoodsSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if hasHistory {
+                if isSearching {
+                    searchContent
+                } else if hasHistory {
                     listContent
                 } else {
                     emptyState
@@ -68,6 +85,9 @@ struct RecentFoodsSheet: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Recents & Favorites")
             .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $query, prompt: "Search all foods, e.g. greek yogurt")
+            .onChange(of: query) { _, _ in scheduleSearch() }
+            .onSubmit(of: .search) { runSearchNow() }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -76,6 +96,10 @@ struct RecentFoodsSheet: View {
             }
             .sensoryFeedback(.success, trigger: logTick)
             .sensoryFeedback(.selection, trigger: starTick)
+        }
+        // Picking a database result opens the editable confirm sheet (then closes this one).
+        .sheet(item: $draft, onDismiss: { dismiss() }) { d in
+            AddFoodSheet(draft: d, date: date)
         }
     }
 
@@ -114,6 +138,149 @@ struct RecentFoodsSheet: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
+    }
+
+    // MARK: Database search
+
+    /// Her own favorites/recents whose name contains the query — shown above the
+    /// database results so foods she already eats are one tap to repeat.
+    private var localMatches: [FoodEntry] {
+        guard isSearching else { return [] }
+        let key = trimmedQuery.lowercased()
+        var seen = Set<String>()
+        var out: [FoodEntry] = []
+        for food in favorites + recents where food.name.lowercased().contains(key) {
+            let k = food.name.normalizedFoodKey
+            guard !seen.contains(k) else { continue }
+            seen.insert(k); out.append(food)
+        }
+        return out
+    }
+
+    private var searchContent: some View {
+        List {
+            if !localMatches.isEmpty {
+                Section {
+                    ForEach(localMatches) { row(for: $0) }
+                } header: {
+                    sectionHeader("Your foods", systemImage: "star.fill")
+                }
+            }
+            Section {
+                switch searchPhase {
+                case .idle, .searching:
+                    HStack(spacing: 10) {
+                        ProgressView()
+                        Text("Searching the food database…")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    .listRowBackground(Theme.card)
+                case .results:
+                    if searchResults.isEmpty {
+                        Text("No matches in the database. Try different words, scan a barcode, or add it manually.")
+                            .font(.caption)
+                            .foregroundStyle(Theme.textSecondary)
+                            .listRowBackground(Theme.card)
+                    } else {
+                        ForEach(searchResults) { product in
+                            Button {
+                                draft = FoodDraft(from: product,
+                                                  meal: preferredMeal ?? MealTime.current(),
+                                                  source: .search)
+                            } label: {
+                                searchResultRow(product)
+                            }
+                            .buttonStyle(.plain)
+                            .listRowBackground(Theme.card)
+                        }
+                    }
+                case .failed:
+                    Text("Search didn't work. Check your connection and try again.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .listRowBackground(Theme.card)
+                }
+            } header: {
+                sectionHeader("All foods", systemImage: "magnifyingglass")
+            } footer: {
+                Text("Results come from the Open Food Facts community database.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
+    }
+
+    private func searchResultRow(_ product: OFFProduct) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(product.name.isEmpty ? "Unnamed food" : product.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Theme.textPrimary)
+                    .lineLimit(2)
+                HStack(spacing: 6) {
+                    if let brand = product.brand, !brand.isEmpty { Text(brand).lineLimit(1) }
+                    Text(product.servingDescription).lineLimit(1)
+                }
+                .font(.caption)
+                .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer(minLength: 8)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(Int(product.calories.rounded()))")
+                    .font(.subheadline.weight(.semibold)).monospacedDigit()
+                    .foregroundStyle(Theme.calories)
+                Text("kcal")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+        }
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: Search logic
+
+    /// Debounced search as she types (350 ms after the last keystroke).
+    private func scheduleSearch() {
+        searchTask?.cancel()
+        let q = trimmedQuery
+        guard !q.isEmpty else { searchPhase = .idle; searchResults = []; return }
+        searchPhase = .searching
+        searchTask = Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            if Task.isCancelled { return }
+            await performSearch(q)
+        }
+    }
+
+    /// Immediate search when she taps the keyboard's Search key.
+    private func runSearchNow() {
+        searchTask?.cancel()
+        let q = trimmedQuery
+        guard !q.isEmpty else { return }
+        searchPhase = .searching
+        searchTask = Task { await performSearch(q) }
+    }
+
+    private func performSearch(_ q: String) async {
+        do {
+            let found = try await OpenFoodFactsService.search(query: q)
+            if Task.isCancelled { return }
+            await MainActor.run {
+                searchResults = found
+                searchPhase = .results
+            }
+        } catch {
+            if Task.isCancelled { return }
+            await MainActor.run {
+                searchResults = []
+                searchPhase = .failed
+            }
+        }
     }
 
     private func sectionHeader(_ title: String, systemImage: String) -> some View {

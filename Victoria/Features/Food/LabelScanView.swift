@@ -14,6 +14,8 @@ struct LabelScanView: View {
 
     /// The day to log the resulting entry to.
     let date: Date
+    /// When set (she tapped a specific meal), the result lands in this meal.
+    var preferredMeal: MealType? = nil
 
     @State private var draft: FoodDraft?
 
@@ -119,7 +121,8 @@ struct LabelScanView: View {
     /// we present the confirm sheet. Until then we keep scanning silently.
     private func handle(_ lines: [String]) {
         guard draft == nil else { return }
-        if let parsed = Self.parseNutritionLabel(lines) {
+        if var parsed = Self.parseNutritionLabel(lines) {
+            parsed.meal = preferredMeal ?? parsed.meal
             draft = parsed
         }
     }
@@ -127,7 +130,7 @@ struct LabelScanView: View {
     /// Open the confirm sheet with an empty manual draft so she can type it in.
     private func addManually() {
         draft = FoodDraft(
-            meal: MealTime.current(),
+            meal: preferredMeal ?? MealTime.current(),
             source: .manual
         )
     }
@@ -168,19 +171,27 @@ struct LabelScanView: View {
         let serving = firstServing(in: lines)
         let brand = firstBrand(in: lines)
 
+        // Vet the OCR'd numbers: fill calories from macros if the calorie line was
+        // missed, and flag the entry low-confidence with a note if they're implausible
+        // (e.g. a "% Daily Value" got grabbed as grams).
+        let sanity = NutritionSanity.check(
+            calories: calories, protein: protein ?? 0, carbs: carbs ?? 0, fat: fat ?? 0)
+
         return FoodDraft(
             name: brand ?? "Scanned label",
             meal: MealTime.current(),
             servingDescription: serving ?? "",
             quantity: 1,
-            calories: calories,
-            proteinG: protein ?? 0,
-            carbsG: carbs ?? 0,
-            fatG: fat ?? 0,
+            calories: sanity.calories,
+            proteinG: sanity.protein,
+            carbsG: sanity.carbs,
+            fatG: sanity.fat,
             // A label is a precise, packaged source — NOT an AI estimate. Use the
             // same source the barcode path uses so the confirm sheet treats it as
-            // exact (no "estimated range" framing).
-            source: .barcode
+            // exact (no "estimated range" framing) — unless sanity flagged it.
+            source: .barcode,
+            confidence: sanity.isSuspicious ? .low : nil,
+            notes: sanity.reason
         )
     }
 

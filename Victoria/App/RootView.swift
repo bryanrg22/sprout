@@ -5,6 +5,7 @@ struct RootView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
     @Query private var profiles: [UserProfile]
+    @Query(sort: \StepsEntry.date) private var stepEntries: [StepsEntry]
 
     private var profile: UserProfile? { profiles.first }
 
@@ -59,6 +60,13 @@ struct RootView: View {
         .animation(.easeInOut, value: profile?.onboardingComplete)
         .task {
             DemoSeed.seedIfNeeded(context, hasProfile: profile != nil)
+            Diagnostics.shared.log("app launched (onboarded=\(profile?.onboardingComplete == true))", .app)
+            // Backfill the last 30 days of REAL per-day step totals from Apple Health on launch,
+            // so the Progress average reflects full days — not the partial/missing history that
+            // `importTodaySteps` alone left behind (it only ever captured "today so far").
+            if HealthKitService.isAvailable {
+                await HealthKitService.shared.importRecentSteps(days: 30, into: context, existing: stepEntries)
+            }
             WidgetDataWriter.refresh(context: context, profile: profile)
             // Ask for notification permission + (re)build gentle reminders once on launch.
             if let profile, profile.onboardingComplete {
@@ -66,8 +74,25 @@ struct RootView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
+            switch phase {
+            case .active:
+                Diagnostics.shared.log("app active", .app)
+                // Re-pull steps on every foreground, then refresh the widget with fresh data.
+                Task {
+                    if HealthKitService.isAvailable {
+                        // Re-pull the last 7 days (not just today) so yesterday gets finalized to
+                        // its FULL total when she reopens the app the next day — the exact case
+                        // where a day was frozen at a partial count.
+                        await HealthKitService.shared.importRecentSteps(days: 7, into: context, existing: stepEntries)
+                    }
+                    WidgetDataWriter.refresh(context: context, profile: profile)
+                }
+            case .background:
+                Diagnostics.shared.log("app background", .app)
+                // Refresh on leave too, so the widget reflects what she just logged.
                 WidgetDataWriter.refresh(context: context, profile: profile)
+            default:
+                break
             }
         }
     }
@@ -79,6 +104,8 @@ struct MainTabView: View {
     /// Shared "Ask Vita about this" bus: a long-press on any card sets a topic here, which
     /// flips us to the Vita tab so the coach can explain that component.
     @State private var askVita = AskVitaCenter()
+    /// "What's New" sheet — shown once per marketing version (see `WhatsNew`).
+    @State private var showWhatsNew = false
 
     var body: some View {
         TabView(selection: $selection) {
@@ -86,7 +113,7 @@ struct MainTabView: View {
                 .tabItem { Label("Today", systemImage: "house.fill") }.tag(0)
 
             FoodLogView(profile: profile)
-                .tabItem { Label("Food", systemImage: "fork.knife") }.tag(1)
+                .tabItem { Label("Nutrients", systemImage: "fork.knife") }.tag(1)
 
             WeightView(profile: profile)
                 .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(2)
@@ -101,6 +128,13 @@ struct MainTabView: View {
         // When a long-press asks Vita about something, jump to her tab so she can answer.
         .onChange(of: askVita.pendingTopic) { _, topic in
             if topic != nil { selection = 3 }
+        }
+        // "What's New" once per update — a celebratory rundown of the release.
+        .sheet(isPresented: $showWhatsNew, onDismiss: { WhatsNew.markSeen() }) {
+            WhatsNewView(release: WhatsNew.current)
+        }
+        .task {
+            if WhatsNew.shouldShow() { showWhatsNew = true }
         }
         // Settings now lives behind the pixel-avatar button in the Dashboard header.
     }

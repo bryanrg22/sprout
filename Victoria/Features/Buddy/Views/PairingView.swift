@@ -46,6 +46,16 @@ struct PairingView: View {
                 dismiss()
             }
         }
+        // Auto-detect when a buddy claims MY code, so the code-GENERATOR connects without
+        // reopening the app. Polls while this screen is up; stops the moment we're linked
+        // (the screen dismisses) or the view goes away (`.task` is cancelled).
+        .task {
+            while !Task.isCancelled && !model.isLinked {
+                await model.refresh()
+                if model.isLinked { break }
+                try? await Task.sleep(for: .seconds(4))
+            }
+        }
     }
 
     // MARK: Intro

@@ -185,7 +185,7 @@ enum AchievementCatalog {
         let nourishedDays: Set<Date> = {
             guard calorieTarget > 0 else { return [] }
             return Set(foodByDay.compactMap { day, items -> Date? in
-                let total = items.reduce(0) { $0 + $1.calories }
+                let total = items.reduce(0) { $0 + $1.totalCalories }
                 return total >= calorieTarget ? day : nil
             })
         }()
@@ -195,7 +195,7 @@ enum AchievementCatalog {
             guard proteinTarget > 0 else { return false }
             let todayProtein = foods
                 .filter { cal.isDateInToday($0.date) }
-                .reduce(0) { $0 + $1.proteinG }
+                .reduce(0) { $0 + $1.totalProteinG }
             return todayProtein >= proteinTarget
         }()
 
@@ -229,9 +229,9 @@ enum AchievementCatalog {
 
         // --- Balanced plate: a single day with protein, carbs, AND fat all > 0 ---
         let hadBalancedDay = foodByDay.values.contains { items in
-            let p = items.reduce(0) { $0 + $1.proteinG }
-            let c = items.reduce(0) { $0 + $1.carbsG }
-            let f = items.reduce(0) { $0 + $1.fatG }
+            let p = items.reduce(0) { $0 + $1.totalProteinG }
+            let c = items.reduce(0) { $0 + $1.totalCarbsG }
+            let f = items.reduce(0) { $0 + $1.totalFatG }
             return p > 0 && c > 0 && f > 0
         }
 

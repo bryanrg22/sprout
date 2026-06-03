@@ -183,6 +183,10 @@ enum FoodSuggestionEngine {
         var topFoods: [TopFood]          // most-frequent first (may be empty)
         var underProteinTrend: Bool?     // true = trending under lately; nil = unknown
 
+        // What she's already eaten TODAY (item names, newest first), so a pick never re-pitches
+        // something she's already had (e.g. a second protein shake) and builds on the real day.
+        var eatenToday: [String] = []
+
         // Optional location flavor — a single nearby healthy spot to (maybe) reference.
         var nearbyPlace: NearbyPlace?
 
@@ -222,6 +226,14 @@ enum FoodSuggestionEngine {
         let proTarget = Int(proteinTarget.rounded())
         let proEaten = Int(proteinEatenToday.rounded())
 
+        // Names of what she's logged TODAY, newest first (blank names dropped). Drives the
+        // "don't re-suggest something she's already had today" guidance in the prompt.
+        let eatenTodayNames = foods
+            .filter { calendar.isDate($0.date, inSameDayAs: now) }
+            .sorted { $0.date > $1.date }
+            .map { $0.name.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
         return Context(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             direction: direction,
@@ -235,6 +247,7 @@ enum FoodSuggestionEngine {
             topFoods: topFoods(foods, now: now, calendar: calendar),
             underProteinTrend: isUnderProteinTrend(foods, proteinTarget: proteinTarget,
                                                    now: now, calendar: calendar),
+            eatenToday: eatenTodayNames,
             nearbyPlace: nearbyPlace
         )
     }
@@ -291,6 +304,19 @@ enum FoodSuggestionEngine {
             lines.append("Foods she logs most: \(list). "
                          + "Reference these by name where it fits — upgrade or build on what she "
                          + "already eats rather than inventing unfamiliar meals.")
+        }
+
+        // What she's already had TODAY — so a pick never repeats it (the "2nd Muscle Milk"
+        // problem) and instead moves her forward to the next useful thing.
+        if !ctx.eatenToday.isEmpty {
+            var seen = Set<String>()
+            let unique = ctx.eatenToday
+                .filter { seen.insert($0.lowercased()).inserted }
+                .prefix(8)
+                .joined(separator: ", ")
+            lines.append("She has ALREADY eaten these today: \(unique). Do not re-suggest "
+                         + "something she's already had today — build on the day and suggest the "
+                         + "NEXT useful thing instead.")
         }
 
         // Optional nearby place.

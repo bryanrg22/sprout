@@ -16,6 +16,7 @@ struct BuddyHomeView: View {
     @State private var model = BuddyViewModel()
 
     @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
 
     // Read MY own "did I log today?" the SAME way the dashboard does, so the shared
     // panda reflects my real activity (see DashboardView.insightInput.loggedAnythingToday).
@@ -146,6 +147,28 @@ struct BuddyHomeView: View {
             withAnimation { didAppear = true }
         }
         .refreshable { await model.refresh() }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                // Coming back: pull my buddy's latest, and if a NEW DAY has begun, republish
+                // my fresh "today" state (totals reset, goal-celebrations re-armed) right away.
+                if model.isLinked {
+                    Task {
+                        await model.refresh()
+                        if BuddyDay.rolledOver() {
+                            Diagnostics.shared.log("buddy: new day — republishing fresh state", .sync)
+                            await publishMyState()
+                        }
+                    }
+                }
+            case .background:
+                // Leaving: publish my latest AND auto-cheer any goal I just crossed — so the
+                // ping fires when I set the phone down, not only when I open the Buddy tab.
+                if model.isLinked { Task { await publishMyState() } }
+            default:
+                break
+            }
+        }
     }
 
     /// Publish my presence AND my SAFE daily activity (steps / water / movement) with MY OWN
@@ -167,6 +190,8 @@ struct BuddyHomeView: View {
 
         // Opt-in flag — gate everything below on it (nil profile → not sharing).
         let sharesFull = profile?.shareFullStatsWithBuddy ?? false
+        // My real name, so the buddy sees "Bryan"/"Victoria" — never the literal "You".
+        let myName = (profile?.name).flatMap { $0.isEmpty ? nil : $0 } ?? "Your buddy"
 
         await model.publishMine(
             loggedToday: myLoggedToday,
@@ -180,12 +205,29 @@ struct BuddyHomeView: View {
             trendWeightLbs: TrendCalculator.currentTrend(weights) ?? 0,
             goalWeightLbs: profile?.goalWeightLbs ?? 0,
             weeklyRateLbs: TrendCalculator.ratePerWeek(weights),    // SIGNED (negative = losing)
-            caloriesEaten: todayFood.reduce(0) { $0 + $1.calories },
+            caloriesEaten: todayFood.reduce(0) { $0 + $1.totalCalories },
             calorieTarget: profile.map { $0.dailyCalorieTarget(weightLbs: basis) } ?? 0,
-            proteinEaten: todayFood.reduce(0) { $0 + $1.proteinG },
+            proteinEaten: todayFood.reduce(0) { $0 + $1.totalProteinG },
             proteinTarget: profile.map { $0.macroTargets(weightLbs: basis).proteinG } ?? 0,
-            todayFoods: todayFood.map(\.name).filter { !$0.isEmpty }.prefix(8).joined(separator: ", ")
+            todayFoods: todayFood.map(\.name).filter { !$0.isEmpty }.prefix(8).joined(separator: ", "),
+            displayName: myName
         )
+
+        // Live buddy: if I just crossed a goal today, auto-cheer my buddy (once per goal per
+        // day) — they get the existing nudge push, "🎉 Bryan just hit their calorie goal!"
+        let milestoneInput = BuddyMilestoneInput(
+            caloriesEaten: todayFood.reduce(0) { $0 + $1.totalCalories },
+            calorieTarget: profile.map { $0.dailyCalorieTarget(weightLbs: basis) } ?? 0,
+            proteinEaten: todayFood.reduce(0) { $0 + $1.totalProteinG },
+            proteinTarget: profile.map { $0.macroTargets(weightLbs: basis).proteinG } ?? 0,
+            steps: todaySteps,
+            stepGoal: myStepGoal,
+            waterOz: waterToday,
+            waterGoal: myWaterGoal,
+            dayStreak: myStreak
+        )
+        let fresh = BuddyMilestones.consumeNewlyReached(milestoneInput, myUserID: model.myUserID)
+        await model.celebrate(fresh, myName: myName)
     }
 
     // MARK: - Linked content
@@ -195,15 +237,12 @@ struct BuddyHomeView: View {
         // (a) Shared character.
         sharedPandaCard.appearLift(didAppear, index: 0)
 
-        // (b) Buddy status.
+        // (b) Buddy's whole day in ONE widget — warm status (avatar, mood, streak, presence)
+        // PLUS, when they've opted into sharing, their metrics as home-screen tiles (weight +
+        // calorie/protein rings) and today's food as chips. Replaces the old status +
+        // full-stats pair. Metrics self-hide when the buddy shares activity only.
         if let snap = model.buddySnapshot {
-            BuddyStatusCard(snapshot: snap, avatar: theirAvatar).appearLift(didAppear, index: 1)
-
-            // (b2) Buddy's FULL day — weight trend, calories, protein, today's foods — for
-            // partners who've opted into sharing everything. Self-hides (renders EmptyView,
-            // reserves no space) when the buddy hasn't opted in (`!snap.sharesFullData`), so
-            // the activity-only experience below is unchanged for everyone else.
-            BuddyFullStatsCard(snapshot: snap).appearLift(didAppear, index: 2)
+            BuddyDayCard(snapshot: snap, avatar: theirAvatar).appearLift(didAppear, index: 1)
 
             // (c) Playful, FAIR, SAFE activity face-off — both pixel avatars + a per-metric
             // (steps/water/gym) comparison scored as % of each person's OWN goal. An

@@ -1525,14 +1525,20 @@ struct OnboardingView: View {
         p.goalWeightLbs = goalWeight
         p.activityLevel = activity
         p.pace = pace
-        // Her chosen look — so she (or Bryan) lands in their own theme from the start.
+        // Her chosen look — so she (or Bryan) lands in their own theme AND their own pixel
+        // companion from the start. Cool = Bryan's character, Cute = Victoria's. (Without
+        // this, companionAvatar stayed at its .victoria default for everyone.)
         p.themeStyle = themeChoice
+        p.companionAvatar = (themeChoice == .cool) ? .bryan : .victoria
         // NEW: persist her optional free-text context (trimmed; "" when she skipped).
         p.onboardingNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
         // Seed the recommended goals we just showed her (she can change any in Settings).
         p.dailyStepGoal = recommendedSteps
         p.waterGoalOzOverride = recommendedWaterOz
         p.onboardingComplete = true
+        // A brand-new user starts caught-up, so "What's New" won't fire for the version they
+        // just installed — only for genuine future updates.
+        WhatsNew.markSeen()
 
         if existing == nil { context.insert(p) }
         context.insert(WeightEntry(weightLbs: currentWeight))

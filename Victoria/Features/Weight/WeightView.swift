@@ -84,8 +84,16 @@ struct WeightView: View {
                 } else {
                     VStack(spacing: Theme.spacingL) {
                         hero
+                        // AI recap of the WHOLE picture — weight, nutrition, activity,
+                        // consistency — so Progress isn't just the scale. Self-manages its
+                        // loading / not-enough-data / no-key states (hides without a key).
+                        ProgressSummaryCard(profile: profile)
+                        // Metrics at a glance — calories/protein/steps/water sparklines.
+                        ProgressMetricsSection(profile: profile)
                         if rawIsDiscouragingBlip { reframeCard }
                         chartCard
+                        // GitHub-style "days you showed up" consistency heatmap.
+                        ConsistencyHeatmapCard(profile: profile)
                         if let eta = TrendCalculator.projectedGoalDate(weights, goalLbs: profile.goalWeightLbs) {
                             etaCard(date: eta)
                         }

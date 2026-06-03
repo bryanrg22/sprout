@@ -34,6 +34,17 @@ struct VictoriaApp: App {
             let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             container = try! ModelContainer(for: schema, configurations: fallback)
         }
+
+        #if DEBUG
+        // DEBUG-ONLY: let an automated / simulator run inject a Claude key via the
+        // `SPROUT_ANTHROPIC_KEY` env var (passed as `SIMCTL_CHILD_SPROUT_ANTHROPIC_KEY`) so the
+        // live AI can be tested end-to-end. This whole block is compiled OUT of Release /
+        // Archive builds (`#if DEBUG`), so it can NEVER reach TestFlight or the App Store.
+        if let raw = ProcessInfo.processInfo.environment["SPROUT_ANTHROPIC_KEY"] {
+            let testKey = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !testKey.isEmpty { KeychainStore.setAPIKey(testKey, for: .anthropic) }
+        }
+        #endif
     }
 
     var body: some Scene {

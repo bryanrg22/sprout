@@ -52,6 +52,7 @@ enum DemoSeed {
         p.companionAvatar = gaining ? .bryan : .victoria
         p.dailyStepGoal = 8000
         p.onboardingComplete = true
+        WhatsNew.markSeen()   // seeded demo user is "caught up" — show What's New only via --whats-new
         context.insert(p)
 
         // Steps — last 7 days, as if mirrored from Apple Health.

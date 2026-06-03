@@ -1,0 +1,16 @@
+# Secrets — NEVER commit API keys
+.env
+.env.*
+*.env
+.anthropic-key
+secrets/
+
+# macOS / Xcode
+.DS_Store
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# Stray xcodegen duplicates
+Victoria [0-9]*.xcodeproj/

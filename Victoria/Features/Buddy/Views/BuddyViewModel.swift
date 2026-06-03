@@ -31,6 +31,22 @@ final class BuddyViewModel {
         return fresh
     }
 
+    private static func pairingCodeKey(_ myUserID: String) -> String { "buddy.myPairingCode.\(myUserID)" }
+
+    /// The user's pairing code — generated ONCE and reused forever. Previously it was
+    /// regenerated on every launch, so the code-OWNER's published record kept changing and
+    /// they could never discover that their buddy had accepted the OLD code. Persisting it
+    /// keeps "show your code → they enter it → you both connect" working across relaunches.
+    static func resolveMyPairingCode(myUserID: String,
+                                     service: any BuddySyncService,
+                                     defaults: UserDefaults = .standard) -> String {
+        let key = pairingCodeKey(myUserID)
+        if let existing = defaults.string(forKey: key), !existing.isEmpty { return existing }
+        let fresh = service.generatePairingCode()
+        defaults.set(fresh, forKey: key)
+        return fresh
+    }
+
     // MARK: Dependencies
 
     let myUserID: String
@@ -66,14 +82,18 @@ final class BuddyViewModel {
     init(defaults: UserDefaults = .standard) {
         self.myUserID = Self.resolveMyUserID(defaults: defaults)
         self.service = BuddySync.makeDefault(myUserID: myUserID)
-        self.myPairingCode = service.generatePairingCode()
+        self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service, defaults: defaults)
+        // Restore the paired state at launch from the service's persisted link, so we don't
+        // flash the pairing screen (and lose the pairing) every time the app reopens.
+        self.isLinked = (service.linkedBuddyID != nil)
     }
 
     /// Test / preview seam: inject a specific service + id.
     init(service: any BuddySyncService, myUserID: String) {
         self.myUserID = myUserID
         self.service = service
-        self.myPairingCode = service.generatePairingCode()
+        self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service)
+        self.isLinked = (service.linkedBuddyID != nil)
     }
 
     // MARK: - Derived UI values
@@ -84,10 +104,27 @@ final class BuddyViewModel {
     ///   this from the dashboard's data; defaults to `true` so a missing read errs warm).
     func sharedState(myLoggedToday: Bool) -> SharedPandaPlaceholder.CombinedState {
         let buddyLogged = buddySnapshot?.loggedToday ?? false
-        switch (myLoggedToday, buddyLogged) {
-        case (true, true):   return .thriving
-        case (false, false): return .sleepy
-        default:             return .okay
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        let lastFedKey = "buddy.panda.lastFed.\(myUserID)"
+        let defaults = UserDefaults.standard
+
+        // Fed today (either of us logged) → record it and show the happy tiers.
+        if myLoggedToday || buddyLogged {
+            defaults.set(today, forKey: lastFedKey)
+            return (myLoggedToday && buddyLogged) ? .thriving : .okay
+        }
+
+        // Nobody's logged yet today — how long since the last feed decides the stakes.
+        guard let lastFed = (defaults.object(forKey: lastFedKey) as? Date).map({ cal.startOfDay(for: $0) }) else {
+            return .sleepy   // no record yet → just waiting, never START fainted
+        }
+        // `gap` counts whole days since the last feed; today isn't over so it doesn't count yet.
+        let gap = cal.dateComponents([.day], from: lastFed, to: today).day ?? 0
+        switch max(0, gap - 1) {       // full missed days
+        case 0:     return .sleepy     // fed yesterday — just waiting on today
+        case 1...2: return .hungry     // a couple quiet days — drooping
+        default:    return .fainted    // 3+ neglected days — keeled over (any log revives it)
         }
     }
 
@@ -101,6 +138,11 @@ final class BuddyViewModel {
         if !isLinked { await announceMyCode() }   // owner side: publish my code so a buddy can claim it
         await loadSnapshot()
         await loadInbox()
+        // If the backend now knows our buddy — because `announceMyCode` just discovered that
+        // someone accepted our code, or it was restored from persistence — we're linked, even
+        // before their snapshot arrives. Without this the code-OWNER could stay stuck on the
+        // pairing screen after a buddy accepted.
+        if !isLinked, service.linkedBuddyID != nil { isLinked = true }
     }
 
     /// Announce my pairing code so a buddy who types it can find + claim me (the
@@ -146,6 +188,34 @@ final class BuddyViewModel {
             banner = .init(text: "That didn't go through — let's try again in a moment.", tone: .info)
         }
     }
+
+    #if DEBUG
+    /// DEV-ONLY one-tap CloudKit schema seed (see `CloudKitSyncService.debugSeedSchema`).
+    /// Returns a human-readable status for the Settings "Seed CloudKit Schema" button.
+    /// No-ops with a clear message when the active backend isn't CloudKit (the Simulator
+    /// routes to the local mock), so it only does real work on a signed-in physical device.
+    func seedCloudKitSchemaForDev() async -> String {
+        guard let ck = service as? CloudKitSyncService else {
+            return "⚠️ Not on CloudKit here — the Simulator uses a local mock. Run this on a real iPhone."
+        }
+        do {
+            try await ck.debugSeedSchema()
+            return "✅ Seeded CloudKit Development.\nNext, in CloudKit Dashboard: add an index on Nudge.toUserID (Queryable) and Nudge.createdAt (Sortable), then Deploy Schema Changes to Production."
+        } catch {
+            return "⚠️ Couldn't reach CloudKit. Check you're signed into iCloud on this device, then tap again."
+        }
+    }
+
+    /// DEV-ONLY CloudKit diagnostic (see `CloudKitSyncService.debugDiagnose`). Returns a
+    /// multi-line report of account status + a real public-DB write/read with the EXACT error,
+    /// so we can see what the live buddy flow hides behind "cloudKitUnavailable."
+    func diagnoseCloudKitForDev() async -> String {
+        guard let ck = service as? CloudKitSyncService else {
+            return "Simulator uses a local mock — run this on a real iPhone to test CloudKit."
+        }
+        return await ck.debugDiagnose()
+    }
+    #endif
 
     /// Send a one-tap nudge (uses the kind's friendly default copy). Fires confetti.
     func send(_ kind: NudgeKind) async {
@@ -196,6 +266,19 @@ final class BuddyViewModel {
             banner = .init(text: kindMessage(for: err), tone: .info)
         } catch {
             banner = .init(text: "Couldn't send that just now — try again in a bit.", tone: .info)
+        }
+    }
+
+    /// Auto-send a warm celebration nudge for each freshly-reached milestone, so the buddy
+    /// is pinged ("🎉 Bryan just hit their calorie goal!") via the SAME proven nudge push —
+    /// even with their app closed. Silent on failure: a missed cheer must never nag.
+    func celebrate(_ milestones: Set<BuddyMilestone>, myName: String) async {
+        guard !milestones.isEmpty,
+              let buddyID = buddySnapshot?.ownerUserID ?? service.linkedBuddyID else { return }
+        for m in milestones {
+            Diagnostics.shared.log("buddy: auto-celebrate \(m.rawValue)", .sync)
+            let nudge = Nudge(fromUserID: myUserID, toUserID: buddyID, kind: .flex, text: m.message(name: myName))
+            try? await service.sendNudge(nudge)
         }
     }
 
@@ -272,11 +355,13 @@ final class BuddyViewModel {
                      calorieTarget: Double = 0,
                      proteinEaten: Double = 0,
                      proteinTarget: Double = 0,
-                     todayFoods: String = "") async {
+                     todayFoods: String = "",
+                     displayName: String = "Your buddy") async {
         let mood: BuddyCharacterMood = dayStreak >= 7 ? .thriving : (loggedToday ? .happy : .sleepy)
         let payload = BuddySnapshotPayload(
             ownerUserID: myUserID,
-            displayName: "You",
+            // The name my BUDDY sees for me — my real name, not the literal "You".
+            displayName: displayName,
             dayStreak: max(dayStreak, 0),
             characterMood: mood,
             loggedToday: loggedToday,

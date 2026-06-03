@@ -18,10 +18,10 @@ enum WidgetDataWriter {
         let steps   = (try? context.fetch(FetchDescriptor<StepsEntry>())) ?? []
 
         let todayFood = foods.filter { cal.isDateInToday($0.date) }
-        let eaten   = todayFood.reduce(0) { $0 + $1.calories }
-        let protein = todayFood.reduce(0) { $0 + $1.proteinG }
-        let carbs   = todayFood.reduce(0) { $0 + $1.carbsG }
-        let fat     = todayFood.reduce(0) { $0 + $1.fatG }
+        let eaten   = todayFood.reduce(0) { $0 + $1.totalCalories }
+        let protein = todayFood.reduce(0) { $0 + $1.totalProteinG }
+        let carbs   = todayFood.reduce(0) { $0 + $1.totalCarbsG }
+        let fat     = todayFood.reduce(0) { $0 + $1.totalFatG }
 
         let trend = TrendCalculator.currentTrend(weights)
         let basis = trend ?? (profile.startWeightLbs > 0 ? profile.startWeightLbs : 150)

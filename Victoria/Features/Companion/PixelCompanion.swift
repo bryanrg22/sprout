@@ -240,7 +240,11 @@ struct PixelBryanView: View {
 
 /// The shared panda Bryan & Victoria keep thriving together. Health-positive: it
 /// only ever naps (never dies / never sick). `thriving` adds bamboo to the scene.
-enum PandaMood { case thriving, okay, sleepy }
+/// The shared panda's state. `thriving`/`okay`/`sleepy` are the everyday tiers; `hungry`
+/// and `fainted` add real STAKES when the pair neglects logging for days — the panda droops,
+/// then keels over (X-eyes), so keeping it alive actually means something. Never permanent:
+/// a single log revives it instantly.
+enum PandaMood { case thriving, okay, sleepy, hungry, fainted }
 
 enum PixelPanda {
     static let palette: [Character: Color] = [
@@ -281,14 +285,16 @@ enum PixelPanda {
         "....................",  // 23
     ]
 
-    static func rows(mood: PandaMood, eyesOpen: Bool = true, chewOpen: Bool = false) -> [String] {
+    /// `eatPhase` (thriving only) cycles 0→1→2 to actually EAT the bamboo: hold it (0), raise
+    /// it to the mouth and bite (1), then chew with a full mouth and a nub left (2).
+    static func rows(mood: PandaMood, eyesOpen: Bool = true, eatPhase: Int = 0) -> [String] {
         var g = base
         switch mood {
         case .thriving:
-            g[16] = "BKKKWWWWWWWWWWWWKKKB"          // bamboo grows in
-            g[17] = "bKKWWWWWWWWWWWWWWKKb"
-            g[18] = "B.WWWWWWWWWWWWWWWW.B"
-            g[19] = "b.WWWWWWWWWWWWWWWW.b"
+            // Thriving = happily EATING a held bamboo stalk: the paws lift it UP to the mouth,
+            // the panda bites (mouth opens), then chews a visibly SHORTER stub — so it reads as
+            // eating, not a bamboo teleporting up into a fixed open mouth. (See `applyEat`.)
+            applyEat(&g, phase: eatPhase)
         case .okay:
             break                                   // base = big eyes + happy smile
         case .sleepy:
@@ -296,20 +302,80 @@ enum PixelPanda {
             g[8]  = ".WWWKKKKWWWWKKKKWWW."
             g[11] = ".WWWWWWWWMMWWWWWWWW."          // small calm mouth
             g[12] = ".WWWWWWWWWWWWWWWWWW."
+        case .hungry:
+            // Awake but drooping + pleading — pale (no rosy cheeks), small flat "feed me" mouth,
+            // no bamboo. The middle-stakes warning that the panda needs a log soon.
+            g[10] = ".WWWWWWWWKKWWWWWWWW."          // pale cheeks + nose
+            g[11] = ".WWWWWWWWMMWWWWWWWW."          // small flat mouth
+            g[12] = ".WWWWWWWWMMWWWWWWWW."
+        case .fainted:
+            // Keeled over from neglect — classic X eyes + a dazed flat mouth, pale. Not permanent:
+            // a single log flips it straight back to a happy panda.
+            g[6]  = ".WWWKWWKWWWWKWWKWWW."          // X eyes ─ corners
+            g[7]  = ".WWWWKKWWWWWWKKWWWW."          //         center
+            g[8]  = ".WWWWKKWWWWWWKKWWWW."
+            g[9]  = ".WWWKWWKWWWWKWWKWWW."          //         corners
+            g[10] = ".WWWWWWWWKKWWWWWWWW."          // pale
+            g[11] = ".WWWWWWWMMMMWWWWWWW."          // flat dazed mouth
+            g[12] = ".WWWWWWWWWWWWWWWWWW."
         }
-        // A quick blink — close the eyes (drop the white + glint) for a frame or two. Gives the
-        // panda the same "alive" feel as Sprout. (Sleepy already rests with eyes closed.)
-        if !eyesOpen && mood != .sleepy {
+        // A quick blink for the awake, alive moods (sleepy/fainted already hold their eyes).
+        if !eyesOpen && mood != .sleepy && mood != .fainted {
             g[7] = ".WWWKKKKWWWWKKKKWWW."
             g[8] = ".WWWKKKKWWWWKKKKWWW."
         }
-        // Munching the bamboo (thriving only): open the mouth for the "chew" frame so the panda
-        // looks like it's happily eating, alternating with the closed smile on a timer.
-        if chewOpen && mood == .thriving {
-            g[11] = ".WWWWWWWMMMMWWWWWWW."
-            g[12] = ".WWWWWWWMMMMWWWWWWW."
-        }
         return g
+    }
+
+    /// Splice `art` into `row` starting at `col`, in-bounds, WITHOUT changing the row's length
+    /// (so the animated frames can never drift off the strict 20-char width).
+    private static func paint(_ row: String, _ art: String, at col: Int) -> String {
+        var chars = Array(row)
+        for (i, ch) in art.enumerated() {
+            let c = col + i
+            if c >= 0 && c < chars.count { chars[c] = ch }
+        }
+        return String(chars)
+    }
+
+    /// Draw ONE eat frame onto `g`: a bamboo stalk (cols 9–10) held in both paws (`K` at cols
+    /// 8 & 11) that the paws lift up to the mouth, the panda bites, then chews a shorter stub.
+    /// Phases (looped 1→4 by the timer; 0 is the Reduce-Motion still): 1 hold-low · 2 lift ·
+    /// 3 bite (mouth opens, stalk goes INTO it) · 4 chew (short stub, mouth working).
+    private static func applyEat(_ g: inout [String], phase: Int) {
+        // Wipe rows 11–19 (mouth → belly) to a clean slate first, so a tall frame's pixels
+        // never linger into a short one.
+        let clean: [Int: String] = [
+            11: ".WWWWWWWMWWMWWWWWWW.",   // closed-smile mouth (phases override when biting)
+            12: ".WWWWWWWWMMWWWWWWWW.",
+            13: "..WWWWWWWWWWWWWWWW..",
+            14: "...WWWWWWWWWWWWWW...",
+            15: "..KKWWWWWWWWWWWWKK..",
+            16: ".KKKWWWWWWWWWWWWKKK.",
+            17: ".KKWWWWWWWWWWWWWWKK.",
+            18: "..WWWWWWWWWWWWWWWW..",
+            19: "..WWWWWWWWWWWWWWWW..",
+        ]
+        for (r, row) in clean { g[r] = row }
+
+        func cane(_ r: Int) { g[r] = paint(g[r], "BB", at: 9) }   // light bamboo segment
+        func node(_ r: Int) { g[r] = paint(g[r], "bb", at: 9) }   // darker node band
+        func grip(_ r: Int) { g[r] = paint(paint(g[r], "K", at: 8), "K", at: 11) }  // paws flanking the cane
+        func biteOpen() { g[11] = ".WWWWWWWMMMMWWWWWWW."; g[12] = ".WWWWWWWMMMMWWWWWWW." }
+        func chewShut() { g[11] = ".WWWWWWWWWWWWWWWWWW."; g[12] = ".WWWWWWWMMMMWWWWWWW." }
+
+        switch phase {
+        case 1:   // HOLD LOW — paws low (17–18), stalk against the belly, top at row 15
+            cane(15); node(16); cane(17); node(18); grip(17); grip(18)
+        case 2:   // LIFT — paws raise (16–17), stalk climbs, top reaches row 13
+            cane(13); node(14); cane(15); node(16); grip(16); grip(17)
+        case 3:   // BITE — mouth opens, stalk goes INTO it (cane painted over the mouth)
+            biteOpen(); cane(12); node(13); cane(14); node(15); grip(13); grip(14)
+        case 4:   // CHEW — a bite taken: short stub (top dropped to 15), mouth working
+            chewShut(); cane(15); node(16); cane(17); grip(15); grip(16)
+        default:  // 0 — REST: stalk held near the mouth, closed smile (the still frame)
+            cane(13); node(14); cane(15); node(16); grip(15); grip(16)
+        }
     }
 }
 
@@ -317,10 +383,10 @@ struct PixelPandaView: View {
     let mood: PandaMood
     /// Eyes open when true; briefly false during a blink (see `SharedPandaPlaceholder`).
     var eyesOpen: Bool = true
-    /// When true (thriving only), the mouth opens for a "chewing the bamboo" frame.
-    var chewOpen: Bool = false
+    /// Eating phase (thriving only): 0 hold · 1 bite · 2 chew — cycled on a timer.
+    var eatPhase: Int = 0
     var body: some View {
-        PixelArtView(rows: PixelPanda.rows(mood: mood, eyesOpen: eyesOpen, chewOpen: chewOpen),
+        PixelArtView(rows: PixelPanda.rows(mood: mood, eyesOpen: eyesOpen, eatPhase: eatPhase),
                      palette: PixelPanda.palette)
             .frame(width: 150, height: 150)
             .accessibilityHidden(true)

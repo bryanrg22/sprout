@@ -28,8 +28,16 @@ final class FoodEntry {
     var notes: String?
     var barcode: String?
 
-    /// Meal photo, stored outside the main store for performance.
+    /// Meal photo, stored outside the main store for performance. When a meal has
+    /// several photos this is the FIRST one (the cover); the rest live in
+    /// `additionalPhotoData` so the single-photo paths keep working unchanged.
     @Attribute(.externalStorage) var photoData: Data?
+
+    /// Extra meal photos beyond the cover, when she snapped several angles/plates of
+    /// the SAME meal for one combined estimate. Optional + defaulted so older rows
+    /// migrate cleanly (they simply read as `nil`). Kept small (downscaled JPEGs,
+    /// capped in the capture UI) since arrays can't use external storage.
+    var additionalPhotoData: [Data]?
 
     /// Starred by the user so it's one tap to "log again" later. Defaults false
     /// (schema-safe: older rows simply read as not-favorite).
@@ -50,8 +58,14 @@ final class FoodEntry {
         set { confidenceRaw = newValue?.rawValue }
     }
 
-    /// Total calories for the logged quantity.
-    var totalCalories: Double { calories }
+    /// Nutrition for the logged AMOUNT = per-serving value × servings (`quantity`).
+    /// The per-serving `calories`/`proteinG`/… stay the editable base; every screen sums
+    /// these `total*` accessors so logging quantity 2 is counted correctly everywhere
+    /// (previously quantity was stored but never multiplied → a silent undercount).
+    var totalCalories: Double { calories * quantity }
+    var totalProteinG: Double { proteinG * quantity }
+    var totalCarbsG: Double { carbsG * quantity }
+    var totalFatG: Double { fatG * quantity }
 
     init(date: Date = .now,
          mealType: MealType = .snack,
@@ -69,6 +83,7 @@ final class FoodEntry {
          notes: String? = nil,
          barcode: String? = nil,
          photoData: Data? = nil,
+         additionalPhotoData: [Data]? = nil,
          isFavorite: Bool = false) {
         self.id = UUID()
         self.date = date
@@ -87,6 +102,7 @@ final class FoodEntry {
         self.notes = notes
         self.barcode = barcode
         self.photoData = photoData
+        self.additionalPhotoData = additionalPhotoData
         self.isFavorite = isFavorite
         self.createdAt = .now
     }

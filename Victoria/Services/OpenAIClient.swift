@@ -37,11 +37,12 @@ struct OpenAIClient: LLMClient {
         }
         wire.append(contentsOf: messages.map { ["role": $0.role, "content": $0.text] })
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": model,
-            "max_tokens": maxTokens,
             "messages": wire,
         ]
+        // o-series/reasoning models reject `max_tokens` and require `max_completion_tokens`.
+        body[Self.tokenParam(for: model)] = maxTokens
 
         let json = try await send(body)
         guard let choices = json["choices"] as? [[String: Any]],
@@ -53,6 +54,29 @@ struct OpenAIClient: LLMClient {
         let text = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { throw AIConfig.AIError.decoding("empty text") }
         return text
+    }
+
+    // MARK: - Key validation
+    /// Mirror of `AnthropicClient.validate` for the OpenAI key (Settings → "Verify key").
+    /// A 1-token request whose only purpose is to confirm the key authenticates; routes through
+    /// `send` so a clamped reply can't read as a failure. Throws `.badResponse` carrying
+    /// OpenAI's own message (e.g. "Incorrect API key provided") on a bad key.
+    func validate() async throws {
+        let model = AIProvider.openai.defaultCoachModel
+        _ = try await send([
+            "model": model,
+            Self.tokenParam(for: model): 1,
+            "messages": [["role": "user", "content": "ping"]],
+        ])
+    }
+
+    /// OpenAI's reasoning models (o1/o3/o4…) reject `max_tokens` and require
+    /// `max_completion_tokens`; everything else (gpt-4o, gpt-4.1, …) takes `max_tokens`.
+    /// Matched on the leading "o<digit>" so "gpt-4o" (which DOES take max_tokens) is excluded.
+    static func tokenParam(for model: String) -> String {
+        let m = model.lowercased()
+        let isReasoning = ["o1", "o3", "o4", "o5"].contains { m.hasPrefix($0) }
+        return isReasoning ? "max_completion_tokens" : "max_tokens"
     }
 
     // MARK: - Networking

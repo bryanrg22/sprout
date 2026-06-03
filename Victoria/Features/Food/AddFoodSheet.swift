@@ -25,6 +25,34 @@ struct FoodDraft: Identifiable {
     var barcode: String? = nil
     var notes: String? = nil
     var photoData: Data? = nil
+    /// Extra photos when several were snapped of the same meal (cover lives in `photoData`).
+    var additionalPhotoData: [Data]? = nil
+}
+
+extension FoodDraft {
+    /// Builds a draft from an Open Food Facts lookup, carrying through a low-confidence
+    /// flag + "double-check this" note when the looked-up numbers failed the plausibility
+    /// check. Centralised so the barcode, search, and recents-search paths stay identical.
+    init(from hit: OpenFoodFactsService.FoodHit, meal: MealType, source: FoodSource) {
+        let composed = [hit.brand, hit.name]
+            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+        self.init(
+            name: composed.isEmpty ? hit.name : composed,
+            meal: meal,
+            servingDescription: hit.servingDescription,
+            quantity: 1,
+            calories: hit.calories,
+            proteinG: hit.proteinG,
+            carbsG: hit.carbsG,
+            fatG: hit.fatG,
+            source: source,
+            confidence: hit.isSuspicious ? .low : nil,
+            barcode: hit.barcode,
+            notes: hit.sanityNote
+        )
+    }
 }
 
 /// Reusable editable form for creating a `FoodEntry`.
@@ -61,6 +89,7 @@ struct AddFoodSheet: View {
     private let confidence: EstimateConfidence?
     private let barcode: String?
     private let photoData: Data?
+    private let additionalPhotoData: [Data]?
 
     /// The ORIGINAL estimate, so the quick-scale portion buttons multiply from a stable base
     /// (1× always returns to the estimate) instead of compounding tap-over-tap.
@@ -92,10 +121,39 @@ struct AddFoodSheet: View {
         confidence = draft.confidence
         barcode = draft.barcode
         photoData = draft.photoData
+        additionalPhotoData = draft.additionalPhotoData
         baseCalories = draft.calories
         baseProteinG = draft.proteinG
         baseCarbsG = draft.carbsG
         baseFatG = draft.fatG
+    }
+
+    /// Opens the form pre-filled from a saved entry; Save updates it in place
+    /// (identity, source, photos and timestamps are preserved).
+    init(editing entry: FoodEntry) {
+        self.init(draft: Self.draft(from: entry), date: entry.date, existing: entry)
+    }
+
+    /// Snapshots a saved entry into an editable draft.
+    static func draft(from entry: FoodEntry) -> FoodDraft {
+        FoodDraft(
+            name: entry.name,
+            meal: entry.mealType,
+            servingDescription: entry.servingDescription,
+            quantity: entry.quantity,
+            calories: entry.calories,
+            proteinG: entry.proteinG,
+            carbsG: entry.carbsG,
+            fatG: entry.fatG,
+            caloriesLow: entry.caloriesLow,
+            caloriesHigh: entry.caloriesHigh,
+            source: entry.source,
+            confidence: entry.confidence,
+            barcode: entry.barcode,
+            notes: entry.notes,
+            photoData: entry.photoData,
+            additionalPhotoData: entry.additionalPhotoData
+        )
     }
 
     private var caloriesValue: Double { Double(calories) ?? 0 }
@@ -240,17 +298,24 @@ struct AddFoodSheet: View {
     /// Quick portion scaling — the single biggest fix for photo-estimate accuracy (portion
     /// size is the #1 error source). Tapping multiplies the WHOLE estimate from its original
     /// base, so "1×" always returns to the estimate and taps never compound.
-    private static let portionFactors: [(label: String, value: Double)] = [
-        ("½", 0.5), ("¾", 0.75), ("1×", 1), ("1¼", 1.25), ("1½", 1.5), ("2×", 2),
-    ]
+    private var portionFactors: [(label: String, value: Double)] {
+        // A SCANNED packaged item carries PER-SERVING values, so offer whole servings — "how
+        // many did you have?" — reaching a full multi-serving bag in one tap (the Gushers case).
+        // A photo estimate is the whole plate, so those stay fractions of the estimate.
+        if source == .barcode {
+            return [("½", 0.5), ("1", 1), ("2", 2), ("3", 3), ("4", 4)]
+        }
+        return [("½", 0.5), ("¾", 0.75), ("1×", 1), ("1¼", 1.25), ("1½", 1.5), ("2×", 2)]
+    }
 
     private var portionRow: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Portion — tap to adjust the whole estimate")
+            Text(source == .barcode ? "How many servings did you have?"
+                                    : "Portion — tap to adjust the whole estimate")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Theme.textSecondary)
             HStack(spacing: 6) {
-                ForEach(Self.portionFactors, id: \.value) { factor in
+                ForEach(portionFactors, id: \.value) { factor in
                     let selected = abs(portionScale - factor.value) < 0.001
                     Button {
                         applyScale(factor.value)
@@ -329,7 +394,8 @@ struct AddFoodSheet: View {
                 confidence: confidence,
                 notes: finalNotes,
                 barcode: barcode,
-                photoData: photoData
+                photoData: photoData,
+                additionalPhotoData: additionalPhotoData
             )
             context.insert(entry)
         }

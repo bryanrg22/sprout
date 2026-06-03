@@ -555,7 +555,7 @@ private struct NeedPip: View {
             .shadow(color: need.tint.opacity(need.isMet ? 0.35 : 0), radius: 6)
             .animation(.spring(response: 0.45, dampingFraction: 0.6), value: need.isMet)
 
-            Text("\(Int((need.fraction * 100).rounded()))%")
+            Text("\(Int((need.rawFraction * 100).rounded()))%")
                 .font(.caption2.weight(.bold))
                 .monospacedDigit()
                 .foregroundStyle(need.isMet ? need.tint : Theme.textSecondary)
@@ -563,7 +563,7 @@ private struct NeedPip: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(need.label) \(Int((need.fraction * 100).rounded())) percent")
+        .accessibilityLabel("\(need.label) \(Int((need.rawFraction * 100).rounded())) percent")
     }
 }
 

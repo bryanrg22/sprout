@@ -14,17 +14,23 @@ import SwiftUI
 /// negative verb (the copy is about the *panda's* needs, future-facing).
 struct SharedPandaPlaceholder: View {
 
-    /// Combined daily state of the pair. Drives color wash, props, and the fallback copy.
+    /// Combined state of the pair. `thriving`/`okay`/`sleepy` reflect TODAY's logging;
+    /// `hungry`/`fainted` add stakes when the pair neglects logging for DAYS (computed from
+    /// "last fed"). Never punitive in copy — always the panda's need + "one log revives it".
     enum CombinedState: Equatable {
-        case thriving   // both logged — the happy peak
-        case okay       // one of you has logged; a warm, no-pressure middle
-        case sleepy     // neither has logged yet — the panda is *waiting*, not unhappy
+        case thriving   // both logged today — the happy peak
+        case okay       // one of you logged today — a warm middle
+        case sleepy     // neither yet today, but recently fed — waiting, not unhappy
+        case hungry     // a day or two with no logs — drooping, needs a check-in
+        case fainted    // several days neglected — keeled over (X-eyes); any log revives it
 
         var accessory: String {
             switch self {
             case .thriving: return "✨"
             case .okay:     return "💛"
             case .sleepy:   return "💤"
+            case .hungry:   return "🥺"
+            case .fainted:  return "💫"
             }
         }
         var headline: String {
@@ -32,6 +38,8 @@ struct SharedPandaPlaceholder: View {
             case .thriving: return "You two are crushing it!"
             case .okay:     return "Doing alright together 💛"
             case .sleepy:   return "Waiting on a check-in 💤"
+            case .hungry:   return "Your panda's getting hungry 🎋"
+            case .fainted:  return "Your panda keeled over 💫"
             }
         }
         var subline: String {
@@ -39,6 +47,8 @@ struct SharedPandaPlaceholder: View {
             case .thriving: return "Both of you logged today — bamboo for everyone!"
             case .okay:     return "One of you logged today — a little nudge keeps you both going."
             case .sleepy:   return "Log something today to wake your panda up. No rush 💛"
+            case .hungry:   return "A couple quiet days — one log brings it right back."
+            case .fainted:  return "A few days with no logs and it fainted. Log once to revive it!"
             }
         }
         var tint: Color {
@@ -46,6 +56,8 @@ struct SharedPandaPlaceholder: View {
             case .thriving: return Theme.brand
             case .okay:     return Theme.positive
             case .sleepy:   return Theme.info
+            case .hungry:   return Theme.warning
+            case .fainted:  return Theme.textSecondary
             }
         }
         var pandaMood: PandaMood {
@@ -53,6 +65,8 @@ struct SharedPandaPlaceholder: View {
             case .thriving: return .thriving
             case .okay:     return .okay
             case .sleepy:   return .sleepy
+            case .hungry:   return .hungry
+            case .fainted:  return .fainted
             }
         }
     }
@@ -73,9 +87,10 @@ struct SharedPandaPlaceholder: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var blink = false
     private let blinkTimer = Timer.publish(every: 3.6, on: .main, in: .common).autoconnect()
-    /// Drives the "munching the bamboo" mouth animation (thriving only).
-    @State private var chew = false
-    private let chewTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    /// Drives the "eat the bamboo" cycle (thriving only): looping 1 hold-low → 2 lift → 3 bite
+    /// → 4 chew, so the paws carry the stalk to the mouth and it's chewed down. 0 = still frame.
+    @State private var eatPhase = 0
+    private let eatTimer = Timer.publish(every: 0.45, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(spacing: Theme.Space.md) {
@@ -100,9 +115,9 @@ struct SharedPandaPlaceholder: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, Theme.Space.sm)
         .onReceive(blinkTimer) { _ in doBlink() }
-        .onReceive(chewTimer) { _ in
+        .onReceive(eatTimer) { _ in
             guard !reduceMotion, state == .thriving else { return }
-            withAnimation(.easeInOut(duration: 0.16)) { chew.toggle() }
+            withAnimation(.easeInOut(duration: 0.16)) { eatPhase = eatPhase >= 4 ? 1 : eatPhase + 1 }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
@@ -192,7 +207,7 @@ struct SharedPandaPlaceholder: View {
                 .overlay(Circle().strokeBorder(state.tint.opacity(0.22), lineWidth: 1))
                 .frame(width: size * 0.82, height: size * 0.82)
 
-            PixelPandaView(mood: state.pandaMood, eyesOpen: !blink, chewOpen: chew)
+            PixelPandaView(mood: state.pandaMood, eyesOpen: !blink, eatPhase: eatPhase)
                 .frame(width: size, height: size)
                 .modifier(PandaLiveness(state: state, reduceMotion: reduceMotion))
                 .overlay(alignment: .topTrailing) {
@@ -211,6 +226,8 @@ struct SharedPandaPlaceholder: View {
     /// Personalized, future-facing copy when we know both people's state; otherwise the
     /// state's generic warm lines.
     private var headline: String {
+        // Hungry/fainted are about the panda's CONDITION (days neglected), not today's split.
+        if state == .hungry || state == .fainted { return state.headline }
         guard let me, let buddy else { return state.headline }
         switch (me.logged, buddy.logged) {
         case (true, true):   return "You're both crushing it! 🎋"
@@ -220,6 +237,7 @@ struct SharedPandaPlaceholder: View {
         }
     }
     private var subline: String {
+        if state == .hungry || state == .fainted { return state.subline }
         guard let me, let buddy else { return state.subline }
         switch (me.logged, buddy.logged) {
         case (true, true):   return "Both of you logged today — the panda is thriving."
@@ -258,6 +276,8 @@ private struct PandaLiveness: ViewModifier {
         case .thriving: AnyView(content.breathing())
         case .okay:     AnyView(content.wiggle(true))
         case .sleepy:   AnyView(content)
+        case .hungry:   AnyView(content.breathing())   // slow, alive-but-tired
+        case .fainted:  AnyView(content.opacity(0.9))  // out cold — still + faded
         }
     }
 }

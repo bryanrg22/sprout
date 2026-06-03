@@ -90,6 +90,12 @@ struct FoodSuggestionService {
       how much ("add 1 cup egg whites, +25g protein"), not vague "eat more protein".
     - Grounded in her numbers: if she has protein left to hit today, aim a pick at closing \
       that gap. Frame calories as fuel toward her goal, never as a budget being spent.
+    - Use judgment about her foods AND the time of day. Anchor the pick on protein + whole \
+      foods. Do NOT build a meal — especially breakfast — around a sometimes-treat or candy \
+      she happens to log (gummies, soda, chips); a small treat as a finish is fine, but it is \
+      never the foundation. And don't re-pitch something she's ALREADY eaten today (you're \
+      given that list) — move her to the next useful thing. Match the meal: a breakfast pick \
+      should read like breakfast.
 
     TONE — DIRECT AND CONFIDENT. Warm, but never precious. Celebrate progress plainly.
     HARD BANS (never use this vocabulary or framing):
