@@ -248,13 +248,14 @@ struct BuddyDayCard: View {
     private var accessibilitySummary: String {
         var parts = ["\(snapshot.displayName), \(moodLine)"]
         if snapshot.dayStreak > 0 { parts.append("\(snapshot.dayStreak) day streak") }
-        parts.append(snapshot.loggedToday ? "logged today" : "hasn't logged yet today")
+        parts.append(snapshot.loggedTodayEffective ? "logged today" : "hasn't logged yet today")
         parts.append("active \(relativeLastActive)")
         if snapshot.sharesFullData {
             parts.append("weight \(Self.oneDecimal(snapshot.trendWeightLbs)) lb, \(rateText)")
             parts.append("calories \(Self.grouped(snapshot.caloriesEaten)) of \(Self.grouped(snapshot.calorieTarget))")
             parts.append("protein \(Self.grouped(snapshot.proteinEaten)) of \(Self.grouped(snapshot.proteinTarget)) grams")
-            parts.append(foods.isEmpty ? "nothing logged yet" : "eaten today: \(snapshot.todayFoods)")
+            let foodLabel = snapshot.reflectsToday ? "eaten today: " : "last logged: "
+            parts.append(foods.isEmpty ? "nothing logged yet" : foodLabel + snapshot.todayFoods)
         }
         return parts.joined(separator: ", ")
     }
