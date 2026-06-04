@@ -5,6 +5,7 @@ import Charts
 struct WeightView: View {
     @Bindable var profile: UserProfile
     @Environment(\.modelContext) private var context
+    @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
 
     @State private var range: ChartRange = .threeMonths
@@ -34,18 +35,6 @@ struct WeightView: View {
     /// Weekly rate from the trend (negative = losing).
     private var ratePerWeek: Double {
         TrendCalculator.ratePerWeek(weights)
-    }
-
-    /// Pounds still to go from the current trend to goal, in the goal's direction
-    /// (lose → above goal; gain → below goal). `nil` for maintain (no gap to close);
-    /// 0 once reached.
-    private var remaining: Double? {
-        guard let t = currentTrend else { return nil }
-        switch profile.pace.direction {
-        case .lose:     return max(0, t - profile.goalWeightLbs)
-        case .gain:     return max(0, profile.goalWeightLbs - t)
-        case .maintain: return nil
-        }
     }
 
     /// The most recent raw weigh-in.
@@ -84,22 +73,24 @@ struct WeightView: View {
                 } else {
                     VStack(spacing: Theme.spacingL) {
                         // The adaptive Plan leads Progress — the AI's read on whether she's actually
-                        // getting there, with targets + insights (see docs/adaptive-plan.md).
+                        // getting there, with the headline ("On track for …"), targets + insights
+                        // (see docs/adaptive-plan.md). A small "Adjust plan" chip sits right under it
+                        // so tweaking the plan with Vita is one tap away.
                         PlanCard(profile: profile)
-                        hero
+                        adjustPlanChip
+                        // ONE weight-trend card: the big smoothed number + rate, then the chart.
+                        // The destination ("on track for …", "X to goal") lives on the plan card
+                        // above, so we don't repeat it here — the dashed goal line carries it visually.
+                        if rawIsDiscouragingBlip { reframeCard }
+                        trendCard
                         // AI recap of the WHOLE picture — weight, nutrition, activity,
                         // consistency — so Progress isn't just the scale. Self-manages its
                         // loading / not-enough-data / no-key states (hides without a key).
                         ProgressSummaryCard(profile: profile)
                         // Metrics at a glance — calories/protein/steps/water sparklines.
                         ProgressMetricsSection(profile: profile)
-                        if rawIsDiscouragingBlip { reframeCard }
-                        chartCard
                         // GitHub-style "days you showed up" consistency heatmap.
                         ConsistencyHeatmapCard(profile: profile)
-                        if let eta = TrendCalculator.projectedGoalDate(weights, goalLbs: profile.goalWeightLbs) {
-                            etaCard(date: eta)
-                        }
                     }
                     .padding(.horizontal, Theme.spacingM)
                     .padding(.vertical, Theme.spacingL)
@@ -119,41 +110,99 @@ struct WeightView: View {
         }
     }
 
-    // MARK: - Hero
+    // MARK: - Adjust-plan chip
 
-    private var hero: some View {
-        VStack(alignment: .leading, spacing: Theme.spacingM) {
-            Text("Current trend")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.textSecondary)
-
-            HStack(alignment: .firstTextBaseline, spacing: Theme.spacingXS) {
-                if let t = currentTrend {
-                    Text(t, format: .number.precision(.fractionLength(1)))
-                        .font(Theme.number(60))
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-                        .foregroundStyle(Theme.textPrimary)
-                } else {
-                    Text("—")
-                        .font(Theme.number(60))
-                        .foregroundStyle(Theme.textPrimary)
-                }
-                Text(unitLabel)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.textSecondary)
+    /// A small, secondary affordance under the plan card: deep-links to Vita with a
+    /// plan-adjustment prompt. Reuses the Ask-Vita bus exactly like `PlanCard.askInsight`
+    /// — setting the topic makes RootView flip to the Vita tab and Vita answers it.
+    /// Kept deliberately small (a chip, not a card) so the plan stays the hero.
+    private var adjustPlanChip: some View {
+        HStack {
+            Spacer(minLength: 0)
+            Button {
+                askVita?.ask(AskVitaTopic(
+                    name: "Adjust my plan",
+                    icon: "slider.horizontal.3",
+                    value: currentTrend.map { "\($0.formatted(.number.precision(.fractionLength(1)))) \(unitLabel) now" } ?? "",
+                    question: "I'd like to adjust my plan — what should change? Look at how I've actually been doing (weight trend, calories, protein, steps, consistency) and tell me what to tweak and why."))
+            } label: {
+                Label("Adjust plan", systemImage: "slider.horizontal.3")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.brand)
+                    .padding(.horizontal, Theme.spacingM)
+                    .padding(.vertical, Theme.spacingXS + 1)
+                    .background(Theme.brandSoft, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Theme.brand.opacity(0.28), lineWidth: 1))
             }
-            .animation(.spring(response: 0.5, dampingFraction: 0.85), value: currentTrend)
+            .buttonStyle(.plain)
+            .bouncyPress()
+            .accessibilityLabel("Adjust my plan with \(profile.coachName.isEmpty ? "Vita" : profile.coachName)")
+        }
+        .padding(.top, -(Theme.spacingS))   // tuck it up snug under the plan card
+    }
 
-            // Rate + goal-gap. Side-by-side normally; stacks at large Dynamic Type so
-            // neither pill truncates.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: Theme.spacingM) { rateBadge; goalGap }
-                VStack(alignment: .leading, spacing: Theme.spacingS) { rateBadge; goalGap }
+    // MARK: - Trend (the one weight card: big number + rate, then the chart)
+
+    /// The single weight-trend card. Header = the smoothed "current trend" number + the
+    /// rate badge; body = the range picker + chart. We intentionally DON'T repeat the
+    /// goal-gap / "on track" text here — that destination framing belongs to the plan
+    /// card above; the dashed goal line on the chart still shows where the finish is.
+    private var trendCard: some View {
+        VStack(alignment: .leading, spacing: Theme.spacingM) {
+            trendHeader
+
+            Divider().overlay(Theme.divider)
+
+            Picker("Range", selection: $range) {
+                ForEach(ChartRange.allCases) { r in
+                    Text(r.label).tag(r)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            if rangedWeights.isEmpty {
+                emptyChartState
+            } else {
+                trendChart
+                    .frame(height: 230)
+                    .animation(.easeInOut(duration: 0.3), value: range)
+                legend
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card(padding: Theme.spacingL)
+    }
+
+    /// The big smoothed trend number + the rate badge — the emotional headline of the card.
+    private var trendHeader: some View {
+        VStack(alignment: .leading, spacing: Theme.spacingS) {
+            Text("Current trend")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.textSecondary)
+
+            HStack(alignment: .firstTextBaseline, spacing: Theme.spacingM) {
+                HStack(alignment: .firstTextBaseline, spacing: Theme.spacingXS) {
+                    if let t = currentTrend {
+                        Text(t, format: .number.precision(.fractionLength(1)))
+                            .font(Theme.number(56))
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                            .foregroundStyle(Theme.textPrimary)
+                    } else {
+                        Text("—")
+                            .font(Theme.number(56))
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                    Text(unitLabel)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer(minLength: 0)
+                rateBadge
+            }
+            .animation(.spring(response: 0.5, dampingFraction: 0.85), value: currentTrend)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var rateBadge: some View {
@@ -181,26 +230,6 @@ struct WeightView: View {
         .padding(.vertical, Theme.spacingXS)
         .background(color.opacity(0.14), in: Capsule())
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: ratePerWeek)
-    }
-
-    /// "X lb to goal" while there's a gap, a celebratory chip once reached. `remaining`
-    /// is already direction-correct (lose: trend−goal, gain: goal−trend), so this reads
-    /// right for both users. Empty for maintain (no gap to close).
-    @ViewBuilder private var goalGap: some View {
-        if let remaining, remaining > 0 {
-            Label {
-                Text("\(remaining, format: .number.precision(.fractionLength(1))) \(unitLabel) to goal")
-                    .monospacedDigit()
-            } icon: {
-                Image(systemName: "flag.checkered")
-            }
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(Theme.textSecondary)
-        } else if remaining != nil {
-            Label("Goal reached", systemImage: "checkmark.seal.fill")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.positive)
-        }
     }
 
     // MARK: - Reframe
@@ -232,33 +261,6 @@ struct WeightView: View {
     }
 
     // MARK: - Chart
-
-    private var chartCard: some View {
-        VStack(alignment: .leading, spacing: Theme.spacingM) {
-            HStack {
-                SectionHeader(title: "Trend")
-                Spacer()
-            }
-
-            Picker("Range", selection: $range) {
-                ForEach(ChartRange.allCases) { r in
-                    Text(r.label).tag(r)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            if rangedWeights.isEmpty {
-                emptyChartState
-            } else {
-                trendChart
-                    .frame(height: 230)
-                    .animation(.easeInOut(duration: 0.3), value: range)
-                legend
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .card(padding: Theme.spacingL)
-    }
 
     private var trendChart: some View {
         Chart {
@@ -376,32 +378,6 @@ struct WeightView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Theme.spacingXL)
-    }
-
-    // MARK: - ETA
-
-    private func etaCard(date: Date) -> some View {
-        VStack(alignment: .leading, spacing: Theme.spacingS) {
-            HStack(spacing: Theme.spacingS) {
-                Image(systemName: "calendar")
-                    .foregroundStyle(Theme.accent)
-                Text("On track for")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.textSecondary)
-            }
-            Text(date, format: .dateTime.month(.wide).day().year())
-                .font(.title2.weight(.bold))
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .foregroundStyle(Theme.textPrimary)
-            Text("A rough estimate — plateaus are normal.")
-                .font(.footnote)
-                .foregroundStyle(Theme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .card(padding: Theme.spacingL)
-        .animation(.easeInOut(duration: 0.3), value: date)
     }
 
     // MARK: - Empty state
