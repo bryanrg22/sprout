@@ -52,6 +52,10 @@ targets:
         CURRENT_PROJECT_VERSION: "10"
         MARKETING_VERSION: "1.8.1"
         INFOPLIST_KEY_CFBundleDisplayName: Sprout
+        # Lets CloudKit's SILENT snapshot-changed push (ensureSnapshotSubscription) wake the app in
+        # the background to refresh the buddy hub. Foreground refresh works without it; this enables
+        # the background case.
+        INFOPLIST_KEY_UIBackgroundModes: remote-notification
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"

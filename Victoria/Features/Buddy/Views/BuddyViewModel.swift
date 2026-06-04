@@ -86,6 +86,7 @@ final class BuddyViewModel {
         // Restore the paired state at launch from the service's persisted link, so we don't
         // flash the pairing screen (and lose the pairing) every time the app reopens.
         self.isLinked = (service.linkedBuddyID != nil)
+        observeRemotePushes()
     }
 
     /// Test / preview seam: inject a specific service + id.
@@ -94,6 +95,27 @@ final class BuddyViewModel {
         self.service = service
         self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service)
         self.isLinked = (service.linkedBuddyID != nil)
+        observeRemotePushes()
+    }
+
+    // `nonisolated(unsafe)` so `deinit` (which is nonisolated) can remove the observer. Safe: it's
+    // assigned once in init and only read in deinit — no concurrent access.
+    nonisolated(unsafe) private var pushObserver: NSObjectProtocol?
+
+    /// Refresh the buddy data when a CloudKit push says it may have changed (the snapshot
+    /// subscription fires a silent wake-up the moment the buddy logs).
+    private func observeRemotePushes() {
+        pushObserver = NotificationCenter.default.addObserver(
+            forName: .buddyRemoteChange, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, self.isLinked else { return }
+                await self.refresh()
+            }
+        }
+    }
+
+    deinit {
+        if let pushObserver { NotificationCenter.default.removeObserver(pushObserver) }
     }
 
     // MARK: - Derived UI values
