@@ -100,7 +100,24 @@ struct AnthropicClient {
             toolUse = nil
         }
 
-        return ChatTurn(text: text, toolUse: toolUse, assistantContent: content)
+        // Sanitize the content we echo back when continuing the turn. We only ever expose and
+        // answer ONE tool_use, but the API requires a tool_result for EVERY tool_use block we send
+        // back. So keep all text, and include ONLY the single tool_use we're handling (matched by
+        // id) — dropping any extra tool calls the model emitted in the same turn. Without this, a
+        // turn with two tool_use blocks 400s the follow-up request (surfacing as "Something went
+        // wrong" right after the change was already applied). When there's no tool_use to answer,
+        // strip them all so a stray/partial block can't break a later continuation either.
+        let assistantContent: [[String: Any]]
+        if let toolUse {
+            assistantContent = content.filter { block in
+                if (block["type"] as? String) == "tool_use" { return (block["id"] as? String) == toolUse.id }
+                return true
+            }
+        } else {
+            assistantContent = content.filter { ($0["type"] as? String) != "tool_use" }
+        }
+
+        return ChatTurn(text: text, toolUse: toolUse, assistantContent: assistantContent)
     }
 
     /// Build the `assistant` message that echoes a prior turn's content back into history.
@@ -181,25 +198,38 @@ struct AnthropicClient {
 
     // MARK: - Networking
     private func send(_ body: [String: Any]) async throws -> [String: Any] {
-        var req = URLRequest(url: AIConfig.baseURL.appendingPathComponent("v1/messages"))
-        req.httpMethod = "POST"
-        req.setValue(key, forHTTPHeaderField: "x-api-key")
-        req.setValue(AIConfig.anthropicVersion, forHTTPHeaderField: "anthropic-version")
-        req.setValue("application/json", forHTTPHeaderField: "content-type")
-        req.httpBody = try JSONSerialization.data(withJSONObject: body)
-        req.timeoutInterval = 60
+        let httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: req)
-        guard let http = response as? HTTPURLResponse else {
-            throw AIConfig.AIError.badResponse("no response")
-        }
-        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-        guard (200..<300).contains(http.statusCode) else {
+        // Retry ONCE on a transient overload before giving up: the Anthropic API occasionally
+        // returns 429 (rate limit) / 503 / 529 (overloaded) under load — exactly the "try again in
+        // a moment" case. A single short backoff recovers it automatically instead of surfacing an
+        // error. Everything else (4xx auth/validation, network) throws straight away.
+        for attempt in 0..<2 {
+            var req = URLRequest(url: AIConfig.baseURL.appendingPathComponent("v1/messages"))
+            req.httpMethod = "POST"
+            req.setValue(key, forHTTPHeaderField: "x-api-key")
+            req.setValue(AIConfig.anthropicVersion, forHTTPHeaderField: "anthropic-version")
+            req.setValue("application/json", forHTTPHeaderField: "content-type")
+            req.httpBody = httpBody
+            req.timeoutInterval = 60
+
+            let (data, response) = try await URLSession.shared.data(for: req)
+            guard let http = response as? HTTPURLResponse else {
+                throw AIConfig.AIError.badResponse("no response")
+            }
+            let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+            if (200..<300).contains(http.statusCode) { return json }
+
             let msg = ((json["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"
             Diagnostics.shared.log("anthropic HTTP \(http.statusCode): \(msg)", .ai)
+
+            if [429, 503, 529].contains(http.statusCode), attempt == 0 {
+                try? await Task.sleep(for: .milliseconds(700))
+                continue
+            }
             throw AIConfig.AIError.badResponse(msg)
         }
-        return json
+        throw AIConfig.AIError.badResponse("request failed after a retry")
     }
 }
 
