@@ -17,6 +17,9 @@ struct CoachView: View {
     // Context the coach reasons over. Sort doesn't matter for aggregation.
     @Query private var foods: [FoodEntry]
     @Query private var weights: [WeightEntry]
+    // So Vita's context can see her training + hydration too, not just food + weight.
+    @Query private var workouts: [WorkoutEntry]
+    @Query private var water: [WaterEntry]
 
     @State private var draft: String = ""
     @State private var isSending = false
@@ -453,6 +456,7 @@ struct CoachView: View {
         // `coachMemory()` reads/creates the single memory row; `CoachContext.system` folds its
         // strings into the prompt synchronously here, so the @Model never crosses to the Task.
         let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
+                                         workouts: workouts, water: water,
                                          memory: coachMemory(), plan: CoachPlan.current(in: context))
         let tools = CoachTools.schemas(for: profile)
 
@@ -645,6 +649,7 @@ struct CoachView: View {
                                                   isError: isError)]
 
         let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
+                                         workouts: workouts, water: water,
                                          memory: coachMemory(), plan: CoachPlan.current(in: context))
         // Once we've chained enough tools, stop offering them so the model must finalize.
         let tools = depth >= Self.maxToolDepth ? [] : CoachTools.schemas(for: profile)

@@ -46,6 +46,20 @@ final class CoachContextItemsTests: XCTestCase {
         XCTAssertTrue(lines[0].contains("Unnamed item"))
     }
 
+    /// THE McDonald's bug: a scanned multi-item meal stores its component breakdown in `notes`.
+    /// Vita's context must now surface those (and the serving), so she sees the "+ 3 more" items
+    /// instead of saying she can't.
+    func testItemLinesIncludesNotesSoVitaSeesMealComponents() {
+        let f = FoodEntry(date: now(), mealType: .dinner,
+                          name: "McDonald's 10 pc. Chicken McNuggets + 3 more",
+                          calories: 1910, proteinG: 49, carbsG: 277, fatG: 73)
+        f.servingDescription = "1 meal"
+        f.notes = "10 pc McNuggets, large fries, large Coke, OREO McFlurry"
+        let line = CoachContext.itemLines([f]).joined()
+        XCTAssertTrue(line.contains("large fries"), "context must carry the meal's component notes")
+        XCTAssertTrue(line.contains("OREO McFlurry"))
+    }
+
     // MARK: - weeklyTotalLines (per-day week view)
 
     func testWeeklyTotalLinesLabelsAndSums() {
