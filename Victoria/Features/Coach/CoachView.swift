@@ -453,7 +453,7 @@ struct CoachView: View {
         // `coachMemory()` reads/creates the single memory row; `CoachContext.system` folds its
         // strings into the prompt synchronously here, so the @Model never crosses to the Task.
         let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
-                                         memory: coachMemory())
+                                         memory: coachMemory(), plan: CoachPlan.current(in: context))
         let tools = CoachTools.schemas(for: profile)
 
         Diagnostics.shared.log("coach send: \(text.count) chars, \(history.count) history msgs", .coach)
@@ -645,7 +645,7 @@ struct CoachView: View {
                                                   isError: isError)]
 
         let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
-                                         memory: coachMemory())
+                                         memory: coachMemory(), plan: CoachPlan.current(in: context))
         // Once we've chained enough tools, stop offering them so the model must finalize.
         let tools = depth >= Self.maxToolDepth ? [] : CoachTools.schemas(for: profile)
 

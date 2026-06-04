@@ -131,6 +131,10 @@ enum AIConfig {
     // they now follow the active provider's strong/cheap model via the resolvers above.
     static var foodModel: String { coachModel }
     static var chatModel: String { coachModel }
+    /// Heavy reasoning model for the one-time adaptive-Plan build/review pass — the user explicitly
+    /// wants Opus here (rare, high-value, worth the tokens). Anthropic-only; the Plan feature runs on
+    /// Claude (like Vita's tool use), independent of the lighter coach model above.
+    static var planModel: String { "claude-opus-4-8" }
 
     enum AIError: LocalizedError {
         case missingKey, badResponse(String), decoding(String)

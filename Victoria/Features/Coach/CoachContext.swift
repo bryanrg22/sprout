@@ -28,7 +28,8 @@ enum CoachContext {
     static func system(profile: UserProfile,
                        foods: [FoodEntry],
                        weights: [WeightEntry],
-                       memory: CoachMemory? = nil) -> String {
+                       memory: CoachMemory? = nil,
+                       plan: CoachPlan? = nil) -> String {
         // Assembled in a few named parts (not one long `+` chain) so the Swift type-checker
         // doesn't strain — the concatenation order/output is unchanged. `bioLine`/`memoryBlock`
         // carry their own leading "\n\n" (or "" when empty), so they're appended directly.
@@ -45,9 +46,29 @@ enum CoachContext {
             + "log_food tool (one call per distinct item) — you don't need to ask her for the numbers. "
             + "Today's date is \(Self.longDate.string(from: .now))."
         let tail = memoryBlock(memory)
+            + planBlock(plan)
             + "\n\n" + toolGuidance(profile: profile)
             + "\n\n" + formattingGuidance
         return header + data + usage + tail
+    }
+
+    /// Injects the user's adaptive Plan (see docs/adaptive-plan.md) so Vita is "the plan talking
+    /// back" — she can reference it, explain it, and (later) adjust it. Compact summary only; the
+    /// full plan lives on Progress. Empty string when there's no plan yet (prompt unchanged).
+    static func planBlock(_ plan: CoachPlan?) -> String {
+        guard let plan, !plan.headline.isEmpty || plan.hasRange || !plan.insights.isEmpty else { return "" }
+        var out = "\n\nHer current Plan (the adaptive plan she built with you — reference it and explain it "
+            + "naturally; she can ask you to adjust it):"
+        if !plan.headline.isEmpty { out += "\n- \(plan.headline)" }
+        if plan.hasRange { out += "\n- Daily fuel range: \(plan.calorieRangeText) kcal (a floor to meet + a soft ceiling — hitting the range is the win, going under the floor is not)" }
+        if plan.proteinTarget > 0 { out += "\n- Protein target: \(Int(plan.proteinTarget)) g" }
+        let assessment = plan.assessment.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !assessment.isEmpty { out += "\n- Current read: \(assessment)" }
+        if !plan.insights.isEmpty {
+            out += "\n- The focus right now:"
+            for i in plan.insights.prefix(5) { out += "\n  • \(i.title) — \(i.body)" }
+        }
+        return out
     }
 
     /// How Vita should format her replies. Her messages render as markdown in a phone-sized chat
