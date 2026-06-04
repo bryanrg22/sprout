@@ -113,7 +113,10 @@ struct MainTabView: View {
     /// CloudKit cold-start (reinstall / new device, plan not yet hydrated) can't re-invite a user who
     /// already has a plan — accepting it would rebuild and wipe their existing plan's history.
     @AppStorage("planInviteShown") private var planInviteShown = false
-    @Query private var coachPlans: [CoachPlan]
+    // Sorted newest-first so `coachPlans.first` is the CURRENT plan (matches CoachPlan.current /
+    // PlanCard) — `syncPlanTargets` mirrors that plan's targets, so an unsorted `.first` could
+    // mirror a stale plan if CloudKit ever transiently has two rows.
+    @Query(sort: \CoachPlan.updatedAt, order: .reverse) private var coachPlans: [CoachPlan]
     @Query private var allFoods: [FoodEntry]
     @Query private var allWeights: [WeightEntry]
 

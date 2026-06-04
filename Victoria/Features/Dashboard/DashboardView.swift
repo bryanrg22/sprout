@@ -133,16 +133,8 @@ struct DashboardView: View {
                     macrosCard.appearLift(didAppear, index: 7)
                     ChecklistCard().appearLift(didAppear, index: 8)
                     quickLinks.appearLift(didAppear, index: 9)
-                    weightCard
-                        .askVita {
-                            AskVitaTopic(
-                                name: "Weight trend",
-                                icon: "chart.line.uptrend.xyaxis",
-                                value: trendWeight.map { "\(Int($0.rounded())) \(profile.unitSystem.weightUnit) (trend)" } ?? "Not enough data yet",
-                                question: "What does my weight trend line really tell me — and why shouldn't I stress about a single day's number on the scale?")
-                        }
-                        .appearLift(didAppear, index: 10)
-                    coachLine.appearLift(didAppear, index: 11)
+                    // Weight trend + the streak "proud of you" line moved OFF Home: Home is the daily
+                    // essentials. Weight lives on Progress; the streak already shows in the header flame.
                 }
                 .padding(.horizontal)
                 .padding(.top, Theme.Space.xs)

@@ -375,10 +375,17 @@ final class CloudKitSyncService: BuddySyncService {
         // Best-effort and idempotent. If CloudKit is down we still consider the local
         // unlink successful (the caller clears the local `BuddyLink` regardless), so we
         // swallow availability errors here rather than blocking the user from leaving.
+        let old = buddyUserID
         buddyUserID = nil
-        // TODO(CloudKit): also delete / detach the shared pairing + snapshot records for
-        // this user once the CKShare model (see the HARDENING TODO in the header) is in
-        // place. The skeleton no-ops the remote teardown to stay safe before then.
+        // Tear down the per-buddy snapshot push subscription — otherwise this device keeps getting
+        // silent wake-ups for the EX-buddy after re-linking, and the per-buddy "created" flag would
+        // never let it be recreated for the next buddy. (The nudge subscription is keyed on my own
+        // id, so it's stable across re-link and left as-is.)
+        if let old {
+            try? await database.deleteSubscription(withID: "buddy-snapshot-\(myUserID)-from-\(old)")
+            UserDefaults.standard.removeObject(forKey: "buddy.ck.snapshotSub.\(myUserID).from.\(old)")
+        }
+        // TODO(CloudKit): also detach the shared pairing record once the CKShare model lands.
     }
 
     func sendNudge(_ nudge: Nudge) async throws {
