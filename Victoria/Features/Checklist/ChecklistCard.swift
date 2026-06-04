@@ -8,9 +8,20 @@ import SwiftData
 ///
 /// Deliberately about **showing up**, never about restricting food or a number on the
 /// scale — same anti-restriction tone as the rest of the app.
+///
+/// Personalized by Vita: when an API key is set, once a day she proposes a few morning
+/// tasks AND quick-add chips drawn from this person's goal + recent training + life context
+/// (so a soccer player sees "Soccer", a lifter sees "Leg day"). It degrades GRACEFULLY to
+/// the static presets when there's no key or on ANY failure — the load never blocks the card
+/// and never throws (same model as `WeeklyReflectionCard`). We never auto-insert the AI's
+/// tasks (CloudKit dup risk across devices); the "Add these" tap is the deliberate accept.
 struct ChecklistCard: View {
     /// Optional override; defaults to the warm standard title.
     var title: String = "Today's checklist"
+
+    /// The person we personalize for. Optional so the `#Preview` (and any no-profile host)
+    /// still works — nil simply keeps the static-preset behavior.
+    var profile: UserProfile?
 
     @Environment(\.modelContext) private var context
 
@@ -20,10 +31,24 @@ struct ChecklistCard: View {
                   SortDescriptor(\ChecklistItem.day)])
     private var items: [ChecklistItem]
 
+    // Data the personalized plan is built from — same sources the coach/weekly card @Query.
+    @Query(sort: \FoodEntry.date, order: .reverse) private var foods: [FoodEntry]
+    @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
+    @Query(sort: \WorkoutEntry.date) private var workouts: [WorkoutEntry]
+    @Query private var water: [WaterEntry]
+    @Query private var memories: [CoachMemory]
+
     /// Presents the "Add your own" custom-task sheet.
     @State private var showCustomSheet = false
     /// Bumped on every check toggle so `.sensoryFeedback(.success)` fires a happy tap.
     @State private var toggleTick = 0
+
+    /// Vita's personalized plan for today (nil until loaded; we start from the fallback so the
+    /// chips are never empty). `loadingPlan` drives the shimmer while the AI call is in flight.
+    @State private var plan: ChecklistPlan? = ChecklistPlanService.fallback()
+    @State private var loadingPlan = false
+    /// In the populated state, reveals the quick-add chip row inline (one consistent add UI).
+    @State private var showAddChips = false
 
     // MARK: Derived
 
@@ -36,6 +61,16 @@ struct ChecklistCard: View {
 
     private var doneCount: Int { todays.filter { $0.done }.count }
     private var allDone: Bool { !todays.isEmpty && doneCount == todays.count }
+
+    /// The chips to offer — Vita's personalized set when we have one, else the static presets.
+    /// Falls back the moment a plan is missing/empty so the row is never blank.
+    private var chipProposals: [ChecklistProposal] {
+        let chips = plan?.chips ?? []
+        return chips.isEmpty ? ChecklistSuggestion.allProposals : chips
+    }
+
+    /// Vita's proposed morning tasks for today (only present when the AI returned some).
+    private var proposedTasks: [ChecklistProposal] { plan?.tasks ?? [] }
 
     // MARK: Body
 
@@ -63,6 +98,9 @@ struct ChecklistCard: View {
         .sheet(isPresented: $showCustomSheet) {
             CustomTaskSheet { title in addCustom(title) }
         }
+        // Build (or refresh) Vita's plan once per calendar day, per profile. Never blocks, never
+        // throws — on no key / any failure we keep the static-preset fallback already in `plan`.
+        .task(id: dayKey) { await loadPlan() }
     }
 
     // MARK: Header
@@ -104,34 +142,116 @@ struct ChecklistCard: View {
             .padding(.top, 2)
             .transition(.opacity)
         }
-        addMenu
+        addMore
             .padding(.top, 2)
     }
 
-    /// The "+ Add task" affordance shown once there are items: the presets as chips, plus
-    /// an "Add your own" entry that opens the custom-title sheet.
-    private var addMenu: some View {
-        Menu {
-            ForEach(ChecklistSuggestion.all) { s in
-                Button { add(s) } label: { Label(s.title, systemImage: s.systemIcon) }
+    /// The "add more" affordance shown once there are items. Tapping reveals the SAME
+    /// personalized quick-add chip row used in the empty state (Vita's chips when we have
+    /// them, else the presets) + an "Add your own" chip — one consistent add interaction in
+    /// both states (this replaces the old dropdown Menu, fixing the two-different-UIs problem).
+    @ViewBuilder
+    private var addMore: some View {
+        if showAddChips {
+            personalizedChips
+                .padding(.top, 2)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+        } else {
+            Button {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) { showAddChips = true }
+            } label: {
+                Label("Add task", systemImage: "plus.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.brand)
             }
-            Divider()
-            Button { showCustomSheet = true } label: {
-                Label("Add your own", systemImage: "square.and.pencil")
-            }
-        } label: {
-            Label("Add task", systemImage: "plus.circle.fill")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.brand)
+            .buttonStyle(.plain)
+            .bouncyPress()
+            .accessibilityLabel("Add a task to today's checklist")
         }
-        .accessibilityLabel("Add a task to today's checklist")
     }
 
     // MARK: Empty state
 
-    /// Warm, inviting blank slate — a gently breathing sparkle, an encouraging line, the
-    /// preset chips, and an "Add your own" option. Same tone as the Food empty state.
+    /// The blank-slate state. Three shapes, in priority order:
+    ///  1. Vita PROPOSED tasks → a "Vita's plan for today" section with a one-tap "Add these",
+    ///     followed by the personalized quick-add chips for à-la-carte planning.
+    ///  2. Vita's plan is still loading → a gentle shimmer placeholder.
+    ///  3. No key / fallback → the warm preset blank slate (today's behavior).
+    @ViewBuilder
     private var emptyState: some View {
+        if !proposedTasks.isEmpty {
+            vitaPlanState
+        } else if loadingPlan {
+            loadingState
+        } else {
+            presetEmptyState
+        }
+    }
+
+    /// Vita's morning proposal: a header, the few suggested tasks, a primary "Add these"
+    /// button that inserts them ALL (the deliberate accept — we never auto-insert), then the
+    /// personalized chips for adding individual things.
+    private var vitaPlanState: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            HStack(spacing: Theme.Space.sm) {
+                ZStack {
+                    Circle().fill(Theme.brandSoft).frame(width: 44, height: 44)
+                    Text("✨").font(.system(size: 22)).breathing()
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(coachName)'s plan for today ✨")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("A few things to show up for — add what fits.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+
+            // The proposed tasks as quiet preview rows (icon disc + title), so she sees the
+            // plan before accepting it.
+            VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                ForEach(proposedTasks) { t in
+                    HStack(spacing: Theme.Space.sm) {
+                        Image(systemName: t.icon)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.brand)
+                            .frame(width: 30, height: 30)
+                            .background(Theme.brandSoft, in: RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
+                        Text(t.title)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Theme.textPrimary)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+
+            // Primary accept: insert every proposed task in one tap.
+            Button { addProposedTasks() } label: {
+                Text("Add these")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 11)
+                    .background(Theme.brandGradient,
+                                in: RoundedRectangle(cornerRadius: Theme.Radius.pill, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .bouncyPress()
+            .accessibilityLabel("Add \(coachName)'s \(proposedTasks.count) suggested tasks to today")
+
+            personalizedChips
+        }
+        .padding(.vertical, 2)
+    }
+
+    /// Warm, inviting blank slate (no AI plan) — a gently breathing sparkle, an encouraging
+    /// line, the preset chips, and an "Add your own" option. Same tone as the Food empty state.
+    private var presetEmptyState: some View {
         VStack(alignment: .leading, spacing: Theme.Space.sm) {
             HStack(spacing: Theme.Space.sm) {
                 ZStack {
@@ -150,18 +270,50 @@ struct ChecklistCard: View {
                 Spacer(minLength: 0)
             }
 
-            presetChips
+            personalizedChips
         }
         .padding(.vertical, 2)
     }
 
-    /// The quick-add presets as tappable brand-soft chips, with an "Add your own" chip
-    /// that opens the custom sheet. Wraps onto new lines at any width / Dynamic Type size.
-    private var presetChips: some View {
+    /// Gentle "\(coachName) is planning…" placeholder while the AI call is in flight: a header
+    /// plus shimmering skeleton chip rows, so the card reads as composing rather than empty.
+    private var loadingState: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            HStack(spacing: Theme.Space.sm) {
+                ZStack {
+                    Circle().fill(Theme.brandSoft).frame(width: 44, height: 44)
+                    Text("✨").font(.system(size: 22)).breathing()
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(coachName) is planning your day ✨")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("One sec — tailoring this to you.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+            VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                ChecklistShimmerLine().frame(width: 200, height: 14)
+                ChecklistShimmerLine().frame(width: 150, height: 14)
+                ChecklistShimmerLine().frame(width: 180, height: 14)
+            }
+            .padding(.top, 2)
+        }
+        .padding(.vertical, 2)
+        .accessibilityLabel("\(coachName) is planning your day")
+    }
+
+    /// The quick-add chips — Vita's personalized set when we have one, else the presets — as
+    /// tappable brand-soft chips, with an "Add your own" chip that opens the custom sheet.
+    /// Wraps onto new lines at any width / Dynamic Type size. This is the SINGLE add UI, shared
+    /// by the empty state and the populated "add more" reveal.
+    private var personalizedChips: some View {
         ChecklistFlowLayout(spacing: Theme.Space.sm) {
-            ForEach(ChecklistSuggestion.all) { s in
-                Button { add(s) } label: {
-                    chipLabel(s.title, icon: s.systemIcon, filled: false)
+            ForEach(chipProposals) { p in
+                Button { addProposal(p) } label: {
+                    chipLabel(p.title, icon: p.icon, filled: false)
                 }
                 .buttonStyle(.plain)
                 .bouncyPress()
@@ -202,8 +354,29 @@ struct ChecklistCard: View {
 
     // MARK: Mutations
 
-    private func add(_ suggestion: ChecklistSuggestion) {
-        insert(title: suggestion.title, icon: suggestion.systemIcon)
+    /// Add one quick-add chip (a preset or one of Vita's personalized chips).
+    private func addProposal(_ proposal: ChecklistProposal) {
+        insert(title: proposal.title, icon: proposal.icon)
+    }
+
+    /// The deliberate accept of Vita's morning plan: insert every proposed task at once. We
+    /// assign sort orders from the current count up so they keep the order she was shown them
+    /// in (a single save). This is the ONLY path that adds the AI tasks — never automatic.
+    private func addProposedTasks() {
+        let tasks = proposedTasks
+        guard !tasks.isEmpty else { return }
+        let day = Calendar.current.startOfDay(for: .now)
+        let base = todays.count
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+            for (offset, t) in tasks.enumerated() {
+                let item = ChecklistItem(title: t.title,
+                                         systemIcon: t.icon,
+                                         day: day,
+                                         sortOrder: base + offset)
+                context.insert(item)
+            }
+            try? context.save()
+        }
     }
 
     private func addCustom(_ rawTitle: String) {
@@ -238,6 +411,88 @@ struct ChecklistCard: View {
             try? context.save()
         }
     }
+
+    // MARK: - Personalized plan (Vita) — load + day cache
+
+    /// Her coach's name for the warm copy (falls back to "Vita").
+    private var coachName: String {
+        let n = profile?.coachName.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return n.isEmpty ? "Vita" : n
+    }
+
+    /// Per-profile, per-day key. Drives `.task(id:)` (a new day rebuilds) and the UserDefaults
+    /// cache. "no-profile" keeps the preview/no-profile host on a stable, fallback-only key.
+    private var dayKey: String {
+        let pid = profile?.id.uuidString ?? "no-profile"
+        return "vita.checklist.\(pid).\(Self.dayStamp.string(from: .now))"
+    }
+
+    /// Build (or reuse) today's personalized plan. Order of operations mirrors `WeeklyReflection`:
+    /// start from the fallback (so chips always render), bail to fallback with NO network when
+    /// there's no key, serve a same-day cache hit, otherwise call the model — and on ANY failure
+    /// keep the fallback. Never throws, never blocks the card. Guards staleness on `dayKey` so a
+    /// slow call that resolves after midnight (or a profile switch) can't commit to the wrong day.
+    @MainActor
+    private func loadPlan() async {
+        let key = dayKey
+
+        // No profile or no key → the static-preset fallback, and we never touch the network.
+        guard let profile, KeychainStore.hasAPIKey else {
+            plan = ChecklistPlanService.fallback()
+            loadingPlan = false
+            return
+        }
+
+        // Same-day cache hit → use it (no network). Daily key means it naturally rolls over.
+        if let cached = readCache(key) {
+            plan = cached
+            loadingPlan = false
+            return
+        }
+
+        // Otherwise generate. Keep the fallback chips visible behind the shimmer.
+        loadingPlan = true
+        do {
+            let fresh = try await ChecklistPlanService.make(
+                profile: profile,
+                foods: foods,
+                weights: weights,
+                workouts: workouts,
+                water: water,
+                memory: memories.first
+            )
+            // Guard against a stale task (day rolled over / profile changed mid-flight).
+            guard key == dayKey else { return }
+            writeCache(fresh, key: key)
+            plan = fresh
+        } catch {
+            // No key mid-flight, network, parse, or guardrail rejection — keep the fallback.
+            guard key == dayKey else { return }
+            plan = ChecklistPlanService.fallback()
+        }
+        loadingPlan = false
+    }
+
+    // MARK: Cache (UserDefaults, keyed by profile + day)
+
+    private func readCache(_ key: String) -> ChecklistPlan? {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let decoded = try? JSONDecoder().decode(ChecklistPlan.self, from: data) else { return nil }
+        return decoded
+    }
+
+    private func writeCache(_ plan: ChecklistPlan, key: String) {
+        guard let data = try? JSONEncoder().encode(plan) else { return }
+        UserDefaults.standard.set(data, forKey: key)
+    }
+
+    /// POSIX yyyy-MM-dd day stamp for the cache key (locale-independent so the bucket is stable).
+    private static let dayStamp: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
 }
 
 // MARK: - Row
@@ -411,6 +666,43 @@ private struct ChecklistFlowLayout: Layout {
     }
 }
 
+// MARK: - Shimmer placeholder line
+
+/// A single rounded "skeleton" line with a soft sheen sweeping across it — the universal
+/// "content is loading" cue, used by the personalized-plan loading state. A self-contained
+/// copy of the dashboard's `ShimmerLine` (which is file-private there), same recipe + timing,
+/// and it respects Reduce Motion (falls back to a static muted bar).
+private struct ChecklistShimmerLine: View {
+    @State private var phase: CGFloat = -1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        GeometryReader { geo in
+            let base = Theme.textSecondary.opacity(0.18)
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(base)
+                .overlay {
+                    if !reduceMotion {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.clear, Theme.textSecondary.opacity(0.28), .clear],
+                                    startPoint: .leading, endPoint: .trailing)
+                            )
+                            .offset(x: phase * geo.size.width)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .onAppear {
+                    guard !reduceMotion else { return }
+                    withAnimation(.linear(duration: 1.3).repeatForever(autoreverses: false)) {
+                        phase = 1.2
+                    }
+                }
+        }
+    }
+}
+
 // MARK: - Preview
 
 #Preview {
@@ -419,5 +711,7 @@ private struct ChecklistFlowLayout: Layout {
             .padding()
     }
     .background(Theme.background.ignoresSafeArea())
-    .modelContainer(for: ChecklistItem.self, inMemory: true)
+    .modelContainer(for: [ChecklistItem.self, FoodEntry.self, WeightEntry.self,
+                          WorkoutEntry.self, WaterEntry.self, CoachMemory.self],
+                    inMemory: true)
 }
