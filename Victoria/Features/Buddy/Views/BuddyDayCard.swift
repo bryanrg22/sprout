@@ -64,8 +64,8 @@ struct BuddyDayCard: View {
             if snapshot.dayStreak > 0 {
                 chip("\(streakEmoji) \(snapshot.dayStreak)-day streak", tint: Theme.warning)
             }
-            chip(snapshot.loggedToday ? "logged today ✓" : "no log yet today",
-                 tint: snapshot.loggedToday ? Theme.positive : Theme.textSecondary)
+            chip(snapshot.loggedTodayEffective ? "logged today ✓" : "no log yet today",
+                 tint: snapshot.loggedTodayEffective ? Theme.positive : Theme.textSecondary)
             Spacer(minLength: 0)
         }
     }
@@ -140,7 +140,9 @@ struct BuddyDayCard: View {
 
     private var eatenToday: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Eaten today")
+            // When the snapshot is stale (synced before today), these foods are their LAST logged
+            // day's — label them honestly rather than as "today".
+            Text(snapshot.reflectsToday ? "Eaten today" : "Last logged")
                 .font(.caption.weight(.semibold)).textCase(.uppercase)
                 .foregroundStyle(Theme.textSecondary)
             if foods.isEmpty {

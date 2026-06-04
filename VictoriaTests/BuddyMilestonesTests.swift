@@ -78,4 +78,30 @@ final class BuddyMilestonesTests: XCTestCase {
         XCTAssertTrue(BuddyMilestone.calories.message(name: "Victoria").contains("Victoria"))
         XCTAssertTrue(BuddyMilestone.streak30.message(name: "Bryan").contains("30"))
     }
+
+    // MARK: - Snapshot freshness (a stale snapshot must not read as "logged today")
+
+    private func snapshot(loggedToday: Bool, lastActive: Date) -> BuddySnapshotPayload {
+        BuddySnapshotPayload(ownerUserID: "u", displayName: "Victoria", dayStreak: 2,
+                             characterMood: .happy, loggedToday: loggedToday, lastActive: lastActive)
+    }
+
+    func testStaleSnapshotIsNotLoggedTodayEffective() {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
+        let stale = snapshot(loggedToday: true, lastActive: yesterday)   // logged "today" — but yesterday
+        XCTAssertFalse(stale.reflectsToday)
+        XCTAssertFalse(stale.loggedTodayEffective, "a snapshot from yesterday must not count as logged today")
+    }
+
+    func testFreshSnapshotIsLoggedTodayEffective() {
+        let fresh = snapshot(loggedToday: true, lastActive: .now)
+        XCTAssertTrue(fresh.reflectsToday)
+        XCTAssertTrue(fresh.loggedTodayEffective)
+    }
+
+    func testFreshButNotLoggedIsNotEffective() {
+        let fresh = snapshot(loggedToday: false, lastActive: .now)        // active today, hasn't logged
+        XCTAssertTrue(fresh.reflectsToday)
+        XCTAssertFalse(fresh.loggedTodayEffective)
+    }
 }

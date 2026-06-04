@@ -103,7 +103,9 @@ final class BuddyViewModel {
     /// - Parameter myLoggedToday: whether *I've* logged anything today (the caller reads
     ///   this from the dashboard's data; defaults to `true` so a missing read errs warm).
     func sharedState(myLoggedToday: Bool) -> SharedPandaPlaceholder.CombinedState {
-        let buddyLogged = buddySnapshot?.loggedToday ?? false
+        // Freshness-gated: a buddy snapshot synced yesterday must not feed the panda as if they
+        // logged "today" (otherwise it shows "both thriving" off last night's stale snapshot).
+        let buddyLogged = buddySnapshot?.loggedTodayEffective ?? false
         let cal = Calendar.current
         let today = cal.startOfDay(for: .now)
         let lastFedKey = "buddy.panda.lastFed.\(myUserID)"
