@@ -159,12 +159,13 @@ struct DashboardView: View {
 
     /// Quick links to the secondary screens that don't have their own tab.
     private var quickLinks: some View {
-        // Buddy is now a top-level tab; Workouts + Achievements stay as quick links.
+        // Workouts now has its own tab, so it's gone from here. Buddy + Achievements are the
+        // secondary screens that don't get a tab (5-tab max keeps Vita on the bar), reachable here.
         HStack(spacing: Theme.Space.md) {
             NavigationLink {
-                WorkoutLogView()
+                BuddyHomeView()
             } label: {
-                quickLinkTile(title: "Workouts", icon: "dumbbell.fill", tint: Theme.info)
+                quickLinkTile(title: "Buddy", icon: "person.2.fill", tint: Theme.info)
             }
             NavigationLink {
                 AchievementsView(profile: profile)
