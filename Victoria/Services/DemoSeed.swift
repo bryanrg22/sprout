@@ -19,11 +19,13 @@ enum DemoSeed {
     static var initialTab: Int {
         guard let i = CommandLine.arguments.firstIndex(of: "--demo-tab"),
               i + 1 < CommandLine.arguments.count else { return 0 }
+        // Tab order: Today(0) · Nutrients(1) · Progress(2) · Workouts(3) · Vita(4) · Buddy(5).
         switch CommandLine.arguments[i + 1] {
         case "food": return 1
         case "progress": return 2
-        case "coach": return 3
-        case "more": return 4
+        case "workouts": return 3
+        case "coach": return 4
+        case "more": return 5
         default: return 0
         }
     }
