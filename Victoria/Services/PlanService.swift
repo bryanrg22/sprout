@@ -25,11 +25,11 @@ enum PlanService {
                                                workouts: workouts, water: water)
         let points = loggedDayCount(foods: foods, weights: weights)
 
-        let safety = safetyNote(profile: profile, foods: foods, weights: weights)
+        let coaching = coachingNote(profile: profile, foods: foods, weights: weights)
         let client = try AnthropicClient()
         let result = try await client.structured(
             system: systemPrompt(profile: profile),
-            userContent: userContent(dataSummary: dataSummary, intake: intake) + safety,
+            userContent: userContent(dataSummary: dataSummary, intake: intake) + coaching,
             toolName: "write_plan",
             toolDescription: "Author the user's personalized, data-grounded coaching plan.",
             schema: planSchema,
@@ -72,14 +72,14 @@ enum PlanService {
         let points = loggedDayCount(foods: foods, weights: weights)
         let elapsed = daysSince(existing.updatedAt)
 
-        // Surface data-driven safety flags (very low intake / very fast loss) so the model addresses
-        // them honestly. (A live web_search could later augment this against current guidance.)
-        let safety = safetyNote(profile: profile, foods: foods, weights: weights)
+        // Surface beneficial coaching patterns (eat-more-to-perform / ease-off-for-better-results)
+        // so the review turns them into encouraging, results-focused insights — never warnings.
+        let coaching = coachingNote(profile: profile, foods: foods, weights: weights)
 
         let client = try AnthropicClient()
         let result = try await client.structured(
             system: reviewSystemPrompt(profile: profile),
-            userContent: reviewUserContent(plan: existing, dataSummary: dataSummary, daysSince: elapsed) + safety,
+            userContent: reviewUserContent(plan: existing, dataSummary: dataSummary, daysSince: elapsed) + coaching,
             toolName: "write_plan",
             toolDescription: "Re-emit the user's plan, adapted to the latest data (same shape as the build).",
             schema: planSchema,
@@ -285,44 +285,48 @@ enum PlanService {
         return days.count
     }
 
-    // MARK: - Safety check (data-driven flags)
+    // MARK: - Coaching patterns (beneficial teaching moments, NOT safety warnings)
 
-    /// A short directive appended to the plan prompt when HER data trips a safety flag, so the model
-    /// addresses it honestly in the plan (educate + give the safe path, never alarm or shame). Empty
-    /// when nothing's flagged — the prompt is then unchanged. (A live web_search could later augment
-    /// these against current guidance; for now the model reasons from established safe floors/ranges.)
-    static func safetyNote(profile: UserProfile, foods: [FoodEntry], weights: [WeightEntry],
-                           now: Date = .now, calendar: Calendar = .current) -> String {
-        let flags = safetyFlags(profile: profile, foods: foods, weights: weights, now: now, calendar: calendar)
+    /// A short directive appended to the plan prompt when HER data shows a pattern worth a BENEFICIAL
+    /// teaching moment — e.g. she's eating so little that eating MORE would actually help her results,
+    /// or losing so fast that easing off would protect her muscle + momentum. The model turns these
+    /// into encouraging, results-focused insights ("here's how this actually helps you"), never
+    /// warnings. Empty when nothing stands out. On-ethos: this app teaches + celebrates results — it
+    /// is NOT an ED-safety gate. (A live web_search could later enrich the "why" with current research.)
+    static func coachingNote(profile: UserProfile, foods: [FoodEntry], weights: [WeightEntry],
+                             now: Date = .now, calendar: Calendar = .current) -> String {
+        let flags = coachingFlags(profile: profile, foods: foods, weights: weights, now: now, calendar: calendar)
         guard !flags.isEmpty else { return "" }
-        return "\n\nSAFETY CHECK — the data tripped these flags. Address them directly and honestly in "
-            + "your assessment and as an insight (educate + give the safe path; never alarm or shame):\n- "
+        return "\n\nPATTERNS WORTH A TEACHING MOMENT — turn each into a beneficial, results-focused insight "
+            + "(the encouraging \"here's how this actually helps you\" angle; never a warning or shame):\n- "
             + flags.joined(separator: "\n- ")
     }
 
-    /// Data-driven safety flags — concerning patterns in HER logged data. Pure + testable.
-    static func safetyFlags(profile: UserProfile, foods: [FoodEntry], weights: [WeightEntry],
-                            now: Date = .now, calendar: Calendar = .current) -> [String] {
+    /// Data-driven coaching patterns — notable things in HER logged data that make for a beneficial,
+    /// educational insight. Pure + testable.
+    static func coachingFlags(profile: UserProfile, foods: [FoodEntry], weights: [WeightEntry],
+                              now: Date = .now, calendar: Calendar = .current) -> [String] {
         var flags: [String] = []
 
-        // Average logged intake (over recently-logged days) vs a conservative safe floor.
+        // Eating very little → the "eat MORE to get better results" teaching moment.
         let floor = profile.sex == .female ? 1200.0 : 1500.0
         let daily = recentDailyCalories(foods, days: 7, now: now, calendar: calendar)
         if !daily.isEmpty {
             let avg = daily.reduce(0, +) / Double(daily.count)
             if avg > 0 && avg < floor {
-                flags.append("Her logged intake is averaging only ~\(Int(avg.rounded())) kcal/day — below the "
-                    + "safe floor (~\(Int(floor)) kcal). Check whether that's genuine under-eating or just "
-                    + "unlogged meals; if it's real, it's too low to sustain.")
+                flags.append("Her logged intake is averaging only ~\(Int(avg.rounded())) kcal/day. If that's real "
+                    + "(not just unlogged meals), eating a bit MORE would likely help her results — more energy to "
+                    + "train, it protects muscle in a deficit, and it's more sustainable. Teach that benefit warmly.")
             }
         }
 
-        // Losing too fast (loss goals only, with enough weight history to trust the rate).
+        // Losing very fast → the "ease off a touch for better, lasting results" teaching moment (loss only).
         if profile.pace.direction == .lose, weights.count >= 3 {
             let rate = TrendCalculator.ratePerWeek(weights)   // negative = losing
             if rate < -2.0 {
-                flags.append("She's losing quickly — about \(String(format: "%.1f", abs(rate))) lb/week. Past "
-                    + "roughly 1% of bodyweight per week tends to cost muscle and rebound; consider easing the deficit.")
+                flags.append("She's losing fast — about \(String(format: "%.1f", abs(rate))) lb/week. Easing the "
+                    + "deficit a little would protect her muscle and make the loss actually stick — frame it as "
+                    + "getting BETTER results, not a problem.")
             }
         }
         return flags
