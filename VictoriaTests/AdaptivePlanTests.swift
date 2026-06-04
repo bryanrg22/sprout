@@ -381,4 +381,20 @@ final class AdaptivePlanTests: XCTestCase {
             XCTAssertTrue(line.hasPrefix("- old durable") || line.hasPrefix(prefix))
         }
     }
+
+    // MARK: - Research phase (web-search grounding)
+
+    func testResearchPromptsAreGoalAwareAndCarryHerWords() {
+        let p = femaleLossProfile()        // a loss pace
+        p.name = "Victoria"
+        let sys = PlanService.researchSystemPrompt(profile: p)
+        XCTAssertTrue(sys.contains("Victoria"))
+        XCTAssertTrue(sys.lowercased().contains("search"))                  // it's a live-web brief
+        XCTAssertTrue(sys.lowercased().contains("source"))                  // must name sources
+
+        let user = PlanService.researchUserContent(profile: p, intake: "I edit videos 6h a day")
+        XCTAssertTrue(user.contains("fat loss"))                           // direction-aware
+        XCTAssertTrue(user.contains("I edit videos 6h a day"))             // her words drive the searches
+        XCTAssertTrue(user.lowercased().contains("no plan yet"))           // research-only, not the plan
+    }
 }
