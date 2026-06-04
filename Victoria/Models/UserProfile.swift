@@ -41,6 +41,17 @@ final class UserProfile {
     /// Friendly label for that container ("bottle", "glass", "cup").
     var waterContainerLabel: String = "bottle"
 
+    // Plan-driven targets (single source of truth)
+    /// When the adaptive Plan is active, ITS targets become the app's targets: these mirror the
+    /// plan's calorie floor + protein target so every ring / achievement / Vita read (all of which
+    /// go through `dailyCalorieTarget` / `macroTargets`) reflects the plan — with NO call site needing
+    /// to know about the plan. `0` = no plan, use the computed default. Kept in sync reactively from
+    /// `CoachPlan` (see RootView.syncPlanTargets). The calorie value is still clamped to the safe floor
+    /// at read time, so a plan can never route the app below a safe intake. Defaulted for CloudKit/
+    /// SwiftData migration (older rows read as 0 → computed).
+    var calorieTargetOverride: Double = 0
+    var proteinTargetOverride: Double = 0
+
     // Buddy
     /// Opt-IN to sharing the FULL daily picture (weight trend, calories, protein, today's
     /// foods) with a paired buddy — not just the safe activity face-off. Default `true`:

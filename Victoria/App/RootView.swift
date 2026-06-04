@@ -165,7 +165,22 @@ struct MainTabView: View {
         }
         .task {
             if WhatsNew.shouldShow() { showWhatsNew = true }
+            syncPlanTargets()
         }
+        // Keep the app's targets mirroring the plan whenever it's built / reviewed / edited (any of
+        // those bumps updatedAt), so a change Vita makes to the plan reflects everywhere instantly.
+        .onChange(of: coachPlans.first?.updatedAt) { _, _ in syncPlanTargets() }
         // Settings now lives behind the pixel-avatar button in the Dashboard header.
+    }
+
+    /// Mirror the active plan's targets into the profile overrides — the single source of truth the
+    /// rings / achievements / Vita context all read through `dailyCalorieTarget` / `macroTargets`.
+    /// No plan (or no targets set) → 0, which falls back to the computed defaults.
+    private func syncPlanTargets() {
+        let plan = coachPlans.first
+        let newCalorie = (plan?.hasRange == true) ? (plan?.calorieMin ?? 0) : 0
+        let newProtein = max(0, plan?.proteinTarget ?? 0)
+        if profile.calorieTargetOverride != newCalorie { profile.calorieTargetOverride = newCalorie }
+        if profile.proteinTargetOverride != newProtein { profile.proteinTargetOverride = newProtein }
     }
 }
