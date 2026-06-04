@@ -169,6 +169,46 @@ struct MarkdownMessage: View {
     }
 }
 
+/// Reveals an assistant reply progressively — a gentle "typing it out" effect, like the big chat
+/// apps. It's a VIEW-only animation over text that's already fully received and persisted: it just
+/// animates how the freshest reply first appears, by feeding `MarkdownMessage` a growing prefix of
+/// the source (so the markdown stays formatted the whole way, not plain-then-reformatted). Reveals
+/// the whole message in ~1.1s regardless of length, and respects Reduce Motion (shows it at once).
+struct TypewriterMarkdown: View {
+    let fullText: String
+    var color: Color = Theme.textPrimary
+    var onComplete: () -> Void = {}
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var revealed = 0
+    @State private var started = false
+    @State private var task: Task<Void, Never>?
+
+    var body: some View {
+        let total = fullText.count
+        let shown = revealed >= total ? fullText : String(fullText.prefix(revealed))
+        MarkdownMessage(shown, color: color)
+            .onAppear { start(total: total) }
+            .onDisappear { task?.cancel() }
+    }
+
+    private func start(total: Int) {
+        guard !started else { return }
+        started = true
+        guard !reduceMotion, total > 0 else { revealed = total; onComplete(); return }
+        let frames = 70                                    // ~70 × 16ms ≈ 1.1s end-to-end
+        let step = max(1, Int((Double(total) / Double(frames)).rounded(.up)))
+        task = Task { @MainActor in
+            while revealed < total {
+                try? await Task.sleep(for: .milliseconds(16))
+                if Task.isCancelled { return }
+                revealed = min(total, revealed + step)
+            }
+            onComplete()
+        }
+    }
+}
+
 #if DEBUG
 extension MarkdownMessage {
     /// Test-only: a compact, comparable description of the parsed blocks, e.g.
