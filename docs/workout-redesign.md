@@ -87,6 +87,12 @@ muscle group; the log grid shows YOUR recents first, then these defaults.
 (Sources: bestusedgymequipment.com, xcelerategyms.com, vasafitness.com gym-machine lists; 24 Hour
 Fitness uses Hoist selectorized machines per setforset.com.)
 
-## Open questions for Bryan
-- Reps/sets: track them, or **just optional weight** to start (simpler)?
-- Machine icons: SF Symbols (fast, consistent) vs custom pixel/asset icons (cuter, lots of art)?
+## Decisions — LOCKED (2026-06-04). Design approved → next is the Phase 1 build.
+- **Tracking:** tap a machine → it assumes **3 sets × 10 reps** + optional weight; reps, sets, and
+  weight are all **editable and all optional** (zero-friction default — just tapping logs a sensible 3×10).
+  So `ExerciseEntry` stores `weightLbs?`, `reps` (default 10), `sets` (default 3).
+- **Icons:** **SF Symbols to start** — focus on getting the right/proper machines first; swap in custom
+  pixel art later only if it adds clarity.
+- **Focuses:** Chest, Back, Shoulders, Arms, Legs, Core, + Other (custom).
+- **Placement:** new **Workouts** bottom tab.
+- **Catalog:** the web-researched list above seeds the defaults; "Other" + describe-to-Vita covers the rest.
