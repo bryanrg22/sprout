@@ -38,6 +38,9 @@ struct CoachView: View {
     @State private var showCamera = false
     @State private var showLibrary = false
     @FocusState private var inputFocused: Bool
+    /// The id of the assistant message currently "typing out" (typewriter reveal). Only the
+    /// freshest reply animates; everything in history renders instantly. Cleared when it finishes.
+    @State private var streamingMessageID: UUID?
 
     /// "Ask Vita about this": set when the user long-pressed a component on another screen.
     @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
@@ -168,7 +171,12 @@ struct CoachView: View {
                     ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
                         MessageRow(message: message,
                                    coachName: coachName,
-                                   showsTimestamp: showsTimestamp(at: index))
+                                   showsTimestamp: showsTimestamp(at: index),
+                                   isStreaming: message.id == streamingMessageID,
+                                   onStreamComplete: {
+                                       if streamingMessageID == message.id { streamingMessageID = nil }
+                                       scrollToBottom(proxy)
+                                   })
                             .id(message.id)
                     }
                     if isSending {
@@ -409,6 +417,7 @@ struct CoachView: View {
         showMissingKeyBanner = false
         // A brand-new message supersedes any unanswered tool proposal.
         pendingTool = nil
+        streamingMessageID = nil   // snap any in-progress reveal to full before the next turn
         if text == draft.trimmingCharacters(in: .whitespacesAndNewlines) { draft = "" }
         // Keep the keyboard up after send (chat-standard, like Messages). Dismissing it here —
         // while the message inserts AND the list auto-scrolls — was the freeze trigger: the
@@ -481,8 +490,10 @@ struct CoachView: View {
         // whether or not a tool was also requested.
         let trimmed = turn.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
-            context.insert(ChatMessage(role: "assistant", content: trimmed))
+            let reply = ChatMessage(role: "assistant", content: trimmed)
+            context.insert(reply)
             try? context.save()
+            streamingMessageID = reply.id   // type this freshest reply out, word by word
         }
 
         guard let toolUse = turn.toolUse else {
@@ -817,6 +828,9 @@ private struct MessageRow: View {
     let message: ChatMessage
     let coachName: String
     let showsTimestamp: Bool
+    /// True only for the freshest assistant reply, which types itself out; history renders instantly.
+    var isStreaming: Bool = false
+    var onStreamComplete: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.xs) {
@@ -866,6 +880,12 @@ private struct MessageRow: View {
                         Text(Self.styled(message.content))
                             .font(.body)
                             .foregroundStyle(Theme.background)
+                    } else if isStreaming {
+                        // The freshest reply types itself out word by word, then settles into the
+                        // same markdown rendering as the rest.
+                        TypewriterMarkdown(fullText: message.content,
+                                           color: Theme.textPrimary,
+                                           onComplete: onStreamComplete)
                     } else {
                         // Vita's replies render real markdown blocks (lists, headings, rules)
                         // instead of leaking literal `- ` / `##` / `---`.
