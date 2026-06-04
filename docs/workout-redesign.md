@@ -15,8 +15,9 @@ to see everything you did**, like the food log.
 
 ## Data model (new)
 - `WorkoutSession` (@Model): `id`, `date` (startOfDay + time), `type` (enum: gym, run, walk, cycle,
-  swim, sport, yoga, other), `focuses` (gym only — Set<MuscleFocus>: push/pull/legs/arms/core; stored
-  as a String for CloudKit), `durationMinutes?`, `distance?`/`pace?` (cardio), `notes?`. CloudKit-safe
+  swim, sport, yoga, other), `focuses` (gym only — Set<MuscleFocus>: **Chest, Back, Shoulders, Arms,
+  Legs, Core, + Other (custom)** — body-part split, covers PPL too; stored as a string for CloudKit),
+  `durationMinutes?`, `distance?`/`pace?` (cardio), `notes?`. CloudKit-safe
   defaults throughout (mirror BuddySnapshot/ChecklistItem).
 - `ExerciseEntry` (@Model): `id`, belongs-to `WorkoutSession`, `machineKey` (stable id into the
   catalog), `displayName`, `iconName` (SF Symbol or asset), optional `weightLbs?`, optional `reps?` /
@@ -71,7 +72,21 @@ icon. (Trade-off: 6 tabs is tighter; if it feels crowded we can merge Workouts u
 3. **Catalog + community:** describe-a-missing-machine → MachineRequest (+ optional image); grow the
    catalog.
 
+## Machine catalog (web-researched — 24 Hour Fitness / LA Fitness / USC rec / commercial)
+Seed list; "Other" + the describe-to-Vita flow covers anything missing. Each machine is tagged by
+muscle group; the log grid shows YOUR recents first, then these defaults.
+
+- **Chest:** Chest press · Incline chest press · Pec deck (chest fly) · Cable crossover · Bench press · Push-up
+- **Back:** Lat pulldown · Seated cable row · Assisted pull-up · T-bar / row machine · Back extension · Deadlift
+- **Shoulders:** Shoulder press · Lateral raise · Reverse pec deck (rear delt) · Cable lateral raise · Overhead press
+- **Arms:** Bicep curl · Preacher curl · Tricep pushdown · Assisted dip · Cable curl · Skullcrusher
+- **Legs:** Leg press · Leg extension · Leg curl · Hack squat · Smith machine · Calf raise · Hip thrust · Hip abductor · Hip adductor · Squat rack
+- **Core:** Ab crunch machine · Cable crunch · Captain's chair (leg raise) · Roman chair / back extension
+- **Cardio (run / other types):** Treadmill · Bike · Elliptical · Rower · Stairmaster
+
+(Sources: bestusedgymequipment.com, xcelerategyms.com, vasafitness.com gym-machine lists; 24 Hour
+Fitness uses Hoist selectorized machines per setforset.com.)
+
 ## Open questions for Bryan
 - Reps/sets: track them, or **just optional weight** to start (simpler)?
 - Machine icons: SF Symbols (fast, consistent) vs custom pixel/asset icons (cuter, lots of art)?
-- The initial curated machine list — want to hand me your go-to machines so the defaults feel right?
