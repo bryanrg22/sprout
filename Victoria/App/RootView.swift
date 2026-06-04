@@ -136,13 +136,12 @@ struct MainTabView: View {
 
             CoachView(profile: profile)
                 .tabItem { Label(profile.coachName, systemImage: "sparkles") }.tag(4)
-
-            NavigationStack { BuddyHomeView() }
-                .tabItem { Label("Buddy", systemImage: "person.2.fill") }.tag(5)
         }
         .environment(askVita)
-        // When a long-press asks Vita about something, jump to her tab so she can answer.
-        // (Vita is tag 4 now that the Workouts tab sits at 3.)
+        // Five tabs is iOS's max before it collapses the rest into a "More" list — which would bury
+        // Vita (the flagship coach). So the bar is Today · Nutrients · Progress · Workouts · Vita,
+        // and Buddy lives as a Dashboard quick-link (it was one before, and stays one tap away).
+        // When a long-press asks Vita about something, jump to her tab so she can answer (tag 4).
         .onChange(of: askVita.pendingTopic) { _, topic in
             if topic != nil { selection = 4 }
         }
