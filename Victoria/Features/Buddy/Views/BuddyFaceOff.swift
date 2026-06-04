@@ -477,14 +477,6 @@ private struct MovementRow: View {
 }
 
 /// A 1pt horizontal line shape for the dotted goal marker.
-private struct Line: Shape {
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        p.move(to: CGPoint(x: rect.minX, y: rect.midY))
-        p.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-        return p
-    }
-}
 
 // MARK: - Pixel avatar badge (reuses the existing companion pixel views)
 

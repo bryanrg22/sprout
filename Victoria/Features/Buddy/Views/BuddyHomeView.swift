@@ -76,29 +76,6 @@ struct BuddyHomeView: View {
 
     // MARK: Friendly-rivalry prompts (kind, activity-only)
 
-    /// My steps as a fraction of MY OWN goal (clamped 0...1), or `nil` if no goal is set —
-    /// the SAME fair math the face-off uses, so the prompts and the bars never disagree.
-    private var myStepFraction: Double? {
-        guard myStepGoal > 0 else { return nil }
-        return min(max(Double(todaySteps) / Double(myStepGoal), 0), 1)
-    }
-    /// Buddy's steps as a fraction of THEIR OWN goal (clamped 0...1), or `nil` if unknown.
-    private var buddyStepFraction: Double? {
-        guard let snap = model.buddySnapshot, snap.stepGoal > 0 else { return nil }
-        return min(max(Double(snap.stepsToday) / Double(snap.stepGoal), 0), 1)
-    }
-    /// The (at most two) playful, kind prompts that apply right now, from my + buddy activity.
-    private func challengePrompts(for snap: BuddySnapshotPayload) -> [BuddyChallengePrompt] {
-        BuddyChallenges.prompts(
-            myStepFraction: myStepFraction,
-            theirStepFraction: buddyStepFraction,
-            myWorkedOut: myWorkedOutToday,
-            theirWorkedOut: snap.workedOutToday,
-            myLoggedToday: myLoggedToday,
-            theirLoggedToday: snap.loggedTodayEffective,   // gated: ignore a stale (pre-today) snapshot
-            buddyName: snap.displayName)
-    }
-
     var body: some View {
         ScrollView {
             VStack(spacing: Theme.Space.md) {
@@ -265,28 +242,6 @@ struct BuddyHomeView: View {
 
         // (e) Recent nudges.
         recentNudges.appearLift(didAppear, index: 6)
-    }
-
-    /// The playful, KIND friendly-rivalry prompt(s) for the current activity, in an elevated
-    /// card. Renders nothing when there's nothing to prompt (so it never shows an empty box).
-    @ViewBuilder
-    private func challengeSection(for snap: BuddySnapshotPayload) -> some View {
-        let prompts = challengePrompts(for: snap)
-        if !prompts.isEmpty {
-            VStack(alignment: .leading, spacing: Theme.Space.sm) {
-                Text("Today's friendly nudge")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                ForEach(prompts) { prompt in
-                    BuddyChallengeCard(prompt: prompt) { message, kind in
-                        Task { await model.send(text: message, kind: kind) }
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .cardElevated()
-            .appearLift(didAppear, index: 4)
-        }
     }
 
     /// The shared panda inside an elevated card, with a header. Passes BOTH contributors so
