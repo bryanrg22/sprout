@@ -83,6 +83,9 @@ struct WeightView: View {
                     emptyState
                 } else {
                     VStack(spacing: Theme.spacingL) {
+                        // The adaptive Plan leads Progress — the AI's read on whether she's actually
+                        // getting there, with targets + insights (see docs/adaptive-plan.md).
+                        PlanCard(profile: profile)
                         hero
                         // AI recap of the WHOLE picture — weight, nutrition, activity,
                         // consistency — so Progress isn't just the scale. Self-manages its

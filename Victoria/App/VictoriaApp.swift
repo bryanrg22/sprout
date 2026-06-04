@@ -17,6 +17,8 @@ struct VictoriaApp: App {
             ChatMessage.self,
             // Vita's long-term memory (durable notes + rolling conversation summary).
             CoachMemory.self,
+            // The adaptive Plan — the AI-authored, evolving "understanding of you" (see docs/adaptive-plan.md).
+            CoachPlan.self,
             StepsEntry.self,
             AchievementUnlock.self,
             InsightShown.self,
