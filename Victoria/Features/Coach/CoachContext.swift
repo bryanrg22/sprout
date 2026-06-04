@@ -283,20 +283,11 @@ enum CoachContext {
                               weights: [WeightEntry],
                               calendar: Calendar = .current,
                               now: Date = .now) -> Int {
-        // Collect the set of start-of-day timestamps that have any activity.
-        var loggedDays = Set<Date>()
-        for f in foods { loggedDays.insert(calendar.startOfDay(for: f.date)) }
-        for w in weights { loggedDays.insert(calendar.startOfDay(for: w.date)) }
-        guard !loggedDays.isEmpty else { return 0 }
-
-        var streak = 0
-        var day = calendar.startOfDay(for: now)
-        while loggedDays.contains(day) {
-            streak += 1
-            guard let prev = calendar.date(byAdding: .day, value: -1, to: day) else { break }
-            day = prev
-        }
-        return streak
+        // Delegates to the shared StreakCalculator so the coach reports the SAME streak as the
+        // dashboard and widget: active logging only (food + manual weigh-ins). Auto-imported steps
+        // and scale-synced weights don't count. (Water isn't in the coach's data here, so water-
+        // only days aren't counted — a rare edge that doesn't move the headline number.)
+        StreakCalculator.loggingStreak(foods: foods, weights: weights, calendar: calendar, now: now)
     }
 
     // MARK: - Helpers
