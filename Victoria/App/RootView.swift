@@ -106,6 +106,12 @@ struct MainTabView: View {
     @State private var askVita = AskVitaCenter()
     /// "What's New" sheet — shown once per marketing version (see `WhatsNew`).
     @State private var showWhatsNew = false
+    /// After What's New, invite a planless user to build their adaptive plan ("let's personalize you").
+    @State private var showPlanInvite = false
+    @State private var showPlanIntake = false
+    @Query private var coachPlans: [CoachPlan]
+    @Query private var allFoods: [FoodEntry]
+    @Query private var allWeights: [WeightEntry]
 
     var body: some View {
         TabView(selection: $selection) {
@@ -130,8 +136,22 @@ struct MainTabView: View {
             if topic != nil { selection = 3 }
         }
         // "What's New" once per update — a celebratory rundown of the release.
-        .sheet(isPresented: $showWhatsNew, onDismiss: { WhatsNew.markSeen() }) {
+        .sheet(isPresented: $showWhatsNew, onDismiss: {
+            WhatsNew.markSeen()
+            // Right after the rundown, invite a planless user to make Sprout theirs.
+            if coachPlans.isEmpty { showPlanInvite = true }
+        }) {
             WhatsNewView(release: WhatsNew.current)
+        }
+        // "Let's personalize you" — the entry into the adaptive Plan, surfaced once after What's New.
+        .confirmationDialog("Make Sprout yours 🌱", isPresented: $showPlanInvite, titleVisibility: .visible) {
+            Button("Build my plan") { showPlanIntake = true }
+            Button("Maybe later", role: .cancel) {}
+        } message: {
+            Text("Let \(profile.coachName.isEmpty ? "Vita" : profile.coachName) study your goals and every day you've logged, then build a personal plan that adapts as you go.")
+        }
+        .sheet(isPresented: $showPlanIntake) {
+            PlanIntakeView(profile: profile, foods: allFoods, weights: allWeights)
         }
         .task {
             if WhatsNew.shouldShow() { showWhatsNew = true }
