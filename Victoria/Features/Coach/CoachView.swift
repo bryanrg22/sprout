@@ -253,16 +253,21 @@ struct CoachView: View {
 
     private var inputArea: some View {
         VStack(spacing: Theme.Space.sm) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Theme.Space.xs) {
-                    ForEach(quickPrompts, id: \.self) { prompt in
-                        QuickPromptChip(text: prompt) { send(text: prompt) }
-                            .disabled(isSending || pendingTool != nil)
-                            .opacity(isSending || pendingTool != nil ? 0.5 : 1)
+            // Quick-prompt chips — only while the field is empty. The moment she starts typing they
+            // get out of the way (they're starters, not a toolbar competing with her own words).
+            if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Theme.Space.xs) {
+                        ForEach(quickPrompts, id: \.self) { prompt in
+                            QuickPromptChip(text: prompt) { send(text: prompt) }
+                                .disabled(isSending || pendingTool != nil)
+                                .opacity(isSending || pendingTool != nil ? 0.5 : 1)
+                        }
                     }
+                    .padding(.horizontal, Theme.Space.md)
+                    .padding(.bottom, 2)
                 }
-                .padding(.horizontal, Theme.Space.md)
-                .padding(.bottom, 2)
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
 
             if let img = attachedImage {
@@ -339,6 +344,7 @@ struct CoachView: View {
             .padding(.bottom, Theme.Space.sm)
         }
         .padding(.top, Theme.Space.sm)
+        .animation(.easeInOut(duration: 0.2), value: draft.isEmpty)   // fade the chips in/out smoothly
         .background(
             ZStack(alignment: .top) {
                 Rectangle()
