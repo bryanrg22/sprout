@@ -257,4 +257,39 @@ final class AdaptivePlanTests: XCTestCase {
         XCTAssertTrue(sys.contains("No change needed — on track")) // the explicit no-op line
         XCTAssertTrue(sys.lowercased().contains("only if the data warrants"))
     }
+
+    // MARK: - Safety flags (P4)
+
+    private func femaleLossProfile() -> UserProfile {
+        let p = UserProfile()
+        p.sex = .female
+        p.pace = .relaxed   // a loss pace
+        return p
+    }
+
+    private func days(_ kcal: Double, count: Int, endingAt now: Date, cal: Calendar) -> [FoodEntry] {
+        (0..<count).map { FoodEntry(date: cal.date(byAdding: .day, value: -$0, to: now)!, name: "x", calories: kcal) }
+    }
+
+    func testSafetyFlagsCatchVeryLowIntake() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = cal.startOfDay(for: Date(timeIntervalSince1970: 1_700_000_000))
+        let flags = PlanService.safetyFlags(profile: femaleLossProfile(),
+                                            foods: days(900, count: 3, endingAt: now, cal: cal),
+                                            weights: [], now: now, calendar: cal)
+        XCTAssertTrue(flags.contains { $0.contains("below the safe floor") })
+    }
+
+    func testSafetyFlagsQuietAtHealthyIntake() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = cal.startOfDay(for: Date(timeIntervalSince1970: 1_700_000_000))
+        let flags = PlanService.safetyFlags(profile: femaleLossProfile(),
+                                            foods: days(1700, count: 3, endingAt: now, cal: cal),
+                                            weights: [], now: now, calendar: cal)
+        XCTAssertTrue(flags.isEmpty)
+    }
+
+    func testSafetyNoteEmptyWhenNothingFlagged() {
+        XCTAssertEqual(PlanService.safetyNote(profile: femaleLossProfile(), foods: [], weights: []), "")
+    }
 }
