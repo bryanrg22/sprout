@@ -61,17 +61,25 @@ enum WhatsNew {
         title: "Meet the new Vita 🌱",
         features: [
             WhatsNewFeature(
-                icon: "sparkles", tint: Theme.brand,
-                title: "Vita can log things for you now",
-                detail: "Just ask — \"log a chicken bowl, 600 cal\" or \"delete that\" — and Vita logs, edits, or removes your food, water, and weight. Quick logs apply instantly, with an Undo if she gets it wrong."),
+                icon: "text.bubble.fill", tint: Theme.brand,
+                title: "A beautiful new way to chat",
+                detail: "Vita's replies now read like a real conversation — clean lists and highlights instead of walls of text. Your suggestions stay put, the text box grows as you type, and a goal you approve stays right in your chat history."),
+            WhatsNewFeature(
+                icon: "sparkles", tint: Theme.info,
+                title: "Vita logs it for you",
+                detail: "Just ask — \"log a chicken bowl, 600 cal\" or \"delete that\" — and she logs, edits, or removes your food, water, and weight. She can see every item in your day, too. Quick logs apply instantly, with an Undo."),
+            WhatsNewFeature(
+                icon: "brain.head.profile", tint: Theme.protein,
+                title: "Vita remembers you",
+                detail: "Tell her you take creatine, train Mon/Wed/Fri, or see a nutritionist — and she'll keep it in mind in every future chat."),
             WhatsNewFeature(
                 icon: "camera.fill", tint: Theme.calories,
                 title: "Show Vita your plate",
                 detail: "Snap or attach a photo right in the chat. Vita actually sees it — and can log the meal for you."),
             WhatsNewFeature(
-                icon: "eye.fill", tint: Theme.info,
-                title: "Vita sees your whole day",
-                detail: "Ask about anything you've eaten — she knows every item you've logged and exactly how your week is going."),
+                icon: "barcode.viewfinder", tint: Theme.water,
+                title: "One scan for everything",
+                detail: "Point your camera at a barcode or a nutrition label — one Scan button figures out which, and asks how many servings you had."),
             WhatsNewFeature(
                 icon: "lightbulb.fill", tint: Theme.warning,
                 title: "Smarter Smart Picks",
@@ -83,17 +91,13 @@ enum WhatsNew {
             WhatsNewFeature(
                 icon: "person.2.fill", tint: Theme.positive,
                 title: "Your buddy & panda, reimagined",
-                detail: "One clean buddy card with weight, calories, protein and today's food — and a panda that reacts to how well you fuel it."),
-            WhatsNewFeature(
-                icon: "square.grid.2x2.fill", tint: Theme.water,
-                title: "A better home-screen widget",
-                detail: "Now shows your calories, and your rings can finally climb past 100%."),
+                detail: "One clean buddy card with weight, calories, protein and today's food — and a panda that munches its bamboo when you fuel it well."),
         ],
         fixes: [
+            "Yesterday's step count now fills in to its real total instead of freezing at a partial number.",
             "Fixed a Vita freeze when using the keyboard or sending a message.",
             "Fixed a calorie undercount when logging more than one serving (like 2 apples).",
-            "Barcode scans now read nutrition more accurately.",
-            "Home-screen percentages no longer stop at 100%.",
+            "Your home-screen widget now shows calories, and the rings can climb past 100%.",
         ])
 }
 
