@@ -45,6 +45,10 @@ final class ChecklistItem {
 /// she can plan her day in a tap. **Intentionally only movement / rest / prep**, with
 /// nothing about restricting food or chasing a number on the scale (keeps the anti-restriction
 /// tone consistent with the rest of the app).
+///
+/// These are also the documented OFFLINE FALLBACK: when there's no API key (or any AI
+/// failure), `ChecklistPlanService.fallback()` surfaces exactly this set as the quick-add
+/// chips, so the card degrades gracefully to today's behavior.
 struct ChecklistSuggestion: Identifiable, Hashable {
     let title: String
     let systemIcon: String
@@ -61,4 +65,22 @@ struct ChecklistSuggestion: Identifiable, Hashable {
         ChecklistSuggestion(title: "Meal prep",  systemIcon: "carrot.fill"),
         ChecklistSuggestion(title: "Sleep early", systemIcon: "bed.double.fill"),
     ]
+}
+
+// MARK: - ChecklistProposal bridging
+
+/// Convenience bridges between the offline `ChecklistSuggestion` presets and the AI-facing
+/// `ChecklistProposal` (defined in `ChecklistPlanService`), so the card can treat a static
+/// preset and a Vita-proposed chip uniformly in its `ForEach`.
+extension ChecklistProposal {
+    /// Lift a static preset into a proposal (used for the fallback chip set).
+    init(_ suggestion: ChecklistSuggestion) {
+        self.init(title: suggestion.title, icon: suggestion.systemIcon)
+    }
+}
+
+extension ChecklistSuggestion {
+    /// The static presets expressed as proposals — the default chip row before (or without)
+    /// a personalized plan.
+    static var allProposals: [ChecklistProposal] { all.map { ChecklistProposal($0) } }
 }

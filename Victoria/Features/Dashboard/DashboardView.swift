@@ -131,7 +131,7 @@ struct DashboardView: View {
                         }
                         .appearLift(didAppear, index: 6)
                     macrosCard.appearLift(didAppear, index: 7)
-                    ChecklistCard().appearLift(didAppear, index: 8)
+                    ChecklistCard(profile: profile).appearLift(didAppear, index: 8)
                     quickLinks.appearLift(didAppear, index: 9)
                     // Weight trend + the streak "proud of you" line moved OFF Home: Home is the daily
                     // essentials. Weight lives on Progress; the streak already shows in the header flame.
