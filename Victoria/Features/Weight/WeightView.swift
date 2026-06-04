@@ -7,6 +7,9 @@ struct WeightView: View {
     @Environment(\.modelContext) private var context
     @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
+    // Mirrors PlanCard's own query so the "Adjust plan" chip appears only once a plan exists
+    // (PlanCard shows "Build my plan" when this is empty — adjusting a plan you don't have is nonsense).
+    @Query(sort: \CoachPlan.updatedAt, order: .reverse) private var coachPlans: [CoachPlan]
 
     @State private var range: ChartRange = .threeMonths
     @State private var showingLog = false
@@ -77,7 +80,8 @@ struct WeightView: View {
                         // (see docs/adaptive-plan.md). A small "Adjust plan" chip sits right under it
                         // so tweaking the plan with Vita is one tap away.
                         PlanCard(profile: profile)
-                        adjustPlanChip
+                        // Only once a plan exists — otherwise PlanCard is showing "Build my plan".
+                        if coachPlans.first != nil { adjustPlanChip }
                         // ONE weight-trend card: the big smoothed number + rate, then the chart.
                         // The destination ("on track for …", "X to goal") lives on the plan card
                         // above, so we don't repeat it here — the dashed goal line carries it visually.
@@ -186,11 +190,15 @@ struct WeightView: View {
                         Text(t, format: .number.precision(.fractionLength(1)))
                             .font(Theme.number(56))
                             .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                             .contentTransition(.numericText())
                             .foregroundStyle(Theme.textPrimary)
                     } else {
                         Text("—")
                             .font(Theme.number(56))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                             .foregroundStyle(Theme.textPrimary)
                     }
                     Text(unitLabel)
