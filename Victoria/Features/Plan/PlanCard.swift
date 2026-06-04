@@ -126,6 +126,22 @@ struct PlanCard: View {
                 .foregroundStyle(Theme.textSecondary)
                 .padding(.top, 2)
             }
+
+            // What grounded the build — the live-web research brief (with its sources named), tucked
+            // behind a disclosure so it's there for trust without cluttering the card.
+            if !plan.researchNotes.isEmpty {
+                DisclosureGroup {
+                    MarkdownMessage(plan.researchNotes, color: Theme.textSecondary)
+                        .padding(.top, Theme.Space.xs)
+                } label: {
+                    Label("What this is based on", systemImage: "books.vertical.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                .tint(Theme.textSecondary)
+                .padding(.top, 2)
+            }
+
             if let reviewError {
                 Text(reviewError).font(.caption).foregroundStyle(Theme.warning)
                     .fixedSize(horizontal: false, vertical: true)

@@ -31,12 +31,12 @@ enum PlanService {
         // PHASE 1 — ground the heavy BUILD in current, cited evidence via a live web search. Best-effort:
         // if the key's plan doesn't allow web search (or it errors), we build from her data + the model's
         // knowledge alone. The REVIEW pass stays web-free by design (it reasons over her latest data).
-        let grounding = await researchGrounding(client: client, profile: profile, intake: intake)
+        let research = await researchGrounding(client: client, profile: profile, intake: intake)
 
         // PHASE 2 — author the structured plan, now grounded in the research.
         let result = try await client.structured(
             system: systemPrompt(profile: profile),
-            userContent: userContent(dataSummary: dataSummary, intake: intake) + coaching + grounding,
+            userContent: userContent(dataSummary: dataSummary, intake: intake) + coaching + research.grounding,
             toolName: "write_plan",
             toolDescription: "Author the user's personalized, data-grounded coaching plan.",
             schema: planSchema,
@@ -65,9 +65,11 @@ enum PlanService {
             existing.changelog = fresh.changelog
             existing.createdAt = fresh.createdAt
             existing.updatedAt = fresh.updatedAt
+            existing.researchNotes = research.notes   // the cited brief that grounded this build
             try? context.save()
             return existing
         }
+        fresh.researchNotes = research.notes
         context.insert(fresh)
         try? context.save()
         return fresh
@@ -203,17 +205,19 @@ enum PlanService {
     /// "" (an un-grounded build) on any failure, and never throws — plan creation must not depend on
     /// web search being available. Logged so the diagnostics panel shows whether it actually searched.
     @MainActor
-    static func researchGrounding(client: AnthropicClient, profile: UserProfile, intake: String) async -> String {
+    static func researchGrounding(client: AnthropicClient, profile: UserProfile, intake: String) async -> (grounding: String, notes: String) {
         guard let research = try? await client.research(
                 system: researchSystemPrompt(profile: profile),
                 userContent: researchUserContent(profile: profile, intake: intake)),
               !research.text.isEmpty else {
             Diagnostics.shared.log("plan research: none (web search unavailable or empty)", .ai)
-            return ""
+            return ("", "")
         }
         Diagnostics.shared.log("plan research: \(research.usedSearch ? "searched · " : "")\(research.text.count) chars", .ai)
-        return "\n\nCURRENT RESEARCH (from a live web search) to ground your plan — use it, and briefly "
+        let grounding = "\n\nCURRENT RESEARCH (from a live web search) to ground your plan — use it, and briefly "
             + "name the source where you lean on it so she can trust the numbers:\n\(research.text)"
+        // Return the raw brief too, so it can be stored on the plan + surfaced as "what this is based on".
+        return (grounding, research.text)
     }
 
     /// The research-phase system prompt: a meticulous coach searching the live web for the few current,

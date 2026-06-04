@@ -43,6 +43,12 @@ final class CoachPlan {
     var goalSummary: String = ""
     var timeframe: String = ""
 
+    /// The live-web research brief that grounded this build (a short cited summary). Surfaced as an
+    /// expandable "what this is based on" on the plan card. Empty when the build wasn't research-
+    /// grounded (no key / web search off). Set on generate; preserved across review. Defaulted +
+    /// kept out of `init` so it's CloudKit-migration-safe and existing call sites are unchanged.
+    var researchNotes: String = ""
+
     /// How many logged days informed this build — drives the "early read" confidence note.
     var dataPointsAtBuild: Int = 0
 
