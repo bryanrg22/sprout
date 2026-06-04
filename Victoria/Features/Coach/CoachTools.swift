@@ -50,6 +50,8 @@ enum CoachTools {
         // Adaptive Plan: record a change to her evolving Plan (the AI-authored "understanding
         // of you" on Progress) so every adaptation is visible in its changelog.
         case updatePlan            = "update_plan"
+        // Log a workout / training session — she could READ workouts but not WRITE one until now.
+        case logWorkout            = "log_workout"
     }
 
     // MARK: - Safe bounds
@@ -70,6 +72,8 @@ enum CoachTools {
     static let waterOzRange = 1.0...300.0
     /// How many containers may be logged at once (e.g. "I drank 3 bottles").
     static let waterContainersLogRange = 1...20
+    /// A logged workout's length, in minutes — generous (a 5-min walk through a long session).
+    static let workoutMinutesRange = 1...600
 
     // MARK: - Schemas (Anthropic tool-use JSON schema)
 
@@ -80,7 +84,7 @@ enum CoachTools {
         [stepGoalSchema, waterGoalSchema, paceSchema(for: profile),
          logFoodSchema, editFoodSchema, deleteFoodSchema,
          logWaterSchema(for: profile), logWeightSchema(for: profile),
-         weightGoalSchema(for: profile), rememberSchema, updatePlanSchema]
+         weightGoalSchema(for: profile), rememberSchema, updatePlanSchema, logWorkoutSchema]
     }
 
     /// Save a durable fact about the user to long-term memory. This is the tool that lets Vita
@@ -337,6 +341,41 @@ enum CoachTools {
         ]
     }
 
+    /// Workout-logging schema. Deliberately light — the goal is to reward showing up, so only the
+    /// activity `type` is required; `minutes` / `focus` / `notes` are optional.
+    private static let logWorkoutSchema: [String: Any] = [
+        "name": Name.logWorkout.rawValue,
+        "description": """
+        Log a workout / training session the user did (gym, run, walk, cycle, yoga, HIIT, sports). \
+        Use whenever she mentions exercising — "I hit the gym", "ran 3 miles", "did legs today". \
+        Only `type` is required; add `minutes`, `focus` (strength split: push/pull/legs/…), and a \
+        short `notes` if she gave them. Showing up always counts — log it whenever it comes up.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "type": [
+                    "type": "string",
+                    "description": "The kind of workout.",
+                    "enum": WorkoutType.allCases.map { $0.rawValue },
+                ],
+                "minutes": [
+                    "type": "integer",
+                    "description": "Duration in minutes, if she gave one.",
+                    "minimum": workoutMinutesRange.lowerBound,
+                    "maximum": workoutMinutesRange.upperBound,
+                ],
+                "focus": [
+                    "type": "string",
+                    "description": "Optional training split for strength days.",
+                    "enum": WorkoutFocus.allCases.map { $0.rawValue },
+                ],
+                "notes": ["type": "string", "description": "A short optional note, e.g. 'felt strong'."],
+            ],
+            "required": ["type"],
+        ],
+    ]
+
     /// Weight-logging schema — the value is in HER unit (lb or kg), stored as the entered
     /// number, exactly how the weigh-in sheet records it (no kg conversion here).
     private static func logWeightSchema(for profile: UserProfile) -> [String: Any] {
@@ -428,6 +467,7 @@ enum CoachTools {
             case weightGoal(lbs: Double)
             case rememberFact(String)
             case updatePlan(note: String)
+            case logWorkout(type: WorkoutType, minutes: Int, focus: WorkoutFocus?, notes: String?)
         }
 
         /// Whether the UI must get an explicit one-tap confirm before applying.
@@ -437,7 +477,7 @@ enum CoachTools {
         /// view reads to pick its flow — keeping the risk policy here, next to the tools.
         var requiresConfirm: Bool {
             switch name {
-            case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan:
+            case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan, .logWorkout:
                 return false   // quick + reversible → auto-apply with Undo
             case .deleteFood,                                   // destructive
                  .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal:
@@ -558,7 +598,33 @@ enum CoachTools {
 
         case .updatePlan:
             return parseUpdatePlan(input: input)
+
+        case .logWorkout:
+            return parseLogWorkout(input: input)
         }
+    }
+
+    private static func parseLogWorkout(input: [String: Any]) -> ParseResult {
+        guard let typeRaw = input["type"] as? String, let type = WorkoutType(rawValue: typeRaw) else {
+            return .invalid("I need to know what kind of workout it was. Nothing was logged.")
+        }
+        var minutes = 0
+        if let mv = doubleValue(input["minutes"]), mv > 0 {
+            let m = Int(mv.rounded())
+            guard workoutMinutesRange.contains(m) else {
+                return .invalid("That length looks off — give me minutes between "
+                              + "\(workoutMinutesRange.lowerBound) and \(workoutMinutesRange.upperBound). Nothing was logged.")
+            }
+            minutes = m
+        }
+        let focus = (input["focus"] as? String).flatMap(WorkoutFocus.init(rawValue:))
+        let rawNote = (input["notes"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let note = (rawNote?.isEmpty == false) ? rawNote : nil
+        let summary = "log a \(type.label.lowercased()) workout" + (minutes > 0 ? " (\(minutes) min)" : "")
+        return .ok(ParsedRequest(
+            name: .logWorkout,
+            confirmSummary: summary,
+            action: .logWorkout(type: type, minutes: minutes, focus: focus, notes: note)))
     }
 
     private static func parseRemember(input: [String: Any]) -> ParseResult {
@@ -882,6 +948,16 @@ enum CoachTools {
             if let note { msg += " Note: \(note)." }
             return Applied(message: msg,
                            undo: { context.delete(entry); try? context.save() })
+
+        case .logWorkout(let type, let minutes, let focus, let notes):
+            let workout = WorkoutEntry(type: type, durationMinutes: minutes, focus: focus, notes: notes)
+            context.insert(workout)
+            try? context.save()
+            var wmsg = "Logged a \(workout.type.label.lowercased()) workout"
+            if minutes > 0 { wmsg += " — \(minutes) min" }
+            wmsg += ". Showing up counts 💪"
+            return Applied(message: wmsg,
+                           undo: { context.delete(workout); try? context.save() })
 
         case .editFood(let id, let changes):
             guard let entry = fetchFood(id: id, context: context) else {

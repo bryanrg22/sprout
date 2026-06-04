@@ -25,7 +25,7 @@ final class CoachToolsWriteTests: XCTestCase {
 
     /// A fresh in-memory context holding every model the write tools touch.
     private func makeContext() throws -> ModelContext {
-        let schema = Schema([UserProfile.self, FoodEntry.self, WaterEntry.self, WeightEntry.self, CoachMemory.self])
+        let schema = Schema([UserProfile.self, FoodEntry.self, WaterEntry.self, WeightEntry.self, CoachMemory.self, WorkoutEntry.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: config)
         return ModelContext(container)
@@ -86,6 +86,42 @@ final class CoachToolsWriteTests: XCTestCase {
         case .invalid(let why):
             return why
         }
+    }
+
+    // MARK: - log_workout (Vita can now WRITE workouts, not just read them)
+
+    func testLogWorkoutParsesAndInsertsWithUndo() throws {
+        let ctx = try makeContext()
+        let profile = lossProfile()
+        guard let req = expectOK(.logWorkout,
+                                 ["type": "strength", "minutes": 45, "focus": "legs", "notes": "felt strong"],
+                                 profile: profile) else { return }
+        XCTAssertFalse(req.requiresConfirm)   // quick, reversible log → auto-apply with Undo
+        let applied = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
+
+        let workouts = try ctx.fetch(FetchDescriptor<WorkoutEntry>())
+        XCTAssertEqual(workouts.count, 1)
+        XCTAssertEqual(workouts.first?.type, .strength)
+        XCTAssertEqual(workouts.first?.durationMinutes, 45)
+        XCTAssertEqual(workouts.first?.focus, .legs)
+
+        applied.undo?()
+        XCTAssertEqual(try ctx.fetch(FetchDescriptor<WorkoutEntry>()).count, 0)
+    }
+
+    func testLogWorkoutTypeOnlyIsFine() throws {
+        let ctx = try makeContext()
+        let profile = lossProfile()
+        guard let req = expectOK(.logWorkout, ["type": "run"], profile: profile) else { return }
+        _ = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
+        let workouts = try ctx.fetch(FetchDescriptor<WorkoutEntry>())
+        XCTAssertEqual(workouts.first?.type, .run)
+        XCTAssertEqual(workouts.first?.durationMinutes, 0)   // minutes optional → 0
+    }
+
+    func testLogWorkoutRejectsUnknownTypeAndAbsurdDuration() {
+        _ = expectInvalid(.logWorkout, ["type": "underwater-basket-weaving"], profile: lossProfile())
+        _ = expectInvalid(.logWorkout, ["type": "cardio", "minutes": 99999], profile: lossProfile())
     }
 
     /// Insert a food entry into the context for today (so lookup tools can find it).

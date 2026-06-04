@@ -8,6 +8,7 @@ struct PlanCard: View {
     let profile: UserProfile
 
     @Environment(\.modelContext) private var context
+    @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
     @Query(sort: \CoachPlan.updatedAt, order: .reverse) private var plans: [CoachPlan]
     @Query private var foods: [FoodEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
@@ -108,7 +109,9 @@ struct PlanCard: View {
             // Insight "tickets".
             if !plan.insights.isEmpty {
                 VStack(spacing: Theme.Space.sm) {
-                    ForEach(plan.insights) { InsightRow(insight: $0) }
+                    ForEach(plan.insights) { insight in
+                        InsightRow(insight: insight) { askInsight(insight) }
+                    }
                 }
                 .padding(.top, Theme.Space.xs)
             }
@@ -154,6 +157,16 @@ struct PlanCard: View {
         isReviewing = false
     }
 
+    /// Tap an insight → hand it to Vita (who already has the plan in her context) so the user can
+    /// dig in. Sets the AskVita topic; MainTabView flips to the Vita tab and Vita answers it.
+    private func askInsight(_ insight: PlanInsight) {
+        askVita?.ask(AskVitaTopic(
+            name: insight.title,
+            icon: "sparkles",
+            value: "",
+            question: "About my plan — \"\(insight.title)\": \(insight.body)\n\nCan you explain this more and tell me what I should actually do?"))
+    }
+
     private func targetStat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
@@ -165,6 +178,7 @@ struct PlanCard: View {
 /// One insight ticket — tone-colored dot + title + body.
 private struct InsightRow: View {
     let insight: PlanInsight
+    var onTap: () -> Void = {}
 
     private var tint: Color {
         switch insight.tone {
@@ -182,17 +196,26 @@ private struct InsightRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: Theme.Space.sm) {
-            Image(systemName: icon).font(.subheadline).foregroundStyle(tint).padding(.top, 1)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(insight.title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(insight.body).font(.subheadline).foregroundStyle(Theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        Button(action: onTap) {
+            HStack(alignment: .top, spacing: Theme.Space.sm) {
+                Image(systemName: icon).font(.subheadline).foregroundStyle(tint).padding(.top, 1)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(insight.title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(insight.body).font(.subheadline).foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: Theme.Space.xs)
+                // Hints it's tappable — taps open Vita to dig into this insight.
+                Image(systemName: "chevron.right")
+                    .font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary.opacity(0.6))
+                    .padding(.top, 3)
             }
-            Spacer(minLength: 0)
+            .padding(Theme.Space.md)
+            .frame(maxWidth: .infinity)
+            .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
+            .contentShape(Rectangle())
         }
-        .padding(Theme.Space.md)
-        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
+        .buttonStyle(.plain)
     }
 }
