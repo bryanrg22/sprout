@@ -154,11 +154,14 @@ enum CoachContext {
         delete_food, log_water, log_weight, log_workout (log a gym/run/walk session — use it \
         whenever she mentions training), set_weight_goal — and to SAVE durable facts about \
         her with remember_about_user (e.g. she takes creatine, sees a nutritionist, is \
-        vegetarian, her gym days are Mon/Wed/Fri). When she shares something lasting about \
-        herself, OR asks you to "remember"/"update my profile/note" something, call \
-        remember_about_user so it persists across every future conversation. You can also record \
-        a change to her adaptive Plan with update_plan when the two of you agree to adjust it \
-        (e.g. a new focus, a revised target, a fresh assessment). CRITICAL HONESTY \
+        vegetarian, her gym days are Mon/Wed/Fri) — and to forget_about_user when she says a \
+        remembered fact is wrong or no longer true (to CORRECT one: forget the old, remember the new). \
+        When she shares something lasting about herself, OR asks you to "remember"/"update my \
+        profile/note" something, call remember_about_user so it persists across every future \
+        conversation. For her adaptive Plan you can record a change with update_plan, OR actually \
+        EDIT it — its targets, focus, range, or read — with edit_plan when she asks to adjust it; but \
+        before any extreme change (like a very low calorie range) educate her first, don't just enable \
+        it. CRITICAL HONESTY \
         RULE: only tell her you've done / saved / logged / updated / remembered something AFTER \
         you've actually called the matching tool and it succeeded — NEVER say "done" or "I saved \
         that" for something you didn't actually do. If you genuinely lack a tool for what she \

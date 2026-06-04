@@ -25,7 +25,7 @@ final class CoachToolsWriteTests: XCTestCase {
 
     /// A fresh in-memory context holding every model the write tools touch.
     private func makeContext() throws -> ModelContext {
-        let schema = Schema([UserProfile.self, FoodEntry.self, WaterEntry.self, WeightEntry.self, CoachMemory.self, WorkoutEntry.self])
+        let schema = Schema([UserProfile.self, FoodEntry.self, WaterEntry.self, WeightEntry.self, CoachMemory.self, WorkoutEntry.self, CoachPlan.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: config)
         return ModelContext(container)
@@ -122,6 +122,73 @@ final class CoachToolsWriteTests: XCTestCase {
     func testLogWorkoutRejectsUnknownTypeAndAbsurdDuration() {
         _ = expectInvalid(.logWorkout, ["type": "underwater-basket-weaving"], profile: lossProfile())
         _ = expectInvalid(.logWorkout, ["type": "cardio", "minutes": 99999], profile: lossProfile())
+    }
+
+    // MARK: - edit_plan + forget_about_user (Vita edits the plan + profile docs)
+
+    func testEditPlanUpdatesOnlyGivenFieldsWithUndo() throws {
+        let ctx = try makeContext()
+        let profile = lossProfile()
+        let plan = CoachPlan(headline: "Old", calorieMin: 1600, calorieMax: 1750, proteinTarget: 120)
+        ctx.insert(plan); try? ctx.save()
+
+        guard let req = expectOK(.editPlan,
+                                 ["protein_target": 150, "calorie_max": 1800, "change_note": "Bumped protein + ceiling"],
+                                 profile: profile) else { return }
+        XCTAssertFalse(req.requiresConfirm)
+        let applied = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
+
+        let updated = try XCTUnwrap(CoachPlan.current(in: ctx))
+        XCTAssertEqual(updated.proteinTarget, 150)
+        XCTAssertEqual(updated.calorieMax, 1800)
+        XCTAssertEqual(updated.calorieMin, 1600)                                  // untouched
+        XCTAssertTrue(updated.changelog.last?.summary.contains("Bumped protein") ?? false)
+
+        applied.undo?()
+        let reverted = try XCTUnwrap(CoachPlan.current(in: ctx))
+        XCTAssertEqual(reverted.proteinTarget, 120)
+        XCTAssertEqual(reverted.calorieMax, 1750)
+    }
+
+    func testEditPlanRejectsInvertedRange() {
+        _ = expectInvalid(.editPlan, ["calorie_min": 2000, "calorie_max": 1500, "change_note": "x"], profile: lossProfile())
+    }
+
+    func testEditPlanWithNoPlanIsGracious() throws {
+        let ctx = try makeContext()
+        guard let req = expectOK(.editPlan, ["protein_target": 150, "change_note": "x"], profile: lossProfile()) else { return }
+        let applied = CoachTools.applyReturningUndo(req, to: lossProfile(), context: ctx)
+        XCTAssertTrue(applied.message.contains("doesn't have a plan yet"))
+        XCTAssertNil(applied.undo)
+    }
+
+    func testForgetRemovesMatchingProfileNoteWithUndo() throws {
+        let ctx = try makeContext()
+        let profile = lossProfile()
+        let memory = CoachMemory.fetchOrCreate(in: ctx, profile: profile)
+        memory.profileNotes = "Takes creatine\nWorks at NVIDIA 9-5\nVegetarian"
+        try? ctx.save()
+
+        guard let req = expectOK(.forgetFact, ["fact": "creatine"], profile: profile) else { return }
+        let applied = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
+        let m = CoachMemory.fetchOrCreate(in: ctx, profile: profile)
+        XCTAssertFalse(m.profileNotes.contains("creatine"))
+        XCTAssertTrue(m.profileNotes.contains("NVIDIA"))                          // other notes survive
+
+        applied.undo?()
+        XCTAssertTrue(CoachMemory.fetchOrCreate(in: ctx, profile: profile).profileNotes.contains("creatine"))
+    }
+
+    func testForgetWhenNothingMatchesIsGracious() throws {
+        let ctx = try makeContext()
+        let profile = lossProfile()
+        let memory = CoachMemory.fetchOrCreate(in: ctx, profile: profile)
+        memory.profileNotes = "Vegetarian"
+        try? ctx.save()
+        guard let req = expectOK(.forgetFact, ["fact": "creatine"], profile: profile) else { return }
+        let applied = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
+        XCTAssertTrue(applied.message.contains("didn't find"))
+        XCTAssertNil(applied.undo)
     }
 
     /// Insert a food entry into the context for today (so lookup tools can find it).
