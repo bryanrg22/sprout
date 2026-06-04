@@ -126,7 +126,7 @@ struct PlanIntakeView: View {
             ProgressView().controlSize(.large).tint(Theme.brand)
             Text("\(coachName) is studying your data…")
                 .font(.headline).foregroundStyle(Theme.textPrimary)
-            Text("Reading every day you've logged and thinking through how to actually get you there. This takes a few seconds.")
+            Text("Reading every day you've logged, checking current research, and thinking through how to actually get you there. This takes a moment.")
                 .font(.subheadline).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

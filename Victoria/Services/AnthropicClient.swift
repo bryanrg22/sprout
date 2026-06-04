@@ -172,6 +172,39 @@ struct AnthropicClient {
         throw AIConfig.AIError.decoding("no tool_use block")
     }
 
+    // MARK: - Web-search-grounded research (the heavy plan build only)
+    /// A research turn that searches the LIVE web — Anthropic's `web_search` server tool runs the
+    /// search loop server-side — and returns a concise, CITED synthesis. Used to ground the one-time
+    /// plan build in current evidence rather than the model's training alone (the review pass stays
+    /// web-free by design). Returns the assistant's prose, with citations riding inline.
+    ///
+    /// Best-effort by contract: callers should `try?` this and fall back to an un-grounded build, so
+    /// a key whose plan doesn't allow web search (or a transient failure) can never block plan
+    /// creation. `usedSearch` reports whether the model actually ran a search, for diagnostics.
+    func research(system: String,
+                  userContent: String,
+                  model: String = AIConfig.planModel,
+                  maxUses: Int = 5,
+                  maxTokens: Int = 1800) async throws -> (text: String, usedSearch: Bool) {
+        let body: [String: Any] = [
+            "model": model,
+            "max_tokens": maxTokens,
+            "system": system,
+            "tools": [["type": "web_search_20250305", "name": "web_search", "max_uses": maxUses]],
+            "messages": [["role": "user", "content": userContent]],
+        ]
+        let json = try await send(body)
+        guard let content = json["content"] as? [[String: Any]] else {
+            throw AIConfig.AIError.decoding("missing content")
+        }
+        let text = content
+            .compactMap { ($0["type"] as? String) == "text" ? $0["text"] as? String : nil }
+            .joined(separator: "\n")
+        // The API emits `server_tool_use` blocks when it actually searches — surface that for logging.
+        let usedSearch = content.contains { ($0["type"] as? String) == "server_tool_use" }
+        return (text, usedSearch)
+    }
+
     /// Build an image content block from JPEG/PNG data.
     static func imageBlock(_ data: Data, mediaType: String = "image/jpeg") -> [String: Any] {
         ["type": "image",

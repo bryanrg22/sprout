@@ -27,9 +27,16 @@ enum PlanService {
 
         let coaching = coachingNote(profile: profile, foods: foods, weights: weights)
         let client = try AnthropicClient()
+
+        // PHASE 1 — ground the heavy BUILD in current, cited evidence via a live web search. Best-effort:
+        // if the key's plan doesn't allow web search (or it errors), we build from her data + the model's
+        // knowledge alone. The REVIEW pass stays web-free by design (it reasons over her latest data).
+        let grounding = await researchGrounding(client: client, profile: profile, intake: intake)
+
+        // PHASE 2 — author the structured plan, now grounded in the research.
         let result = try await client.structured(
             system: systemPrompt(profile: profile),
-            userContent: userContent(dataSummary: dataSummary, intake: intake) + coaching,
+            userContent: userContent(dataSummary: dataSummary, intake: intake) + coaching + grounding,
             toolName: "write_plan",
             toolDescription: "Author the user's personalized, data-grounded coaching plan.",
             schema: planSchema,
@@ -170,6 +177,9 @@ enum PlanService {
         observations whenever the data supports them.
         - assessment and strategy are short markdown for a phone — a few warm, plain sentences or bullets, \
         not an essay.
+        - If CURRENT RESEARCH is provided below, ground your numbers in it and briefly name the source \
+        (e.g. "current guidance puts protein around…") — it's there so she can trust the plan, not just \
+        take your word. Don't cite for its own sake; weave it in where it sharpens a target.
         - changelog_note is one line summarizing what this build set up.
         """
     }
@@ -184,6 +194,57 @@ enum PlanService {
             out += "\n\n(They didn't add extra context in their own words — work from the data above.)"
         }
         out += "\n\nAuthor their plan now by calling write_plan."
+        return out
+    }
+
+    // MARK: - Research phase (web-search grounding — heavy build only)
+
+    /// Run the live-web research phase and format it for the write_plan turn. Best-effort: returns
+    /// "" (an un-grounded build) on any failure, and never throws — plan creation must not depend on
+    /// web search being available. Logged so the diagnostics panel shows whether it actually searched.
+    @MainActor
+    static func researchGrounding(client: AnthropicClient, profile: UserProfile, intake: String) async -> String {
+        guard let research = try? await client.research(
+                system: researchSystemPrompt(profile: profile),
+                userContent: researchUserContent(profile: profile, intake: intake)),
+              !research.text.isEmpty else {
+            Diagnostics.shared.log("plan research: none (web search unavailable or empty)", .ai)
+            return ""
+        }
+        Diagnostics.shared.log("plan research: \(research.usedSearch ? "searched · " : "")\(research.text.count) chars", .ai)
+        return "\n\nCURRENT RESEARCH (from a live web search) to ground your plan — use it, and briefly "
+            + "name the source where you lean on it so she can trust the numbers:\n\(research.text)"
+    }
+
+    /// The research-phase system prompt: a meticulous coach searching the live web for the few current,
+    /// reputable facts that make THIS plan more accurate than generic knowledge. Pure + testable.
+    static func researchSystemPrompt(profile: UserProfile) -> String {
+        let name = profile.name.isEmpty ? "this person" : profile.name
+        return """
+        You are a meticulous nutrition + training researcher prepping to write \(name)'s plan. Search \
+        the web for CURRENT, reputable evidence (recent guidelines, well-regarded sources) that bears on \
+        their specific goal and situation. Return a TIGHT, factual brief — the few numbers and principles \
+        a great coach would look up first — and name your sources inline. No plan yet, no fluff: just the \
+        grounded findings.
+        """
+    }
+
+    /// The research user turn: the direction + her own words, so the searches are about HER goal. Pure.
+    static func researchUserContent(profile: UserProfile, intake: String) -> String {
+        let direction: String
+        switch profile.pace.direction {
+        case .lose:     direction = "sustainable fat loss"
+        case .gain:     direction = "a healthy lean gain"
+        case .maintain: direction = "maintaining a healthy weight"
+        }
+        var out = "Research current, citable evidence to ground a plan for someone whose goal is \(direction). "
+        out += "Focus on what actually moves this goal: a realistic rate of change, protein and calorie targets, "
+        out += "and anything specific to their situation below."
+        let trimmed = intake.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            out += "\n\nTheir own words about their goal + life:\n\"\(trimmed)\""
+        }
+        out += "\n\nReturn the cited findings now (no plan yet)."
         return out
     }
 
