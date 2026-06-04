@@ -21,7 +21,7 @@ struct WorkoutLogFlow: View {
 
     /// The user's exercise history, newest-first — feeds `MachineCatalog.ranked` so her recents
     /// surface first in the grid.
-    @Query(sort: \WorkoutSession.date, order: .reverse) private var history: [ExerciseEntry]
+    @Query(sort: \ExerciseEntry.date, order: .reverse) private var history: [ExerciseEntry]
 
     // MARK: Flow state
 
@@ -336,6 +336,7 @@ struct WorkoutLogFlow: View {
         if kind.isGym {
             for pick in selectedPicks {
                 let entry = ExerciseEntry(sessionID: session.id,
+                                          date: session.date,
                                           machineKey: pick.machineKey,
                                           displayName: pick.displayName,
                                           iconName: pick.iconName,

@@ -18,6 +18,13 @@ final class ExerciseEntry {
     /// The owning `WorkoutSession.id`. Flat foreign key (no `@Relationship`).
     var sessionID: UUID = UUID()
 
+    /// The owning session's `date`, **denormalized** onto each entry. Because the app uses flat
+    /// foreign keys (no `@Relationship`), a `@Query` over `ExerciseEntry` can't sort by the parent
+    /// session's date — so we copy it here on save. This is what powers "recents float to the top"
+    /// (`@Query(sort: \.date, .reverse)` → `MachineCatalog.ranked`) and Phase 2's per-machine
+    /// strength chart (query by `machineKey`, plot `weightLbs` over `date`) with no join.
+    var date: Date = Date.now
+
     /// Stable catalog key (e.g. "leg_press"). For a custom "+ Add a machine" entry this is a
     /// generated key so it stays distinct in history without polluting the static catalog.
     var machineKey: String = ""
@@ -40,6 +47,7 @@ final class ExerciseEntry {
 
     init(id: UUID = UUID(),
          sessionID: UUID,
+         date: Date = .now,
          machineKey: String = "",
          displayName: String = "",
          iconName: String = "dumbbell.fill",
@@ -48,6 +56,7 @@ final class ExerciseEntry {
          sets: Int = 3) {
         self.id = id
         self.sessionID = sessionID
+        self.date = date
         self.machineKey = machineKey
         self.displayName = displayName
         self.iconName = iconName
