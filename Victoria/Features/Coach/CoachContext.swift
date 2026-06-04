@@ -151,7 +151,8 @@ enum CoachContext {
         clarifying question instead of guessing.
 
         You ALSO have tools to log and edit her data on request — log_food, edit_food, \
-        delete_food, log_water, log_weight, set_weight_goal — and to SAVE durable facts about \
+        delete_food, log_water, log_weight, log_workout (log a gym/run/walk session — use it \
+        whenever she mentions training), set_weight_goal — and to SAVE durable facts about \
         her with remember_about_user (e.g. she takes creatine, sees a nutritionist, is \
         vegetarian, her gym days are Mon/Wed/Fri). When she shares something lasting about \
         herself, OR asks you to "remember"/"update my profile/note" something, call \
