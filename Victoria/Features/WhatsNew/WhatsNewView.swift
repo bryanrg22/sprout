@@ -57,7 +57,7 @@ enum WhatsNew {
     /// The notes for the current release. Editing this (and bumping MARKETING_VERSION) is all
     /// it takes to ship a new "What's New".
     static let current = WhatsNewRelease(
-        version: "1.8",
+        version: "1.8.1",
         title: "Meet the new Vita 🌱",
         features: [
             WhatsNewFeature(
@@ -65,39 +65,18 @@ enum WhatsNew {
                 title: "A beautiful new way to chat",
                 detail: "Vita's replies now read like a real conversation — clean lists and highlights instead of walls of text. Your suggestions stay put, the text box grows as you type, and a goal you approve stays right in your chat history."),
             WhatsNewFeature(
-                icon: "sparkles", tint: Theme.info,
-                title: "Vita logs it for you",
-                detail: "Just ask — \"log a chicken bowl, 600 cal\" or \"delete that\" — and she logs, edits, or removes your food, water, and weight. She can see every item in your day, too. Quick logs apply instantly, with an Undo."),
-            WhatsNewFeature(
                 icon: "brain.head.profile", tint: Theme.protein,
                 title: "Vita remembers you",
-                detail: "Tell her you take creatine, train Mon/Wed/Fri, or see a nutritionist — and she'll keep it in mind in every future chat."),
-            WhatsNewFeature(
-                icon: "camera.fill", tint: Theme.calories,
-                title: "Show Vita your plate",
-                detail: "Snap or attach a photo right in the chat. Vita actually sees it — and can log the meal for you."),
+                detail: "Tell her you take creatine, train Mon/Wed/Fri, or see a nutritionist — and she'll keep it in mind in every future chat, building up a picture of you over time."),
             WhatsNewFeature(
                 icon: "barcode.viewfinder", tint: Theme.water,
                 title: "One scan for everything",
                 detail: "Point your camera at a barcode or a nutrition label — one Scan button figures out which, and asks how many servings you had."),
-            WhatsNewFeature(
-                icon: "lightbulb.fill", tint: Theme.warning,
-                title: "Smarter Smart Picks",
-                detail: "Suggestions that fit the time of day and never re-pitch something you've already had today."),
-            WhatsNewFeature(
-                icon: "chart.line.uptrend.xyaxis", tint: Theme.protein,
-                title: "A Progress page that tells a story",
-                detail: "An AI recap of your goal, trend sparklines for every metric, and a consistency heatmap."),
-            WhatsNewFeature(
-                icon: "person.2.fill", tint: Theme.positive,
-                title: "Your buddy & panda, reimagined",
-                detail: "One clean buddy card with weight, calories, protein and today's food — and a panda that munches its bamboo when you fuel it well."),
         ],
         fixes: [
             "Yesterday's step count now fills in to its real total instead of freezing at a partial number.",
-            "Fixed a Vita freeze when using the keyboard or sending a message.",
+            "Smart Picks no longer re-shuffle every time you open the app, and won't re-pitch something you've already eaten.",
             "Fixed a calorie undercount when logging more than one serving (like 2 apples).",
-            "Your home-screen widget now shows calories, and the rings can climb past 100%.",
         ])
 }
 
