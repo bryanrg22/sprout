@@ -593,18 +593,11 @@ struct DashboardView: View {
     }
 
     // MARK: Streak + coach
+    /// "Logging streak" = days she actively logged (food, water, or a manual weigh-in). Auto-
+    /// imported Health data — steps, and scale-synced weights — does NOT count, or backfilling
+    /// ~30 days of Health steps would read as a 30-day streak she never earned. See StreakCalculator.
     private var streak: Int {
-        let cal = Calendar.current
-        let days = Set(allFood.map { cal.startOfDay(for: $0.date) })
-            .union(weights.map { cal.startOfDay(for: $0.date) })
-            .union(steps.map { cal.startOfDay(for: $0.date) })
-        var s = 0; var d = cal.startOfDay(for: .now)
-        while days.contains(d) {
-            s += 1
-            guard let prev = cal.date(byAdding: .day, value: -1, to: d) else { break }
-            d = prev
-        }
-        return s
+        StreakCalculator.loggingStreak(foods: allFood, waters: water, weights: weights)
     }
 
     private var coachLine: some View {

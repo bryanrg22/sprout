@@ -85,6 +85,7 @@
 		822215BF3BEDD9A096EE460D /* FoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8663F282E5827BC7D730DD97 /* FoodEntry.swift */; };
 		83ADA73DD13B81E527A1C7D3 /* NearbyPlacesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207514F0DF609FA2EE6818F2 /* NearbyPlacesService.swift */; };
 		8A847421AC571A63B55C8036 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805A92CB799597934FD6D76A /* Components.swift */; };
+		8CC77AD74701F3568FB45A0E /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD40CF3E700F6319DB13260 /* StreakCalculatorTests.swift */; };
 		8CDE36BBE85EE02189AE63E8 /* CoachContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A144C6BA1EBCBEB134C5DA95 /* CoachContext.swift */; };
 		90E55D047EC06D7D265CB733 /* Nudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BFD3BF8F59A358261B9D67 /* Nudge.swift */; };
 		92264D535D59D42D672F0370 /* CompanionPhrases.swift in Sources */ = {isa = PBXBuildFile; fileRef = D291CE0399A8EAA34FA9E4BB /* CompanionPhrases.swift */; };
@@ -111,6 +112,7 @@
 		B3C6A5DADB6F9DB0C37DEFCD /* DelightKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67F58A1525F232D233BCC63F /* DelightKit.swift */; };
 		B3E7A2E64AA611E31259D29B /* WidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E068E1518FA921CACEF67EBC /* WidgetViews.swift */; };
 		B62BF6C6FD41715FABC5229D /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95FFCEC3E35084F35904F238 /* PairingView.swift */; };
+		B7CC2C1A5EE08BF5D5B9B481 /* StreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B36AAB291B880B1284FC07A /* StreakCalculator.swift */; };
 		B9649EBD3CF3D881AD9D2D39 /* CompanionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81BC1CDFB2921C3A2145384 /* CompanionCard.swift */; };
 		B9743FFE74938D2364D7BCE1 /* CompanionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = D207DF2D14F12D5402219B72 /* CompanionWidget.swift */; };
 		BAE285FFCE15DFD8ED258A06 /* CompanionPercentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C4F83F8027A4F1EC7F5441 /* CompanionPercentTests.swift */; };
@@ -195,6 +197,7 @@
 		184871AE7BB850D549B3B194 /* ChecklistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistItem.swift; sourceTree = "<group>"; };
 		19061CEB334011B4266ADFA5 /* FoodSuggestionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodSuggestionEngineTests.swift; sourceTree = "<group>"; };
 		1AF2CA6E00BE01F9EEE964F7 /* BuddyDayCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyDayCard.swift; sourceTree = "<group>"; };
+		1B36AAB291B880B1284FC07A /* StreakCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCalculator.swift; sourceTree = "<group>"; };
 		1CBF8EF09D88436338C06CE7 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		1CC8973FEF9E6AADEAF216AB /* ProgressVisuals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressVisuals.swift; sourceTree = "<group>"; };
 		1E949431B44D3A85216282D6 /* ProgressSummaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummaryService.swift; sourceTree = "<group>"; };
@@ -205,6 +208,7 @@
 		29C4F83F8027A4F1EC7F5441 /* CompanionPercentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionPercentTests.swift; sourceTree = "<group>"; };
 		2AB509A7A61B2B0B31522E6E /* NutritionMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionMathTests.swift; sourceTree = "<group>"; };
 		2B12D6450976E7557DDC1D30 /* ProgressSummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressSummaryCard.swift; sourceTree = "<group>"; };
+		2BD40CF3E700F6319DB13260 /* StreakCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakCalculatorTests.swift; sourceTree = "<group>"; };
 		2D32C5A400ED6AB47252DB00 /* DemoSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoSeed.swift; sourceTree = "<group>"; };
 		2FFF61CC2B8470FB82B86442 /* OpenAIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIClient.swift; sourceTree = "<group>"; };
 		30BF320BA4DB22D1F5525598 /* FinishSetupCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishSetupCard.swift; sourceTree = "<group>"; };
@@ -516,6 +520,7 @@
 				5E99C99ABD3A2DB5BEEF87FE /* OpenFoodFactsParsingTests.swift */,
 				447B2CC592D73C45BCAB8C52 /* ProfileTargetsTests.swift */,
 				B4DA8544AACE173A4B22525C /* StepsBackfillTests.swift */,
+				2BD40CF3E700F6319DB13260 /* StreakCalculatorTests.swift */,
 				BD82C076CB7AE2144C893458 /* TrendCalculatorTests.swift */,
 			);
 			path = VictoriaTests;
@@ -593,6 +598,7 @@
 				1E949431B44D3A85216282D6 /* ProgressSummaryService.swift */,
 				47A357D199D085254DE50CFD /* RecommendationEngine.swift */,
 				F5F73FBAC5EC21DC6BB1683F /* StepsSupport.swift */,
+				1B36AAB291B880B1284FC07A /* StreakCalculator.swift */,
 				F66D5227E0D2EE0A0A4F30FF /* TrendCalculator.swift */,
 				4F62DD297E2695E51AFE0F7D /* UserProfile+Targets.swift */,
 				69C1B1D37540CF82CDAF42AA /* WeeklyReflection.swift */,
@@ -892,6 +898,7 @@
 				3918B28C2A74EF74C177C39D /* SmartSuggestionsView.swift in Sources */,
 				6C09E31128DD5120DB6ED4C2 /* StepsEntry.swift in Sources */,
 				6F48DA8CBA3A9E338BB94070 /* StepsSupport.swift in Sources */,
+				B7CC2C1A5EE08BF5D5B9B481 /* StreakCalculator.swift in Sources */,
 				A09677A668B476E426C181B3 /* Theme.swift in Sources */,
 				1B661D25D06937C12212A21F /* ThemeCompat.swift in Sources */,
 				E0BFF4B21A38057313A05E43 /* TrendCalculator.swift in Sources */,
@@ -937,6 +944,7 @@
 				98D897FA9A2D6C9A4AEF8BEA /* OpenFoodFactsParsingTests.swift in Sources */,
 				1229382035D03CD1DF0AFDBE /* ProfileTargetsTests.swift in Sources */,
 				A851743184F9E8F2771CBAC2 /* StepsBackfillTests.swift in Sources */,
+				8CC77AD74701F3568FB45A0E /* StreakCalculatorTests.swift in Sources */,
 				A187DFDD52B46D142353CB09 /* TrendCalculatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

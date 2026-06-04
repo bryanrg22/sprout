@@ -48,25 +48,11 @@ enum WidgetDataWriter {
             trendWeight: trend, ratePerWeek: TrendCalculator.ratePerWeek(weights),
             goalWeight: profile.goalWeightLbs,
             trendSpark: spark,
-            streak: streak(foods: foods, weights: weights, steps: steps, calendar: cal)
+            // Active logging only (food/water/manual weigh-in) — NOT auto-imported steps or
+            // scale-synced weights, which would otherwise inflate the streak. See StreakCalculator.
+            streak: StreakCalculator.loggingStreak(foods: foods, waters: waters, weights: weights, calendar: cal)
         )
         WidgetSharedStore.save(snap)
         WidgetCenter.shared.reloadAllTimelines()
-    }
-
-    /// Consecutive days (back from today) with any logged activity.
-    private static func streak(foods: [FoodEntry], weights: [WeightEntry],
-                               steps: [StepsEntry], calendar cal: Calendar) -> Int {
-        var days = Set(foods.map { cal.startOfDay(for: $0.date) })
-        days.formUnion(weights.map { cal.startOfDay(for: $0.date) })
-        days.formUnion(steps.map { cal.startOfDay(for: $0.date) })
-        var count = 0
-        var day = cal.startOfDay(for: .now)
-        while days.contains(day) {
-            count += 1
-            guard let prev = cal.date(byAdding: .day, value: -1, to: day) else { break }
-            day = prev
-        }
-        return count
     }
 }
