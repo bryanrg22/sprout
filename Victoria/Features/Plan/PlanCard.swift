@@ -13,6 +13,8 @@ struct PlanCard: View {
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
 
     @State private var showIntake = false
+    @State private var isReviewing = false
+    @State private var reviewError: String?
 
     private var plan: CoachPlan? { plans.first }
     private var coachName: String { profile.coachName.isEmpty ? "Vita" : profile.coachName }
@@ -66,11 +68,15 @@ struct PlanCard: View {
                     Text("Your plan").font(.headline).foregroundStyle(Theme.textPrimary)
                 }
                 Spacer()
-                Button { showIntake = true } label: {
-                    Image(systemName: "arrow.clockwise").font(.subheadline.weight(.semibold))
+                if isReviewing {
+                    ProgressView().controlSize(.small).tint(Theme.brand)
+                } else {
+                    Button { Task { await review() } } label: {
+                        Image(systemName: "arrow.clockwise").font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.plain).foregroundStyle(Theme.brand)
+                    .accessibilityLabel("Update my plan from my latest data")
                 }
-                .buttonStyle(.plain).foregroundStyle(Theme.brand)
-                .accessibilityLabel("Rebuild plan")
             }
 
             if !plan.headline.isEmpty {
@@ -106,12 +112,46 @@ struct PlanCard: View {
                 }
                 .padding(.top, Theme.Space.xs)
             }
+
+            // Most recent adaptation — the plan changing is visible, never silent.
+            if let last = plan.changelog.last {
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "clock.arrow.circlepath").font(.caption2)
+                    Text(last.summary).font(.caption).fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(Theme.textSecondary)
+                .padding(.top, 2)
+            }
+            if let reviewError {
+                Text(reviewError).font(.caption).foregroundStyle(Theme.warning)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(Theme.Space.lg)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous).strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
         )
+    }
+
+    // MARK: - Adapt (the P3 review pass)
+
+    /// Re-read the latest data against the existing plan and adapt it in place (range / protein /
+    /// insights + a changelog line) — the lighter "are we on target?" pass, not a full rebuild.
+    @MainActor
+    private func review() async {
+        guard !isReviewing else { return }
+        isReviewing = true
+        reviewError = nil
+        do {
+            _ = try await PlanService.review(profile: profile, foods: foods, weights: weights, context: context)
+        } catch AIConfig.AIError.missingKey {
+            reviewError = "\(coachName) needs an Anthropic key to update your plan."
+        } catch {
+            reviewError = "Couldn't update your plan just now — try again in a moment."
+        }
+        isReviewing = false
     }
 
     private func targetStat(_ label: String, _ value: String) -> some View {

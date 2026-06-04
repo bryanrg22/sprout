@@ -19,7 +19,10 @@ enum PlanService {
                          weights: [WeightEntry],
                          intake: String,
                          context: ModelContext) async throws -> CoachPlan {
-        let dataSummary = CoachContext.summary(profile: profile, foods: foods, weights: weights)
+        let workouts = (try? context.fetch(FetchDescriptor<WorkoutEntry>())) ?? []
+        let water = (try? context.fetch(FetchDescriptor<WaterEntry>())) ?? []
+        let dataSummary = CoachContext.summary(profile: profile, foods: foods, weights: weights,
+                                               workouts: workouts, water: water)
         let points = loggedDayCount(foods: foods, weights: weights)
 
         let client = try AnthropicClient()
@@ -61,7 +64,10 @@ enum PlanService {
                                       intake: "", context: context)
         }
 
-        let dataSummary = CoachContext.summary(profile: profile, foods: foods, weights: weights)
+        let workouts = (try? context.fetch(FetchDescriptor<WorkoutEntry>())) ?? []
+        let water = (try? context.fetch(FetchDescriptor<WaterEntry>())) ?? []
+        let dataSummary = CoachContext.summary(profile: profile, foods: foods, weights: weights,
+                                               workouts: workouts, water: water)
         let points = loggedDayCount(foods: foods, weights: weights)
         let elapsed = daysSince(existing.updatedAt)
 
