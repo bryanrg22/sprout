@@ -304,13 +304,16 @@ enum ChecklistPlanService {
         let lower = title.lowercased()
         let banned = [
             "eat less", "eat fewer", "fewer calorie", "fewer calories", "cut calorie",
-            "cut calories", "calorie deficit", "count calorie", "restrict", "fast ",
+            "cut calories", "calorie deficit", "count calorie", "restrict",
             "fasting", "skip a meal", "skip meal", "skip breakfast", "skip lunch",
             "skip dinner", "starve", "starving", "diet", "cheat day", "cheat meal",
             "weigh in", "weigh-in", "weigh yourself", "step on the scale", "no eating",
             "don't eat", "stop eating", "lose weight",
         ]
-        return !banned.contains(where: lower.contains)
+        if banned.contains(where: lower.contains) { return false }
+        // "fast" as a WHOLE word — catches "intermittent fast" / "fast day" without ever flagging
+        // "breakfast" (the old "fast " substring missed an end-of-string "fast").
+        return lower.range(of: "\\bfast\\b", options: .regularExpression) == nil
     }
 
     /// Trim and bound a title so one runaway item can't dominate a chip row. Collapses inner
