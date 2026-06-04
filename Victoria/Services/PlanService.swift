@@ -41,6 +41,67 @@ enum PlanService {
         return plan
     }
 
+    // MARK: - Review (the light "are we on target?" adaptation pass)
+
+    /// Re-read the data against the EXISTING plan and adapt it: nudge the range / protein / insights
+    /// only if the data warrants, and append one changelog line describing the change (or noting
+    /// "on track"). Lighter than `generate` — no intake free-text, no full re-author; it compares
+    /// reality to the plan that's already there. Preserves history: the resulting plan carries the
+    /// old changelog with the new entry appended and keeps the original `createdAt`. If there's no
+    /// plan yet there's nothing to review, so we fall through to a fresh `generate`.
+    /// Anthropic-only (runs on `planModel`). Throws `.missingKey` if no key is set.
+    @MainActor
+    static func review(profile: UserProfile,
+                       foods: [FoodEntry],
+                       weights: [WeightEntry],
+                       context: ModelContext) async throws -> CoachPlan {
+        guard let existing = CoachPlan.current(in: context) else {
+            // Nothing to review yet — build one from scratch (no intake words to work from).
+            return try await generate(profile: profile, foods: foods, weights: weights,
+                                      intake: "", context: context)
+        }
+
+        let dataSummary = CoachContext.summary(profile: profile, foods: foods, weights: weights)
+        let points = loggedDayCount(foods: foods, weights: weights)
+        let elapsed = daysSince(existing.updatedAt)
+
+        // TODO P3: safety web-check on flagged data (very low intake / very fast rate). If the fresh
+        // summary trips a floor/rate flag, do a targeted web lookup here and fold the finding into the
+        // review prompt before calling the model. Not implemented yet (no live web search in-app).
+
+        let client = try AnthropicClient()
+        let result = try await client.structured(
+            system: reviewSystemPrompt(profile: profile),
+            userContent: reviewUserContent(plan: existing, dataSummary: dataSummary, daysSince: elapsed),
+            toolName: "write_plan",
+            toolDescription: "Re-emit the user's plan, adapted to the latest data (same shape as the build).",
+            schema: planSchema,
+            model: AIConfig.planModel,
+            maxTokens: 2200
+        )
+
+        // Map the fresh result, then keep history: merge changelogs + carry the original createdAt.
+        let fresh = makePlan(from: result, dataPoints: points)
+        let merged = mergedChangelog(old: existing.changelog, new: fresh.changelog)
+
+        // Update in place so the row's identity / CloudKit record survives the review.
+        existing.headline = fresh.headline
+        existing.assessment = fresh.assessment
+        existing.strategy = fresh.strategy
+        existing.calorieMin = fresh.calorieMin
+        existing.calorieMax = fresh.calorieMax
+        existing.proteinTarget = fresh.proteinTarget
+        existing.goalSummary = fresh.goalSummary
+        existing.timeframe = fresh.timeframe
+        existing.dataPointsAtBuild = points
+        existing.insights = fresh.insights
+        existing.changelog = merged
+        // createdAt is intentionally left untouched — the plan's birthday doesn't change on review.
+        existing.updatedAt = fresh.updatedAt
+        try? context.save()
+        return existing
+    }
+
     // MARK: - Prompts (pure)
 
     /// The coaching philosophy + output contract. Encodes the app's ethos: specific-to-her-data,
@@ -73,7 +134,12 @@ enum PlanService {
         - Educate, don't refuse. If they're drawn to an extreme (barely eating, crash dieting), explain why \
         it backfires and teach the better path — never lecture or shut them down.
         - 3 to 5 insights, each short, specific, and actionable. tone = "win" (celebrate something real), \
-        "watch" (a gentle flag), or "nudge" (a concrete lever to pull).
+        "watch" (a gentle flag), or "nudge" (a concrete lever to pull). The most valuable insights catch \
+        the patterns that move the goal: under-eating below the floor (a "watch"), protein falling short \
+        of target (a "nudge"), a behavior visibly driving an outcome in the data (e.g. "your three \
+        highest-protein days were your three biggest drops" — a "win" or "nudge"), and genuine wins \
+        worth naming when they're fueling well and the trend agrees (a "win"). Prefer these over generic \
+        observations whenever the data supports them.
         - assessment and strategy are short markdown for a phone — a few warm, plain sentences or bullets, \
         not an essay.
         - changelog_note is one line summarizing what this build set up.
@@ -90,6 +156,66 @@ enum PlanService {
             out += "\n\n(They didn't add extra context in their own words — work from the data above.)"
         }
         out += "\n\nAuthor their plan now by calling write_plan."
+        return out
+    }
+
+    // MARK: - Review prompts (pure)
+
+    /// The review-pass system prompt: same coaching ethos as the build, but framed as *checking an
+    /// existing plan against reality* and adapting it conservatively — change only what the data
+    /// warrants, and make the adaptation visible in one changelog line.
+    static func reviewSystemPrompt(profile: UserProfile) -> String {
+        let name = profile.name.isEmpty ? "the user" : profile.name
+        return """
+        You are \(name)'s coach, reviewing a plan you already wrote. Compare reality (the latest \
+        data) to this existing plan. Is it working?
+
+        Adjust the calorie range / protein / insights ONLY if the data warrants it — don't churn a \
+        plan that's on track. Then write ONE new changelog line describing what changed (or say \
+        exactly "No change needed — on track" if nothing should change).
+
+        Same rules as always:
+        - The calorie target is a RANGE (calorie_min..calorie_max), never a single number — a floor \
+        that prevents under-eating and a soft ceiling that keeps the goal on track. Going UNDER the \
+        floor is the trap, not extra credit.
+        - Be honest but encouraging: if the data drifted off track, say so plainly and give the path \
+        back, never discouragement.
+        - Be specific to the data — name the numbers, foods, and trend. Generic advice is failure.
+        - Confidence scales with data; with few logged days, hedge openly rather than fake precision.
+        - 3 to 5 insights, each short and actionable. tone = "win", "watch", or "nudge".
+        - assessment and strategy are short markdown for a phone, not an essay.
+        - changelog_note is the ONE new line for this review (what changed, or "No change needed — on track").
+
+        Re-emit the FULL plan (every field) by calling write_plan, carrying forward whatever still \
+        holds and updating only what the data moved.
+        """
+    }
+
+    /// The review user turn: the current plan (so the model can compare against it), the fresh data
+    /// summary, and how long it's been since the plan was last touched.
+    static func reviewUserContent(plan: CoachPlan, dataSummary: String, daysSince: Int) -> String {
+        let when: String
+        switch daysSince {
+        case 0:  when = "today"
+        case 1:  when = "1 day ago"
+        default: when = "\(daysSince) days ago"
+        }
+        var out = "Here is the plan you wrote \(when):\n\n"
+        out += "Headline: \(plan.headline)\n"
+        let range = plan.calorieRangeText
+        out += "Calorie range: \(range.isEmpty ? "not set" : "\(range) kcal/day")\n"
+        out += "Protein target: \(plan.proteinTarget > 0 ? "\(Int(plan.proteinTarget)) g/day" : "not set")\n"
+        if !plan.assessment.isEmpty { out += "Assessment: \(plan.assessment)\n" }
+        if plan.insights.isEmpty {
+            out += "Insights: (none on the current plan)\n"
+        } else {
+            out += "Insights:\n"
+            for i in plan.insights {
+                out += "  - [\(i.tone.rawValue)] \(i.title): \(i.body)\n"
+            }
+        }
+        out += "\nHere is the latest data from the app:\n\n\(dataSummary)\n\n"
+        out += "Review it against the plan above and re-emit the plan by calling write_plan."
         return out
     }
 
@@ -124,6 +250,23 @@ enum PlanService {
     }
 
     // MARK: - Helpers
+
+    /// Merge an existing plan's changelog with a freshly-authored one, preserving full history:
+    /// the old entries first (in order), then the new entry/entries appended last. `makePlan` always
+    /// stamps exactly one entry for the current pass, so a review yields N+1 lines — and adaptation
+    /// stays visible instead of overwriting the past. Pure, so it's testable without the network.
+    static func mergedChangelog(old: [PlanChange], new: [PlanChange]) -> [PlanChange] {
+        old + new
+    }
+
+    /// Whole calendar days between `date` and now (clamped at 0), for the "you wrote this N days ago"
+    /// line the review prompt leads with.
+    static func daysSince(_ date: Date, now: Date = .now, calendar: Calendar = .current) -> Int {
+        let days = calendar.dateComponents([.day],
+                                           from: calendar.startOfDay(for: date),
+                                           to: calendar.startOfDay(for: now)).day ?? 0
+        return max(0, days)
+    }
 
     /// Distinct calendar days with any food OR weight logged — the "how much do we actually know"
     /// signal that drives the plan's confidence hedging.
