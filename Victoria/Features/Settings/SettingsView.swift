@@ -34,6 +34,12 @@ struct SettingsView: View {
         profile.calorieGoal(weightLbs: currentWeightLbs)
     }
 
+    /// The EFFECTIVE daily calorie target she actually eats to — the plan's number when a plan is
+    /// active (mirrored into the override), else the computed goal. Macros already honor the override.
+    private var effectiveCalories: Int { Int(profile.dailyCalorieTarget(weightLbs: currentWeightLbs)) }
+    /// True when the adaptive plan is driving the targets (so the footer can say so).
+    private var planDrivesTargets: Bool { profile.calorieTargetOverride > 0 }
+
     private var macros: NutritionMath.Macros {
         profile.macroTargets(weightLbs: currentWeightLbs)
     }
@@ -368,7 +374,7 @@ struct SettingsView: View {
         Section {
             row(icon: "fork.knife") {
                 LabeledContent("Calories") {
-                    Text("\(Int(calorieGoal.dailyCalories)) kcal")
+                    Text("\(effectiveCalories) kcal")
                         .foregroundStyle(Theme.textPrimary)
                         .monospacedDigit()
                 }
@@ -385,10 +391,12 @@ struct SettingsView: View {
         } header: {
             sectionHeader("Your daily targets")
         } footer: {
-            if calorieGoal.wasClampedToFloor {
+            if planDrivesTargets {
+                footer("Set by your adaptive plan — these adapt as the plan does. (Calories are kept at or above a safe minimum.)")
+            } else if calorieGoal.wasClampedToFloor {
                 footer("Adjusted up to a safe minimum — we never recommend going lower. Targets update with your weight and plan.")
             } else {
-                footer("Calculated from your weight and plan. Updates automatically as you log.")
+                footer("Calculated from your weight. Updates automatically as you log.")
             }
         }
         .listRowBackground(Theme.card)
