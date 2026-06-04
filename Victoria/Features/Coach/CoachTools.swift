@@ -529,8 +529,16 @@ enum CoachTools {
         var requiresConfirm: Bool {
             switch name {
             case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan, .logWorkout,
-                 .editPlan, .forgetFact:
+                 .forgetFact:
                 return false   // quick + reversible → auto-apply with Undo
+            case .editPlan:
+                // A prose tweak (headline / assessment / strategy) auto-applies with Undo, but
+                // changing the TARGETS (calorie range or protein) is goal-changing — confirm it with
+                // the same Yes/Not-now card as set_water_goal / set_weight_goal.
+                if case .editPlan(let edit) = action {
+                    return edit.calorieMin != nil || edit.calorieMax != nil || edit.proteinTarget != nil
+                }
+                return false
             case .deleteFood,                                   // destructive
                  .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal:
                 return true    // goal-changing / not a casual log → confirm first
@@ -730,8 +738,20 @@ enum CoachTools {
         var note = (input["change_note"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if note.isEmpty { note = "Adjusted the plan." }
         edit.changeNote = note
+        // When targets change, phrase the confirm card like the other goal tools ("Want me to {…}?").
+        // Prose-only edits auto-apply, so their summary is just the Undo-banner text.
+        var targetParts: [String] = []
+        if let p = edit.proteinTarget { targetParts.append("set your protein target to \(Int(p))g") }
+        if let lo = edit.calorieMin, let hi = edit.calorieMax {
+            targetParts.append("set your daily fuel to \(Int(lo))–\(Int(hi)) kcal")
+        } else if let lo = edit.calorieMin {
+            targetParts.append("raise your calorie floor to \(Int(lo)) kcal")
+        } else if let hi = edit.calorieMax {
+            targetParts.append("set your calorie ceiling to \(Int(hi)) kcal")
+        }
+        let summary = targetParts.isEmpty ? "update your plan — \(note)" : targetParts.joined(separator: " and ")
         return .ok(ParsedRequest(name: .editPlan,
-                                 confirmSummary: "update your plan — \(note)",
+                                 confirmSummary: summary,
                                  action: .editPlan(edit)))
     }
 
