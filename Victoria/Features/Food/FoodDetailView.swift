@@ -73,7 +73,11 @@ struct FoodDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: Theme.Space.sm) {
                 mealPill
-                if !entry.servingDescription.isEmpty {
+                // The serving chip is hidden for an AI-combined multi-item meal: there the
+                // stored `servingDescription` is just the FIRST item's weight (e.g. the
+                // nuggets' "170 g"), not the whole order — showing it reads as a wrong total.
+                // The real per-item portions live in the breakdown below instead.
+                if !entry.servingDescription.isEmpty && !isMultiItemMeal {
                     detailChip(entry.servingDescription, systemImage: "scalemass")
                 }
                 if entry.quantity != 1 {
@@ -132,16 +136,30 @@ struct FoodDetailView: View {
             HStack(spacing: 10) {
                 ForEach(Array(photos.enumerated()), id: \.offset) { _, data in
                     if let image = UIImage(data: data) {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 120, height: 120)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        photoTile(image)
                     }
                 }
             }
             .padding(.vertical, 2)
         }
+    }
+
+    /// A framed photo thumbnail. Scanned receipts/order screenshots are often mostly
+    /// white, which without a frame reads as a raw white rectangle on the dark theme and
+    /// a tall one gets its text cropped by a square fill. So the image is fit (not filled)
+    /// inside a themed card with a hairline border — it always looks like an intentional
+    /// thumbnail in BOTH skins, and the whole shot stays visible (no cut-off text).
+    private func photoTile(_ image: UIImage) -> some View {
+        Image(uiImage: image)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 120, height: 120)
+            .background(Theme.cardRaised)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Theme.divider, lineWidth: 1)
+            )
     }
 
     private var macroBreakdown: some View {
@@ -169,18 +187,58 @@ struct FoodDetailView: View {
         .padding(.vertical, Theme.Space.sm)
     }
 
+    /// The AI's notes carry the real breakdown of a scanned meal — its one-line summary,
+    /// then an "Assumptions: a; b; c" line (each item's portion/scale guess), then any
+    /// sanity flag, joined by newlines. We surface that as readable text instead of
+    /// leaving it trapped only inside the (often white) order screenshot: the summary
+    /// lines stay as sentences and the assumptions become a tidy bulleted list. Falls
+    /// back to plain text for a normal single-line note.
     private func notesCard(_ notes: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label("Notes", systemImage: "note.text")
+        let blocks = notesBlocks(notes)
+        return VStack(alignment: .leading, spacing: Theme.Space.sm) {
+            Label(isMultiItemMeal ? "What's in this" : "Notes",
+                  systemImage: isMultiItemMeal ? "list.bullet" : "note.text")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Theme.textSecondary)
-            Text(notes)
+
+            VStack(alignment: .leading, spacing: Theme.Space.sm) {
+                ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                    switch block {
+                    case .text(let line):
+                        Text(line)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    case .bullets(let title, let items):
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let title {
+                                Text(title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Theme.textPrimary)
+                            }
+                            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                                bulletRow(item)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardElevated()
+    }
+
+    private func bulletRow(_ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Circle()
+                .fill(Theme.brand)
+                .frame(width: 5, height: 5)
+                .padding(.top, 6)
+            Text(text)
                 .font(.subheadline)
                 .foregroundStyle(Theme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .cardElevated()
     }
 
     private var actions: some View {
@@ -226,6 +284,49 @@ struct FoodDetailView: View {
     }
 
     // MARK: - Logic
+
+    /// True for an AI photo/scan estimate that combined several foods into one entry. The
+    /// log flow names those `"<first item> + N more"`, so we detect that suffix. Such an
+    /// entry's `servingDescription` is only the first item's weight (misleading as a meal
+    /// total), and its notes hold the real component breakdown — both handled above.
+    private var isMultiItemMeal: Bool {
+        entry.source == .photo && Self.multiItemSuffix.firstMatch(
+            in: entry.name, range: NSRange(entry.name.startIndex..., in: entry.name)) != nil
+    }
+
+    /// Matches the " + N more" tail the photo flow appends for a combined meal.
+    private static let multiItemSuffix = try! NSRegularExpression(
+        pattern: #"\+\s*\d+\s+more\s*$"#, options: [.caseInsensitive])
+
+    /// One rendered piece of the notes card: either a sentence or a (titled) bullet list.
+    private enum NotesBlock {
+        case text(String)
+        case bullets(title: String?, items: [String])
+    }
+
+    /// Splits the stored notes into display blocks. Newline-separated lines become
+    /// sentences, except an `"Assumptions: a; b; c"` line, which becomes a "Assumptions"
+    /// titled bullet list (one bullet per `;`-separated item) so each item's portion guess
+    /// is easy to scan. A plain note with no such line just renders as its line(s).
+    private func notesBlocks(_ notes: String) -> [NotesBlock] {
+        notes
+            .split(separator: "\n", omittingEmptySubsequences: true)
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .map { line in
+                if let range = line.range(of: "Assumptions:") {
+                    let body = String(line[range.upperBound...])
+                    let items = body
+                        .split(separator: ";")
+                        .map { $0.trimmingCharacters(in: .whitespaces) }
+                        .filter { !$0.isEmpty }
+                    if !items.isEmpty {
+                        return .bullets(title: "Assumptions", items: items)
+                    }
+                }
+                return .text(line)
+            }
+    }
 
     private var vitaTopic: AskVitaTopic { askVitaTopic(for: entry) }
 
