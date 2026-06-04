@@ -52,19 +52,11 @@ struct BuddyHomeView: View {
     private var myLoggedToday: Bool {
         !todayFood.isEmpty || waterToday > 0 || todaySteps > 0
     }
-    /// My consecutive-day logging streak (same shape as the dashboard's streak helper).
+    /// My consecutive-day logging streak — the SHARED calculator (food / water / manual weigh-ins
+    /// only). Must NOT count auto-imported steps, or the buddy sees an inflated streak and gets a
+    /// false "hit a 30-day streak!" cheer — the exact bug `StreakCalculator` was created to fix.
     private var myStreak: Int {
-        let cal = Calendar.current
-        let days = Set(allFood.map { cal.startOfDay(for: $0.date) })
-            .union(water.map { cal.startOfDay(for: $0.date) })
-            .union(steps.map { cal.startOfDay(for: $0.date) })
-        var s = 0; var d = cal.startOfDay(for: .now)
-        while days.contains(d) {
-            s += 1
-            guard let prev = cal.date(byAdding: .day, value: -1, to: d) else { break }
-            d = prev
-        }
-        return s
+        StreakCalculator.loggingStreak(foods: allFood, waters: water, weights: weights)
     }
 
     // MARK: My SAFE activity + goals for the face-off (movement/hydration only)
@@ -185,7 +177,10 @@ struct BuddyHomeView: View {
     private func publishMyState() async {
         // Basis weight for target math — smoothed trend, else start weight, else a safe 150
         // (mirrors UserProfile.currentWeightLbs / SettingsView.currentWeightLbs).
-        let basis = TrendCalculator.currentTrend(weights)
+        // Real (non-future-dated) weigh-ins only — a clock-skewed future entry would otherwise slide
+        // TrendCalculator's window and skew the trend/rate the buddy sees (matches PlanService).
+        let realWeights = weights.filter { $0.date <= .now }
+        let basis = TrendCalculator.currentTrend(realWeights)
             ?? ((profile?.startWeightLbs ?? 0) > 0 ? profile!.startWeightLbs : 150)
 
         // Opt-in flag — gate everything below on it (nil profile → not sharing).
@@ -202,9 +197,9 @@ struct BuddyHomeView: View {
             waterGoal: myWaterGoal,
             workedOutToday: myWorkedOutToday,
             sharesFullData: sharesFull,
-            trendWeightLbs: TrendCalculator.currentTrend(weights) ?? 0,
+            trendWeightLbs: TrendCalculator.currentTrend(realWeights) ?? 0,
             goalWeightLbs: profile?.goalWeightLbs ?? 0,
-            weeklyRateLbs: TrendCalculator.ratePerWeek(weights),    // SIGNED (negative = losing)
+            weeklyRateLbs: TrendCalculator.ratePerWeek(realWeights),    // SIGNED (negative = losing)
             caloriesEaten: todayFood.reduce(0) { $0 + $1.totalCalories },
             calorieTarget: profile.map { $0.dailyCalorieTarget(weightLbs: basis) } ?? 0,
             proteinEaten: todayFood.reduce(0) { $0 + $1.totalProteinG },
@@ -257,12 +252,6 @@ struct BuddyHomeView: View {
                 buddy: snap
             )
             .appearLift(didAppear, index: 3)
-
-            // (c2) Playful, KIND friendly-rivalry prompts derived from our SAFE activity
-            // ("Bryan hit the gym — your turn?", "you're winning the step race"). Each just
-            // sends a warm, encouraging note to the buddy — never guilt, never raw numbers.
-            // (Renders nothing — and reserves no space — when no prompt applies.)
-            challengeSection(for: snap)
         }
 
         // (d) Nudge buttons + write-your-own composer.
