@@ -52,6 +52,10 @@ enum CoachTools {
         case updatePlan            = "update_plan"
         // Log a workout / training session — she could READ workouts but not WRITE one until now.
         case logWorkout            = "log_workout"
+        // Edit the user's adaptive PLAN's content directly (targets / prose / focus) + log the change.
+        case editPlan              = "edit_plan"
+        // Correct/forget a fact from her durable profile notes — the counterpart to remember.
+        case forgetFact            = "forget_about_user"
     }
 
     // MARK: - Safe bounds
@@ -84,7 +88,8 @@ enum CoachTools {
         [stepGoalSchema, waterGoalSchema, paceSchema(for: profile),
          logFoodSchema, editFoodSchema, deleteFoodSchema,
          logWaterSchema(for: profile), logWeightSchema(for: profile),
-         weightGoalSchema(for: profile), rememberSchema, updatePlanSchema, logWorkoutSchema]
+         weightGoalSchema(for: profile), rememberSchema, updatePlanSchema, logWorkoutSchema,
+         editPlanSchema, forgetSchema]
     }
 
     /// Save a durable fact about the user to long-term memory. This is the tool that lets Vita
@@ -376,6 +381,50 @@ enum CoachTools {
         ],
     ]
 
+    /// Edit the user's adaptive PLAN's content directly — set only the fields she asked to change,
+    /// like edit_food. Vita's coaching judgment (educate, don't enable extremes) is the guardrail;
+    /// there's no hard gate. `change_note` becomes the changelog line so the edit is visible.
+    private static let editPlanSchema: [String: Any] = [
+        "name": Name.editPlan.rawValue,
+        "description": """
+        Edit the user's adaptive PLAN in place when she asks to change it ("bump my protein to 150", \
+        "make the focus about dinners", "shift my range up"). Set ONLY the fields she wants changed — \
+        you can see her plan in your context, so keep the rest. Before any extreme change (e.g. a very \
+        low calorie range), educate her first — never just enable it. Always include a short change_note.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "headline": ["type": "string", "description": "New one-line headline, if changing it."],
+                "assessment": ["type": "string", "description": "New 'how it's going' read (markdown), if changing it."],
+                "strategy": ["type": "string", "description": "New approach / focus (markdown), if changing it."],
+                "calorie_min": ["type": "number", "description": "New lower bound of the daily calorie range."],
+                "calorie_max": ["type": "number", "description": "New upper bound of the daily calorie range."],
+                "protein_target": ["type": "number", "description": "New daily protein target (g)."],
+                "change_note": ["type": "string", "description": "One line: what you changed + why (becomes the plan's changelog entry)."],
+            ],
+            "required": ["change_note"],
+        ],
+    ]
+
+    /// Forget / correct a fact in her durable profile notes — removes any remembered lines matching
+    /// `fact`. The counterpart to remember_about_user; together they let her profile be edited.
+    private static let forgetSchema: [String: Any] = [
+        "name": Name.forgetFact.rawValue,
+        "description": """
+        Remove something from your durable memory about her when she says it's wrong or no longer true \
+        ("I don't take creatine anymore", "forget that I work nights"). Pass the `fact` to forget; any \
+        remembered note matching it is dropped. To CORRECT a fact, forget the old one then remember the new.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "fact": ["type": "string", "description": "The thing to forget, e.g. 'works nights' or 'takes creatine'."],
+            ],
+            "required": ["fact"],
+        ],
+    ]
+
     /// Weight-logging schema — the value is in HER unit (lb or kg), stored as the entered
     /// number, exactly how the weigh-in sheet records it (no kg conversion here).
     private static func logWeightSchema(for profile: UserProfile) -> [String: Any] {
@@ -468,6 +517,8 @@ enum CoachTools {
             case rememberFact(String)
             case updatePlan(note: String)
             case logWorkout(type: WorkoutType, minutes: Int, focus: WorkoutFocus?, notes: String?)
+            case editPlan(PlanEdit)
+            case forgetFact(String)
         }
 
         /// Whether the UI must get an explicit one-tap confirm before applying.
@@ -477,7 +528,8 @@ enum CoachTools {
         /// view reads to pick its flow — keeping the risk policy here, next to the tools.
         var requiresConfirm: Bool {
             switch name {
-            case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan, .logWorkout:
+            case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan, .logWorkout,
+                 .editPlan, .forgetFact:
                 return false   // quick + reversible → auto-apply with Undo
             case .deleteFood,                                   // destructive
                  .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal:
@@ -501,6 +553,24 @@ enum CoachTools {
         var hasAnyChange: Bool {
             name != nil || meal != nil || calories != nil || proteinG != nil
                 || carbsG != nil || fatG != nil || quantity != nil
+        }
+    }
+
+    /// A plain-value set of edits for `edit_plan`: each nil when unchanged, so `apply` only touches
+    /// the fields she actually asked to change. `changeNote` becomes the plan's changelog line.
+    struct PlanEdit {
+        var headline: String?
+        var assessment: String?
+        var strategy: String?
+        var calorieMin: Double?
+        var calorieMax: Double?
+        var proteinTarget: Double?
+        var changeNote: String = ""
+
+        /// True when at least one substantive field is set (a bare note belongs in update_plan).
+        var hasAnyChange: Bool {
+            headline != nil || assessment != nil || strategy != nil
+                || calorieMin != nil || calorieMax != nil || proteinTarget != nil
         }
     }
 
@@ -601,6 +671,12 @@ enum CoachTools {
 
         case .logWorkout:
             return parseLogWorkout(input: input)
+
+        case .editPlan:
+            return parseEditPlan(input: input)
+
+        case .forgetFact:
+            return parseForget(input: input)
         }
     }
 
@@ -625,6 +701,48 @@ enum CoachTools {
             name: .logWorkout,
             confirmSummary: summary,
             action: .logWorkout(type: type, minutes: minutes, focus: focus, notes: note)))
+    }
+
+    private static func parseEditPlan(input: [String: Any]) -> ParseResult {
+        var edit = PlanEdit()
+        if let h = (input["headline"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !h.isEmpty { edit.headline = h }
+        if let a = (input["assessment"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !a.isEmpty { edit.assessment = a }
+        if let s = (input["strategy"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty { edit.strategy = s }
+        if let lo = doubleValue(input["calorie_min"]) {
+            guard lo > 0 else { return .invalid("A calorie floor has to be above zero. Nothing was changed.") }
+            edit.calorieMin = lo
+        }
+        if let hi = doubleValue(input["calorie_max"]) {
+            guard hi > 0 else { return .invalid("A calorie ceiling has to be above zero. Nothing was changed.") }
+            edit.calorieMax = hi
+        }
+        if let p = doubleValue(input["protein_target"]) {
+            guard p >= 0 else { return .invalid("Protein can't be negative. Nothing was changed.") }
+            edit.proteinTarget = p
+        }
+        if let lo = edit.calorieMin, let hi = edit.calorieMax, lo > hi {
+            return .invalid("The calorie floor can't be above the ceiling. Nothing was changed.")
+        }
+        guard edit.hasAnyChange else {
+            return .invalid("Tell me what to change on the plan — the targets, the focus, or the read. "
+                          + "(If you just want to note something, use update_plan.) Nothing was changed.")
+        }
+        var note = (input["change_note"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if note.isEmpty { note = "Adjusted the plan." }
+        edit.changeNote = note
+        return .ok(ParsedRequest(name: .editPlan,
+                                 confirmSummary: "update your plan — \(note)",
+                                 action: .editPlan(edit)))
+    }
+
+    private static func parseForget(input: [String: Any]) -> ParseResult {
+        guard let fact = (input["fact"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !fact.isEmpty else {
+            return .invalid("Tell me what to forget. Nothing was changed.")
+        }
+        return .ok(ParsedRequest(name: .forgetFact,
+                                 confirmSummary: "forget that \(fact)",
+                                 action: .forgetFact(fact)))
     }
 
     private static func parseRemember(input: [String: Any]) -> ParseResult {
@@ -958,6 +1076,48 @@ enum CoachTools {
             wmsg += ". Showing up counts 💪"
             return Applied(message: wmsg,
                            undo: { context.delete(workout); try? context.save() })
+
+        case .editPlan(let edit):
+            guard let plan = CoachPlan.current(in: context) else {
+                return Applied(message: "She doesn't have a plan yet — she can build one on the Progress tab.",
+                               undo: nil)
+            }
+            // Snapshot everything edit_plan can touch so undo restores exactly it.
+            let b = (plan.headline, plan.assessment, plan.strategy,
+                     plan.calorieMin, plan.calorieMax, plan.proteinTarget, plan.changelog, plan.updatedAt)
+            if let h = edit.headline { plan.headline = h }
+            if let a = edit.assessment { plan.assessment = a }
+            if let s = edit.strategy { plan.strategy = s }
+            if let lo = edit.calorieMin { plan.calorieMin = lo }
+            if let hi = edit.calorieMax { plan.calorieMax = hi }
+            if let p = edit.proteinTarget { plan.proteinTarget = p }
+            plan.changelog = plan.changelog + [PlanChange(date: .now, summary: edit.changeNote)]
+            plan.updatedAt = .now
+            try? context.save()
+            return Applied(message: "Updated your plan — \(edit.changeNote)", undo: {
+                plan.headline = b.0; plan.assessment = b.1; plan.strategy = b.2
+                plan.calorieMin = b.3; plan.calorieMax = b.4; plan.proteinTarget = b.5
+                plan.changelog = b.6; plan.updatedAt = b.7
+                try? context.save()
+            })
+
+        case .forgetFact(let fact):
+            let memory = CoachMemory.fetchOrCreate(in: context, profile: profile)
+            let before = memory.profileNotes
+            let kept = before
+                .split(separator: "\n", omittingEmptySubsequences: false)
+                .filter { !$0.lowercased().contains(fact.lowercased()) }
+                .joined(separator: "\n")
+            guard kept != before else {
+                return Applied(message: "I didn't find anything about \"\(fact)\" in what I remember, so nothing changed.",
+                               undo: nil)
+            }
+            memory.profileNotes = kept
+            memory.updatedAt = .now
+            try? context.save()
+            return Applied(message: "Done — I've forgotten that.", undo: {
+                memory.profileNotes = before; memory.updatedAt = .now; try? context.save()
+            })
 
         case .editFood(let id, let changes):
             guard let entry = fetchFood(id: id, context: context) else {
