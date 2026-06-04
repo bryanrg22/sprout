@@ -196,7 +196,7 @@ enum FaceOffMetricKind: CaseIterable, Identifiable {
         switch self {
         case .steps: return "Steps"
         case .water: return "Water"
-        case .gym:   return "Movement"
+        case .gym:   return "Exercise"
         }
     }
 }
