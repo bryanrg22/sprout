@@ -279,11 +279,15 @@ struct CoachView: View {
                     .focused($inputFocused)
                     .padding(.horizontal, Theme.Space.md)
                     .padding(.vertical, 11)
+                    // A rounded RECTANGLE, not a Capsule: a capsule's big semicircular end-caps
+                    // crowd and clip text once the field wraps to a second line (the "letters
+                    // flow out of the box" bug). A continuous 20pt corner still reads as a pill
+                    // at one line but grows into a clean rounded box as the text wraps.
                     .background(
-                        Capsule(style: .continuous)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .fill(Theme.cardRaised)
                             .overlay(
-                                Capsule(style: .continuous)
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
                                     .strokeBorder(
                                         inputFocused ? Theme.brand.opacity(0.45)
                                                      : Color.white.opacity(0.06),
@@ -422,7 +426,7 @@ struct CoachView: View {
         // Build the history from everything *except* the canned welcome seed. We map to
         // the client's `Msg` (content is a plain String here).
         // Recent sliding window only (full transcript stays on-device for scroll-back).
-        var recent = Array(messages.filter { !$0.isSystemSeed }.suffix(Self.maxHistoryMessages))
+        var recent = Array(messages.filter { !$0.isSystemSeed && !$0.isDecision }.suffix(Self.maxHistoryMessages))
         // The Messages API requires the conversation to start on a user turn.
         while let first = recent.first, first.roleRaw != "user" { recent.removeFirst() }
         // A message with a photo becomes a multimodal content array (image + optional text)
@@ -547,6 +551,9 @@ struct CoachView: View {
         let resultText = CoachTools.apply(pending.request, to: profile, context: context)
         confettiTrigger += 1   // a small celebration for taking a positive step
 
+        // Leave the decision in the transcript (grayed card, "Yes" highlighted) before the reply.
+        recordDecision(summary: pending.request.confirmSummary, accepted: true)
+
         continueTurn(history: pending.history,
                      assistantContent: pending.assistantContent,
                      toolUseId: pending.toolUseId,
@@ -562,6 +569,9 @@ struct CoachView: View {
         pendingTool = nil
         sendTrigger += 1
 
+        // Leave the decision in the transcript (grayed card, "Not now" highlighted).
+        recordDecision(summary: pending.request.confirmSummary, accepted: false)
+
         continueTurn(history: pending.history,
                      assistantContent: pending.assistantContent,
                      toolUseId: pending.toolUseId,
@@ -569,6 +579,17 @@ struct CoachView: View {
                                + "Nothing was changed. Respond warmly and without any pressure.",
                      isError: false,
                      depth: 0)
+    }
+
+    /// Persist a settled tool-confirm decision as a transcript row, so the confirm card stays in
+    /// history (grayed, with the chosen option highlighted) instead of vanishing on tap. It's a
+    /// UI-only marker: excluded from the API history we send and from long-term memory folding.
+    @MainActor
+    private func recordDecision(summary: String, accepted: Bool) {
+        let marker = ChatMessage(role: "assistant", content: "",
+                                 decisionSummary: summary, decisionAccepted: accepted)
+        context.insert(marker)
+        try? context.save()
     }
 
     /// Show the "done · Undo" banner for a just-applied quick log, auto-dismissing after a few
@@ -671,7 +692,7 @@ struct CoachView: View {
 
         // Pure selection: which older, not-yet-folded messages should we summarize?
         let toFold = CoachMemoryService.messagesToConsolidate(
-            messages: messages,
+            messages: messages.filter { !$0.isDecision },   // UI-only decision rows never fold
             windowSize: Self.maxHistoryMessages,
             summarizedThrough: memory.summarizedThroughDate
         )
@@ -808,14 +829,22 @@ private struct MessageRow: View {
                     .padding(.bottom, 2)
             }
 
-            HStack(alignment: .bottom, spacing: Theme.Space.xs) {
-                if message.isUser {
-                    Spacer(minLength: 44)
-                    bubble
-                } else {
-                    CoachAvatar(size: 28)
-                    bubble
-                    Spacer(minLength: 44)
+            if message.isDecision {
+                // A settled confirm decision, kept in the transcript as a grayed card with the
+                // chosen option highlighted — history of what she decided, not a live prompt.
+                DecidedConfirmCard(coachName: coachName,
+                                   summary: message.decisionSummary ?? "",
+                                   accepted: message.decisionAccepted ?? false)
+            } else {
+                HStack(alignment: .bottom, spacing: Theme.Space.xs) {
+                    if message.isUser {
+                        Spacer(minLength: 44)
+                        bubble
+                    } else {
+                        CoachAvatar(size: 28)
+                        bubble
+                        Spacer(minLength: 44)
+                    }
                 }
             }
         }
@@ -831,11 +860,20 @@ private struct MessageRow: View {
                     .frame(maxWidth: 240, maxHeight: 280)
             }
             if !message.content.isEmpty {
-                Text(Self.styled(message.content))
-                    .font(.body)
-                    .foregroundStyle(message.isUser ? Theme.background : Theme.textPrimary)
-                    .padding(.horizontal, Theme.Space.md)
-                    .padding(.vertical, 11)
+                Group {
+                    if message.isUser {
+                        // Her own text — plain, on the brand gradient. Inline markup only.
+                        Text(Self.styled(message.content))
+                            .font(.body)
+                            .foregroundStyle(Theme.background)
+                    } else {
+                        // Vita's replies render real markdown blocks (lists, headings, rules)
+                        // instead of leaking literal `- ` / `##` / `---`.
+                        MarkdownMessage(message.content, color: Theme.textPrimary)
+                    }
+                }
+                .padding(.horizontal, Theme.Space.md)
+                .padding(.vertical, 11)
             }
         }
         .background(bubbleBackground)
@@ -919,13 +957,14 @@ private struct BubbleShape: InsettableShape {
 private struct QuickPromptChip: View {
     let text: String
     let action: () -> Void
-    @State private var pressed = false
 
     var body: some View {
         Button(action: action) {
             Text(text)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(Theme.brand)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, Theme.Space.md)
                 .padding(.vertical, 8)
                 .background(Theme.brandSoft, in: Capsule(style: .continuous))
@@ -934,14 +973,11 @@ private struct QuickPromptChip: View {
                         .strokeBorder(Theme.brand.opacity(0.25), lineWidth: 1)
                 )
         }
-        .buttonStyle(.plain)
-        .scaleEffect(pressed ? 0.95 : 1)
-        .animation(.easeOut(duration: 0.12), value: pressed)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in pressed = true }
-                .onEnded { _ in pressed = false }
-        )
+        // `.jelly` drives the press-squish from the ButtonStyle's own `isPressed`. The old
+        // `.simultaneousGesture(DragGesture(minimumDistance: 0))` was the "can't scroll the
+        // chips" bug: at distance 0 it claimed the touch instantly and starved the horizontal
+        // ScrollView's pan. A ButtonStyle yields to the scroll, so the row scrolls again.
+        .buttonStyle(.jelly)
     }
 }
 
@@ -1114,5 +1150,72 @@ private struct ToolConfirmCard: View {
         .popIn(appeared)
         .onAppear { appeared = true }
         .accessibilityElement(children: .contain)
+    }
+}
+
+// MARK: - Decided confirm card (a settled proposal, kept in the transcript)
+
+/// The history form of `ToolConfirmCard`. Once she taps Yes / Not now, the live card is replaced
+/// by this — same silhouette, but grayed and non-interactive, with the option she chose lit up in
+/// light green. The conversation keeps a visible record of what was decided instead of the card
+/// just vanishing. Backed by a `ChatMessage` decision row, so it survives relaunch.
+private struct DecidedConfirmCard: View {
+    let coachName: String
+    let summary: String
+    let accepted: Bool
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: Theme.Space.xs) {
+            CoachAvatar(size: 28)
+
+            VStack(alignment: .leading, spacing: Theme.Space.sm) {
+                Text("Want me to \(summary)?")
+                    .font(.body)
+                    .foregroundStyle(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: Theme.Space.sm) {
+                    decidedPill(title: "Yes", chosen: accepted)
+                    decidedPill(title: "Not now", chosen: !accepted)
+                }
+            }
+            .padding(.horizontal, Theme.Space.md)
+            .padding(.vertical, 12)
+            .background(Theme.card.opacity(0.55))
+            .clipShape(BubbleShape(isUser: false))
+            .overlay(
+                BubbleShape(isUser: false)
+                    .strokeBorder(Color.white.opacity(0.05), lineWidth: 1)
+            )
+            .opacity(0.9)
+
+            Spacer(minLength: 24)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(accepted ? "Accepted" : "Declined"): \(summary)")
+    }
+
+    /// One settled pill: the chosen option glows light green with a check; the other is dimmed.
+    @ViewBuilder
+    private func decidedPill(title: String, chosen: Bool) -> some View {
+        HStack(spacing: 5) {
+            if chosen {
+                Image(systemName: "checkmark").font(.caption2.weight(.bold))
+            }
+            Text(title).font(.subheadline.weight(chosen ? .semibold : .medium))
+        }
+        .foregroundStyle(chosen ? Theme.positive : Theme.textSecondary.opacity(0.6))
+        .padding(.horizontal, Theme.Space.md)
+        .padding(.vertical, 9)
+        .background(
+            Capsule(style: .continuous)
+                .fill(chosen ? Theme.positive.opacity(0.16) : Theme.cardRaised.opacity(0.5))
+        )
+        .overlay(
+            Capsule(style: .continuous)
+                .strokeBorder(chosen ? Theme.positive.opacity(0.5) : Color.white.opacity(0.05),
+                              lineWidth: 1)
+        )
     }
 }

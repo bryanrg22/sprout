@@ -29,11 +29,13 @@ enum CoachContext {
                        foods: [FoodEntry],
                        weights: [WeightEntry],
                        memory: CoachMemory? = nil) -> String {
-        persona(profile: profile)
-            + bioLine(profile: profile)
-            + "\n\nHere is her current data:\n"
+        // Assembled in a few named parts (not one long `+` chain) so the Swift type-checker
+        // doesn't strain — the concatenation order/output is unchanged. `bioLine`/`memoryBlock`
+        // carry their own leading "\n\n" (or "" when empty), so they're appended directly.
+        let header = persona(profile: profile) + bioLine(profile: profile)
+        let data = "\n\nHere is her current data:\n"
             + summary(profile: profile, foods: foods, weights: weights)
-            + "\n\nUse this data — including the exact foods she logged today and this week — to make "
+        let usage = "\n\nUse this data — including the exact foods she logged today and this week — to make "
             + "your replies specific and personal, but speak naturally — "
             + "don't dump numbers or read the data back like a report unless she asks. "
             + "You CAN see her individual logged foods above, so never say you can't; "
@@ -42,9 +44,29 @@ enum CoachContext {
             + "food she wants logged, estimate its calories + macros from the image and call the "
             + "log_food tool (one call per distinct item) — you don't need to ask her for the numbers. "
             + "Today's date is \(Self.longDate.string(from: .now))."
-            + memoryBlock(memory)
+        let tail = memoryBlock(memory)
             + "\n\n" + toolGuidance(profile: profile)
+            + "\n\n" + formattingGuidance
+        return header + data + usage + tail
     }
+
+    /// How Vita should format her replies. Her messages render as markdown in a phone-sized chat
+    /// bubble (via `MarkdownMessage`), so this steers her toward short, scannable, human text and
+    /// AWAY from heavy document structure (big headings, horizontal rules) that reads cold in a
+    /// chat — the same "use markdown deliberately, keep it light" guidance the big assistants get.
+    /// The client renderer handles whatever she emits; this just keeps the habits clean so a reply
+    /// never looks like a spec sheet.
+    static let formattingGuidance = """
+    Formatting your replies: your messages render as markdown in a small chat bubble, so write \
+    for a phone screen:
+    - Keep it short — usually a sentence or two. This is a chat, not an essay or a report.
+    - Use a short bulleted list (lines starting with "- ") only when you're genuinely listing \
+    two or more things; otherwise just write a normal sentence.
+    - Use **bold** sparingly — at most one key number or word.
+    - Do NOT use headings (#) or horizontal rules (---) — they look heavy and clinical in a chat. \
+    No tables or code blocks.
+    - Plain warmth over structure. A little emoji is welcome in moderation.
+    """
 
     /// The long-term-memory section of the system prompt: the durable qualitative notes and
     /// the rolling conversation summary, each injected only when non-empty.
