@@ -26,13 +26,26 @@ extension UserProfile {
                                   sex: sex)
     }
 
+    /// The safe minimum daily intake (kcal) — the same floor `NutritionMath.calorieGoal` enforces.
+    /// A plan override is never allowed to route the app below this.
+    var safeCalorieFloor: Double { sex == .female ? 1200 : 1500 }
+
     func dailyCalorieTarget(weightLbs: Double) -> Double {
-        calorieGoal(weightLbs: weightLbs).dailyCalories
+        // The adaptive Plan, when active, is the single source of truth (mirrored into the override
+        // and kept in sync from CoachPlan) — but still clamped to the safe floor.
+        if calorieTargetOverride > 0 { return max(calorieTargetOverride, safeCalorieFloor) }
+        return calorieGoal(weightLbs: weightLbs).dailyCalories
     }
 
     func macroTargets(weightLbs: Double) -> NutritionMath.Macros {
-        NutritionMath.macros(calories: dailyCalorieTarget(weightLbs: weightLbs),
-                             weightKg: NutritionMath.lbToKg(weightLbs))
+        let calories = dailyCalorieTarget(weightLbs: weightLbs)
+        let base = NutritionMath.macros(calories: calories, weightKg: NutritionMath.lbToKg(weightLbs))
+        // Honor the plan's protein target when set: anchor protein, refill carbs so the macros still
+        // add up to the calorie target (fat stays at the bodyweight floor).
+        guard proteinTargetOverride > 0 else { return base }
+        let proteinG = proteinTargetOverride
+        let carbsG = max(0, calories - proteinG * 4 - base.fatG * 9) / 4
+        return NutritionMath.Macros(proteinG: proteinG.rounded(), carbsG: carbsG.rounded(), fatG: base.fatG)
     }
 
     /// Daily water goal in oz. Uses her explicit override when set, else the

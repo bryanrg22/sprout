@@ -97,4 +97,38 @@ final class ProfileTargetsTests: XCTestCase {
         let target = p.dailyCalorieTarget(weightLbs: 110)
         XCTAssertGreaterThanOrEqual(target, 1200) // female floor holds
     }
+
+    // MARK: - Plan target overrides (the plan as the single source of truth)
+
+    func testCalorieOverrideDrivesTheTarget() {
+        let p = victoria()
+        p.calorieTargetOverride = 1900
+        XCTAssertEqual(p.dailyCalorieTarget(weightLbs: 158), 1900, accuracy: 0.0001)
+    }
+
+    /// A plan can RAISE the target freely, but can never route the app below the safe floor.
+    func testCalorieOverrideStillClampedToSafeFloor() {
+        let p = victoria()                 // female → floor 1200
+        p.calorieTargetOverride = 900
+        XCTAssertEqual(p.dailyCalorieTarget(weightLbs: 158), 1200, accuracy: 0.0001)
+    }
+
+    func testProteinOverrideDrivesProteinAndRefillsCarbs() {
+        let p = victoria()
+        p.calorieTargetOverride = 1800
+        p.proteinTargetOverride = 150
+        let m = p.macroTargets(weightLbs: 158)
+        XCTAssertEqual(m.proteinG, 150, accuracy: 0.0001)
+        // Macros still add up to the (overridden) calorie target within rounding.
+        let kcal = NutritionMath.calories(proteinG: m.proteinG, carbsG: m.carbsG, fatG: m.fatG)
+        XCTAssertEqual(kcal, 1800, accuracy: 12)
+    }
+
+    func testZeroOverrideFallsBackToComputed() {
+        let p = victoria()
+        p.calorieTargetOverride = 0
+        p.proteinTargetOverride = 0
+        XCTAssertEqual(p.dailyCalorieTarget(weightLbs: 158),
+                       p.calorieGoal(weightLbs: 158).dailyCalories, accuracy: 0.0001)
+    }
 }
