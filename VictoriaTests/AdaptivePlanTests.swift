@@ -140,4 +140,121 @@ final class AdaptivePlanTests: XCTestCase {
         XCTAssertTrue(without.contains("DATA"))
         XCTAssertTrue(without.contains("didn't add extra context"))
     }
+
+    // MARK: - Review pass: changelog preservation (the core P3 invariant)
+
+    /// The whole point of the review pass: adaptation is visible. Given an old plan with N changelog
+    /// entries and a freshly-authored result (which always carries exactly one new entry), merging
+    /// must yield N+1 entries — the old ones first, in order, with the new one appended last.
+    func testReviewMergeAppendsNewChangelogEntryPreservingHistory() {
+        let t0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let oldChangelog = [
+            PlanChange(date: t0, summary: "Built your starting plan."),
+            PlanChange(date: t0.addingTimeInterval(86_400), summary: "Bumped protein to 140g."),
+        ]
+        // A fresh review result → makePlan stamps exactly one new entry.
+        let reviewResult: [String: Any] = [
+            "headline": "Still on track",
+            "calorie_min": 1600, "calorie_max": 1750, "protein_target": 140,
+            "insights": [],
+            "changelog_note": "Trimmed ceiling 50 kcal — loss stalled this week.",
+        ]
+        let fresh = PlanService.makePlan(from: reviewResult,
+                                         dataPoints: 14,
+                                         now: t0.addingTimeInterval(2 * 86_400))
+
+        let merged = PlanService.mergedChangelog(old: oldChangelog, new: fresh.changelog)
+
+        XCTAssertEqual(merged.count, 3)                                     // N (2) + 1
+        XCTAssertEqual(merged[0].summary, "Built your starting plan.")      // old first…
+        XCTAssertEqual(merged[1].summary, "Bumped protein to 140g.")        // …in order…
+        XCTAssertEqual(merged[2].summary, "Trimmed ceiling 50 kcal — loss stalled this week.") // new last
+    }
+
+    /// Generalizes the invariant across N: any old count yields N+1, with the appended entry last.
+    func testReviewMergeYieldsNPlusOneForAnyHistoryLength() {
+        let base = Date(timeIntervalSince1970: 1_700_000_000)
+        for n in 0...5 {
+            let old = (0..<n).map { i in
+                PlanChange(date: base.addingTimeInterval(Double(i) * 86_400), summary: "entry \(i)")
+            }
+            let fresh = PlanService.makePlan(from: ["changelog_note": "new review line"], dataPoints: 0)
+            let merged = PlanService.mergedChangelog(old: old, new: fresh.changelog)
+            XCTAssertEqual(merged.count, n + 1, "N=\(n) should yield N+1 entries")
+            XCTAssertEqual(merged.last?.summary, "new review line", "new entry must be last (N=\(n))")
+            // Old entries preserved in their original order at the front.
+            for i in 0..<n { XCTAssertEqual(merged[i].summary, "entry \(i)") }
+        }
+    }
+
+    /// The merge keeps the old entries' identities/dates intact (it doesn't rebuild them) and never
+    /// mutates the inputs — so a default "No change needed" review still records a line in history.
+    func testReviewMergePreservesOldEntryDatesAndDoesNotMutateInputs() {
+        let d0 = Date(timeIntervalSince1970: 1_700_000_000)
+        let old = [PlanChange(date: d0, summary: "Built your starting plan.")]
+        // A "nothing changed" review: no changelog_note → makePlan defaults it to "Plan created.".
+        let fresh = PlanService.makePlan(from: [:], dataPoints: 10)
+        let merged = PlanService.mergedChangelog(old: old, new: fresh.changelog)
+
+        XCTAssertEqual(merged.count, 2)
+        XCTAssertEqual(merged[0].date, d0)                 // original date carried through unchanged
+        XCTAssertEqual(merged[0].id, old[0].id)            // same entry, not a rebuilt copy
+        XCTAssertEqual(old.count, 1)                       // input left untouched
+    }
+
+    // MARK: - daysSince helper
+
+    func testDaysSinceCountsWholeCalendarDays() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = cal.startOfDay(for: Date(timeIntervalSince1970: 1_700_000_000))
+            .addingTimeInterval(11 * 3600)                  // 11am "today"
+        let threeDaysAgo = cal.date(byAdding: .day, value: -3, to: now)!
+        XCTAssertEqual(PlanService.daysSince(threeDaysAgo, now: now, calendar: cal), 3)
+        XCTAssertEqual(PlanService.daysSince(now, now: now, calendar: cal), 0)         // same day → 0
+        // Defends against a future-dated plan (clock skew / CloudKit): never negative.
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: now)!
+        XCTAssertEqual(PlanService.daysSince(tomorrow, now: now, calendar: cal), 0)
+    }
+
+    // MARK: - Review prompts (pure)
+
+    func testReviewUserContentIncludesPlanAndData() {
+        let plan = CoachPlan(
+            headline: "On track for 135",
+            assessment: "Trending down nicely.",
+            calorieMin: 1600, calorieMax: 1750, proteinTarget: 130,
+            insights: [PlanInsight(title: "Protein short", body: "78g vs 130g", tone: .nudge)]
+        )
+        let out = PlanService.reviewUserContent(plan: plan, dataSummary: "FRESH-DATA", daysSince: 5)
+        XCTAssertTrue(out.contains("On track for 135"))     // current plan echoed in…
+        XCTAssertTrue(out.contains("FRESH-DATA"))           // …alongside the new data
+        XCTAssertTrue(out.contains("Protein short"))        // existing insights surfaced for comparison
+        XCTAssertTrue(out.contains("5 days ago"))           // cadence framing
+        XCTAssertTrue(out.contains("write_plan"))           // re-emit instruction
+    }
+
+    func testReviewUserContentSingularDayAndTodayPhrasing() {
+        let plan = CoachPlan(headline: "Hi")
+        XCTAssertTrue(PlanService.reviewUserContent(plan: plan, dataSummary: "D", daysSince: 1)
+            .contains("1 day ago"))                          // singular, not "1 days"
+        XCTAssertTrue(PlanService.reviewUserContent(plan: plan, dataSummary: "D", daysSince: 0)
+            .contains("today"))                              // 0 days → "today"
+    }
+
+    func testReviewUserContentHandlesUnsetTargetsAndNoInsights() {
+        let plan = CoachPlan(headline: "Hi")               // no range, no protein, no insights
+        let out = PlanService.reviewUserContent(plan: plan, dataSummary: "D", daysSince: 2)
+        XCTAssertTrue(out.contains("not set"))             // range + protein both render "not set"
+        XCTAssertTrue(out.contains("none on the current plan"))
+    }
+
+    func testReviewSystemPromptKeepsRangeRuleAndChangelogInstruction() {
+        let profile = UserProfile()
+        profile.name = "Victoria"
+        let sys = PlanService.reviewSystemPrompt(profile: profile)
+        XCTAssertTrue(sys.contains("Victoria"))
+        XCTAssertTrue(sys.contains("RANGE"))                       // range-not-point rule survives
+        XCTAssertTrue(sys.contains("No change needed — on track")) // the explicit no-op line
+        XCTAssertTrue(sys.lowercased().contains("only if the data warrants"))
+    }
 }
