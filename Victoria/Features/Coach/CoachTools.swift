@@ -419,7 +419,7 @@ enum CoachTools {
         "input_schema": [
             "type": "object",
             "properties": [
-                "fact": ["type": "string", "description": "The thing to forget, e.g. 'works nights' or 'takes creatine'."],
+                "fact": ["type": "string", "description": "The SHORTEST distinctive keyword(s) to remove — match how it was likely stored, NOT a full sentence. Use 'desk job' not 'I work a 9-5 desk job'; 'creatine' not 'I take creatine every morning'. Pick the 1–3 key words; matching is whole-word (plurals OK)."],
             ],
             "required": ["fact"],
         ],
@@ -739,6 +739,12 @@ enum CoachTools {
         guard let fact = (input["fact"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
               !fact.isEmpty else {
             return .invalid("Tell me what to forget. Nothing was changed.")
+        }
+        // Guard against a too-vague target ("i", "a") that, as a substring, would match — and wipe —
+        // nearly every note. `removingFact` matches whole words, but require a real token up front too.
+        guard fact.count >= 3 else {
+            return .invalid("That's too broad to forget safely — name the specific thing "
+                          + "(e.g. \"that I'm vegetarian\"). Nothing was changed.")
         }
         return .ok(ParsedRequest(name: .forgetFact,
                                  confirmSummary: "forget that \(fact)",
@@ -1104,11 +1110,7 @@ enum CoachTools {
         case .forgetFact(let fact):
             let memory = CoachMemory.fetchOrCreate(in: context, profile: profile)
             let before = memory.profileNotes
-            let kept = before
-                .split(separator: "\n", omittingEmptySubsequences: false)
-                .filter { !$0.lowercased().contains(fact.lowercased()) }
-                .joined(separator: "\n")
-            guard kept != before else {
+            guard let kept = removingFact(fact, from: before) else {
                 return Applied(message: "I didn't find anything about \"\(fact)\" in what I remember, so nothing changed.",
                                undo: nil)
             }
@@ -1230,6 +1232,40 @@ enum CoachTools {
     private static func fetchFood(id: UUID, context: ModelContext) -> FoodEntry? {
         let descriptor = FetchDescriptor<FoodEntry>(predicate: #Predicate { $0.id == id })
         return (try? context.fetch(descriptor))?.first
+    }
+
+    /// Remove `fact` from durable profile notes WITHOUT collateral damage. Matches the fact as a
+    /// whole word/phrase (so "art" can't delete "startup", and a stray "i" can't delete every line),
+    /// and on a multi-fact line — the comma/“·”-joined onboarding seed is a single line — strips only
+    /// the matching clause(s) instead of nuking the whole line. Returns the new notes, or nil when
+    /// nothing matched (caller reports "didn't find anything"). Pure + testable.
+    static func removingFact(_ fact: String, from notes: String) -> String? {
+        let needle = fact.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard needle.count >= 3, !notes.isEmpty else { return nil }
+        // Whole-word, but tolerant of a common inflection on the last word — so "desk job" still
+        // matches a stored "desk jobs" (autocorrect/plural), while the leading \b still prevents the
+        // dangerous mid-word over-match ("art" must not hit "startup").
+        let pattern = "\\b" + NSRegularExpression.escapedPattern(for: needle) + "(ing|es|ed|'s|s)?\\b"
+        func matches(_ s: String) -> Bool {
+            s.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
+        }
+        var changed = false
+        var outLines: [String] = []
+        for raw in notes.split(separator: "\n", omittingEmptySubsequences: false).map(String.init) {
+            guard matches(raw) else { outLines.append(raw); continue }
+            if raw.contains(",") || raw.contains("·") {
+                // Multi-clause line → drop only the offending clause(s), keep the rest.
+                let kept = raw.components(separatedBy: CharacterSet(charactersIn: ",·"))
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty && !matches($0) }
+                changed = true
+                if !kept.isEmpty { outLines.append(kept.joined(separator: ", ")) }
+            } else {
+                changed = true   // single-fact line → drop it entirely
+            }
+        }
+        guard changed else { return nil }
+        return outLines.joined(separator: "\n").trimmingCharacters(in: .newlines)
     }
 
     // MARK: - Helpers

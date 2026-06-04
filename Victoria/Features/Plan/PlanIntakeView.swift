@@ -141,18 +141,40 @@ struct PlanIntakeView: View {
     /// (`CoachMemory.profileNotes`) — so it grows her "about me" and Vita carries it everywhere, not
     /// just inside the plan. Deduped + bounded, mirroring the remember_about_user tool. (The timeframe
     /// is goal-specific, not durable, so it stays out of the profile.)
+    /// Stable label every plan-intake note carries, so a rebuild replaces it in place instead of
+    /// stacking near-duplicates.
+    nonisolated static let intakePrefix = "From her plan intake — "
+
     private func foldContextIntoProfile() {
         let bits = [dayToDay, exercise]
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         guard !bits.isEmpty else { return }
-        let addition = "From her plan intake — her life + training: " + bits.joined(separator: " · ")
+        let addition = Self.intakePrefix + "her life + training: " + bits.joined(separator: " · ")
         let memory = CoachMemory.fetchOrCreate(in: context, profile: profile)
-        guard !memory.profileNotes.contains(addition) else { return }   // don't re-add on a rebuild
-        memory.profileNotes = memory.profileNotes.isEmpty ? addition : memory.profileNotes + "\n" + addition
-        if memory.profileNotes.count > 2000 { memory.profileNotes = String(memory.profileNotes.suffix(2000)) }
+        let merged = Self.foldingIntake(addition, into: memory.profileNotes, prefix: Self.intakePrefix)
+        guard merged != memory.profileNotes else { return }   // exact rebuild → nothing to write
+        memory.profileNotes = merged
         memory.updatedAt = .now
         try? context.save()
+    }
+
+    /// Fold a plan-intake line into existing profile notes: drop any prior line with the same stable
+    /// `prefix` (so editing-then-rebuilding replaces rather than duplicates), append the new one, then
+    /// bound the result by dropping WHOLE leading lines — never a raw `suffix(maxChars)` that would
+    /// slice an older note mid-sentence — always keeping the just-added line (it's last). Pure + testable.
+    nonisolated static func foldingIntake(_ addition: String, into existing: String,
+                                          prefix: String, maxChars: Int = 2000) -> String {
+        var lines = existing
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init)
+            .filter { !$0.hasPrefix(prefix) }
+        lines.append(addition)
+        var notes = lines.joined(separator: "\n").trimmingCharacters(in: .newlines)
+        while notes.count > maxChars, let nl = notes.firstIndex(of: "\n") {
+            notes = String(notes[notes.index(after: nl)...])
+        }
+        return notes
     }
 
     private func build() {

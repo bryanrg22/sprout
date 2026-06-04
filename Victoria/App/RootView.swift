@@ -109,6 +109,10 @@ struct MainTabView: View {
     /// After What's New, invite a planless user to build their adaptive plan ("let's personalize you").
     @State private var showPlanInvite = false
     @State private var showPlanIntake = false
+    /// Fire the plan invite at most once, ever. Decoupled from the volatile `coachPlans` @Query so a
+    /// CloudKit cold-start (reinstall / new device, plan not yet hydrated) can't re-invite a user who
+    /// already has a plan — accepting it would rebuild and wipe their existing plan's history.
+    @AppStorage("planInviteShown") private var planInviteShown = false
     @Query private var coachPlans: [CoachPlan]
     @Query private var allFoods: [FoodEntry]
     @Query private var allWeights: [WeightEntry]
@@ -138,14 +142,20 @@ struct MainTabView: View {
         // "What's New" once per update — a celebratory rundown of the release.
         .sheet(isPresented: $showWhatsNew, onDismiss: {
             WhatsNew.markSeen()
-            // Right after the rundown, invite a planless user to make Sprout theirs.
-            if coachPlans.isEmpty { showPlanInvite = true }
+            // Right after the rundown, invite a planless user to make Sprout theirs — but only once
+            // ever, so a not-yet-synced plan on a fresh install can't trigger a history-wiping rebuild.
+            if coachPlans.isEmpty && !planInviteShown {
+                planInviteShown = true
+                showPlanInvite = true
+            }
         }) {
             WhatsNewView(release: WhatsNew.current)
         }
         // "Let's personalize you" — the entry into the adaptive Plan, surfaced once after What's New.
         .confirmationDialog("Make Sprout yours 🌱", isPresented: $showPlanInvite, titleVisibility: .visible) {
-            Button("Build my plan") { showPlanIntake = true }
+            // Defer to the next runloop tick: presenting the intake sheet synchronously from the
+            // dialog button collides with the dialog's own dismissal and SwiftUI drops the sheet.
+            Button("Build my plan") { DispatchQueue.main.async { showPlanIntake = true } }
             Button("Maybe later", role: .cancel) {}
         } message: {
             Text("Let \(profile.coachName.isEmpty ? "Vita" : profile.coachName) study your goals and every day you've logged, then build a personal plan that adapts as you go.")

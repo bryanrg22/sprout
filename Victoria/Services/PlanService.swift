@@ -37,12 +37,33 @@ enum PlanService {
             maxTokens: 2200
         )
 
-        let plan = makePlan(from: result, dataPoints: points)
-        // One plan per user — replace any prior one.
-        if let existing = CoachPlan.current(in: context) { context.delete(existing) }
-        context.insert(plan)
+        let fresh = makePlan(from: result, dataPoints: points)
+        // One plan per user. If one exists, rebuild it IN PLACE (same row) rather than
+        // delete-and-insert. Deleting the row could (a) tombstone a CoachPlan that an in-flight
+        // `review()` is about to mutate across its await, and (b) invalidate the live reference a
+        // Vita edit_plan / update_plan Undo closure captured. Mutating in place keeps the row — and
+        // every reference to it — valid, and preserves the CloudKit record. A fresh build still
+        // replaces all content (changelog + createdAt included — it's a brand-new plan).
+        if let existing = CoachPlan.current(in: context) {
+            existing.headline = fresh.headline
+            existing.assessment = fresh.assessment
+            existing.strategy = fresh.strategy
+            existing.calorieMin = fresh.calorieMin
+            existing.calorieMax = fresh.calorieMax
+            existing.proteinTarget = fresh.proteinTarget
+            existing.goalSummary = fresh.goalSummary
+            existing.timeframe = fresh.timeframe
+            existing.dataPointsAtBuild = fresh.dataPointsAtBuild
+            existing.insights = fresh.insights
+            existing.changelog = fresh.changelog
+            existing.createdAt = fresh.createdAt
+            existing.updatedAt = fresh.updatedAt
+            try? context.save()
+            return existing
+        }
+        context.insert(fresh)
         try? context.save()
-        return plan
+        return fresh
     }
 
     // MARK: - Review (the light "are we on target?" adaptation pass)
@@ -239,12 +260,17 @@ enum PlanService {
             return PlanInsight(title: title, body: body, tone: tone)
         }
         let note = (result["changelog_note"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "Plan created."
+        // Tolerate a swapped range (min > max) from the model — normalize it rather than store it
+        // as-is, where `hasRange` would be false and the targets would silently vanish ("not set").
+        var cMin = num(result["calorie_min"])
+        var cMax = num(result["calorie_max"])
+        if cMin > 0, cMax > 0, cMin > cMax { swap(&cMin, &cMax) }
         return CoachPlan(
             headline: str(result["headline"]),
             assessment: str(result["assessment"]),
             strategy: str(result["strategy"]),
-            calorieMin: num(result["calorie_min"]),
-            calorieMax: num(result["calorie_max"]),
+            calorieMin: cMin,
+            calorieMax: cMax,
             proteinTarget: num(result["protein_target"]),
             goalSummary: str(result["goal_summary"]),
             timeframe: str(result["timeframe"]),
@@ -278,10 +304,13 @@ enum PlanService {
     /// Distinct calendar days with any food OR weight logged — the "how much do we actually know"
     /// signal that drives the plan's confidence hedging.
     static func loggedDayCount(foods: [FoodEntry], weights: [WeightEntry],
-                               calendar: Calendar = .current) -> Int {
+                               now: Date = .now, calendar: Calendar = .current) -> Int {
+        let today = calendar.startOfDay(for: now)
         var days = Set<Date>()
-        for f in foods { days.insert(calendar.startOfDay(for: f.date)) }
-        for w in weights { days.insert(calendar.startOfDay(for: w.date)) }
+        // Exclude future-dated entries (clock skew / fat-finger) so they can't inflate the count and
+        // wrongly flip `isEarlyRead` — consistent with how the intake average already ignores them.
+        for f in foods where calendar.startOfDay(for: f.date) <= today { days.insert(calendar.startOfDay(for: f.date)) }
+        for w in weights where calendar.startOfDay(for: w.date) <= today { days.insert(calendar.startOfDay(for: w.date)) }
         return days.count
     }
 
@@ -311,7 +340,10 @@ enum PlanService {
         // Eating very little → the "eat MORE to get better results" teaching moment.
         let floor = profile.sex == .female ? 1200.0 : 1500.0
         let daily = recentDailyCalories(foods, days: 7, now: now, calendar: calendar)
-        if !daily.isEmpty {
+        // Need ≥3 logged days before calling intake "low": averaging over 1–2 days (or a single
+        // breakfast-only day) makes under-LOGGING look like under-EATING and fires a false "eat more"
+        // moment. Mirrors the ≥3 guard the rate branch below uses.
+        if daily.count >= 3 {
             let avg = daily.reduce(0, +) / Double(daily.count)
             if avg > 0 && avg < floor {
                 flags.append("Her logged intake is averaging only ~\(Int(avg.rounded())) kcal/day. If that's real "
@@ -321,8 +353,11 @@ enum PlanService {
         }
 
         // Losing very fast → the "ease off a touch for better, lasting results" teaching moment (loss only).
-        if profile.pace.direction == .lose, weights.count >= 3 {
-            let rate = TrendCalculator.ratePerWeek(weights)   // negative = losing
+        // Only real (non-future-dated) weigh-ins: a single future-dated entry (clock skew / fat-finger)
+        // would otherwise slide TrendCalculator's window into the future and skew the rate.
+        let realWeights = weights.filter { $0.date <= now }
+        if profile.pace.direction == .lose, realWeights.count >= 3 {
+            let rate = TrendCalculator.ratePerWeek(realWeights)   // negative = losing
             if rate < -2.0 {
                 flags.append("She's losing fast — about \(String(format: "%.1f", abs(rate))) lb/week. Easing the "
                     + "deficit a little would protect her muscle and make the loss actually stick — frame it as "
@@ -352,7 +387,20 @@ enum PlanService {
         if let d = v as? Double { return d }
         if let i = v as? Int { return Double(i) }
         if let n = v as? NSNumber { return n.doubleValue }
-        if let s = v as? String { return Double(s.filter { $0.isNumber || $0 == "." }) ?? 0 }
+        if let s = v as? String {
+            let t = s.trimmingCharacters(in: .whitespaces)
+            if let d = Double(t) { return d }
+            // Salvage a number from a messy string ("1,600 kcal", "~1600", "-50"): keep digits, the
+            // FIRST dot, and a leading sign — so the sign isn't dropped and a stray second dot can't
+            // poison the parse. (Dead today: JSONSerialization hands numbers back as NSNumber.)
+            var out = "", seenDot = false
+            for ch in t {
+                if ch.isNumber { out.append(ch) }
+                else if ch == "." && !seenDot { out.append(ch); seenDot = true }
+                else if ch == "-" && out.isEmpty { out.append(ch) }
+            }
+            return Double(out) ?? 0
+        }
         return 0
     }
 

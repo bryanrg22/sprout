@@ -128,7 +128,24 @@ final class AdaptivePlanTests: XCTestCase {
             FoodEntry(date: d1, name: "c", calories: 100),
         ]
         let weights = [WeightEntry(date: d0, weightLbs: 150)]  // same day as food
-        XCTAssertEqual(PlanService.loggedDayCount(foods: foods, weights: weights, calendar: cal), 2)
+        XCTAssertEqual(PlanService.loggedDayCount(foods: foods, weights: weights, now: d0, calendar: cal), 2)
+    }
+
+    func testLoggedDayCountExcludesFutureDatedEntries() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = cal.startOfDay(for: Date(timeIntervalSince1970: 1_700_000_000))
+        let today = FoodEntry(date: now, name: "a", calories: 100)
+        let future = FoodEntry(date: cal.date(byAdding: .day, value: 3, to: now)!, name: "b", calories: 100)
+        XCTAssertEqual(PlanService.loggedDayCount(foods: [today, future], weights: [], now: now, calendar: cal), 1,
+                       "a future-dated entry must not inflate the logged-day count")
+    }
+
+    /// num() salvages a messy numeric string (the dead-today string branch) — keeps the sign and the
+    /// first dot rather than dropping them.
+    func testMakePlanSalvagesMessyNumericStrings() {
+        let plan = PlanService.makePlan(from: ["calorie_min": "1,600 kcal", "calorie_max": "~1750"], dataPoints: 0)
+        XCTAssertEqual(plan.calorieMin, 1600)
+        XCTAssertEqual(plan.calorieMax, 1750)
     }
 
     func testUserContentIncludesIntakeWhenPresent() {
@@ -292,5 +309,76 @@ final class AdaptivePlanTests: XCTestCase {
 
     func testCoachingNoteEmptyWhenNothingStandsOut() {
         XCTAssertEqual(PlanService.coachingNote(profile: femaleLossProfile(), foods: [], weights: []), "")
+    }
+
+    /// Only 1–2 logged days at a low number is under-LOGGING, not under-eating — the "eat more"
+    /// teaching moment must stay quiet until there's enough signal (≥3 days).
+    func testCoachingFlagsQuietWithTooFewLoggedDays() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = cal.startOfDay(for: Date(timeIntervalSince1970: 1_700_000_000))
+        let flags = PlanService.coachingFlags(profile: femaleLossProfile(),
+                                              foods: days(500, count: 2, endingAt: now, cal: cal),
+                                              weights: [], now: now, calendar: cal)
+        XCTAssertTrue(flags.isEmpty)
+    }
+
+    /// A future-dated weigh-in (clock skew / fat-finger) must not count toward the ≥3 real weigh-ins
+    /// the fast-loss moment needs, nor slide the trend window — here only 2 real points → no flag.
+    func testCoachingFlagsIgnoreFutureDatedWeighIn() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = cal.startOfDay(for: Date(timeIntervalSince1970: 1_700_000_000))
+        let weights = [
+            WeightEntry(date: cal.date(byAdding: .day, value: -7, to: now)!, weightLbs: 180),
+            WeightEntry(date: now, weightLbs: 160),                                  // steep real loss
+            WeightEntry(date: cal.date(byAdding: .day, value: 7, to: now)!, weightLbs: 140), // future
+        ]
+        let flags = PlanService.coachingFlags(profile: femaleLossProfile(),
+                                              foods: [], weights: weights, now: now, calendar: cal)
+        XCTAssertTrue(flags.isEmpty, "future weigh-in shouldn't be counted as a third real data point")
+    }
+
+    // MARK: - makePlan: inverted calorie range
+
+    /// The model occasionally swaps the bounds (min > max). makePlan must normalize, not store it
+    /// as-is where `hasRange` is false and the targets silently read "not set".
+    func testMakePlanNormalizesInvertedCalorieRange() {
+        let plan = PlanService.makePlan(from: ["calorie_min": 1900, "calorie_max": 1500], dataPoints: 5)
+        XCTAssertEqual(plan.calorieMin, 1500)
+        XCTAssertEqual(plan.calorieMax, 1900)
+        XCTAssertTrue(plan.hasRange)
+        XCTAssertTrue(plan.calorieRangeText.contains("–"))
+    }
+
+    // MARK: - Plan-intake → durable profile notes (PlanIntakeView.foldingIntake)
+
+    /// Editing-then-rebuilding the plan must REPLACE the prior intake line, not stack a near-duplicate,
+    /// while leaving unrelated durable notes untouched.
+    func testFoldingIntakeReplacesPriorLineInsteadOfDuplicating() {
+        let prefix = PlanIntakeView.intakePrefix
+        let first = prefix + "her life + training: edits videos"
+        let once = PlanIntakeView.foldingIntake(first, into: "- likes oat milk", prefix: prefix)
+        XCTAssertTrue(once.contains("likes oat milk"))
+        XCTAssertTrue(once.contains("edits videos"))
+
+        let second = prefix + "her life + training: edits videos · lifts 3x/week"   // superset edit
+        let twice = PlanIntakeView.foldingIntake(second, into: once, prefix: prefix)
+        XCTAssertEqual(twice.components(separatedBy: prefix).count - 1, 1)   // exactly ONE intake line
+        XCTAssertTrue(twice.contains("lifts 3x/week"))
+        XCTAssertTrue(twice.contains("likes oat milk"))                     // unrelated note preserved
+    }
+
+    /// Over the cap, drop WHOLE leading lines (never a mid-sentence `suffix`), always keeping the
+    /// just-added line.
+    func testFoldingIntakeBoundsByWholeLinesKeepingNewest() {
+        let prefix = PlanIntakeView.intakePrefix
+        let bulky = (0..<60).map { "- old durable fact number \($0) about her" }.joined(separator: "\n")
+        let addition = prefix + "her life + training: the freshest line"
+        let out = PlanIntakeView.foldingIntake(addition, into: bulky, prefix: prefix, maxChars: 500)
+        XCTAssertLessThanOrEqual(out.count, 500)
+        XCTAssertTrue(out.hasSuffix("the freshest line"))                   // newest survives the trim
+        XCTAssertFalse(out.contains("number 0 "))                          // oldest dropped from front
+        for line in out.split(separator: "\n") {                           // whole-line integrity
+            XCTAssertTrue(line.hasPrefix("- old durable") || line.hasPrefix(prefix))
+        }
     }
 }
