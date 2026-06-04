@@ -131,16 +131,20 @@ struct MainTabView: View {
             WeightView(profile: profile)
                 .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(2)
 
+            WorkoutsView()
+                .tabItem { Label("Workouts", systemImage: "dumbbell.fill") }.tag(3)
+
             CoachView(profile: profile)
-                .tabItem { Label(profile.coachName, systemImage: "sparkles") }.tag(3)
+                .tabItem { Label(profile.coachName, systemImage: "sparkles") }.tag(4)
 
             NavigationStack { BuddyHomeView() }
-                .tabItem { Label("Buddy", systemImage: "person.2.fill") }.tag(4)
+                .tabItem { Label("Buddy", systemImage: "person.2.fill") }.tag(5)
         }
         .environment(askVita)
         // When a long-press asks Vita about something, jump to her tab so she can answer.
+        // (Vita is tag 4 now that the Workouts tab sits at 3.)
         .onChange(of: askVita.pendingTopic) { _, topic in
-            if topic != nil { selection = 3 }
+            if topic != nil { selection = 4 }
         }
         // "What's New" once per update — a celebratory rundown of the release.
         .sheet(isPresented: $showWhatsNew, onDismiss: {
