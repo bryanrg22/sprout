@@ -137,53 +137,83 @@ struct AchievementsView: View {
     private var summaryCard: some View {
         let total = AchievementCatalog.all.count
         let progress = total > 0 ? Double(earnedCount) / Double(total) : 0
-        return HStack(spacing: Theme.Space.lg) {
-            // The progress ring pops in and gently breathes, so the whole header
-            // feels alive and a little proud of you.
-            ZStack {
-                // Soft halo behind the ring for a warm, collectible glow.
-                Circle()
-                    .fill(Theme.brand.opacity(0.12))
-                    .frame(width: 84, height: 84)
-                    .blur(radius: 8)
+        return VStack(spacing: Theme.Space.md) {
+            HStack(spacing: Theme.Space.lg) {
+                // The gradient ring pops in and gently breathes, with the live count
+                // nested inside — a proud little "trophy meter" for the whole shelf.
+                ZStack {
+                    // Soft halo behind the ring for a warm, collectible glow.
+                    Circle()
+                        .fill(Theme.brand.opacity(0.14))
+                        .frame(width: 96, height: 96)
+                        .blur(radius: 10)
 
-                ProgressRing(progress: didAppear ? progress : 0,
-                             lineWidth: 10, color: Theme.brand,
-                             track: Theme.divider)
-                    .frame(width: 78, height: 78)
+                    GradientRing(progress: didAppear ? progress : 0,
+                                 lineWidth: 9, gradient: .brandSweep,
+                                 track: Theme.divider)
+                        .frame(width: 86, height: 86)
 
-                // A medal that wiggles happily once you've collected them all,
-                // and breathes the rest of the time.
-                Image(systemName: "rosette")
-                    .font(.title2)
-                    .foregroundStyle(Theme.brand)
-                    .breathing()
-                    .wiggle(allEarned)
-            }
-            .popIn(didAppear)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text("\(earnedCount) of \(total)")
-                        .font(.system(size: 30, weight: .heavy, design: .rounded))
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-                    // A tiny celebratory sparkle once everything's collected.
-                    if allEarned {
-                        Text("🎉")
-                            .font(.title3)
-                            .popIn(didAppear, delay: 0.25)
+                    // Count lives inside the ring — the headline metric, front and center.
+                    VStack(spacing: 0) {
+                        Text("\(earnedCount)")
+                            .font(.system(size: 30, weight: .heavy, design: .rounded))
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("of \(total)")
+                            .font(.caption2.weight(.semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(Theme.textSecondary)
                     }
                 }
-                Text(summaryMessage)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                .popIn(didAppear)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text("Your collection")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(Theme.textPrimary)
+                        // A celebratory medal that wiggles once everything's collected.
+                        Image(systemName: "rosette")
+                            .font(.headline)
+                            .foregroundStyle(Theme.brand)
+                            .breathing()
+                            .wiggle(allEarned)
+                        if allEarned {
+                            Text("🎉")
+                                .font(.title3)
+                                .popIn(didAppear, delay: 0.25)
+                        }
+                    }
+                    Text(summaryMessage)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
+
+            // A slim brand-gradient progress bar — the clearest at-a-glance read of how
+            // far the shelf has filled. (Same MacroBar / speedometer fill idiom.)
+            collectionBar(progress: progress)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardElevated(padding: Theme.Space.lg)
+    }
+
+    /// Slim collection-progress bar: a brand-gradient fill on a soft track, growing in
+    /// once the view appears. Purely reflects earned/total — no new earning logic.
+    private func collectionBar(progress: Double) -> some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.divider)
+                Capsule()
+                    .fill(Theme.brandGradient)
+                    .frame(width: max(0, min(1, didAppear ? progress : 0)) * geo.size.width)
+                    .animation(.spring(response: 0.7, dampingFraction: 0.85), value: didAppear)
+            }
+        }
+        .frame(height: 8)
     }
 
     /// Warm, never-shaming copy that scales with progress — a little cheer for
@@ -274,69 +304,46 @@ private struct BadgeTile: View {
     private var tint: Color { badge.tint.color }
 
     var body: some View {
-        VStack(spacing: Theme.Space.sm) {
-            ZStack {
-                Circle()
-                    // Skin-aware so the locked well reads on BOTH the dark and the
-                    // cream skins (a flat white wash vanished on cream).
-                    .fill(isEarned ? tint.opacity(0.16) : Theme.textSecondary.opacity(0.08))
-                    .frame(width: 68, height: 68)
-                    .overlay(
-                        Circle().strokeBorder(
-                            isEarned ? tint.opacity(0.55) : Theme.divider,
-                            lineWidth: 1.5
-                        )
-                    )
-                    // A soft, collectible glow on earned medals — warmer while
-                    // it's freshly celebrating.
-                    .shadow(color: isEarned ? tint.opacity(isCelebrating ? 0.6 : 0.35) : .clear,
-                            radius: isEarned ? (isCelebrating ? 16 : 10) : 0)
+        VStack(spacing: Theme.Space.md) {
+            medal
+                // The medal art breathes so the wall feels gently alive. Earned
+                // badges already stand apart via full color, glow, and the lock's
+                // absence — so locked never reads as punished.
+                .breathing()
+                // Springy collectible pop-in for earned badges (cascaded by popDelay);
+                // locked badges skip it and lift in softly from the parent.
+                .popIn(isEarned ? didAppear : true, delay: popDelay)
+                .scaleEffect(isCelebrating ? 1.14 : 1)
+                .animation(.spring(response: 0.5, dampingFraction: 0.55), value: isCelebrating)
 
-                Image(systemName: badge.systemImage)
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(isEarned ? tint : Theme.textSecondary.opacity(0.55))
-
-                if !isEarned {
-                    // A gentle, friendly lock — dimmed, never punishing.
-                    Image(systemName: "lock.fill")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Theme.textSecondary)
-                        .padding(5)
-                        .background(Theme.cardRaised, in: Circle())
-                        .overlay(Circle().strokeBorder(Theme.divider, lineWidth: 1))
-                        .offset(x: 24, y: 24)
-                }
-            }
-            // The medal art breathes so the wall feels gently alive. Earned
-            // badges already stand apart via full color, glow, and the lock's
-            // absence — so locked never reads as punished.
-            .breathing()
-            // Springy collectible pop-in for earned badges (cascaded by popDelay);
-            // locked badges skip it and lift in softly from the parent.
-            .popIn(isEarned ? didAppear : true, delay: popDelay)
-            .scaleEffect(isCelebrating ? 1.14 : 1)
-            .animation(.spring(response: 0.5, dampingFraction: 0.55), value: isCelebrating)
-
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
                 Text(badge.title)
-                    .font(.subheadline.weight(.bold))
+                    .font(.callout.weight(.bold))
                     .foregroundStyle(isEarned ? Theme.textPrimary : Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
 
-                Text(isEarned ? earnedDateText : (isCute ? "Soon 🌱" : "Locked"))
-                    .font(.caption2)
-                    .foregroundStyle(Theme.textSecondary)
-                    .monospacedDigit()
-                    .lineLimit(1)
+                // Status chip: a warm "earned on …" capsule, or a soft locked hint —
+                // gives every tile a clear, collectible footer.
+                statusChip
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 150)
-        .cardElevated(padding: Theme.Space.md, radius: Theme.Radius.md)
+        .frame(minHeight: 178)
+        .cardElevated(padding: Theme.Space.md, radius: Theme.Radius.lg)
+        // Earned tiles get a faint tinted wash + brand-tier ring so the wall reads as a
+        // real trophy shelf; locked stays a calm, plain surface (never punishing).
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous)
+                .fill(isEarned ? tint.opacity(0.05) : .clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous)
+                .strokeBorder(isEarned ? tint.opacity(0.30) : .clear, lineWidth: 1)
+        )
         // Locked stays tastefully present (not greyed-out punishing); earned pops.
-        .opacity(isEarned ? 1 : 0.78)
+        .opacity(isEarned ? 1 : 0.8)
         .overlay(alignment: .topTrailing) {
             if isCelebrating {
                 Image(systemName: "sparkles")
@@ -350,6 +357,84 @@ private struct BadgeTile: View {
         .accessibilityLabel(isEarned
             ? "\(badge.title), earned \(earnedDateText). \(badge.blurb)"
             : "\(badge.title), not yet earned. \(badge.blurb)")
+    }
+
+    /// The collectible medal: a larger, dimensional "enamel pin" well — a soft
+    /// radial gradient gives the disc depth, a glossy top highlight makes earned
+    /// medals feel precious, and a tier ring frames it. Locked is a quiet, flat well.
+    private var medal: some View {
+        ZStack {
+            Circle()
+                // Skin-aware so the locked well reads on BOTH the dark and the
+                // cream skins (a flat white wash vanished on cream). Earned wells get
+                // a radial gradient (brighter at the top) for a dimensional, badge feel.
+                .fill(
+                    isEarned
+                        ? AnyShapeStyle(RadialGradient(
+                            colors: [tint.opacity(0.32), tint.opacity(0.12)],
+                            center: .top, startRadius: 2, endRadius: 78))
+                        : AnyShapeStyle(Theme.textSecondary.opacity(0.08))
+                )
+                .frame(width: 78, height: 78)
+                .overlay(
+                    // Tier ring — a brand-gradient sweep on earned, a hairline when locked.
+                    Circle().strokeBorder(
+                        isEarned ? AnyShapeStyle(Theme.brandGradient.opacity(0.55))
+                                 : AnyShapeStyle(Theme.divider),
+                        lineWidth: 2
+                    )
+                )
+                .overlay(
+                    // Glossy top highlight — only on earned, for that enamel-pin sheen.
+                    Circle()
+                        .trim(from: 0.5, to: 1)
+                        .stroke(Color.white.opacity(isEarned ? 0.22 : 0), lineWidth: 1.5)
+                        .rotationEffect(.degrees(180))
+                        .blur(radius: 0.5)
+                )
+                // A soft, collectible glow on earned medals — warmer while
+                // it's freshly celebrating.
+                .shadow(color: isEarned ? tint.opacity(isCelebrating ? 0.6 : 0.35) : .clear,
+                        radius: isEarned ? (isCelebrating ? 18 : 11) : 0)
+
+            Image(systemName: badge.systemImage)
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(isEarned ? tint : Theme.textSecondary.opacity(0.55))
+                .shadow(color: isEarned ? tint.opacity(0.35) : .clear, radius: 4)
+
+            if !isEarned {
+                // A gentle, friendly lock — dimmed, never punishing.
+                Image(systemName: "lock.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Theme.textSecondary)
+                    .padding(5)
+                    .background(Theme.cardRaised, in: Circle())
+                    .overlay(Circle().strokeBorder(Theme.divider, lineWidth: 1))
+                    .offset(x: 28, y: 28)
+            }
+        }
+    }
+
+    /// Earned → a warm tinted capsule with the unlock date; locked → a soft, kind hint.
+    @ViewBuilder private var statusChip: some View {
+        if isEarned {
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.seal.fill").font(.caption2)
+                Text(earnedDateText).monospacedDigit()
+            }
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 9).padding(.vertical, 4)
+            .background(tint.opacity(0.14), in: Capsule())
+            .lineLimit(1)
+        } else {
+            Text(isCute ? "Soon 🌱" : "Locked")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(Theme.textSecondary)
+                .padding(.horizontal, 9).padding(.vertical, 4)
+                .background(Theme.textSecondary.opacity(0.08), in: Capsule())
+                .lineLimit(1)
+        }
     }
 
     private var earnedDateText: String {
@@ -380,22 +465,40 @@ private struct BadgeDetailSheet: View {
                 if isEarned {
                     Circle()
                         .fill(tint.opacity(0.18))
-                        .frame(width: 130, height: 130)
-                        .blur(radius: 14)
+                        .frame(width: 140, height: 140)
+                        .blur(radius: 16)
                 }
                 Circle()
-                    .fill(isEarned ? tint.opacity(0.16) : Theme.textSecondary.opacity(0.08))
-                    .frame(width: 110, height: 110)
+                    // Dimensional radial fill on earned (matches the grid's enamel-pin medal).
+                    .fill(
+                        isEarned
+                            ? AnyShapeStyle(RadialGradient(
+                                colors: [tint.opacity(0.34), tint.opacity(0.12)],
+                                center: .top, startRadius: 4, endRadius: 120))
+                            : AnyShapeStyle(Theme.textSecondary.opacity(0.08))
+                    )
+                    .frame(width: 116, height: 116)
                     .overlay(
+                        // Brand-gradient tier ring on earned; hairline when locked.
                         Circle().strokeBorder(
-                            isEarned ? tint.opacity(0.55) : Theme.divider,
-                            lineWidth: 2
+                            isEarned ? AnyShapeStyle(Theme.brandGradient.opacity(0.55))
+                                     : AnyShapeStyle(Theme.divider),
+                            lineWidth: 2.5
                         )
                     )
-                    .shadow(color: isEarned ? tint.opacity(0.35) : .clear, radius: 16)
+                    .overlay(
+                        // Glossy top sheen.
+                        Circle()
+                            .trim(from: 0.5, to: 1)
+                            .stroke(Color.white.opacity(isEarned ? 0.22 : 0), lineWidth: 2)
+                            .rotationEffect(.degrees(180))
+                            .blur(radius: 0.5)
+                    )
+                    .shadow(color: isEarned ? tint.opacity(0.38) : .clear, radius: 18)
                 Image(systemName: badge.systemImage)
-                    .font(.system(size: 44, weight: .semibold))
+                    .font(.system(size: 46, weight: .semibold))
                     .foregroundStyle(isEarned ? tint : Theme.textSecondary.opacity(0.55))
+                    .shadow(color: isEarned ? tint.opacity(0.35) : .clear, radius: 5)
                     // An earned medal gently breathes; a locked one rests calmly.
                     .breathing()
             }
