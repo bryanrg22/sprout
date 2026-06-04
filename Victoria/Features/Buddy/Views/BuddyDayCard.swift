@@ -40,7 +40,8 @@ struct BuddyDayCard: View {
                 pixelAvatar.frame(width: 46, height: 50)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(snapshot.displayName)
+                // First name only — a long full name ("Bryan Ramirez-Gonzalez") truncates and looks off.
+                Text(snapshot.displayName.split(separator: " ").first.map(String.init) ?? snapshot.displayName)
                     .font(.headline.weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
                     .lineLimit(1)
