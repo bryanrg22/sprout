@@ -273,6 +273,33 @@ final class CloudKitSyncService: BuddySyncService {
         }
     }
 
+    /// One-time per linked buddy: subscribe to "my buddy's snapshot changed" so CloudKit pushes a
+    /// SILENT wake-up the moment they log — and the hub pulls the fresh snapshot without me reopening
+    /// it. Mirrors `ensureNudgeSubscription`, but content-available (no banner): a snapshot isn't a
+    /// message, it just means "their numbers moved, refresh". Best-effort + idempotent. Requires the
+    /// `BuddySnapshot.ownerUserID` field to be QUERYABLE in the CloudKit schema (same as the nudge
+    /// predicate needs `toUserID`), the push entitlement, and a signed-in iCloud account to deliver.
+    private func ensureSnapshotSubscription(buddyUserID: String) async {
+        let key = "buddy.ck.snapshotSub.\(myUserID).from.\(buddyUserID)"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+
+        let predicate = NSPredicate(format: "%K == %@", Field.ownerUserID, buddyUserID)
+        let subscription = CKQuerySubscription(
+            recordType: RecordType.snapshot,
+            predicate: predicate,
+            subscriptionID: "buddy-snapshot-\(myUserID)-from-\(buddyUserID)",
+            options: [.firesOnRecordCreation, .firesOnRecordUpdate])
+        let info = CKSubscription.NotificationInfo()
+        info.shouldSendContentAvailable = true   // silent: wake to refresh, no alert
+        subscription.notificationInfo = info
+        do {
+            _ = try await database.save(subscription)
+            UserDefaults.standard.set(true, forKey: key)   // created once per buddy
+        } catch {
+            // Best-effort: leave the flag unset so we retry next time (once iCloud is ready).
+        }
+    }
+
     func link(usingCode code: String) async throws {
         try await ensureAvailable()
         let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
@@ -481,6 +508,7 @@ final class CloudKitSyncService: BuddySyncService {
         await resolveBuddyIfNeeded()   // owner side: discover a buddy who claimed my code
         await ensureNudgeSubscription() // one-time: push me a notification when a nudge arrives
         guard let buddyUserID else { throw BuddySyncError.notLinked }
+        await ensureSnapshotSubscription(buddyUserID: buddyUserID) // one-time: silent push when they log
 
         let recordID = CKRecord.ID(recordName: "snapshot-\(buddyUserID)")
         do {
