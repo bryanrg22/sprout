@@ -47,6 +47,9 @@ enum CoachTools {
         // Durable memory: save a lasting fact about the user (creatine, nutritionist, allergy…)
         // to her long-term notes so it persists across every future conversation.
         case rememberFact          = "remember_about_user"
+        // Adaptive Plan: record a change to her evolving Plan (the AI-authored "understanding
+        // of you" on Progress) so every adaptation is visible in its changelog.
+        case updatePlan            = "update_plan"
     }
 
     // MARK: - Safe bounds
@@ -77,7 +80,7 @@ enum CoachTools {
         [stepGoalSchema, waterGoalSchema, paceSchema(for: profile),
          logFoodSchema, editFoodSchema, deleteFoodSchema,
          logWaterSchema(for: profile), logWeightSchema(for: profile),
-         weightGoalSchema(for: profile), rememberSchema]
+         weightGoalSchema(for: profile), rememberSchema, updatePlanSchema]
     }
 
     /// Save a durable fact about the user to long-term memory. This is the tool that lets Vita
@@ -100,6 +103,32 @@ enum CoachTools {
                 "note": [
                     "type": "string",
                     "description": "The durable fact to remember, as a short phrase, e.g. \"takes creatine daily\".",
+                ],
+            ],
+            "required": ["note"],
+        ],
+    ]
+
+    /// Record a change to the user's adaptive **Plan** (the evolving "understanding of you" on
+    /// Progress). This appends a line to the plan's visible changelog so every adaptation is
+    /// surfaced, never silent — like `remember_about_user`, calling it is what makes a claimed
+    /// plan change real.
+    private static let updatePlanSchema: [String: Any] = [
+        "name": Name.updatePlan.rawValue,
+        "description": """
+        Record a change to the user's adaptive PLAN — the evolving "understanding of you" that \
+        lives on the Progress tab. Use when you and she agree to adjust her approach, e.g. \
+        "let's add a protein focus", "shifting your timeframe to October", or "easing off on \
+        cardio for now". This appends a visible line to her plan's changelog so the adaptation \
+        is never silent. NEVER tell her you've updated her plan without calling this tool — if \
+        you didn't call it, you didn't do it.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "note": [
+                    "type": "string",
+                    "description": "What changed about their plan + why, one or two sentences.",
                 ],
             ],
             "required": ["note"],
@@ -398,6 +427,7 @@ enum CoachTools {
             case logWeight(lbs: Double)
             case weightGoal(lbs: Double)
             case rememberFact(String)
+            case updatePlan(note: String)
         }
 
         /// Whether the UI must get an explicit one-tap confirm before applying.
@@ -407,7 +437,7 @@ enum CoachTools {
         /// view reads to pick its flow — keeping the risk policy here, next to the tools.
         var requiresConfirm: Bool {
             switch name {
-            case .logFood, .editFood, .logWater, .logWeight, .rememberFact:
+            case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan:
                 return false   // quick + reversible → auto-apply with Undo
             case .deleteFood,                                   // destructive
                  .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal:
@@ -525,6 +555,9 @@ enum CoachTools {
 
         case .rememberFact:
             return parseRemember(input: input)
+
+        case .updatePlan:
+            return parseUpdatePlan(input: input)
         }
     }
 
@@ -540,6 +573,20 @@ enum CoachTools {
             name: .rememberFact,
             confirmSummary: "remember that \(note)",
             action: .rememberFact(note)))
+    }
+
+    private static func parseUpdatePlan(input: [String: Any]) -> ParseResult {
+        guard let note = (input["note"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !note.isEmpty else {
+            return .invalid("I need the detail of what's changing on your plan. Nothing was changed.")
+        }
+        guard note.count <= 280 else {
+            return .invalid("That's a bit long for a plan note — give me the short version. Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .updatePlan,
+            confirmSummary: "note on your plan that \(note)",
+            action: .updatePlan(note: note)))
     }
 
     // MARK: - Parse helpers: data-logging tools
@@ -920,6 +967,22 @@ enum CoachTools {
             return Applied(message: "Noted — I'll remember that.", undo: {
                 let m = CoachMemory.fetchOrCreate(in: context, profile: profile)
                 m.profileNotes = old
+                try? context.save()
+            })
+
+        case .updatePlan(let note):
+            // Append a visible line to her adaptive Plan's changelog so the adaptation is never
+            // silent. No plan yet → nothing to amend (she builds one on Progress first).
+            guard let plan = CoachPlan.current(in: context) else {
+                return Applied(message: "She doesn't have a plan yet — she can build one on the Progress tab.",
+                               undo: nil)
+            }
+            let old = plan.changelog
+            plan.changelog.append(PlanChange(date: .now, summary: note))
+            plan.updatedAt = .now
+            try? context.save()
+            return Applied(message: "Noted on your plan.", undo: {
+                plan.changelog = old
                 try? context.save()
             })
         }
