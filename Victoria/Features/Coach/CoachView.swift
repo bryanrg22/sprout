@@ -51,12 +51,15 @@ struct CoachView: View {
     /// Vita's answer is anchored to a *thing she can see*, not just text.
     @State private var aboutTopic: AskVitaTopic?
 
-    private let quickPrompts = [
-        "How's my week?",
-        "Review today",
-        "I'm feeling discouraged",
-        "Is this enough protein?",
-    ]
+    /// The quick-prompt chips shown above the input. Starts as the synchronous, no-network
+    /// fixed list (constants + generic extras) so the row is NEVER empty and there's no flash;
+    /// a `.task` then swaps in a personalized set (the constants always lead) that refreshes
+    /// every few days. See `CoachPromptService`. The hide-while-typing gating below is unchanged.
+    @State private var quickPrompts: [String] = CoachPromptService.fixedPrompts()
+
+    /// Drives the personalized-prompt `.task`: changes per user and every few days (the cache
+    /// bucket rolling over), so the chips reload — served from cache or regenerated — with no timer.
+    private var promptPeriodKey: String { CoachPromptService.periodKey(userId: profile.id) }
 
     /// Sliding-window cap on how many recent messages we send to the model verbatim per turn,
     /// so a long-running chat can never overflow the context window or balloon cost. The FULL
@@ -140,6 +143,27 @@ struct CoachView: View {
         .onAppear { if let t = askVita?.pendingTopic { handleAskVita(t) } }
         .onChange(of: askVita?.pendingTopic) { _, topic in
             if let topic { handleAskVita(topic) }
+        }
+        // Swap the fixed starter chips for a personalized set, refreshed every few days. Keyed on
+        // user + the cache bucket so it re-runs when the bucket rolls over (served from cache, or
+        // one cheap call to regenerate). Never empties the row: on no-key / any failure the service
+        // returns the same fixed list `quickPrompts` already holds, so this only ever improves it.
+        .task(id: promptPeriodKey) { await loadQuickPrompts() }
+    }
+
+    /// Load the personalized quick-prompt chips (constants + a personalized set, refreshed every
+    /// few days) and swap them in. The service handles the cache, the no-key fallback, and all
+    /// failures internally — it always returns a non-empty list — so this just assigns the result.
+    @MainActor
+    private func loadQuickPrompts() async {
+        let prompts = await CoachPromptService.prompts(
+            profile: profile, foods: foods, weights: weights,
+            workouts: workouts, water: water, memory: coachMemory()
+        )
+        // Only animate/replace if something actually changed (the common cache-hit re-run returns
+        // the same list), so the row doesn't flicker on every appear.
+        if prompts != quickPrompts {
+            withAnimation(.easeInOut(duration: 0.25)) { quickPrompts = prompts }
         }
     }
 
