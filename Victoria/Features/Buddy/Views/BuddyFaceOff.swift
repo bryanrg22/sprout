@@ -361,132 +361,64 @@ struct FaceOffMetricRow: View {
     }
 }
 
-/// A polished **paired column chart** for one metric: two rounded columns (you + buddy)
-/// share ONE little plot — a tidy continuous baseline at the bottom and a dotted "100%
-/// goal" line at the top. Each column rises to **% of THAT person's own goal** (clamped
-/// 0...1, so both can top out), is capped by a % pill, and labelled with the person's first
-/// name underneath. Fixed-width columns (centered, not full-bleed) keep it from ever running
-/// wide / off-screen. Fair and playful; for gym, the column is full ("moved!") or an empty
-/// resting column ("not yet").
+/// A clean, on-brand **paired progress ring** for one metric: two rings (you + buddy) side by
+/// side, each filled to **% of THAT person's own goal** (clamped 0...1 so both can top out), with
+/// the % in the center and the person's name + exact value below. Uses the SAME ring language as
+/// the dashboard + the buddy card, so the face-off reads as native — fair and playful, never raw
+/// numbers against each other.
 private struct PairedBarGraph: View {
     let myFraction: Double?
     let theirFraction: Double?
-    /// Exact value shown under each column (e.g. "8,432" steps, "44 oz" water). nil hides it.
+    /// Exact value shown under each ring (e.g. "8,432" steps, "44 oz" water). nil hides it.
     var myStat: String? = nil
     var theirStat: String? = nil
     let myName: String
     let theirName: String
 
-    /// Plot height for the column track, and a fixed (cute, chunky-but-tidy) column width so
-    /// the pair always sits comfortably regardless of card width — never full-bleed.
-    private let plotHeight: CGFloat = 58
-    private let columnWidth: CGFloat = 30
-    /// Each column's "slot" — a touch wider than the bar so the % pill / name can breathe and
-    /// all three rows (caps · columns · names) line up perfectly above/below each column.
-    private var slotWidth: CGFloat { columnWidth + 16 }
-
     var body: some View {
-        // Three aligned rows sharing the same two centered slots, so caps sit over columns
-        // and names sit under them. The middle row is the actual plot (baseline + dotted
-        // 100% line bracketing the column band).
-        VStack(spacing: 6) {
-            twoSlots { tint, frac, _, _ in capPill(for: frac, tint: tint) }
-
-            // Plot band: a continuous shared baseline at the bottom, a dotted "100% goal"
-            // line at the top, and the two columns rising from the baseline between them.
-            ZStack(alignment: .bottom) {
-                Line()
-                    .stroke(Theme.textSecondary.opacity(0.30),
-                            style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                    .frame(height: 1)
-                    .frame(maxHeight: .infinity, alignment: .top)
-                Line()
-                    .stroke(Theme.divider, lineWidth: 1.5)
-                    .frame(height: 1.5)
-                twoSlots { tint, frac, _, _ in columnBar(fraction: frac, tint: tint) }
-            }
-            .frame(height: plotHeight)
-
-            twoSlots { _, _, name, _ in
-                Text(firstName(name))
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Theme.textSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-
-            // The exact value beneath each column — the precise stat Bryan wanted alongside
-            // the % (e.g. "8,432" steps, "44 oz" water).
-            twoSlots { tint, _, _, stat in
-                if let stat {
-                    Text(stat)
-                        .font(.caption2.weight(.bold)).monospacedDigit()
-                        .foregroundStyle(tint)
-                        .lineLimit(1)
-                        .fixedSize()
-                }
-            }
+        HStack(alignment: .top, spacing: Theme.Space.xl) {
+            Spacer(minLength: 0)
+            ring(fraction: myFraction, tint: Theme.brand, name: myName, stat: myStat)
+            ring(fraction: theirFraction, tint: Theme.info, name: theirName, stat: theirStat)
+            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 2)
     }
 
-    /// Lays "my" slot and "their" slot centered with a gap, each a fixed `slotWidth`, so every
-    /// row stacks in perfect vertical alignment. `content` gets (tint, fraction, name).
+    /// One person's ring: a soft track + a tinted progress arc (rounded cap, same 6pt weight as
+    /// the dashboard/buddy-card rings), the % in the center, then their first name + exact value.
     @ViewBuilder
-    private func twoSlots<Content: View>(
-        @ViewBuilder _ content: @escaping (Color, Double?, String, String?) -> Content
-    ) -> some View {
-        HStack(spacing: Theme.Space.md) {
-            Spacer(minLength: 0)
-            content(Theme.brand, myFraction, myName, myStat).frame(width: slotWidth)
-            content(Theme.info, theirFraction, theirName, theirStat).frame(width: slotWidth)
-            Spacer(minLength: 0)
-        }
-    }
-
-    /// The % cap (or gym wording) in a soft pill that fills in once the goal's reached.
-    @ViewBuilder
-    private func capPill(for fraction: Double?, tint: Color) -> some View {
+    private func ring(fraction: Double?, tint: Color, name: String, stat: String?) -> some View {
+        let f = min(max(fraction ?? 0, 0), 1)
         let reached = (fraction ?? 0) >= 1
-        Text(capLabel(for: fraction))
-            .font(.caption2.weight(.bold)).monospacedDigit()
-            .lineLimit(1)
-            .fixedSize()                                   // never wrap "100%" onto two lines
-            .foregroundStyle(reached ? tint : Theme.textSecondary)
-            .padding(.horizontal, 7).padding(.vertical, 2)
-            .background(reached ? tint.opacity(0.16) : Color.clear, in: Capsule())
-    }
-
-    /// The rounded column rising from the shared baseline. A soft track sits behind it so even
-    /// an empty/`nil` value reads as a tidy resting column, never a harsh 0% gap.
-    @ViewBuilder
-    private func columnBar(fraction: Double?, tint: Color) -> some View {
-        ZStack(alignment: .bottom) {
-            RoundedRectangle(cornerRadius: columnWidth / 2, style: .continuous)
-                .fill(Theme.divider.opacity(0.6))
-                .frame(width: columnWidth, height: plotHeight)
-            if let f = fraction, f > 0 {
-                RoundedRectangle(cornerRadius: columnWidth / 2, style: .continuous)
-                    .fill(LinearGradient(colors: [tint, tint.opacity(0.72)],
-                                         startPoint: .top, endPoint: .bottom))
-                    .frame(width: columnWidth,
-                           height: max(columnWidth, plotHeight * CGFloat(min(1, f))))
-                    .overlay(alignment: .top) {
-                        // A tiny glossy cap so the column reads soft + cute, not a slab.
-                        Capsule()
-                            .fill(Color.white.opacity(0.25))
-                            .frame(width: columnWidth - 12, height: 4)
-                            .padding(.top, 5)
-                    }
+        VStack(spacing: 6) {
+            ZStack {
+                Circle().stroke(Theme.divider.opacity(0.55), lineWidth: 6)
+                Circle()
+                    .trim(from: 0, to: max(0.001, f))
+                    .stroke(LinearGradient(colors: [tint, tint.opacity(0.72)],
+                                           startPoint: .top, endPoint: .bottom),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
                     .animation(.spring(response: 0.55, dampingFraction: 0.8), value: f)
+                Text(fraction == nil ? "—" : "\(Int((f * 100).rounded()))%")
+                    .font(.subheadline.weight(.bold)).monospacedDigit()
+                    .foregroundStyle(reached ? tint : Theme.textPrimary)
+                    .minimumScaleFactor(0.7).lineLimit(1)
+            }
+            .frame(width: 62, height: 62)
+            Text(firstName(name))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.textSecondary)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            if let stat {
+                Text(stat)
+                    .font(.caption2.weight(.bold)).monospacedDigit()
+                    .foregroundStyle(tint)
+                    .lineLimit(1).fixedSize()
             }
         }
-    }
-
-    private func capLabel(for fraction: Double?) -> String {
-        guard let f = fraction else { return "—" }
-        return "\(Int((f * 100).rounded()))%"
     }
 
     /// "You" stays "You"; otherwise show the first word so the label stays tidy under a bar.
