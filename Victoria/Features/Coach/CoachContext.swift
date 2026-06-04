@@ -25,9 +25,17 @@ enum CoachContext {
     ///   labeled as qualitative context with an explicit note that the live numbers win. The
     ///   memory is qualitative only — it never carries weights/calories/targets (those stay in
     ///   the data snapshot above), so it can't override the authoritative numbers.
+    ///
+    /// - Parameter workouts: her logged gym/cardio sessions. Optional and defaulting to `[]` so
+    ///   every existing call site and test keeps its exact behavior; when non-empty, a compact
+    ///   "recent workouts" block is folded into the snapshot so Vita can see she's training.
+    /// - Parameter water: today's `WaterEntry` rows. Optional and defaulting to `[]` for the same
+    ///   reason; when present, today's hydration is summed against her goal in the snapshot.
     static func system(profile: UserProfile,
                        foods: [FoodEntry],
                        weights: [WeightEntry],
+                       workouts: [WorkoutEntry] = [],
+                       water: [WaterEntry] = [],
                        memory: CoachMemory? = nil,
                        plan: CoachPlan? = nil) -> String {
         // Assembled in a few named parts (not one long `+` chain) so the Swift type-checker
@@ -35,12 +43,14 @@ enum CoachContext {
         // carry their own leading "\n\n" (or "" when empty), so they're appended directly.
         let header = persona(profile: profile) + bioLine(profile: profile)
         let data = "\n\nHere is her current data:\n"
-            + summary(profile: profile, foods: foods, weights: weights)
-        let usage = "\n\nUse this data — including the exact foods she logged today and this week — to make "
+            + summary(profile: profile, foods: foods, weights: weights, workouts: workouts, water: water)
+        let usage = "\n\nUse this data — including the exact foods she logged today and this week, "
+            + "their per-item breakdown/notes, her water, and her recent workouts — to make "
             + "your replies specific and personal, but speak naturally — "
             + "don't dump numbers or read the data back like a report unless she asks. "
-            + "You CAN see her individual logged foods above, so never say you can't; "
-            + "reference them by name when it's relevant. "
+            + "You CAN see her individual logged foods above (including each meal's component "
+            + "breakdown and the assumptions in its notes), her water, and her workouts, so never "
+            + "say you can't see them; reference them by name when it's relevant. "
             + "When she sends a PHOTO, actually look at it and respond to what's in it. If it's "
             + "food she wants logged, estimate its calories + macros from the image and call the "
             + "log_food tool (one call per distinct item) — you don't need to ask her for the numbers. "
@@ -145,7 +155,9 @@ enum CoachContext {
         her with remember_about_user (e.g. she takes creatine, sees a nutritionist, is \
         vegetarian, her gym days are Mon/Wed/Fri). When she shares something lasting about \
         herself, OR asks you to "remember"/"update my profile/note" something, call \
-        remember_about_user so it persists across every future conversation. CRITICAL HONESTY \
+        remember_about_user so it persists across every future conversation. You can also record \
+        a change to her adaptive Plan with update_plan when the two of you agree to adjust it \
+        (e.g. a new focus, a revised target, a fresh assessment). CRITICAL HONESTY \
         RULE: only tell her you've done / saved / logged / updated / remembered something AFTER \
         you've actually called the matching tool and it succeeded — NEVER say "done" or "I saved \
         that" for something you didn't actually do. If you genuinely lack a tool for what she \
@@ -197,10 +209,14 @@ enum CoachContext {
     }
 
     /// A compact, human-readable snapshot of the user's current numbers and momentum.
-    /// Safe to call with empty `foods`/`weights` — it degrades gracefully.
+    /// Safe to call with empty `foods`/`weights`/`workouts`/`water` — it degrades gracefully.
+    /// `workouts`/`water` default to empty so existing callers (and tests) are byte-for-byte
+    /// unchanged; pass them to give Vita the full picture (so she never says "I can't see X").
     static func summary(profile: UserProfile,
                         foods: [FoodEntry],
-                        weights: [WeightEntry]) -> String {
+                        weights: [WeightEntry],
+                        workouts: [WorkoutEntry] = [],
+                        water: [WaterEntry] = []) -> String {
         var lines: [String] = []
 
         let unit = profile.unitSystem.weightUnit
@@ -259,12 +275,32 @@ enum CoachContext {
             lines.append(contentsOf: itemLines(today))
         }
 
+        // Today's water vs her goal — so "have I had enough water?" is answerable, and Vita can
+        // see hydration the same way the dashboard does. Goal is her override or the computed
+        // ~½-bodyweight default; expressed in oz AND her own containers so it reads naturally.
+        let waterOz = todaysWaterOz(water)
+        let goalOz = profile.waterTargetOz
+        let container = profile.waterContainerLabel.isEmpty ? "container" : profile.waterContainerLabel
+        var waterLine = "Today's water: \(Int(waterOz.rounded())) of \(Int(goalOz.rounded())) oz goal "
+            + "(~\(profile.waterGoalContainers) \(container)\(profile.waterGoalContainers == 1 ? "" : "s"))"
+        if waterOz <= 0 { waterLine += " — none logged yet today" }
+        else if waterOz >= goalOz { waterLine += " — goal met, nice" }
+        lines.append(waterLine)
+
         // This week at a glance — per-day food totals for the last 7 days that have logs, so
         // "how's my week?" is answerable from real food numbers (not just the weight trend).
         let weekLines = weeklyTotalLines(foods)
         if !weekLines.isEmpty {
             lines.append("This week's daily food totals (most recent first):")
             lines.append(contentsOf: weekLines)
+        }
+
+        // Recent workouts — so Vita can see she's actually training (and reward showing up),
+        // never claiming she can't see the gym. Compact: last few sessions, newest first.
+        let recentWorkouts = workoutLines(workouts)
+        if !recentWorkouts.isEmpty {
+            lines.append("Recent workouts (most recent first):")
+            lines.append(contentsOf: recentWorkouts)
         }
 
         // Weight trend + weekly rate + assessment wording.
@@ -320,24 +356,102 @@ enum CoachContext {
         foods.filter { calendar.isDate($0.date, inSameDayAs: now) }
     }
 
-    /// One compact line per logged item: "Name ×qty (Meal) — X kcal, Pg / Cg / Fg". Newest
-    /// first, capped at `limit` with a "…and N more" tail so a heavy day can't blow up the
-    /// prompt. This is the per-item detail that makes Vita able to discuss specific foods.
+    /// Total fluid ounces of water logged today (sum of today's `WaterEntry` amounts).
+    static func todaysWaterOz(_ water: [WaterEntry],
+                              calendar: Calendar = .current,
+                              now: Date = .now) -> Double {
+        water.filter { calendar.isDate($0.date, inSameDayAs: now) }
+             .reduce(0) { $0 + $1.amountOz }
+    }
+
+    /// One compact line per recent workout: "Today — Push day (Strength), 45 min, 320 kcal".
+    /// Newest first, capped at `limit`; date is named (Today/Yesterday) or weekday+date. The
+    /// optional focus, duration, calories, and free-text notes are appended only when present,
+    /// so a bare "showed up" log still reads cleanly. Empty when there are no workouts.
+    static func workoutLines(_ workouts: [WorkoutEntry],
+                             limit: Int = 6,
+                             now: Date = .now,
+                             calendar: Calendar = .current) -> [String] {
+        let sorted = workouts.sorted { $0.date > $1.date }
+        let startToday = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: startToday)
+        var out = sorted.prefix(limit).map { w -> String in
+            let day = calendar.startOfDay(for: w.date)
+            let when: String
+            if calendar.isDate(day, inSameDayAs: startToday) { when = "Today" }
+            else if let y = yesterday, calendar.isDate(day, inSameDayAs: y) { when = "Yesterday" }
+            else { when = Self.weekdayDate.string(from: day) }
+
+            let rawTitle = w.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let title = rawTitle.isEmpty ? w.type.label : rawTitle
+            var line = "\(when) — \(title) (\(w.type.label))"
+            if let focus = w.focus { line += ", \(focus.label.lowercased())" }
+            if w.durationMinutes > 0 { line += ", \(w.durationMinutes) min" }
+            if let kcal = w.caloriesBurned, kcal > 0 { line += ", \(Int(kcal.rounded())) kcal" }
+            let notes = (w.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !notes.isEmpty { line += " — \(trimmedNote(notes, max: 200))" }
+            return line
+        }
+        if sorted.count > limit {
+            let extra = sorted.count - limit
+            out.append("…and \(extra) more workout\(extra == 1 ? "" : "s")")
+        }
+        return out
+    }
+
+    /// One compact line per logged item: "Name ×qty (Meal) — X kcal, Pg / Cg / Fg", with the
+    /// item's serving, calorie range, source/confidence, and — crucially — the AI's own component
+    /// breakdown/assumptions from `notes` appended to the SAME line. THAT detail is what lets Vita
+    /// answer "what are the +3 more items?" for a combined meal like a fast-food order, instead of
+    /// admitting she can't see the components (the bug this fixes: previously only name + macros
+    /// were injected, dropping `notes`/`servingDescription`). One line per item is kept on purpose
+    /// (callers/tests rely on it). Newest first, capped at `limit` with a "…and N more" tail so a
+    /// heavy day can't blow up the prompt; `notes` is lightly trimmed only if very long so it stays
+    /// complete but bounded.
     static func itemLines(_ foods: [FoodEntry], limit: Int = 15) -> [String] {
         let sorted = foods.sorted { $0.date > $1.date }
         var out = sorted.prefix(limit).map { f -> String in
             let raw = f.name.trimmingCharacters(in: .whitespacesAndNewlines)
             let name = raw.isEmpty ? "Unnamed item" : raw
             let qty = f.quantity != 1 ? " ×\(formatQty(f.quantity))" : ""
-            return "\(name)\(qty) (\(f.mealType.label)) — \(Int(f.totalCalories.rounded())) kcal, "
+            var line = "\(name)\(qty) (\(f.mealType.label)) — \(Int(f.totalCalories.rounded())) kcal, "
                 + "\(Int(f.totalProteinG.rounded()))g P / \(Int(f.totalCarbsG.rounded()))g C / "
                 + "\(Int(f.totalFatG.rounded()))g F"
+
+            // Trailing detail so the FULL meal is visible — serving size, any uncertainty range,
+            // how it was logged, and the AI's item-by-item breakdown / assumptions (`notes`).
+            var details: [String] = []
+            let serving = f.servingDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !serving.isEmpty { details.append("serving: \(serving)") }
+            if let lo = f.caloriesLow, let hi = f.caloriesHigh, hi > lo {
+                // Per-serving range scaled to the logged quantity, matching the totals above.
+                details.append("est. range \(Int((lo * f.quantity).rounded()))–\(Int((hi * f.quantity).rounded())) kcal")
+            }
+            if f.source != .manual {
+                details.append("logged via \(f.source.rawValue)\(f.confidence.map { ", \($0.label.lowercased()) confidence" } ?? "")")
+            } else if let conf = f.confidence {
+                details.append("\(conf.label.lowercased()) confidence")
+            }
+            let notes = (f.notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !notes.isEmpty { details.append("breakdown/notes: \(trimmedNote(notes))") }
+            if !details.isEmpty { line += " [" + details.joined(separator: "; ") + "]" }
+            return line
         }
         if sorted.count > limit {
             let extra = sorted.count - limit
             out.append("…and \(extra) more item\(extra == 1 ? "" : "s")")
         }
         return out
+    }
+
+    /// `FoodEntry.notes` carries the AI's component breakdown + per-item assumptions, which we
+    /// want Vita to see in FULL — so the cap is generous and we only trim a runaway note (clipping
+    /// on a word boundary, with an ellipsis) so one pathological entry can't dominate the prompt.
+    private static func trimmedNote(_ s: String, max: Int = 600) -> String {
+        guard s.count > max else { return s }
+        let clipped = String(s.prefix(max))
+        if let lastSpace = clipped.lastIndex(of: " ") { return String(clipped[..<lastSpace]) + "…" }
+        return clipped + "…"
     }
 
     /// Per-day food totals for the last `days` days that have any food logged, newest first:
