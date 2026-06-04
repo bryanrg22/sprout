@@ -137,6 +137,24 @@ struct PlanIntakeView: View {
 
     // MARK: - Build
 
+    /// Fold the LASTING context she shared (her day-to-day + training) into her durable profile
+    /// (`CoachMemory.profileNotes`) — so it grows her "about me" and Vita carries it everywhere, not
+    /// just inside the plan. Deduped + bounded, mirroring the remember_about_user tool. (The timeframe
+    /// is goal-specific, not durable, so it stays out of the profile.)
+    private func foldContextIntoProfile() {
+        let bits = [dayToDay, exercise]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !bits.isEmpty else { return }
+        let addition = "From her plan intake — her life + training: " + bits.joined(separator: " · ")
+        let memory = CoachMemory.fetchOrCreate(in: context, profile: profile)
+        guard !memory.profileNotes.contains(addition) else { return }   // don't re-add on a rebuild
+        memory.profileNotes = memory.profileNotes.isEmpty ? addition : memory.profileNotes + "\n" + addition
+        if memory.profileNotes.count > 2000 { memory.profileNotes = String(memory.profileNotes.suffix(2000)) }
+        memory.updatedAt = .now
+        try? context.save()
+    }
+
     private func build() {
         let intake = """
         Timeframe: \(timeframe.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -149,7 +167,10 @@ struct PlanIntakeView: View {
             do {
                 _ = try await PlanService.generate(profile: profile, foods: foods, weights: weights,
                                                    intake: intake, context: context)
-                await MainActor.run { dismiss() }
+                await MainActor.run {
+                    foldContextIntoProfile()   // what she shared also grows her durable profile
+                    dismiss()
+                }
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {
                     isBuilding = false

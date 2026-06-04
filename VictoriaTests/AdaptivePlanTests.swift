@@ -258,7 +258,7 @@ final class AdaptivePlanTests: XCTestCase {
         XCTAssertTrue(sys.lowercased().contains("only if the data warrants"))
     }
 
-    // MARK: - Safety flags (P4)
+    // MARK: - Coaching patterns (beneficial teaching moments, P4)
 
     private func femaleLossProfile() -> UserProfile {
         let p = UserProfile()
@@ -271,25 +271,26 @@ final class AdaptivePlanTests: XCTestCase {
         (0..<count).map { FoodEntry(date: cal.date(byAdding: .day, value: -$0, to: now)!, name: "x", calories: kcal) }
     }
 
-    func testSafetyFlagsCatchVeryLowIntake() {
+    func testCoachingFlagsFrameVeryLowIntakeAsEatMore() {
         let cal = Calendar(identifier: .gregorian)
         let now = cal.startOfDay(for: Date(timeIntervalSince1970: 1_700_000_000))
-        let flags = PlanService.safetyFlags(profile: femaleLossProfile(),
-                                            foods: days(900, count: 3, endingAt: now, cal: cal),
-                                            weights: [], now: now, calendar: cal)
-        XCTAssertTrue(flags.contains { $0.contains("below the safe floor") })
+        let flags = PlanService.coachingFlags(profile: femaleLossProfile(),
+                                              foods: days(900, count: 3, endingAt: now, cal: cal),
+                                              weights: [], now: now, calendar: cal)
+        // Beneficial framing ("eat a bit MORE → better results"), not a warning.
+        XCTAssertTrue(flags.contains { $0.lowercased().contains("eating a bit more") })
     }
 
-    func testSafetyFlagsQuietAtHealthyIntake() {
+    func testCoachingFlagsQuietAtHealthyIntake() {
         let cal = Calendar(identifier: .gregorian)
         let now = cal.startOfDay(for: Date(timeIntervalSince1970: 1_700_000_000))
-        let flags = PlanService.safetyFlags(profile: femaleLossProfile(),
-                                            foods: days(1700, count: 3, endingAt: now, cal: cal),
-                                            weights: [], now: now, calendar: cal)
+        let flags = PlanService.coachingFlags(profile: femaleLossProfile(),
+                                              foods: days(1700, count: 3, endingAt: now, cal: cal),
+                                              weights: [], now: now, calendar: cal)
         XCTAssertTrue(flags.isEmpty)
     }
 
-    func testSafetyNoteEmptyWhenNothingFlagged() {
-        XCTAssertEqual(PlanService.safetyNote(profile: femaleLossProfile(), foods: [], weights: []), "")
+    func testCoachingNoteEmptyWhenNothingStandsOut() {
+        XCTAssertEqual(PlanService.coachingNote(profile: femaleLossProfile(), foods: [], weights: []), "")
     }
 }
