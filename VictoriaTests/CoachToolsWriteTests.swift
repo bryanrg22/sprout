@@ -135,7 +135,7 @@ final class CoachToolsWriteTests: XCTestCase {
         guard let req = expectOK(.editPlan,
                                  ["protein_target": 150, "calorie_max": 1800, "change_note": "Bumped protein + ceiling"],
                                  profile: profile) else { return }
-        XCTAssertFalse(req.requiresConfirm)
+        XCTAssertTrue(req.requiresConfirm, "a target change confirms like the other goal tools")
         let applied = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
 
         let updated = try XCTUnwrap(CoachPlan.current(in: ctx))
@@ -152,6 +152,21 @@ final class CoachToolsWriteTests: XCTestCase {
 
     func testEditPlanRejectsInvertedRange() {
         _ = expectInvalid(.editPlan, ["calorie_min": 2000, "calorie_max": 1500, "change_note": "x"], profile: lossProfile())
+    }
+
+    /// A target change (calorie/protein) must show the Yes/Not-now card, and the card names the new
+    /// number — matching set_water_goal / set_weight_goal.
+    func testEditPlanTargetChangeConfirmsAndNamesTheTarget() {
+        let req = expectOK(.editPlan, ["protein_target": 150, "change_note": "x"], profile: lossProfile())
+        XCTAssertEqual(req?.requiresConfirm, true)
+        XCTAssertTrue(req?.confirmSummary.contains("150") ?? false, "card should name the new target")
+    }
+
+    /// A prose-only tweak (no targets) stays a quick auto-apply with Undo — no confirm card.
+    func testEditPlanProseOnlyTweakAutoApplies() {
+        let req = expectOK(.editPlan, ["headline": "Fresh start", "change_note": "reworded the read"],
+                           profile: lossProfile())
+        XCTAssertEqual(req?.requiresConfirm, false)
     }
 
     func testEditPlanWithNoPlanIsGracious() throws {
