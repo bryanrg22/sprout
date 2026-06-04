@@ -191,6 +191,12 @@ final class CoachToolsWriteTests: XCTestCase {
         XCTAssertNil(applied.undo)
     }
 
+    /// A too-broad `fact` ("i") is rejected at parse time before it can match — and wipe — every note.
+    func testForgetRejectsTooVagueFact() {
+        let why = expectInvalid(.forgetFact, ["fact": "i"], profile: lossProfile())
+        XCTAssertTrue(why.lowercased().contains("specific") || why.lowercased().contains("broad"))
+    }
+
     /// Insert a food entry into the context for today (so lookup tools can find it).
     @discardableResult
     private func seedFood(_ name: String,
@@ -697,6 +703,54 @@ final class CoachToolsWriteTests: XCTestCase {
         let after = CoachMemory.fetchOrCreate(in: ctx, profile: p).profileNotes
         XCTAssertFalse(after.contains("on creatine"), "undo removes the just-added note")
         XCTAssertTrue(after.contains("prior note"), "the prior note is preserved")
+    }
+
+    // MARK: - forget_about_user: surgical removal (no collateral damage)
+
+    func testRemovingFactDropsOnlyTheMatchingBulletLine() {
+        let notes = "- takes creatine daily\n- sees a nutritionist\n- works night shifts"
+        XCTAssertEqual(CoachTools.removingFact("creatine", from: notes),
+                       "- sees a nutritionist\n- works night shifts")
+    }
+
+    /// The onboarding seed is a SINGLE comma-joined line — forgetting one fact must strip only that
+    /// clause, not annihilate the whole line (the original substring filter did the latter).
+    func testRemovingFactStripsOneClauseFromCommaJoinedSeed() throws {
+        let seed = "From her onboarding note: vegetarian, has two kids, allergic to peanuts"
+        let out = try XCTUnwrap(CoachTools.removingFact("peanuts", from: seed))
+        XCTAssertFalse(out.contains("peanuts"))
+        XCTAssertTrue(out.contains("has two kids"))     // siblings survive
+        XCTAssertTrue(out.contains("vegetarian"))
+    }
+
+    /// Whole-word matching: "art" must NOT delete "startup" (raw substring containment would have).
+    func testRemovingFactUsesWordBoundariesNotSubstring() {
+        let notes = "- works at a startup\n- training for a marathon"
+        XCTAssertNil(CoachTools.removingFact("art", from: notes))
+    }
+
+    /// Inflection tolerance (found live): "desk job" must match a stored "desk jobs" (plural), while
+    /// the unrelated "startup" line is left untouched. This is the desk-job/desk-jobs miss.
+    func testRemovingFactToleratesPluralInflection() throws {
+        let notes = "- I work a 9 to 5 desk jobs and train after\n- runs a startup on the side"
+        let out = try XCTUnwrap(CoachTools.removingFact("desk job", from: notes))
+        XCTAssertFalse(out.lowercased().contains("desk job"))   // the plural form was matched + removed
+        XCTAssertTrue(out.contains("startup"), "unrelated line must survive")
+    }
+
+    func testRemovingFactReturnsNilWhenAbsentEmptyOrTooVague() {
+        let notes = "- vegetarian\n- two cats"
+        XCTAssertNil(CoachTools.removingFact("skydiving", from: notes))  // not present
+        XCTAssertNil(CoachTools.removingFact("a", from: notes))          // too short to match safely
+        XCTAssertNil(CoachTools.removingFact("creatine", from: ""))      // empty notes
+    }
+
+    /// A present-but-broad word removes only its own line — never wipes everything (the old filter
+    /// would delete every line containing the substring).
+    func testRemovingFactNeverWipesUnrelatedLines() {
+        let notes = "- likes spin class\n- dislikes running\n- vegetarian"
+        XCTAssertEqual(CoachTools.removingFact("running", from: notes),
+                       "- likes spin class\n- vegetarian")
     }
 }
 
