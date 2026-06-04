@@ -28,6 +28,9 @@ struct VictoriaApp: App {
             BuddySnapshot.self,
             // Daily "Today's checklist" tasks (gym / run / etc).
             ChecklistItem.self,
+            // The Workouts tab: a session + its per-machine exercise rows (flat sessionID link).
+            WorkoutSession.self,
+            ExerciseEntry.self,
         ])
         do {
             container = try ModelContainer(for: schema)
