@@ -104,6 +104,18 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
     /// Today's logged food names, comma-joined.
     var todayFoods: String = ""
 
+    // MARK: - Freshness
+
+    /// True only when this snapshot's data is actually from the current calendar day. A snapshot
+    /// last synced yesterday (its `lastActive` is yesterday) must NOT be read as "today" — otherwise
+    /// the hub shows last night's totals under a "logged today" label. (Buddy sync is pull-on-open,
+    /// so a snapshot can easily be hours old; this is the guard that keeps the display honest.)
+    var reflectsToday: Bool { Calendar.current.isDateInToday(lastActive) }
+
+    /// "Logged today", gated on freshness — the meaning every presence / celebration read wants
+    /// (the shared panda, the "both logged today" headline, the logged-✓ dots, the card badge).
+    var loggedTodayEffective: Bool { loggedToday && reflectsToday }
+
     init(ownerUserID: String,
          displayName: String,
          dayStreak: Int,

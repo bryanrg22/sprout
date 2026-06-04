@@ -103,7 +103,7 @@ struct BuddyHomeView: View {
             myWorkedOut: myWorkedOutToday,
             theirWorkedOut: snap.workedOutToday,
             myLoggedToday: myLoggedToday,
-            theirLoggedToday: snap.loggedToday,
+            theirLoggedToday: snap.loggedTodayEffective,   // gated: ignore a stale (pre-today) snapshot
             buddyName: snap.displayName)
     }
 
@@ -316,7 +316,7 @@ struct BuddyHomeView: View {
                 me: .init(avatar: myAvatar, name: "You", logged: myLoggedToday),
                 buddy: .init(avatar: theirAvatar,
                              name: model.buddySnapshot?.displayName ?? "Buddy",
-                             logged: model.buddySnapshot?.loggedToday ?? false))
+                             logged: model.buddySnapshot?.loggedTodayEffective ?? false))
         }
         .cardElevated(padding: Theme.Space.lg)
     }
