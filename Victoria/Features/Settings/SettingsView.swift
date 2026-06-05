@@ -165,6 +165,16 @@ struct SettingsView: View {
         )
     }
 
+    /// Non-optional view over `profile.homeGym` for the Settings picker: an unset gym reads as
+    /// `.usc` (the app's primary persona) so a valid option is always selected, and choosing one
+    /// writes through to the stored optional.
+    private var homeGymBinding: Binding<HomeGym> {
+        Binding(
+            get: { profile.homeGym ?? .usc },
+            set: { profile.homeGym = $0 }
+        )
+    }
+
     // MARK: - You
 
     private var youSection: some View {
@@ -241,6 +251,16 @@ struct SettingsView: View {
                 Picker("Companion", selection: $profile.companionAvatar) {
                     Text("Victoria").tag(CompanionAvatar.victoria)
                     Text("Bryan").tag(CompanionAvatar.bryan)
+                }
+            }
+
+            // Your primary gym — used to show machine photos + personalize advice. (Doesn't change
+            // which machines are listed; the catalog stays the same.)
+            row(icon: "dumbbell.fill") {
+                Picker("Home gym", selection: homeGymBinding) {
+                    ForEach(HomeGym.allCases) { gym in
+                        Text(gym.label).tag(gym)
+                    }
                 }
             }
 

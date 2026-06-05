@@ -90,6 +90,12 @@ final class UserProfile {
     var aiModelFood: String = "claude-sonnet-4-6"
     var aiModelChat: String = "claude-sonnet-4-6"
 
+    // Workouts
+    /// The user's primary gym (raw `HomeGym` value; "" = unset). Used to show machine photos +
+    /// personalize context — it does NOT filter the (universal) machine catalog. Defaulted so the
+    /// @Model stays SwiftData-migration- and CloudKit-ready (older rows read as unset).
+    var homeGymRaw: String = ""
+
     init() {
         self.id = UUID()
         self.createdAt = .now
@@ -119,6 +125,11 @@ final class UserProfile {
     var companionAvatar: CompanionAvatar {
         get { CompanionAvatar(rawValue: companionAvatarRaw) ?? .victoria }
         set { companionAvatarRaw = newValue.rawValue }
+    }
+    /// The user's primary gym, or `nil` when unset. Backed by `homeGymRaw`.
+    var homeGym: HomeGym? {
+        get { HomeGym(rawValue: homeGymRaw) }
+        set { homeGymRaw = newValue?.rawValue ?? "" }
     }
 
     var ageYears: Int {

@@ -427,8 +427,9 @@ private struct MachineTile: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: Theme.Space.xs) {
-                Image(systemName: machine.icon)
-                    .font(.title2)
+                MachineImage(key: machine.key, symbolName: machine.icon)
+                    .font(.title2)                  // sizes the SF-Symbol fallback
+                    .frame(width: 32, height: 32)   // bounds the photo to the icon area
                 Text(machine.name)
                     .font(.caption2.weight(.semibold))
                     .lineLimit(2)

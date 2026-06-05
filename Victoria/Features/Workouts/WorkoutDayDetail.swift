@@ -120,11 +120,13 @@ private struct ExerciseDetailRow: View {
 
     var body: some View {
         HStack(spacing: Theme.Space.sm) {
-            Image(systemName: entry.iconName)
-                .font(.subheadline.weight(.semibold))
+            MachineImage(key: entry.machineKey, symbolName: entry.iconName)
+                .font(.subheadline.weight(.semibold))   // sizes the SF-Symbol fallback
                 .foregroundStyle(Theme.brand)
+                .padding(4)                              // inset so a photo sits cleanly in the disc
                 .frame(width: 30, height: 30)
                 .background(Theme.brandSoft, in: RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
 
             Text(entry.displayName)
                 .font(.subheadline.weight(.medium))
