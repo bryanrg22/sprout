@@ -116,6 +116,7 @@ struct WorkoutsView: View {
                     .foregroundStyle(Theme.brand)
                     .wiggle()
             }
+            .frame(width: 120, height: 120)   // stable bounds so the pulse/wiggle never reflow the column
             VStack(spacing: Theme.Space.xs) {
                 Text("Let's log a workout! 🏋️‍♀️")
                     .font(.title3.weight(.bold))
@@ -139,7 +140,7 @@ struct WorkoutsView: View {
             .bouncyPress()
             .padding(.top, Theme.Space.xs)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)   // fill + center, so position is stable
         .padding(.horizontal, Theme.Space.xl)
         .padding(.vertical, Theme.Space.xl)
     }
