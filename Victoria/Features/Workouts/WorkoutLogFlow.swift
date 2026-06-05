@@ -128,7 +128,8 @@ struct WorkoutLogFlow: View {
                 stepHeading("Tap the machines you did",
                             "Each one logs a comfy 3×10 — open it to set weight or tweak reps/sets.")
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: Theme.Space.sm)],
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: Theme.Space.sm),
+                                    GridItem(.flexible(), spacing: Theme.Space.sm)],
                           spacing: Theme.Space.sm) {
                     ForEach(rankedMachines) { machine in
                         MachineTile(machine: machine,
@@ -428,16 +429,17 @@ private struct MachineTile: View {
         Button(action: action) {
             VStack(spacing: Theme.Space.xs) {
                 MachineImage(key: machine.key, symbolName: machine.icon)
-                    .font(.title2)                  // sizes the SF-Symbol fallback
-                    .frame(width: 32, height: 32)   // bounds the photo to the icon area
+                    .font(.system(size: 40))        // sizes the SF-Symbol fallback
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 86)              // big, clear machine image in the 2-col grid
                 Text(machine.name)
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 92)
+            .frame(height: 130)
             .padding(.horizontal, 4)
             .foregroundStyle(selected ? .white : Theme.textPrimary)
             .background { tileBackground }
@@ -485,14 +487,14 @@ private struct AddTile: View {
         Button(action: action) {
             VStack(spacing: Theme.Space.xs) {
                 Image(systemName: "plus")
-                    .font(.title2)
+                    .font(.system(size: 34, weight: .semibold))
                 Text("Add a machine")
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 92)
+            .frame(height: 130)
             .padding(.horizontal, 4)
             .foregroundStyle(Theme.brand)
             .background(RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous).fill(Theme.brandSoft.opacity(0.5)))
