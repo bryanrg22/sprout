@@ -272,6 +272,11 @@ enum MachineCatalog {
     /// `ExerciseEntry.machineKey`: e.g. `leg_press` → `machine_leg_press`. Keep bundled assets
     /// named to match (lowercase, underscore — identical to the catalog key).
     static func photoAssetName(for key: String) -> String { "machine_\(key)" }
+
+    /// Keys whose bundled `machine_<key>` asset is a flat exercise PICTOGRAM (a hand-sourced
+    /// silhouette for moves with no machine to photograph), not a product photo. `MachineImage`
+    /// scales these down so their solid ink doesn't outweigh the detailed machine shots.
+    static let pictogramKeys: Set<String> = ["push_up", "deadlift", "skullcrusher", "cable_curl"]
 }
 
 // MARK: - Machine image (photo with SF-Symbol fallback)
@@ -300,6 +305,10 @@ struct MachineImage: View {
         Image(MachineCatalog.photoAssetName(for: key)).resizable().scaledToFit()
     }
 
+    /// Flat exercise PICTOGRAMS (push-up etc.) are bold solid silhouettes; rendered full-bleed they
+    /// visually outweigh the airy machine product shots beside them, so we scale them down to match.
+    private var scale: CGFloat { MachineCatalog.pictogramKeys.contains(key) ? 0.58 : 1 }
+
     var body: some View {
         if !hasPhoto {
             Image(systemName: symbolName)
@@ -307,9 +316,9 @@ struct MachineImage: View {
             // The machine cut-outs are dark metal — invisible on the near-black dark-theme tiles.
             // Flip their luminance so they render as clean LIGHT machines (still transparent — no
             // white box). The shots are greyscale, so this reads as a natural light/chrome machine.
-            photo().colorInvert()
+            photo().colorInvert().scaleEffect(scale)
         } else {
-            photo()   // light (cream) theme: the dark machine reads cleanly straight on the tile
+            photo().scaleEffect(scale)   // light (cream) theme: dark machine reads cleanly on the tile
         }
     }
 }
