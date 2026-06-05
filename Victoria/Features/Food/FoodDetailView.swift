@@ -73,6 +73,8 @@ struct FoodDetailView: View {
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: Theme.Space.sm) {
                 mealPill
+                // When she ate it.
+                detailChip(entry.date.formatted(date: .omitted, time: .shortened), systemImage: "clock")
                 // The serving chip is hidden for an AI-combined multi-item meal: there the
                 // stored `servingDescription` is just the FIRST item's weight (e.g. the
                 // nuggets' "170 g"), not the whole order — showing it reads as a wrong total.

@@ -75,22 +75,18 @@ struct WeightView: View {
                     emptyState
                 } else {
                     VStack(spacing: Theme.spacingL) {
-                        // The adaptive Plan leads Progress — the AI's read on whether she's actually
-                        // getting there, with the headline ("On track for …"), targets + insights
-                        // (see docs/adaptive-plan.md). A small "Adjust plan" chip sits right under it
-                        // so tweaking the plan with Vita is one tap away.
-                        PlanCard(profile: profile)
-                        // Only once a plan exists — otherwise PlanCard is showing "Build my plan".
-                        if coachPlans.first != nil { adjustPlanChip }
-                        // ONE weight-trend card: the big smoothed number + rate, then the chart.
-                        // The destination ("on track for …", "X to goal") lives on the plan card
-                        // above, so we don't repeat it here — the dashed goal line carries it visually.
-                        if rawIsDiscouragingBlip { reframeCard }
-                        trendCard
-                        // AI recap of the WHOLE picture — weight, nutrition, activity,
-                        // consistency — so Progress isn't just the scale. Self-manages its
+                        // "Your progress" — the AI recap of the WHOLE picture (weight, nutrition,
+                        // activity, consistency) — LEADS now (his latest call). Self-manages its
                         // loading / not-enough-data / no-key states (hides without a key).
                         ProgressSummaryCard(profile: profile)
+                        // Then the Current-trend chart — the concrete number + rate, with the goal
+                        // AND starting-weight reference lines. A discouraging weigh-in gets a gentle
+                        // reframe right above it.
+                        if rawIsDiscouragingBlip { reframeCard }
+                        trendCard
+                        // The adaptive Plan + its "Adjust plan" chip.
+                        PlanCard(profile: profile)
+                        if coachPlans.first != nil { adjustPlanChip }
                         // Metrics at a glance — calories/protein/steps/water sparklines.
                         ProgressMetricsSection(profile: profile)
                         // GitHub-style "days you showed up" consistency heatmap.
@@ -310,15 +306,31 @@ struct WeightView: View {
                 .foregroundStyle(Theme.positive)
             }
 
-            // Dashed goal line.
-            RuleMark(y: .value("Goal", profile.goalWeightLbs))
-                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                .foregroundStyle(Theme.accent.opacity(0.85))
-                .annotation(position: .top, alignment: .trailing, spacing: 2) {
-                    Text("Goal \(Int(profile.goalWeightLbs.rounded())) \(unitLabel)")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
-                }
+            // Dashed goal line — guarded like the start line, so a 0/unset goal never draws a
+            // bogus "Goal 0 lb" rule or squashes the chart's Y-domain down to zero.
+            if profile.goalWeightLbs > 0 {
+                RuleMark(y: .value("Goal", profile.goalWeightLbs))
+                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                    .foregroundStyle(Theme.accent.opacity(0.85))
+                    .annotation(position: .top, alignment: .trailing, spacing: 2) {
+                        Text("Goal \(Int(profile.goalWeightLbs.rounded())) \(unitLabel)")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Theme.accent)
+                    }
+            }
+
+            // Dashed starting-weight line — so the chart shows BOTH ends of the journey
+            // (start → goal), not just the finish. Neutral grey, distinct from the goal line.
+            if profile.startWeightLbs > 0 {
+                RuleMark(y: .value("Start", profile.startWeightLbs))
+                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                    .foregroundStyle(Theme.textSecondary.opacity(0.6))
+                    .annotation(position: .bottom, alignment: .leading, spacing: 2) {
+                        Text("Start \(Int(profile.startWeightLbs.rounded())) \(unitLabel)")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+            }
         }
         .chartYScale(domain: chartYDomain)
         .chartYAxis {
@@ -353,9 +365,17 @@ struct WeightView: View {
                 Circle().fill(Theme.textSecondary.opacity(0.35)).frame(width: 7, height: 7)
                 Text("Daily").font(.caption).foregroundStyle(Theme.textSecondary)
             }
-            HStack(spacing: 6) {
-                Capsule().fill(Theme.accent).frame(width: 18, height: 2)
-                Text("Goal").font(.caption).foregroundStyle(Theme.textSecondary)
+            if profile.goalWeightLbs > 0 {
+                HStack(spacing: 6) {
+                    Capsule().fill(Theme.accent).frame(width: 18, height: 2)
+                    Text("Goal").font(.caption).foregroundStyle(Theme.textSecondary)
+                }
+            }
+            if profile.startWeightLbs > 0 {
+                HStack(spacing: 6) {
+                    Capsule().fill(Theme.textSecondary.opacity(0.6)).frame(width: 18, height: 2)
+                    Text("Start").font(.caption).foregroundStyle(Theme.textSecondary)
+                }
             }
         }
     }
@@ -364,7 +384,8 @@ struct WeightView: View {
     private var chartYDomain: ClosedRange<Double> {
         var values = rangedWeights.map(\.weightLbs)
         values.append(contentsOf: trendPoints.map(\.value))
-        values.append(profile.goalWeightLbs)
+        if profile.goalWeightLbs > 0 { values.append(profile.goalWeightLbs) }
+        if profile.startWeightLbs > 0 { values.append(profile.startWeightLbs) }
         guard let lo = values.min(), let hi = values.max(), lo < hi else {
             let base = profile.goalWeightLbs > 0 ? profile.goalWeightLbs : 150
             return (base - 5)...(base + 5)

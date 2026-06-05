@@ -76,9 +76,22 @@ enum DemoSeed {
         }
 
         // Today's food
+        // A realistic clock time for each meal, so the "what time you ate" stamps vary.
+        func mealHour(_ meal: MealType) -> (Int, Int) {
+            switch meal {
+            case .breakfast: return (8, 15)
+            case .lunch:     return (12, 30)
+            case .snack:     return (15, 30)
+            case .dinner:    return (19, 0)
+            }
+        }
+        func mealDate(_ meal: MealType, on day: Date) -> Date {
+            let (h, m) = mealHour(meal)
+            return calendar.date(bySettingHour: h, minute: m, second: 0, of: day) ?? day
+        }
         func food(_ meal: MealType, _ name: String, _ serving: String,
                   _ kcal: Double, _ pr: Double, _ cb: Double, _ ft: Double) {
-            context.insert(FoodEntry(date: .now, mealType: meal, name: name,
+            context.insert(FoodEntry(date: mealDate(meal, on: .now), mealType: meal, name: name,
                                      servingDescription: serving,
                                      calories: kcal, proteinG: pr, carbsG: cb, fatG: ft))
         }
@@ -86,6 +99,22 @@ enum DemoSeed {
         food(.lunch, "Grilled chicken salad", "1 plate", 420, 38, 22, 18)
         food(.snack, "Apple", "1 medium", 95, 0, 25, 0)
         food(.dinner, "Salmon & rice", "1 plate", 600, 42, 55, 22)
+
+        // A couple of PAST days of food, so the Nutrients date-stepper has history to browse and
+        // past-day macros are visible (the thing Victoria asked for).
+        func pastFood(_ dayOffset: Int, _ meal: MealType, _ name: String, _ serving: String,
+                      _ kcal: Double, _ pr: Double, _ cb: Double, _ ft: Double) {
+            let day = calendar.date(byAdding: .day, value: dayOffset, to: .now) ?? .now
+            context.insert(FoodEntry(date: mealDate(meal, on: day), mealType: meal, name: name,
+                                     servingDescription: serving,
+                                     calories: kcal, proteinG: pr, carbsG: cb, fatG: ft))
+        }
+        pastFood(-1, .breakfast, "Oatmeal & banana", "1 bowl", 310, 10, 54, 6)
+        pastFood(-1, .lunch, "Turkey sandwich", "1 sandwich", 480, 32, 45, 18)
+        pastFood(-1, .dinner, "Chicken stir-fry", "1 plate", 540, 40, 48, 20)
+        pastFood(-2, .breakfast, "Eggs & toast", "2 eggs", 320, 20, 24, 16)
+        pastFood(-2, .lunch, "Burrito bowl", "1 bowl", 620, 34, 70, 22)
+        pastFood(-2, .dinner, "Pasta & veggies", "1 plate", 560, 22, 82, 16)
         // DEBUG only: nudge today's total to ~98% of goal (1355 → 1715 vs a 1742
         // target) so the celebratory "Fueled!" / "goal reached" state renders.
         if isFueledRequested {
@@ -95,10 +124,14 @@ enum DemoSeed {
         // Water today
         for _ in 0..<3 { context.insert(WaterEntry(date: .now, amountOz: 12)) }
 
-        // A workout yesterday
+        // A workout yesterday (legacy dashboard `WorkoutEntry`, feeds the activity row).
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: .now) {
             context.insert(WorkoutEntry(date: yesterday, type: .strength, durationMinutes: 45))
         }
+
+        // Recent gym/cardio sessions for the Workouts tab — grouped Today/Yesterday/…, with real
+        // weights so the detail's volume hero and the weekly stats card have something to show.
+        seedWorkouts(context, today: today, gaining: gaining)
 
         // Coach conversation
         context.insert(ChatMessage(
@@ -116,5 +149,54 @@ enum DemoSeed {
             createdAt: calendar.date(byAdding: .minute, value: -3, to: .now) ?? .now))
 
         try? context.save()
+    }
+
+    /// Seed a handful of recent `WorkoutSession`s (+ their `ExerciseEntry` rows) for the Workouts
+    /// tab: a few gym days across the week plus one run, with weights scaled to the demo persona
+    /// (Bryan lifts heavier than Victoria) so the volume hero + weekly stats read realistically.
+    private static func seedWorkouts(_ context: ModelContext, today: Date, gaining: Bool) {
+        let cal = Calendar.current
+        func at(_ dayOffset: Int, hour: Int) -> Date {
+            let d = cal.date(byAdding: .day, value: dayOffset, to: today) ?? today
+            return cal.date(bySettingHour: hour, minute: 0, second: 0, of: d) ?? d
+        }
+        // Round a base weight to the nearest 5 lb after persona scaling.
+        let scale = gaining ? 1.0 : 0.62
+        func w(_ base: Double) -> Double { ((base * scale) / 5).rounded() * 5 }
+        // Insert one exercise row, pulling the display name + icon from the catalog so it matches.
+        func ex(_ session: WorkoutSession, _ key: String, _ weight: Double, reps: Int = 10, sets: Int = 3) {
+            let m = MachineCatalog.machine(for: key)
+            context.insert(ExerciseEntry(sessionID: session.id, date: session.date,
+                                         machineKey: key,
+                                         displayName: m?.name ?? key,
+                                         iconName: m?.icon ?? "dumbbell.fill",
+                                         weightLbs: weight, reps: reps, sets: sets))
+        }
+
+        // Today — Chest + Arms
+        let chest = WorkoutSession(date: at(0, hour: 8), kind: .gym, focuses: [.chest, .arms], durationMinutes: 50)
+        context.insert(chest)
+        ex(chest, "chest_press", w(140))
+        ex(chest, "incline_db_press", w(50))
+        ex(chest, "cable_curl", w(40), reps: 12)
+        ex(chest, "tricep_pushdown", w(50), reps: 12)
+
+        // Yesterday — Legs
+        let legs = WorkoutSession(date: at(-1, hour: 18), kind: .gym, focuses: [.legs], durationMinutes: 55)
+        context.insert(legs)
+        ex(legs, "leg_press", w(360), reps: 10, sets: 4)
+        ex(legs, "leg_extension", w(120), reps: 12)
+        ex(legs, "romanian_deadlift", w(155))
+        ex(legs, "calf_raise", w(180), reps: 15, sets: 4)
+
+        // 2 days ago — Back
+        let back = WorkoutSession(date: at(-2, hour: 7), kind: .gym, focuses: [.back], durationMinutes: 48)
+        context.insert(back)
+        ex(back, "lat_pulldown", w(120))
+        ex(back, "seated_cable_row", w(130))
+        ex(back, "barbell_row", w(115))
+
+        // 3 days ago — a run (cardio: the duration hero, no exercise rows)
+        context.insert(WorkoutSession(date: at(-3, hour: 7), kind: .run, focuses: [], durationMinutes: 32))
     }
 }
