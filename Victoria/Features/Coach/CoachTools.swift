@@ -1022,6 +1022,29 @@ enum CoachTools {
         let undo: (@MainActor () -> Void)?
     }
 
+    /// The authoritative "today so far" calorie line for a tool result, computed EXACTLY like the
+    /// food log (`FoodLogView`): same `basisWeight` (current trend, else start weight, else 150) and
+    /// `dailyCalorieTarget`. Handing this to Vita stops her recomputing "kcal left" in chat and
+    /// getting it wrong. `nil` when there's no usable target. Returns e.g. "Today so far: 1555 of
+    /// 1740 kcal (185 left)."
+    @MainActor
+    static func calorieStatusLine(profile: UserProfile, context: ModelContext) -> String? {
+        let foods = (try? context.fetch(FetchDescriptor<FoodEntry>())) ?? []
+        let weights = (try? context.fetch(FetchDescriptor<WeightEntry>())) ?? []
+        let cal = Calendar.current
+        let consumed = foods.filter { cal.isDateInToday($0.date) }.reduce(0) { $0 + $1.totalCalories }
+        let basis = TrendCalculator.currentTrend(weights)
+            ?? (profile.startWeightLbs > 0 ? profile.startWeightLbs : 150)
+        let target = profile.dailyCalorieTarget(weightLbs: basis)
+        guard target > 0 else { return nil }
+        let consumedI = Int(consumed.rounded()), targetI = Int(target.rounded())
+        let remaining = targetI - consumedI
+        if remaining >= 0 {
+            return "Today so far: \(consumedI) of \(targetI) kcal (\(remaining) left)."
+        }
+        return "Today so far: \(consumedI) of \(targetI) kcal (\(-remaining) over — and that's okay, one day doesn't define the week)."
+    }
+
     /// Apply a confirmed change and return just the message. Thin wrapper over
     /// `applyReturningUndo` so the confirm path + existing tests keep their `String` contract.
     @MainActor
@@ -1090,6 +1113,12 @@ enum CoachTools {
             var msg = "Logged \(entry.name) to \(entry.mealType.label.lowercased()): "
                 + "\(Int(entry.totalCalories.rounded())) kcal, \(Int(entry.totalProteinG.rounded()))g protein."
             if let note { msg += " Note: \(note)." }
+            // Hand Vita the AUTHORITATIVE post-log day total so she states the real "kcal left"
+            // instead of doing her own (error-prone) chat arithmetic — she was getting it wrong
+            // (e.g. saying 80 left when 185 was actually left, double-counting the item she'd just
+            // logged). Computed exactly like the food log (same basisWeight + target) so the number
+            // matches what the user sees on the Nutrients card.
+            if let status = calorieStatusLine(profile: profile, context: context) { msg += " " + status }
             return Applied(message: msg,
                            undo: { context.delete(entry); try? context.save() })
 
