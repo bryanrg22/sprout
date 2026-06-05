@@ -232,6 +232,34 @@ for pair in "${PAIRS[@]}"; do
   ok=$((ok + 1))
 done
 
+# --- Post-process: white background -> transparent + tight-crop ---------------
+# The product shots ship on white; cutting the white to transparent + cropping
+# tight lets the machine sit big and clean on any tile (no white box). Needs
+# python3 + Pillow; skipped with a warning if unavailable (white-bg still works).
+if command -v python3 >/dev/null 2>&1 && python3 -c "import PIL" >/dev/null 2>&1; then
+  echo
+  echo "Cutting white backgrounds (transparent + crop)…"
+  python3 - "$ASSETS_DIR" <<'PY'
+import sys, glob
+from PIL import Image
+THRESH = 238
+n = 0
+for p in glob.glob(sys.argv[1] + "/machine_*.imageset/*.png"):
+    im = Image.open(p).convert("RGBA")
+    im.putdata([(255, 255, 255, 0) if (r > THRESH and g > THRESH and b > THRESH) else (r, g, b, a)
+                for (r, g, b, a) in im.getdata()])
+    bbox = im.getbbox()
+    if bbox:
+        im = im.crop(bbox)
+    im.save(p)
+    n += 1
+print(f"  transparent-cut {n} images")
+PY
+else
+  echo "NOTE: python3 + Pillow not found — skipping the transparent-background step"
+  echo "      (images still install with their white background)."
+fi
+
 echo
 echo "----------------------------------------"
 echo "Done. $ok/$total machine photos in place ($skipped already present, $failed failed)."
