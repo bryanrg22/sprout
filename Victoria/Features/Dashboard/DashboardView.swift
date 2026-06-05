@@ -122,6 +122,7 @@ struct DashboardView: View {
                                 question: "What makes my little companion happy, and what is it really telling me about how my day is going?")
                         }
                         .appearLift(didAppear, index: 5)
+                    buddyCard.appearLift(didAppear, index: 6)
                     activityRow
                         .askVita {
                             AskVitaTopic(
@@ -158,21 +159,45 @@ struct DashboardView: View {
         }
     }
 
+    /// Buddy lives here — a prominent full-width card right under Sprout (above Steps/Water),
+    /// fronted by the shared pixel panda, instead of a small tile buried at the bottom.
+    private var buddyCard: some View {
+        NavigationLink {
+            BuddyHomeView()
+        } label: {
+            HStack(spacing: Theme.Space.md) {
+                PixelArtView(rows: PixelPanda.rows(mood: .okay), palette: PixelPanda.palette)
+                    .frame(width: 38, height: 38)
+                    .padding(7)
+                    .background(Theme.info.opacity(0.15),
+                                in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Buddy")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("Cheer each other on 💛")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .cardElevated()
+        }
+        .buttonStyle(.plain)
+    }
+
     /// Quick links to the secondary screens that don't have their own tab.
     private var quickLinks: some View {
-        // Workouts now has its own tab, so it's gone from here. Buddy + Achievements are the
-        // secondary screens that don't get a tab (5-tab max keeps Vita on the bar), reachable here.
-        HStack(spacing: Theme.Space.md) {
-            NavigationLink {
-                BuddyHomeView()
-            } label: {
-                quickLinkTile(title: "Buddy", icon: "person.2.fill", tint: Theme.info)
-            }
-            NavigationLink {
-                AchievementsView(profile: profile)
-            } label: {
-                quickLinkTile(title: "Achievements", icon: "trophy.fill", tint: Theme.warning)
-            }
+        // Buddy moved up to its own card under Sprout. Achievements stays here as a full-width
+        // tile (no tab of its own — 5-tab max keeps Vita on the bar).
+        NavigationLink {
+            AchievementsView(profile: profile)
+        } label: {
+            quickLinkTile(title: "Achievements", icon: "trophy.fill", tint: Theme.warning)
         }
         .buttonStyle(.plain)
     }
