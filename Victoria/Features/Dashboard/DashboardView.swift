@@ -95,7 +95,8 @@ struct DashboardView: View {
                     // Recoverable "add your key" nudge — only when she skipped it in setup.
                     FinishSetupCard(coachName: profile.coachName.isEmpty ? "Vita" : profile.coachName)
                         .appearLift(didAppear, index: 1)
-                    InsightCard(input: insightInput).appearLift(didAppear, index: 1)
+                    // (Removed the "Vita noticed" InsightCard — it stacked with the weekly reflection
+                    // and the streak header, over-cluttering the top of Today.)
                     // Earned, one-time "add a widget" nudge — only once she's a couple days in.
                     WidgetPromoCard(profile: profile, eligible: streak >= 2)
                         .appearLift(didAppear, index: 2)
@@ -186,7 +187,7 @@ struct DashboardView: View {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.textPrimary)
-                .lineLimit(1).minimumScaleFactor(0.8)
+                .lineLimit(1).minimumScaleFactor(0.6)   // fit "Achievements" without the "Achievem…" cut
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.bold))
