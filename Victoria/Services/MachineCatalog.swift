@@ -289,26 +289,31 @@ struct MachineImage: View {
     /// The SF Symbol to fall back to (`Machine.icon` / `ExerciseEntry.iconName`).
     let symbolName: String
 
+    @Environment(\.colorScheme) private var colorScheme
+
     /// True only when a matching `machine_<key>` asset is actually bundled.
     private var hasPhoto: Bool {
         UIImage(named: MachineCatalog.photoAssetName(for: key)) != nil
     }
 
+    private func photo() -> some View {
+        Image(MachineCatalog.photoAssetName(for: key)).resizable().scaledToFit()
+    }
+
     var body: some View {
-        if hasPhoto {
-            // Product shots are white-background. Render each on a clean white rounded chip so it
-            // reads as a deliberate product thumbnail on BOTH the cream and dark themes — a bare
-            // white photo otherwise looks like a jarring white box on the dark tiles. The white
-            // chip is seamless with the photos' own white background. Fills the call site's frame.
-            Image(MachineCatalog.photoAssetName(for: key))
-                .resizable()
-                .scaledToFit()
-                .padding(2)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-        } else {
+        if !hasPhoto {
             Image(systemName: symbolName)
+        } else if colorScheme == .dark {
+            // The machine cut-outs are dark — invisible on the dark theme's near-black tiles — so
+            // on dark only we sit them on a soft light chip for contrast. On the light (cream)
+            // theme the transparent machine reads cleanly straight on the tile, no box.
+            photo()
+                .padding(4)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white.opacity(0.93))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        } else {
+            photo()
         }
     }
 }
