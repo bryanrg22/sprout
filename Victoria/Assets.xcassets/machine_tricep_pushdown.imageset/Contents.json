@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "machine_tricep_pushdown.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
