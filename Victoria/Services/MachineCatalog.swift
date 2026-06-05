@@ -304,16 +304,12 @@ struct MachineImage: View {
         if !hasPhoto {
             Image(systemName: symbolName)
         } else if colorScheme == .dark {
-            // The machine cut-outs are dark — invisible on the dark theme's near-black tiles — so
-            // on dark only we sit them on a soft light chip for contrast. On the light (cream)
-            // theme the transparent machine reads cleanly straight on the tile, no box.
-            photo()
-                .padding(4)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.93))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            // The machine cut-outs are dark metal — invisible on the near-black dark-theme tiles.
+            // Flip their luminance so they render as clean LIGHT machines (still transparent — no
+            // white box). The shots are greyscale, so this reads as a natural light/chrome machine.
+            photo().colorInvert()
         } else {
-            photo()
+            photo()   // light (cream) theme: the dark machine reads cleanly straight on the tile
         }
     }
 }
