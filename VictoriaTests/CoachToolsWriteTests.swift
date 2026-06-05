@@ -675,6 +675,41 @@ final class CoachToolsWriteTests: XCTestCase {
         expectInvalid(.setWeightGoal, ["weight": 20], profile: lossProfile(), "absurd goal rejected")
     }
 
+    // MARK: - set_water_container (confirm card mirrors her own container word)
+
+    /// A size-only change (no new label) must name her CURRENT container on the confirm card —
+    /// "set your bottle to 32 oz" — not the generic "set one drink to …". This matches the
+    /// apply-side success message ("One bottle is now 32 oz.").
+    func testSetWaterContainerSizeOnlyUsesExistingLabelNotDrink() {
+        let p = lossProfile()   // waterContainerLabel == "bottle"
+        let req = expectOK(.setWaterContainer, ["oz": 32], profile: p)
+        XCTAssertEqual(req?.requiresConfirm, true, "a container change confirms first")
+        XCTAssertTrue(req?.confirmSummary.contains("bottle") ?? false,
+                      "the card should reference her own word; got: \(req?.confirmSummary ?? "nil")")
+        XCTAssertFalse(req?.confirmSummary.contains("drink") ?? true,
+                       "a named container must not fall back to the generic \"drink\"")
+        XCTAssertTrue(req?.confirmSummary.contains("32") ?? false, "the card names the new size")
+    }
+
+    /// When she's never named her container (empty label), a size-only change falls back to the
+    /// generic "drink" gracefully — never an empty word.
+    func testSetWaterContainerSizeOnlyFallsBackToDrinkWhenUnlabeled() {
+        let p = lossProfile()
+        p.waterContainerLabel = ""   // she hasn't named it
+        let req = expectOK(.setWaterContainer, ["oz": 24], profile: p)
+        XCTAssertEqual(req?.confirmSummary, "set your drink to 24 oz",
+                       "unlabeled container reads naturally with the \"drink\" fallback")
+    }
+
+    /// Renaming (a NEW label) keeps referencing the new name so the card reads as a rename + resize.
+    func testSetWaterContainerRenameReferencesTheNewName() {
+        let p = lossProfile()
+        let req = expectOK(.setWaterContainer, ["oz": 40, "label": "big jug"], profile: p)
+        XCTAssertTrue(req?.confirmSummary.contains("big jug") ?? false,
+                      "a rename names the new container; got: \(req?.confirmSummary ?? "nil")")
+        XCTAssertTrue(req?.confirmSummary.contains("40") ?? false, "the card names the new size")
+    }
+
     // MARK: - The safety floor: NO tool can drop a loss user's intake below the floor
 
     /// The computed calorie target for a loss user is held at the safe floor; nothing in the
