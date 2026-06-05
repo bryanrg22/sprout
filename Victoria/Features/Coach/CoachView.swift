@@ -21,6 +21,10 @@ struct CoachView: View {
     @Query private var workouts: [WorkoutEntry]
     @Query private var water: [WaterEntry]
     @Query private var steps: [StepsEntry]
+    // The rich Workouts-tab data (sessions + their per-machine exercises), so Vita can see exactly
+    // what she trained — not just the legacy `WorkoutEntry` checklist log.
+    @Query private var sessions: [WorkoutSession]
+    @Query private var exerciseEntries: [ExerciseEntry]
 
     @State private var draft: String = ""
     @State private var isSending = false
@@ -488,6 +492,7 @@ struct CoachView: View {
         // strings into the prompt synchronously here, so the @Model never crosses to the Task.
         let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
                                          workouts: workouts, water: water, steps: steps,
+                                         sessions: sessions, exercises: exerciseEntries,
                                          memory: coachMemory(), plan: CoachPlan.current(in: context))
         let tools = CoachTools.schemas(for: profile)
 
@@ -681,6 +686,7 @@ struct CoachView: View {
 
         let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
                                          workouts: workouts, water: water, steps: steps,
+                                         sessions: sessions, exercises: exerciseEntries,
                                          memory: coachMemory(), plan: CoachPlan.current(in: context))
         // Once we've chained enough tools, stop offering them so the model must finalize.
         let tools = depth >= Self.maxToolDepth ? [] : CoachTools.schemas(for: profile)

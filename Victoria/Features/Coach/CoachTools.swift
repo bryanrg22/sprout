@@ -346,28 +346,37 @@ enum CoachTools {
                         "minimum": waterOzRange.lowerBound,
                         "maximum": waterOzRange.upperBound,
                     ],
+                    "date": [
+                        "type": "string",
+                        "description": "ONLY when she means a PAST day she forgot to log: \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
+                    ],
                 ],
             ],
         ]
     }
 
-    /// Workout-logging schema. Deliberately light — the goal is to reward showing up, so only the
-    /// activity `type` is required; `minutes` / `focus` / `notes` are optional.
+    /// Workout-logging schema. Writes the rich Workouts-tab model (`WorkoutSession` + per-exercise
+    /// `ExerciseEntry`). Deliberately light to log — only the `kind` is required; `minutes`,
+    /// `focuses`, `notes`, the back-dating `date`, and (for a gym day) the `exercises` list are all
+    /// optional. The goal is to reward showing up, so a bare "I hit the gym" still logs cleanly.
     private static let logWorkoutSchema: [String: Any] = [
         "name": Name.logWorkout.rawValue,
         "description": """
-        Log a workout / training session the user did (gym, run, walk, cycle, yoga, HIIT, sports). \
-        Use whenever she mentions exercising — "I hit the gym", "ran 3 miles", "did legs today". \
-        Only `type` is required; add `minutes`, `focus` (strength split: push/pull/legs/…), and a \
-        short `notes` if she gave them. Showing up always counts — log it whenever it comes up.
+        Log a workout / training session the user did — TODAY by default, or a PAST day via the \
+        optional `date`. Use whenever she mentions exercising — "I hit the gym", "ran 3 miles", \
+        "did chest and arms today". Only `kind` is required (gym/run/walk/cycle/swim/sport/yoga/other). \
+        For a GYM day you can also pass `focuses` (the muscle groups she trained) and an `exercises` \
+        list of the machines/moves she did (with weight/reps/sets if she gave them) — e.g. "chest \
+        press 90lb 3x10, incline press". Add `minutes` and a short `notes` if she mentioned them. \
+        Showing up always counts — log it whenever it comes up.
         """,
         "input_schema": [
             "type": "object",
             "properties": [
-                "type": [
+                "kind": [
                     "type": "string",
                     "description": "The kind of workout.",
-                    "enum": WorkoutType.allCases.map { $0.rawValue },
+                    "enum": WorkoutKind.allCases.map { $0.rawValue },
                 ],
                 "minutes": [
                     "type": "integer",
@@ -375,14 +384,35 @@ enum CoachTools {
                     "minimum": workoutMinutesRange.lowerBound,
                     "maximum": workoutMinutesRange.upperBound,
                 ],
-                "focus": [
-                    "type": "string",
-                    "description": "Optional training split for strength days.",
-                    "enum": WorkoutFocus.allCases.map { $0.rawValue },
+                "focuses": [
+                    "type": "array",
+                    "description": "GYM days only: the muscle groups she trained (one or more).",
+                    "items": [
+                        "type": "string",
+                        "enum": MuscleFocus.allCases.map { $0.rawValue },
+                    ],
+                ],
+                "exercises": [
+                    "type": "array",
+                    "description": "GYM days only: the machines/moves she did. One object per exercise.",
+                    "items": [
+                        "type": "object",
+                        "properties": [
+                            "name": ["type": "string", "description": "The machine / exercise name, e.g. \"Chest press\" or \"Incline dumbbell press\"."],
+                            "weight_lbs": ["type": "number", "description": "Working weight in lbs, if she gave one. Omit if unknown.", "minimum": 0],
+                            "reps": ["type": "integer", "description": "Reps per set (defaults to 10).", "minimum": 1],
+                            "sets": ["type": "integer", "description": "Number of sets (defaults to 3).", "minimum": 1],
+                        ],
+                        "required": ["name"],
+                    ],
                 ],
                 "notes": ["type": "string", "description": "A short optional note, e.g. 'felt strong'."],
+                "date": [
+                    "type": "string",
+                    "description": "ONLY when she means a PAST day she forgot to log: \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
+                ],
             ],
-            "required": ["type"],
+            "required": ["kind"],
         ],
     ]
 
@@ -516,12 +546,15 @@ enum CoachTools {
             case logFood(FoodDraft)
             case editFood(id: UUID, changes: FoodEdit)
             case deleteFood(id: UUID)
-            case logWaterOz(Double)
+            // Back-datable: `date` is the resolved day (nil = today), threaded through from the tool's
+            // optional `date` param exactly like log_food.
+            case logWaterOz(Double, date: Date?)
             case logWeight(lbs: Double)
             case weightGoal(lbs: Double)
             case rememberFact(String)
             case updatePlan(note: String)
-            case logWorkout(type: WorkoutType, minutes: Int, focus: WorkoutFocus?, notes: String?)
+            // Writes the rich Workouts-tab model: one WorkoutSession + (gym) one ExerciseEntry per move.
+            case logWorkout(WorkoutDraft)
             case editPlan(PlanEdit)
             case forgetFact(String)
         }
@@ -585,6 +618,32 @@ enum CoachTools {
             headline != nil || assessment != nil || strategy != nil
                 || calorieMin != nil || calorieMax != nil || proteinTarget != nil
         }
+    }
+
+    /// One machine/move within a logged gym session — the plain-value form `apply` turns into an
+    /// `ExerciseEntry`. `machineKey`/`iconName` are pre-resolved by `parse` against `MachineCatalog`
+    /// (a known machine → its catalog key + icon; an unknown one → a slugged key + the dumbbell
+    /// fallback) so `apply` never has to touch the catalog. `displayName` is what she actually said.
+    struct ExerciseDraft {
+        var machineKey: String
+        var displayName: String
+        var iconName: String
+        var weightLbs: Double = 0   // 0 = unset, mirrors ExerciseEntry
+        var reps: Int = 10
+        var sets: Int = 3
+    }
+
+    /// A plain-value description of a workout session (the new Workouts-tab model). `apply` inserts
+    /// one `WorkoutSession` and, for a gym day, one `ExerciseEntry` per `exercises` item. We pass a
+    /// struct (not a live @Model) so it survives the parse → confirm/apply hop, exactly like
+    /// `FoodDraft`. `loggedDate` is set only when the coach back-dates (nil = today).
+    struct WorkoutDraft {
+        var kind: WorkoutKind
+        var focuses: [MuscleFocus] = []
+        var minutes: Int = 0
+        var notes: String? = nil
+        var exercises: [ExerciseDraft] = []
+        var loggedDate: Date? = nil
     }
 
     /// Outcome of validating a raw `tool_use` from the model.
@@ -694,8 +753,10 @@ enum CoachTools {
     }
 
     private static func parseLogWorkout(input: [String: Any]) -> ParseResult {
-        guard let typeRaw = input["type"] as? String, let type = WorkoutType(rawValue: typeRaw) else {
-            return .invalid("I need to know what kind of workout it was. Nothing was logged.")
+        // Prefer the new `kind`; also accept the legacy `type` (mapped onto WorkoutKind) so older
+        // prompts / habits still log instead of erroring.
+        guard let kind = workoutKind(from: input) else {
+            return .invalid("I need to know what kind of workout it was (gym, run, walk, …). Nothing was logged.")
         }
         var minutes = 0
         if let mv = doubleValue(input["minutes"]), mv > 0 {
@@ -706,14 +767,102 @@ enum CoachTools {
             }
             minutes = m
         }
-        let focus = (input["focus"] as? String).flatMap(WorkoutFocus.init(rawValue:))
+        // Focuses + exercises are gym-only; harmlessly ignore them for cardio so a stray value
+        // can't make a run log read like a lifting day.
+        let focuses = kind.isGym ? parseFocuses(input["focuses"]) : []
+        let exercises = kind.isGym ? parseExercises(input["exercises"]) : []
+
         let rawNote = (input["notes"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
         let note = (rawNote?.isEmpty == false) ? rawNote : nil
-        let summary = "log a \(type.label.lowercased()) workout" + (minutes > 0 ? " (\(minutes) min)" : "")
+        let loggedDate = resolveLogDate(input["date"])   // nil = today; set only when back-dating
+
+        var draft = WorkoutDraft(kind: kind)
+        draft.focuses = focuses
+        draft.minutes = minutes
+        draft.notes = note
+        draft.exercises = exercises
+        draft.loggedDate = loggedDate
+
+        // Build a human summary: "log a gym workout (Chest, Arms) — 50 min, 3 exercises [for yesterday]".
+        var summary = "log a \(kind.label.lowercased()) workout"
+        if !focuses.isEmpty {
+            summary += " (\(focuses.map { $0.label }.joined(separator: ", ")))"
+        }
+        var bits: [String] = []
+        if minutes > 0 { bits.append("\(minutes) min") }
+        if !exercises.isEmpty { bits.append("\(exercises.count) exercise\(exercises.count == 1 ? "" : "s")") }
+        if !bits.isEmpty { summary += " — " + bits.joined(separator: ", ") }
+        if loggedDate != nil, let dayNote = input["date"] as? String { summary += " for \(dayNote)" }
+
         return .ok(ParsedRequest(
             name: .logWorkout,
             confirmSummary: summary,
-            action: .logWorkout(type: type, minutes: minutes, focus: focus, notes: note)))
+            action: .logWorkout(draft)))
+    }
+
+    /// Resolve the workout kind from the tool input: the new `kind` param wins; otherwise the legacy
+    /// `type` (a `WorkoutType`) is mapped onto the nearest `WorkoutKind`. `nil` only when neither is a
+    /// value we recognize.
+    private static func workoutKind(from input: [String: Any]) -> WorkoutKind? {
+        if let raw = input["kind"] as? String, let kind = WorkoutKind(rawValue: raw) { return kind }
+        if let raw = input["type"] as? String {
+            if let kind = WorkoutKind(rawValue: raw) { return kind }   // e.g. "run"/"walk"/"yoga" overlap
+            switch WorkoutType(rawValue: raw) {
+            case .strength:        return .gym
+            case .run:             return .run
+            case .walk:            return .walk
+            case .cycle:           return .cycle
+            case .yoga:            return .yoga
+            case .sports:          return .sport
+            case .cardio, .hiit:   return .other   // no direct gym-kind equivalent
+            case .other:           return .other
+            case .none:            return nil
+            }
+        }
+        return nil
+    }
+
+    /// Parse the `focuses` array (a list of `MuscleFocus` raw values) from tool input, dropping any
+    /// unrecognized entries and de-duplicating while preserving order. Empty when absent / all bad.
+    private static func parseFocuses(_ any: Any?) -> [MuscleFocus] {
+        guard let arr = any as? [Any] else { return [] }
+        var seen = Set<MuscleFocus>()
+        var out: [MuscleFocus] = []
+        for item in arr {
+            guard let raw = item as? String, let f = MuscleFocus(rawValue: raw), !seen.contains(f) else { continue }
+            seen.insert(f)
+            out.append(f)
+        }
+        return out
+    }
+
+    /// Parse the `exercises` array into `ExerciseDraft`s, resolving each name to a catalog machine
+    /// (case-insensitive on `Machine.name` → its `key` + `icon`); an unknown name becomes a slugged
+    /// key (spaces→underscores) with the `dumbbell.fill` fallback icon. Items with no usable name are
+    /// skipped; reps/sets default to the zero-friction 10/3, weight 0 = unset.
+    private static func parseExercises(_ any: Any?) -> [ExerciseDraft] {
+        guard let arr = any as? [Any] else { return [] }
+        return arr.compactMap { item -> ExerciseDraft? in
+            guard let obj = item as? [String: Any],
+                  let rawName = (obj["name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !rawName.isEmpty else { return nil }
+
+            let machineKey: String
+            let iconName: String
+            if let machine = MachineCatalog.all.first(where: { $0.name.caseInsensitiveCompare(rawName) == .orderedSame }) {
+                machineKey = machine.key
+                iconName = machine.icon
+            } else {
+                machineKey = rawName.lowercased().replacingOccurrences(of: " ", with: "_")
+                iconName = "dumbbell.fill"
+            }
+
+            var draft = ExerciseDraft(machineKey: machineKey, displayName: rawName, iconName: iconName)
+            if let w = doubleValue(obj["weight_lbs"]), w > 0 { draft.weightLbs = w }
+            if let r = intValue(obj["reps"]), r > 0 { draft.reps = r }
+            if let s = intValue(obj["sets"]), s > 0 { draft.sets = s }
+            return draft
+        }
     }
 
     private static func parseEditPlan(input: [String: Any]) -> ParseResult {
@@ -937,6 +1086,10 @@ enum CoachTools {
     }
 
     private static func parseLogWater(input: [String: Any], profile: UserProfile) -> ParseResult {
+        // Optional back-dating, same semantics as log_food (nil = today). The "for {day}" tail is
+        // appended to the confirm summary only when a past day was actually resolved.
+        let loggedDate = resolveLogDate(input["date"])
+        let dayNote = loggedDate != nil ? ((input["date"] as? String).map { " for \($0)" } ?? "") : ""
         // Accept EITHER containers (preferred) or an explicit oz amount — exactly one.
         if let count = intValue(input["containers"]) {
             guard waterContainersLogRange.contains(count) else {
@@ -948,8 +1101,8 @@ enum CoachTools {
             let label = containerLabel(profile, count: count)
             return .ok(ParsedRequest(
                 name: .logWater,
-                confirmSummary: "log \(count) \(label) of water",
-                action: .logWaterOz(oz)))
+                confirmSummary: "log \(count) \(label) of water\(dayNote)",
+                action: .logWaterOz(oz, date: loggedDate)))
         }
         if let oz = doubleValue(input["oz"]) {
             guard waterOzRange.contains(oz) else {
@@ -958,8 +1111,8 @@ enum CoachTools {
             }
             return .ok(ParsedRequest(
                 name: .logWater,
-                confirmSummary: "log \(Int(oz.rounded())) oz of water",
-                action: .logWaterOz(oz)))
+                confirmSummary: "log \(Int(oz.rounded())) oz of water\(dayNote)",
+                action: .logWaterOz(oz, date: loggedDate)))
         }
         return .invalid("Tell me how much water — a number of \(containerLabel(profile, count: 2)) or ounces. Nothing was logged.")
     }
@@ -1153,15 +1306,47 @@ enum CoachTools {
             return Applied(message: msg,
                            undo: { context.delete(entry); try? context.save() })
 
-        case .logWorkout(let type, let minutes, let focus, let notes):
-            let workout = WorkoutEntry(type: type, durationMinutes: minutes, focus: focus, notes: notes)
-            context.insert(workout)
+        case .logWorkout(let draft):
+            // Write the rich Workouts-tab model: ONE WorkoutSession + (gym) one ExerciseEntry per move.
+            // The session date is `loggedDate` when back-dating, else now; each ExerciseEntry copies
+            // that date (it's denormalized onto the entry, exactly like the manual Workouts UI does).
+            let when = draft.loggedDate ?? .now
+            let session = WorkoutSession(date: when,
+                                         kind: draft.kind,
+                                         focuses: draft.focuses,
+                                         durationMinutes: draft.minutes,
+                                         notes: draft.notes ?? "")
+            context.insert(session)
+            var entries: [ExerciseEntry] = []
+            for ex in draft.exercises {
+                let entry = ExerciseEntry(sessionID: session.id,
+                                          date: when,
+                                          machineKey: ex.machineKey,
+                                          displayName: ex.displayName,
+                                          iconName: ex.iconName,
+                                          weightLbs: ex.weightLbs,
+                                          reps: ex.reps,
+                                          sets: ex.sets)
+                context.insert(entry)
+                entries.append(entry)
+            }
             try? context.save()
-            var wmsg = "Logged a \(workout.type.label.lowercased()) workout"
-            if minutes > 0 { wmsg += " — \(minutes) min" }
+
+            var wmsg = "Logged a \(draft.kind.label.lowercased()) workout"
+            if !draft.focuses.isEmpty {
+                wmsg += " (\(draft.focuses.map { $0.label }.joined(separator: ", ")))"
+            }
+            var tail: [String] = []
+            if draft.minutes > 0 { tail.append("\(draft.minutes) min") }
+            if !entries.isEmpty { tail.append("\(entries.count) exercise\(entries.count == 1 ? "" : "s")") }
+            if !tail.isEmpty { wmsg += " — " + tail.joined(separator: ", ") }
             wmsg += ". Showing up counts 💪"
-            return Applied(message: wmsg,
-                           undo: { context.delete(workout); try? context.save() })
+            // Undo removes the session AND its exercises so the revert is exact (no orphans left).
+            return Applied(message: wmsg, undo: {
+                context.delete(session)
+                for e in entries { context.delete(e) }
+                try? context.save()
+            })
 
         case .editPlan(let edit):
             guard let plan = CoachPlan.current(in: context) else {
@@ -1243,9 +1428,10 @@ enum CoachTools {
             try? context.save()
             return Applied(message: "Removed \"\(name)\" from today's log.", undo: nil)
 
-        case .logWaterOz(let oz):
-            // ADD to today's total exactly like the dashboard + button: one new WaterEntry.
-            let water = WaterEntry(amountOz: oz)
+        case .logWaterOz(let oz, let date):
+            // ADD to the day's total exactly like the dashboard + button: one new WaterEntry. `date`
+            // is set only when the coach back-dates a forgotten day; otherwise it's today (`.now`).
+            let water = WaterEntry(date: date ?? .now, amountOz: oz)
             context.insert(water)
             try? context.save()
             return Applied(message: "Logged \(Int(oz.rounded())) oz of water.",

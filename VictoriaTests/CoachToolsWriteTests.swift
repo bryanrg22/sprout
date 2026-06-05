@@ -25,7 +25,7 @@ final class CoachToolsWriteTests: XCTestCase {
 
     /// A fresh in-memory context holding every model the write tools touch.
     private func makeContext() throws -> ModelContext {
-        let schema = Schema([UserProfile.self, FoodEntry.self, WaterEntry.self, WeightEntry.self, CoachMemory.self, WorkoutEntry.self, CoachPlan.self])
+        let schema = Schema([UserProfile.self, FoodEntry.self, WaterEntry.self, WeightEntry.self, CoachMemory.self, WorkoutEntry.self, WorkoutSession.self, ExerciseEntry.self, CoachPlan.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: schema, configurations: config)
         return ModelContext(container)
@@ -88,40 +88,103 @@ final class CoachToolsWriteTests: XCTestCase {
         }
     }
 
-    // MARK: - log_workout (Vita can now WRITE workouts, not just read them)
+    // MARK: - log_workout (Vita writes the rich Workouts-tab model: WorkoutSession + ExerciseEntry)
 
-    func testLogWorkoutParsesAndInsertsWithUndo() throws {
+    /// A full gym day: kind + focuses + an exercises list. One WorkoutSession is written, plus one
+    /// ExerciseEntry per move, with known machines resolved to their catalog key/icon and an unknown
+    /// move slugged with the dumbbell fallback. Undo removes the session AND every exercise.
+    func testLogWorkoutGymWritesSessionAndExercisesWithUndo() throws {
         let ctx = try makeContext()
         let profile = lossProfile()
-        guard let req = expectOK(.logWorkout,
-                                 ["type": "strength", "minutes": 45, "focus": "legs", "notes": "felt strong"],
-                                 profile: profile) else { return }
+        guard let req = expectOK(.logWorkout, [
+            "kind": "gym",
+            "minutes": 50,
+            "focuses": ["chest", "arms"],
+            "notes": "felt strong",
+            "exercises": [
+                ["name": "Chest press", "weight_lbs": 90, "reps": 10, "sets": 3],
+                ["name": "Incline dumbbell press", "weight_lbs": 50],   // reps/sets default 10/3
+                ["name": "Cable tricep thingy"],                        // off-catalog → slug + fallback
+            ],
+        ], profile: profile) else { return }
         XCTAssertFalse(req.requiresConfirm)   // quick, reversible log → auto-apply with Undo
+
         let applied = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
 
-        let workouts = try ctx.fetch(FetchDescriptor<WorkoutEntry>())
-        XCTAssertEqual(workouts.count, 1)
-        XCTAssertEqual(workouts.first?.type, .strength)
-        XCTAssertEqual(workouts.first?.durationMinutes, 45)
-        XCTAssertEqual(workouts.first?.focus, .legs)
+        let sessions = try ctx.fetch(FetchDescriptor<WorkoutSession>())
+        XCTAssertEqual(sessions.count, 1)
+        let session = try XCTUnwrap(sessions.first)
+        XCTAssertEqual(session.kind, .gym)
+        XCTAssertEqual(session.focuses, [.chest, .arms])
+        XCTAssertEqual(session.durationMinutes, 50)
+        XCTAssertEqual(session.notes, "felt strong")
+
+        let exercises = try ctx.fetch(FetchDescriptor<ExerciseEntry>()).filter { $0.sessionID == session.id }
+        XCTAssertEqual(exercises.count, 3)
+        // Known machine resolves to its catalog key + icon.
+        let chest = try XCTUnwrap(exercises.first { $0.displayName == "Chest press" })
+        XCTAssertEqual(chest.machineKey, "chest_press")
+        XCTAssertEqual(chest.weightLbs, 90)
+        XCTAssertEqual(chest.reps, 10)
+        XCTAssertEqual(chest.sets, 3)
+        // Defaults applied where weight/reps/sets weren't given.
+        let incline = try XCTUnwrap(exercises.first { $0.displayName == "Incline dumbbell press" })
+        XCTAssertEqual(incline.machineKey, "incline_db_press")
+        XCTAssertEqual(incline.weightLbs, 50)
+        XCTAssertEqual(incline.reps, 10)
+        XCTAssertEqual(incline.sets, 3)
+        // Off-catalog move → slugged key + dumbbell fallback icon.
+        let custom = try XCTUnwrap(exercises.first { $0.displayName == "Cable tricep thingy" })
+        XCTAssertEqual(custom.machineKey, "cable_tricep_thingy")
+        XCTAssertEqual(custom.iconName, "dumbbell.fill")
 
         applied.undo?()
-        XCTAssertEqual(try ctx.fetch(FetchDescriptor<WorkoutEntry>()).count, 0)
+        XCTAssertEqual(try ctx.fetch(FetchDescriptor<WorkoutSession>()).count, 0)
+        XCTAssertEqual(try ctx.fetch(FetchDescriptor<ExerciseEntry>()).count, 0)
     }
 
-    func testLogWorkoutTypeOnlyIsFine() throws {
+    /// A bare cardio log (kind only) writes a session with no exercises; the legacy `type` key is
+    /// still accepted and mapped onto a WorkoutKind, and cardio never carries focuses/exercises.
+    func testLogWorkoutKindOnlyAndLegacyTypeFallback() throws {
         let ctx = try makeContext()
         let profile = lossProfile()
-        guard let req = expectOK(.logWorkout, ["type": "run"], profile: profile) else { return }
-        _ = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
-        let workouts = try ctx.fetch(FetchDescriptor<WorkoutEntry>())
-        XCTAssertEqual(workouts.first?.type, .run)
-        XCTAssertEqual(workouts.first?.durationMinutes, 0)   // minutes optional → 0
+
+        guard let run = expectOK(.logWorkout, ["kind": "run"], profile: profile) else { return }
+        _ = CoachTools.applyReturningUndo(run, to: profile, context: ctx)
+        // Legacy `type: "strength"` maps to the gym kind; focuses on a cardio kind are ignored.
+        guard let legacy = expectOK(.logWorkout, ["type": "strength"], profile: profile) else { return }
+        _ = CoachTools.applyReturningUndo(legacy, to: profile, context: ctx)
+        guard let walkWithStrayFocus = expectOK(.logWorkout, ["kind": "walk", "focuses": ["legs"]], profile: profile) else { return }
+        _ = CoachTools.applyReturningUndo(walkWithStrayFocus, to: profile, context: ctx)
+
+        let sessions = try ctx.fetch(FetchDescriptor<WorkoutSession>()).sorted { $0.date < $1.date }
+        XCTAssertEqual(sessions.map(\.kind), [.run, .gym, .walk])
+        XCTAssertEqual(sessions[0].durationMinutes, 0)   // minutes optional → 0
+        XCTAssertTrue(sessions.last?.focuses.isEmpty ?? false)   // cardio focuses dropped
+        XCTAssertEqual(try ctx.fetch(FetchDescriptor<ExerciseEntry>()).count, 0)   // no exercises on cardio
     }
 
-    func testLogWorkoutRejectsUnknownTypeAndAbsurdDuration() {
-        _ = expectInvalid(.logWorkout, ["type": "underwater-basket-weaving"], profile: lossProfile())
-        _ = expectInvalid(.logWorkout, ["type": "cardio", "minutes": 99999], profile: lossProfile())
+    /// Back-dating: a `date` of "yesterday" lands the session (and any exercises) on yesterday.
+    func testLogWorkoutBackdatesToYesterday() throws {
+        let ctx = try makeContext()
+        let profile = lossProfile()
+        guard let req = expectOK(.logWorkout, [
+            "kind": "gym", "date": "yesterday",
+            "exercises": [["name": "Leg press"]],
+        ], profile: profile) else { return }
+        _ = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
+
+        let cal = Calendar.current
+        let session = try XCTUnwrap(ctx.fetch(FetchDescriptor<WorkoutSession>()).first)
+        let yesterday = cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: .now))!
+        XCTAssertTrue(cal.isDate(session.date, inSameDayAs: yesterday))
+        let entry = try XCTUnwrap(ctx.fetch(FetchDescriptor<ExerciseEntry>()).first)
+        XCTAssertTrue(cal.isDate(entry.date, inSameDayAs: yesterday))   // entry date denormalized from session
+    }
+
+    func testLogWorkoutRejectsUnknownKindAndAbsurdDuration() {
+        _ = expectInvalid(.logWorkout, ["kind": "underwater-basket-weaving"], profile: lossProfile())
+        _ = expectInvalid(.logWorkout, ["kind": "gym", "minutes": 99999], profile: lossProfile())
     }
 
     // MARK: - edit_plan + forget_about_user (Vita edits the plan + profile docs)
