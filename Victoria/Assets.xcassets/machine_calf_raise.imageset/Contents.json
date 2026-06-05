@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "machine_calf_raise.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

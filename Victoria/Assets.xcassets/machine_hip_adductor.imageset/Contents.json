@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "machine_hip_adductor.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
