@@ -62,15 +62,17 @@ extension View {
 
 private struct Wiggle: ViewModifier {
     let active: Bool
-    @State private var on = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func body(content: Content) -> some View {
-        content
-            .rotationEffect(.degrees(on && active && !reduceMotion ? 2.5 : -2.5))
-            .animation(active && !reduceMotion
-                       ? .easeInOut(duration: 0.5).repeatForever(autoreverses: true)
-                       : .default, value: on)
-            .onAppear { on = true }
+        // `.phaseAnimator` drives the loop as a PURE transform. The old
+        // `.animation(.repeatForever, value:)` + `.onAppear` pattern could latch onto a stale
+        // layout position captured mid-transition and animate the view around it forever — which
+        // made icons drift wildly out of place (the Workouts empty-state dumbbell floating up off
+        // the card / into the status bar). phaseAnimator can't drag layout, so it stays put.
+        let on = active && !reduceMotion
+        return content.phaseAnimator([false, true]) { view, flipped in
+            view.rotationEffect(.degrees(on ? (flipped ? 2.5 : -2.5) : 0))
+        } animation: { _ in on ? .easeInOut(duration: 0.5) : nil }
     }
 }
 extension View {
@@ -81,13 +83,13 @@ extension View {
 // MARK: - Breathing (gentle scale pulse, "alive" feel)
 
 private struct Breathing: ViewModifier {
-    @State private var big = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func body(content: Content) -> some View {
-        content
-            .scaleEffect(big && !reduceMotion ? 1.04 : 1.0)
-            .animation(reduceMotion ? nil : .easeInOut(duration: 2.2).repeatForever(autoreverses: true), value: big)
-            .onAppear { big = true }
+        // See Wiggle: phaseAnimator keeps the pulse a pure transform, so it can never drag layout
+        // (the old repeatForever-via-onAppear pattern could, causing animated icons to drift).
+        content.phaseAnimator([false, true]) { view, big in
+            view.scaleEffect(big && !reduceMotion ? 1.04 : 1.0)
+        } animation: { _ in reduceMotion ? nil : .easeInOut(duration: 2.2) }
     }
 }
 extension View {
