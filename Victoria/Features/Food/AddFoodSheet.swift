@@ -27,6 +27,9 @@ struct FoodDraft: Identifiable {
     var photoData: Data? = nil
     /// Extra photos when several were snapped of the same meal (cover lives in `photoData`).
     var additionalPhotoData: [Data]? = nil
+    /// When the coach back-dates a forgotten meal, the day to log it on (nil = today). Only the
+    /// Vita `log_food` path reads this; the manual AddFoodSheet sets the entry date itself.
+    var loggedDate: Date? = nil
 }
 
 extension FoodDraft {

@@ -237,7 +237,8 @@ enum CoachTools {
     private static let logFoodSchema: [String: Any] = [
         "name": Name.logFood.rawValue,
         "description": """
-        Log a FOOD ITEM or meal to the user's diary for TODAY. Use when she tells you what \
+        Log a FOOD ITEM or meal to the user's diary — TODAY by default (the normal case), or a \
+        PAST day she forgot via the optional `date`. Use when she tells you what \
         she ate and wants it recorded, e.g. "log a chicken bowl, about 600 calories, 45g \
         protein" or "add my oatmeal breakfast". Provide your best calorie + macro estimate \
         from what she described; portion size is the biggest unknown, so estimate sensibly. \
@@ -261,6 +262,10 @@ enum CoachTools {
                     "type": "number",
                     "description": "How many servings she ate. The per-serving calories/macros above are multiplied by this — so DON'T pre-multiply them. Use 1 for a single item; only set higher for genuine multiples (e.g. 2 for two identical bowls). Defaults to 1.",
                     "minimum": 0,
+                ],
+                "date": [
+                    "type": "string",
+                    "description": "ONLY when she means a PAST day she forgot to log (e.g. \"add the burger I had yesterday\"): \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
                 ],
             ],
             "required": ["name", "meal", "calories", "protein_g", "carbs_g", "fat_g"],
@@ -831,14 +836,39 @@ enum CoachTools {
         draft.carbsG = carbs
         draft.fatG = fat
         draft.source = .manual   // logged via the coach, same as a manual add
+        draft.loggedDate = resolveLogDate(input["date"])   // nil = today; set only when back-dating
 
         // Show the TOTAL (per-serving × quantity), which is what actually lands in the diary.
         let totalKcal = Int((calories * quantity).rounded())
         let qtyNote = quantity != 1 ? " ×\(trimmed(quantity))" : ""
+        let dayNote = draft.loggedDate != nil ? ((input["date"] as? String).map { " for \($0)" } ?? "") : ""
         return .ok(ParsedRequest(
             name: .logFood,
-            confirmSummary: "log \(rawName)\(qtyNote) (\(totalKcal) kcal) to \(meal.label.lowercased())",
+            confirmSummary: "log \(rawName)\(qtyNote) (\(totalKcal) kcal) to \(meal.label.lowercased())\(dayNote)",
             action: .logFood(draft)))
+    }
+
+    /// Resolve a tool-supplied log-date string to a concrete day (set to NOON, to dodge midnight
+    /// edge cases), or `nil` for today / omitted / unparseable / future — so the apply just uses
+    /// `.now`. Accepts "today", "yesterday", or an ISO "yyyy-MM-dd". Never returns a future day.
+    static func resolveLogDate(_ raw: Any?) -> Date? {
+        guard let s = (raw as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+              !s.isEmpty, s != "today" else { return nil }
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        func noon(_ day: Date) -> Date { cal.date(bySettingHour: 12, minute: 0, second: 0, of: day) ?? day }
+        if s == "yesterday" {
+            return cal.date(byAdding: .day, value: -1, to: today).map(noon)
+        }
+        let fmt = DateFormatter()
+        fmt.calendar = cal
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.dateFormat = "yyyy-MM-dd"
+        if let parsed = fmt.date(from: s) {
+            let day = cal.startOfDay(for: parsed)
+            return day <= today ? noon(day) : nil   // never the future
+        }
+        return nil
     }
 
     private static func parseEditFood(input: [String: Any], todaysFoods: [FoodEntry]) -> ParseResult {
@@ -1095,9 +1125,10 @@ enum CoachTools {
                                                carbs: draft.carbsG,
                                                fat: draft.fatG)
             let note = sanity.isSuspicious ? sanity.reason : nil
-            // Build the entry exactly like the manual-add path (AddFoodSheet.save).
+            // Build the entry exactly like the manual-add path (AddFoodSheet.save). `loggedDate`
+            // is set only when the coach back-dates a forgotten meal; otherwise it's today.
             let entry = FoodEntry(
-                date: .now,
+                date: draft.loggedDate ?? .now,
                 mealType: draft.meal,
                 name: draft.name,
                 servingDescription: draft.servingDescription,
