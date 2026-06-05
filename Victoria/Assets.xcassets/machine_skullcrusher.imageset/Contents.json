@@ -1,0 +1,6 @@
+{
+  "images" : [
+    { "filename" : "machine_skullcrusher.png", "idiom" : "universal" }
+  ],
+  "info" : { "author" : "xcode", "version" : 1 }
+}
