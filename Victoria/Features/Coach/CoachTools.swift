@@ -56,6 +56,21 @@ enum CoachTools {
         case editPlan              = "edit_plan"
         // Correct/forget a fact from her durable profile notes — the counterpart to remember.
         case forgetFact            = "forget_about_user"
+        // Settings / preferences tools — let Vita change every setting the user can in Settings.
+        // Each writes a single profile field, validated to the same options/ranges the UI allows.
+        case setUnits              = "set_units"
+        case setTheme              = "set_theme"
+        case setHomeGym            = "set_home_gym"
+        case setGoalDirection      = "set_goal_direction"
+        case setHeight             = "set_height"
+        case setBirthDate          = "set_birth_date"
+        case setSex                = "set_sex"
+        case setActivityLevel      = "set_activity_level"
+        case setCompanion          = "set_companion"
+        case setCoachName          = "set_coach_name"
+        case setWaterContainer     = "set_water_container"
+        case setProteinGoal        = "set_protein_goal"
+        case toggleStepsInBudget   = "toggle_steps_in_budget"
     }
 
     // MARK: - Safe bounds
@@ -79,6 +94,18 @@ enum CoachTools {
     /// A logged workout's length, in minutes — generous (a 5-min walk through a long session).
     static let workoutMinutesRange = 1...600
 
+    // Bounds for the settings/preferences tools. These mirror what the Settings UI accepts so
+    // the coach can never write a value the user couldn't set themselves.
+    /// Height in cm — comfortably spans the onboarding stepper (48–84 in ≈ 122–213 cm).
+    static let heightCmRange = 120.0...230.0
+    /// A plausible adult age in whole years (used when she gives an age instead of a birth date).
+    static let ageYearsRange = 13...100
+    /// A directly-set daily protein target, in grams — generous but sane (0 clears any override).
+    static let proteinGoalRange = 0.0...400.0
+    /// The size of "one drink" she logs, in oz — spans the Settings presets (glass 8 … big bottle 32)
+    /// with a little headroom for a custom container.
+    static let waterContainerOzRange = 4.0...64.0
+
     // MARK: - Schemas (Anthropic tool-use JSON schema)
 
     /// The full `tools` array passed to `AnthropicClient.chatWithTools`. Pace is
@@ -89,7 +116,12 @@ enum CoachTools {
          logFoodSchema, editFoodSchema, deleteFoodSchema,
          logWaterSchema(for: profile), logWeightSchema(for: profile),
          weightGoalSchema(for: profile), rememberSchema, updatePlanSchema, logWorkoutSchema,
-         editPlanSchema, forgetSchema]
+         editPlanSchema, forgetSchema,
+         // Settings / preferences tools — every setting the user can change in Settings.
+         setUnitsSchema, setThemeSchema, setHomeGymSchema, setGoalDirectionSchema(for: profile),
+         setHeightSchema(for: profile), setBirthDateSchema, setSexSchema, setActivityLevelSchema,
+         setCompanionSchema, setCoachNameSchema, setWaterContainerSchema, setProteinGoalSchema,
+         toggleStepsInBudgetSchema]
     }
 
     /// Save a durable fact about the user to long-term memory. This is the tool that lets Vita
@@ -524,6 +556,312 @@ enum CoachTools {
         ]
     }
 
+    // MARK: - Schemas: settings / preferences tools
+    //
+    // One per Settings control, so Vita can change anything the user can in the Settings sheet.
+    // Each is constrained to the same options/ranges the UI offers (see SettingsView), so a tool
+    // call can never write a value the user couldn't pick themselves.
+
+    private static let setUnitsSchema: [String: Any] = [
+        "name": Name.setUnits.rawValue,
+        "description": """
+        Set the user's UNIT SYSTEM — imperial (lb) or metric (kg). Use when she asks to switch \
+        units, e.g. "show my weight in kg" or "switch me to pounds". This changes only how \
+        weights are displayed/entered; it doesn't alter any logged values. The app shows a \
+        one-tap confirm before it's saved.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "system": [
+                    "type": "string",
+                    "description": "Which unit system to use.",
+                    "enum": UnitSystem.allCases.map { $0.rawValue },
+                ],
+            ],
+            "required": ["system"],
+        ],
+    ]
+
+    private static let setThemeSchema: [String: Any] = [
+        "name": Name.setTheme.rawValue,
+        "description": """
+        Set the app's APPEARANCE / theme. Two looks: "\(ThemeStyle.cute.rawValue)" \
+        (\(ThemeStyle.cute.label) — \(ThemeStyle.cute.blurb.lowercased())) and \
+        "\(ThemeStyle.cool.rawValue)" (\(ThemeStyle.cool.label) — \(ThemeStyle.cool.blurb.lowercased())). \
+        Use when she asks to change how the app looks, e.g. "make it dark" → cool, or "give me \
+        the soft pastel look" → cute. Same layout either way; only the palette changes.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "theme": [
+                    "type": "string",
+                    "description": "Which look to wear.",
+                    "enum": ThemeStyle.allCases.map { $0.rawValue },
+                ],
+            ],
+            "required": ["theme"],
+        ],
+    ]
+
+    private static let setHomeGymSchema: [String: Any] = [
+        "name": Name.setHomeGym.rawValue,
+        "description": """
+        Set the user's PRIMARY (home) GYM — used to show the right machine photos and personalize \
+        workout advice. Options: \(HomeGym.allCases.map { "\"\($0.rawValue)\" (\($0.label))" }.joined(separator: ", ")). \
+        Use when she tells you where she trains, e.g. "I work out at 24 Hour Fitness". This doesn't \
+        change which machines are listed — the catalog stays the same.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "gym": [
+                    "type": "string",
+                    "description": "Her home gym.",
+                    "enum": HomeGym.allCases.map { $0.rawValue },
+                ],
+            ],
+            "required": ["gym"],
+        ],
+    ]
+
+    /// Goal-direction schema — flips whether she's losing, maintaining, or gaining. The model is
+    /// told her current direction and current weight so it understands the consequence; `parse`
+    /// snaps her pace to a sensible in-direction pace (mirroring Settings' goalDirectionBinding).
+    private static func setGoalDirectionSchema(for profile: UserProfile) -> [String: Any] {
+        let cur: String
+        switch profile.pace.direction {
+        case .lose:     cur = "losing weight"
+        case .gain:     cur = "on a lean gain"
+        case .maintain: cur = "maintaining"
+        }
+        return [
+            "name": Name.setGoalDirection.rawValue,
+            "description": """
+            Set the user's GOAL DIRECTION — whether she's working to lose weight, hold steady \
+            (maintain), or gain (a lean build). She is currently \(cur). Use when she wants to \
+            change what she's aiming for, e.g. "I want to switch to maintaining" or "let's start a \
+            lean bulk". This picks a gentle, sustainable pace in the new direction; it never routes \
+            her to under-eating. The app shows a one-tap confirm before it's saved.
+            """,
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "direction": [
+                        "type": "string",
+                        "description": "Which way she's aiming: lose, maintain, or gain.",
+                        "enum": ["lose", "maintain", "gain"],
+                    ],
+                ],
+                "required": ["direction"],
+            ],
+        ]
+    }
+
+    /// Height schema — always in cm internally. The example is phrased in her unit so it reads
+    /// naturally, but the model is told to send cm.
+    private static func setHeightSchema(for profile: UserProfile) -> [String: Any] {
+        let imperial = profile.unitSystem == .imperial
+        let hint = imperial ? "e.g. she says 5'6\" → send 168" : "e.g. she says 168 cm → send 168"
+        return [
+            "name": Name.setHeight.rawValue,
+            "description": """
+            Set the user's HEIGHT, in CENTIMETRES (this feeds her calorie/BMR math). Always send \
+            `cm` — convert from feet/inches yourself if she gives those (\(hint)). Use when she \
+            tells you or corrects her height. Must be between \(Int(heightCmRange.lowerBound)) and \
+            \(Int(heightCmRange.upperBound)) cm. The app shows a one-tap confirm before it's saved.
+            """,
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "cm": [
+                        "type": "number",
+                        "description": "Her height in centimetres, e.g. 168.",
+                        "minimum": heightCmRange.lowerBound,
+                        "maximum": heightCmRange.upperBound,
+                    ],
+                ],
+                "required": ["cm"],
+            ],
+        ]
+    }
+
+    private static let setBirthDateSchema: [String: Any] = [
+        "name": Name.setBirthDate.rawValue,
+        "description": """
+        Set the user's AGE / BIRTH DATE (this feeds her calorie/BMR math). Pass EITHER `age` in \
+        whole years (the usual case — "I'm 29") OR an exact `date` as ISO "yyyy-MM-dd" if she gives \
+        her birthday. Use when she tells you or corrects her age. Age must be between \
+        \(ageYearsRange.lowerBound) and \(ageYearsRange.upperBound). The app shows a one-tap \
+        confirm before it's saved.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "age": [
+                    "type": "integer",
+                    "description": "Her age in whole years, e.g. 29.",
+                    "minimum": ageYearsRange.lowerBound,
+                    "maximum": ageYearsRange.upperBound,
+                ],
+                "date": [
+                    "type": "string",
+                    "description": "Her birth date as ISO \"yyyy-MM-dd\", if she gave an exact birthday.",
+                ],
+            ],
+        ],
+    ]
+
+    private static let setSexSchema: [String: Any] = [
+        "name": Name.setSex.rawValue,
+        "description": """
+        Set the user's BIOLOGICAL SEX — used only for the BMR/calorie equation. Options: \
+        \(BiologicalSex.allCases.map { "\"\($0.rawValue)\" (\($0.label))" }.joined(separator: ", ")). \
+        Use when she tells you or corrects it. The app shows a one-tap confirm before it's saved.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "sex": [
+                    "type": "string",
+                    "description": "Her biological sex (for the BMR equation).",
+                    "enum": BiologicalSex.allCases.map { $0.rawValue },
+                ],
+            ],
+            "required": ["sex"],
+        ],
+    ]
+
+    private static let setActivityLevelSchema: [String: Any] = [
+        "name": Name.setActivityLevel.rawValue,
+        "description": """
+        Set the user's ACTIVITY LEVEL — her everyday baseline movement, which feeds her calorie \
+        target (TDEE). Options: \
+        \(ActivityLevel.allCases.map { "\"\($0.rawValue)\" (\($0.label) — \($0.detail.lowercased()))" }.joined(separator: "; ")). \
+        Use when she describes how active her days are, e.g. "I'm on my feet all day at work" → \
+        a higher level. The app shows a one-tap confirm before it's saved.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "level": [
+                    "type": "string",
+                    "description": "Her everyday activity baseline.",
+                    "enum": ActivityLevel.allCases.map { $0.rawValue },
+                ],
+            ],
+            "required": ["level"],
+        ],
+    ]
+
+    private static let setCompanionSchema: [String: Any] = [
+        "name": Name.setCompanion.rawValue,
+        "description": """
+        Set the user's little COMPANION — its name and/or its pixel avatar. Provide whichever she \
+        wants to change (at least one). The avatar choices are \
+        \(CompanionAvatar.allCases.map { "\"\($0.rawValue)\"" }.joined(separator: " or ")). Use when \
+        she says e.g. "rename my buddy to Sprout" (name) or "make my companion Bryan" (avatar). \
+        This is a fun cosmetic change and applies right away (she can undo).
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "name": ["type": "string", "description": "A new name for the companion, if renaming it."],
+                "avatar": [
+                    "type": "string",
+                    "description": "Which pixel avatar the companion uses, if changing it.",
+                    "enum": CompanionAvatar.allCases.map { $0.rawValue },
+                ],
+            ],
+        ],
+    ]
+
+    private static let setCoachNameSchema: [String: Any] = [
+        "name": Name.setCoachName.rawValue,
+        "description": """
+        Rename YOU, the coach. Use when she wants to call you something else, e.g. "I'll call you \
+        Coach" or "your name is now Mia". This just changes your display name throughout the app — \
+        it applies right away (she can undo).
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "name": ["type": "string", "description": "The new coach name, e.g. \"Mia\"."],
+            ],
+            "required": ["name"],
+        ],
+    ]
+
+    private static let setWaterContainerSchema: [String: Any] = [
+        "name": Name.setWaterContainer.rawValue,
+        "description": """
+        Set what "one drink" means for water logging — its size in ounces, and optionally a friendly \
+        label ("glass", "bottle", "big bottle"). Common sizes: a glass ≈ 8 oz, a bottle ≈ 17 oz, a \
+        big bottle ≈ 32 oz. Use when she tells you what she usually drinks from, e.g. "I drink from a \
+        32 oz bottle" → oz: 32, label: "big bottle". Size must be between \
+        \(Int(waterContainerOzRange.lowerBound)) and \(Int(waterContainerOzRange.upperBound)) oz. The \
+        app shows a one-tap confirm before it's saved (it affects how her water goal is counted).
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "oz": [
+                    "type": "number",
+                    "description": "The size of one drink/container in fluid ounces, e.g. 32.",
+                    "minimum": waterContainerOzRange.lowerBound,
+                    "maximum": waterContainerOzRange.upperBound,
+                ],
+                "label": ["type": "string", "description": "A friendly name for it, e.g. \"big bottle\". Optional."],
+            ],
+            "required": ["oz"],
+        ],
+    ]
+
+    private static let setProteinGoalSchema: [String: Any] = [
+        "name": Name.setProteinGoal.rawValue,
+        "description": """
+        Set the user's DAILY PROTEIN TARGET directly, in grams. Use when she asks to aim for a \
+        specific protein number, e.g. "I want to hit 140g of protein a day". Higher protein is \
+        healthy and supportive of her goals — encourage it. Must be between \
+        \(Int(proteinGoalRange.lowerBound)) and \(Int(proteinGoalRange.upperBound)) g (send 0 only \
+        if she wants to clear a custom target and go back to the calculated one). The app shows a \
+        one-tap confirm before it's saved.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "grams": [
+                    "type": "number",
+                    "description": "The daily protein target in grams, e.g. 140.",
+                    "minimum": proteinGoalRange.lowerBound,
+                    "maximum": proteinGoalRange.upperBound,
+                ],
+            ],
+            "required": ["grams"],
+        ],
+    ]
+
+    private static let toggleStepsInBudgetSchema: [String: Any] = [
+        "name": Name.toggleStepsInBudget.rawValue,
+        "description": """
+        Turn ON or OFF "let steps add to my budget" — when on, steps she walks above her baseline \
+        add a little to her daily calorie budget. Use when she asks for this, e.g. "let my steps \
+        earn me extra calories" → on, or "stop adding steps to my budget" → off. The app shows a \
+        one-tap confirm before it's saved.
+        """,
+        "input_schema": [
+            "type": "object",
+            "properties": [
+                "enabled": [
+                    "type": "boolean",
+                    "description": "true to let steps add to her budget, false to turn it off.",
+                ],
+            ],
+            "required": ["enabled"],
+        ],
+    ]
+
     // MARK: - Parsed, validated request
 
     /// A tool request that has passed name + input validation and is ready either to
@@ -557,6 +895,20 @@ enum CoachTools {
             case logWorkout(WorkoutDraft)
             case editPlan(PlanEdit)
             case forgetFact(String)
+            // Settings / preferences actions — each writes a single profile field.
+            case setUnits(UnitSystem)
+            case setTheme(ThemeStyle)
+            case setHomeGym(HomeGym)
+            case setGoalDirection(GoalPace.Direction)
+            case setHeight(cm: Double)
+            case setBirthDate(Date)
+            case setSex(BiologicalSex)
+            case setActivityLevel(ActivityLevel)
+            case setCompanion(name: String?, avatar: CompanionAvatar?)
+            case setCoachName(String)
+            case setWaterContainer(oz: Double, label: String?)
+            case setProteinGoal(grams: Double)
+            case toggleStepsInBudget(Bool)
         }
 
         /// Whether the UI must get an explicit one-tap confirm before applying.
@@ -567,7 +919,10 @@ enum CoachTools {
         var requiresConfirm: Bool {
             switch name {
             case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan, .logWorkout,
-                 .forgetFact:
+                 .forgetFact,
+                 // Cosmetic / personalization preferences with no effect on targets, units, or her
+                 // goal — like a rename, these are safely reversible, so auto-apply with Undo.
+                 .setTheme, .setHomeGym, .setCompanion, .setCoachName:
                 return false   // quick + reversible → auto-apply with Undo
             case .editPlan:
                 // A prose tweak (headline / assessment / strategy) auto-applies with Undo, but
@@ -578,7 +933,11 @@ enum CoachTools {
                 }
                 return false
             case .deleteFood,                                   // destructive
-                 .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal:
+                 .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal,
+                 // Biometric / unit / goal-direction / target-changing settings — anything that
+                 // moves her numbers (BMR inputs, units, goal, computed budget) → confirm first.
+                 .setUnits, .setGoalDirection, .setHeight, .setBirthDate, .setSex, .setActivityLevel,
+                 .setProteinGoal, .setWaterContainer, .toggleStepsInBudget:
                 return true    // goal-changing / not a casual log → confirm first
             }
         }
@@ -749,6 +1108,45 @@ enum CoachTools {
 
         case .forgetFact:
             return parseForget(input: input)
+
+        case .setUnits:
+            return parseSetUnits(input: input)
+
+        case .setTheme:
+            return parseSetTheme(input: input)
+
+        case .setHomeGym:
+            return parseSetHomeGym(input: input)
+
+        case .setGoalDirection:
+            return parseSetGoalDirection(input: input, profile: profile)
+
+        case .setHeight:
+            return parseSetHeight(input: input)
+
+        case .setBirthDate:
+            return parseSetBirthDate(input: input)
+
+        case .setSex:
+            return parseSetSex(input: input)
+
+        case .setActivityLevel:
+            return parseSetActivityLevel(input: input)
+
+        case .setCompanion:
+            return parseSetCompanion(input: input)
+
+        case .setCoachName:
+            return parseSetCoachName(input: input)
+
+        case .setWaterContainer:
+            return parseSetWaterContainer(input: input)
+
+        case .setProteinGoal:
+            return parseSetProteinGoal(input: input)
+
+        case .toggleStepsInBudget:
+            return parseToggleStepsInBudget(input: input)
         }
     }
 
@@ -951,6 +1349,268 @@ enum CoachTools {
             name: .updatePlan,
             confirmSummary: "note on your plan that \(note)",
             action: .updatePlan(note: note)))
+    }
+
+    // MARK: - Parse helpers: settings / preferences tools
+    //
+    // One per Settings control. Each is pure, returns the same `ParseResult`, and validates against
+    // the exact options/ranges the Settings UI offers so a tool call can never set an out-of-bounds
+    // value. The confirmSummary phrasing matches the goal tools ("set your … to …").
+
+    private static func parseSetUnits(input: [String: Any]) -> ParseResult {
+        guard let raw = input["system"] as? String else {
+            return .invalid("Tell me imperial or metric. Nothing was changed.")
+        }
+        guard let system = UnitSystem(rawValue: raw) else {
+            return .invalid("\"\(raw)\" isn't a unit system I know (imperial or metric). Nothing was changed.")
+        }
+        let name = system == .imperial ? "imperial (lb)" : "metric (kg)"
+        return .ok(ParsedRequest(
+            name: .setUnits,
+            confirmSummary: "switch your units to \(name)",
+            action: .setUnits(system)))
+    }
+
+    private static func parseSetTheme(input: [String: Any]) -> ParseResult {
+        guard let raw = input["theme"] as? String else {
+            return .invalid("Tell me which look — cute or cool. Nothing was changed.")
+        }
+        guard let theme = ThemeStyle(rawValue: raw) else {
+            return .invalid("\"\(raw)\" isn't a theme I know (cute or cool). Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .setTheme,
+            confirmSummary: "switch your appearance to \(theme.label) (\(theme.blurb.lowercased()))",
+            action: .setTheme(theme)))
+    }
+
+    private static func parseSetHomeGym(input: [String: Any]) -> ParseResult {
+        guard let raw = input["gym"] as? String else {
+            return .invalid("Tell me which gym. Nothing was changed.")
+        }
+        guard let gym = HomeGym(rawValue: raw) else {
+            let names = HomeGym.allCases.map { $0.label }.joined(separator: ", ")
+            return .invalid("I don't recognize that gym. I can set: \(names). Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .setHomeGym,
+            confirmSummary: "set your home gym to \(gym.label)",
+            action: .setHomeGym(gym)))
+    }
+
+    /// Goal-direction parse — maps lose/maintain/gain to the gentlest in-direction pace (mirroring
+    /// Settings' `goalDirectionBinding`), so pace + direction stay consistent. Guards against an
+    /// already-current direction so we never show a no-op confirm.
+    private static func parseSetGoalDirection(input: [String: Any], profile: UserProfile) -> ParseResult {
+        guard let raw = (input["direction"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
+              !raw.isEmpty else {
+            return .invalid("Tell me the direction — lose, maintain, or gain. Nothing was changed.")
+        }
+        let direction: GoalPace.Direction
+        switch raw {
+        case "lose", "lose weight", "loss", "cut":     direction = .lose
+        case "maintain", "hold", "maintenance":        direction = .maintain
+        case "gain", "gain weight", "bulk", "build":   direction = .gain
+        default:
+            return .invalid("\"\(raw)\" isn't a direction I know (lose, maintain, or gain). Nothing was changed.")
+        }
+        guard direction != profile.pace.direction else {
+            let word = direction == .lose ? "losing" : (direction == .gain ? "gaining" : "maintaining")
+            return .invalid("You're already set to \(word), so there's nothing to change.")
+        }
+        // Pick the gentlest pace that actually moves weight in the new direction (gain → Lean gain,
+        // not the always-listed Maintain) — exactly like the Settings goal picker.
+        let newPace = GoalPace.paces(for: direction).first { $0.direction == direction } ?? .maintain
+        let label: String
+        switch direction {
+        case .lose:     label = "losing weight"
+        case .gain:     label = "a lean gain"
+        case .maintain: label = "maintaining"
+        }
+        let paceNote = direction == .maintain ? "" : " (on a \(newPace.label.lowercased()) pace)"
+        return .ok(ParsedRequest(
+            name: .setGoalDirection,
+            confirmSummary: "switch your goal to \(label)\(paceNote)",
+            action: .setGoalDirection(direction)))
+    }
+
+    private static func parseSetHeight(input: [String: Any]) -> ParseResult {
+        guard let cm = doubleValue(input["cm"]) else {
+            return .invalid("I need your height in centimetres. Nothing was changed.")
+        }
+        guard heightCmRange.contains(cm) else {
+            return .invalid("A height of \(Int(cm.rounded())) cm is outside the range I can set "
+                          + "(\(Int(heightCmRange.lowerBound))–\(Int(heightCmRange.upperBound)) cm). Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .setHeight,
+            confirmSummary: "set your height to \(Int(cm.rounded())) cm",
+            action: .setHeight(cm: cm)))
+    }
+
+    /// Birth-date parse — accepts EITHER an `age` in years (converted to a birth date) OR an ISO
+    /// `date`. Either way the resulting age must land in `ageYearsRange`, and never the future.
+    private static func parseSetBirthDate(input: [String: Any]) -> ParseResult {
+        let cal = Calendar.current
+        // Prefer an explicit ISO date when given; otherwise build one from the age.
+        if let raw = (input["date"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty {
+            let fmt = DateFormatter()
+            fmt.calendar = cal
+            fmt.locale = Locale(identifier: "en_US_POSIX")
+            fmt.dateFormat = "yyyy-MM-dd"
+            guard let date = fmt.date(from: raw) else {
+                return .invalid("I couldn't read that birth date — use YYYY-MM-DD. Nothing was changed.")
+            }
+            let age = cal.dateComponents([.year], from: date, to: .now).year ?? -1
+            guard ageYearsRange.contains(age) else {
+                return .invalid("That birth date works out to an age outside what I can set "
+                              + "(\(ageYearsRange.lowerBound)–\(ageYearsRange.upperBound)). Nothing was changed.")
+            }
+            return .ok(ParsedRequest(
+                name: .setBirthDate,
+                confirmSummary: "set your age to \(age) (born \(raw))",
+                action: .setBirthDate(date)))
+        }
+        if let age = intValue(input["age"]) {
+            guard ageYearsRange.contains(age) else {
+                return .invalid("An age of \(age) is outside what I can set "
+                              + "(\(ageYearsRange.lowerBound)–\(ageYearsRange.upperBound)). Nothing was changed.")
+            }
+            // Mirror the model's own default: subtract `age` years from now. We don't try to recover
+            // an exact birthday from an age — the BMR math only uses whole years anyway.
+            guard let date = cal.date(byAdding: .year, value: -age, to: .now) else {
+                return .invalid("I couldn't set that age. Nothing was changed.")
+            }
+            return .ok(ParsedRequest(
+                name: .setBirthDate,
+                confirmSummary: "set your age to \(age)",
+                action: .setBirthDate(date)))
+        }
+        return .invalid("Tell me your age in years, or your birth date as YYYY-MM-DD. Nothing was changed.")
+    }
+
+    private static func parseSetSex(input: [String: Any]) -> ParseResult {
+        guard let raw = input["sex"] as? String else {
+            return .invalid("Tell me female or male (for the calorie math). Nothing was changed.")
+        }
+        guard let sex = BiologicalSex(rawValue: raw.lowercased()) else {
+            return .invalid("\"\(raw)\" isn't a value I know (female or male). Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .setSex,
+            confirmSummary: "set your biological sex to \(sex.label.lowercased()) (for the calorie math)",
+            action: .setSex(sex)))
+    }
+
+    private static func parseSetActivityLevel(input: [String: Any]) -> ParseResult {
+        guard let raw = input["level"] as? String else {
+            return .invalid("Tell me your activity level. Nothing was changed.")
+        }
+        guard let level = ActivityLevel(rawValue: raw) else {
+            let names = ActivityLevel.allCases.map { "\"\($0.rawValue)\"" }.joined(separator: ", ")
+            return .invalid("\"\(raw)\" isn't an activity level I know. Valid: \(names). Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .setActivityLevel,
+            confirmSummary: "set your activity level to \(level.label.lowercased())",
+            action: .setActivityLevel(level)))
+    }
+
+    private static func parseSetCompanion(input: [String: Any]) -> ParseResult {
+        var newName: String?
+        if let n = (input["name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty {
+            guard n.count <= 40 else {
+                return .invalid("That name's a bit long — keep it short and sweet. Nothing was changed.")
+            }
+            newName = n
+        }
+        var avatar: CompanionAvatar?
+        if let a = (input["avatar"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !a.isEmpty {
+            guard let parsed = CompanionAvatar(rawValue: a.lowercased()) else {
+                let names = CompanionAvatar.allCases.map { "\"\($0.rawValue)\"" }.joined(separator: " or ")
+                return .invalid("\"\(a)\" isn't an avatar I have — pick \(names). Nothing was changed.")
+            }
+            avatar = parsed
+        }
+        guard newName != nil || avatar != nil else {
+            return .invalid("Tell me a new name or which avatar for your companion. Nothing was changed.")
+        }
+        var parts: [String] = []
+        if let n = newName { parts.append("name your companion \"\(n)\"") }
+        if let a = avatar { parts.append("set its avatar to \(a.rawValue.capitalized)") }
+        return .ok(ParsedRequest(
+            name: .setCompanion,
+            confirmSummary: parts.joined(separator: " and "),
+            action: .setCompanion(name: newName, avatar: avatar)))
+    }
+
+    private static func parseSetCoachName(input: [String: Any]) -> ParseResult {
+        guard let name = (input["name"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty else {
+            return .invalid("Tell me what to call me. Nothing was changed.")
+        }
+        guard name.count <= 40 else {
+            return .invalid("That name's a bit long — keep it short. Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .setCoachName,
+            confirmSummary: "rename your coach to \(name)",
+            action: .setCoachName(name)))
+    }
+
+    private static func parseSetWaterContainer(input: [String: Any]) -> ParseResult {
+        guard let oz = doubleValue(input["oz"]) else {
+            return .invalid("Tell me the size of your drink in ounces. Nothing was changed.")
+        }
+        guard waterContainerOzRange.contains(oz) else {
+            return .invalid("\(Int(oz.rounded())) oz is outside the size I can set for one drink "
+                          + "(\(Int(waterContainerOzRange.lowerBound))–\(Int(waterContainerOzRange.upperBound)) oz). Nothing was changed.")
+        }
+        var label: String?
+        if let l = (input["label"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !l.isEmpty {
+            guard l.count <= 30 else {
+                return .invalid("That container name's a bit long — keep it short (e.g. \"big bottle\"). Nothing was changed.")
+            }
+            label = l
+        }
+        let labelNote = label.map { " (\($0))" } ?? ""
+        return .ok(ParsedRequest(
+            name: .setWaterContainer,
+            confirmSummary: "set one drink to \(Int(oz.rounded())) oz\(labelNote)",
+            action: .setWaterContainer(oz: oz, label: label)))
+    }
+
+    private static func parseSetProteinGoal(input: [String: Any]) -> ParseResult {
+        guard let grams = doubleValue(input["grams"]) else {
+            return .invalid("I need a protein number in grams. Nothing was changed.")
+        }
+        guard proteinGoalRange.contains(grams) else {
+            return .invalid("A protein target of \(Int(grams.rounded()))g is outside the range I can set "
+                          + "(\(Int(proteinGoalRange.lowerBound))–\(Int(proteinGoalRange.upperBound))g). Nothing was changed.")
+        }
+        // 0 is the documented "clear the custom target, go back to the calculated one" value.
+        if grams == 0 {
+            return .ok(ParsedRequest(
+                name: .setProteinGoal,
+                confirmSummary: "clear your custom protein target (back to the calculated one)",
+                action: .setProteinGoal(grams: 0)))
+        }
+        return .ok(ParsedRequest(
+            name: .setProteinGoal,
+            confirmSummary: "set your daily protein target to \(Int(grams.rounded()))g",
+            action: .setProteinGoal(grams: grams)))
+    }
+
+    private static func parseToggleStepsInBudget(input: [String: Any]) -> ParseResult {
+        guard let enabled = boolValue(input["enabled"]) else {
+            return .invalid("Tell me whether to turn it on or off. Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .toggleStepsInBudget,
+            confirmSummary: enabled
+                ? "let your steps add to your daily budget"
+                : "stop your steps from adding to your daily budget",
+            action: .toggleStepsInBudget(enabled)))
     }
 
     // MARK: - Parse helpers: data-logging tools
@@ -1489,6 +2149,138 @@ enum CoachTools {
                 plan.changelog = old
                 try? context.save()
             })
+
+        // MARK: Settings / preferences applies (each captures the old value for Undo)
+
+        case .setUnits(let system):
+            let old = profile.unitSystem
+            profile.unitSystem = system   // enum setter writes unitSystemRaw
+            try? context.save()
+            let name = system == .imperial ? "imperial (lb)" : "metric (kg)"
+            return Applied(message: "Units are now \(name).",
+                           undo: { profile.unitSystem = old; try? context.save() })
+
+        case .setTheme(let theme):
+            let old = profile.themeStyle
+            profile.themeStyle = theme   // enum setter writes themeStyleRaw
+            try? context.save()
+            return Applied(message: "Appearance is now \(theme.label) — \(theme.blurb.lowercased()).",
+                           undo: { profile.themeStyle = old; try? context.save() })
+
+        case .setHomeGym(let gym):
+            let old = profile.homeGym
+            profile.homeGym = gym   // optional setter writes homeGymRaw
+            try? context.save()
+            return Applied(message: "Home gym is now \(gym.label).",
+                           undo: { profile.homeGym = old; try? context.save() })
+
+        case .setGoalDirection(let direction):
+            // Mirror Settings' goalDirectionBinding: changing direction snaps the pace to the
+            // gentlest one that moves weight that way (gain → Lean gain, not Maintain). The pace
+            // stays the single stored source of truth, so undo just restores the old pace.
+            let oldPace = profile.pace
+            let newPace = GoalPace.paces(for: direction).first { $0.direction == direction } ?? .maintain
+            profile.pace = newPace
+            try? context.save()
+            let label: String
+            switch direction {
+            case .lose:     label = "losing weight"
+            case .gain:     label = "a lean gain"
+            case .maintain: label = "maintaining"
+            }
+            let paceNote = direction == .maintain ? "" : " (\(newPace.label) pace)"
+            return Applied(message: "Your goal is now \(label)\(paceNote).",
+                           undo: { profile.pace = oldPace; try? context.save() })
+
+        case .setHeight(let cm):
+            let old = profile.heightCm
+            profile.heightCm = cm
+            try? context.save()
+            return Applied(message: "Height is now \(Int(cm.rounded())) cm.",
+                           undo: { profile.heightCm = old; try? context.save() })
+
+        case .setBirthDate(let date):
+            let old = profile.birthDate
+            profile.birthDate = date
+            try? context.save()
+            return Applied(message: "Got it — your age is now set to \(profile.ageYears).",
+                           undo: { profile.birthDate = old; try? context.save() })
+
+        case .setSex(let sex):
+            let old = profile.sex
+            profile.sex = sex   // enum setter writes sexRaw
+            try? context.save()
+            return Applied(message: "Biological sex is now \(sex.label.lowercased()) (used only for the calorie math).",
+                           undo: { profile.sex = old; try? context.save() })
+
+        case .setActivityLevel(let level):
+            let old = profile.activityLevel
+            profile.activityLevel = level   // enum setter writes activityLevelRaw
+            try? context.save()
+            return Applied(message: "Activity level is now \(level.label.lowercased()).",
+                           undo: { profile.activityLevel = old; try? context.save() })
+
+        case .setCompanion(let name, let avatar):
+            // Capture both fields; restore exactly what changed on undo.
+            let oldName = profile.companionName
+            let oldAvatar = profile.companionAvatar
+            if let name { profile.companionName = name }
+            if let avatar { profile.companionAvatar = avatar }
+            try? context.save()
+            var msg = "Your companion is now"
+            if let name { msg += " \"\(name)\"" }
+            if let avatar { msg += (name != nil ? " (\(avatar.rawValue.capitalized) avatar)" : " the \(avatar.rawValue.capitalized) avatar") }
+            msg += "."
+            return Applied(message: msg, undo: {
+                profile.companionName = oldName
+                profile.companionAvatar = oldAvatar
+                try? context.save()
+            })
+
+        case .setCoachName(let name):
+            let old = profile.coachName
+            profile.coachName = name
+            try? context.save()
+            return Applied(message: "You can call me \(name) from now on.",
+                           undo: { profile.coachName = old; try? context.save() })
+
+        case .setWaterContainer(let oz, let label):
+            // Capture both size + label so undo restores the pair. Only overwrite the label when she
+            // gave one (otherwise keep her existing label for the new size).
+            let oldOz = profile.waterContainerOz
+            let oldLabel = profile.waterContainerLabel
+            profile.waterContainerOz = oz
+            if let label { profile.waterContainerLabel = label }
+            try? context.save()
+            let shownLabel = profile.waterContainerLabel.isEmpty ? "drink" : profile.waterContainerLabel
+            return Applied(message: "One \(shownLabel) is now \(Int(oz.rounded())) oz.",
+                           undo: {
+                               profile.waterContainerOz = oldOz
+                               profile.waterContainerLabel = oldLabel
+                               try? context.save()
+                           })
+
+        case .setProteinGoal(let grams):
+            // Write the override DIRECTLY so it works even with no plan (macroTargets honors it).
+            // 0 clears it → back to the calculated target.
+            let old = profile.proteinTargetOverride
+            profile.proteinTargetOverride = grams
+            try? context.save()
+            let msg = grams == 0
+                ? "Cleared your custom protein target — back to the calculated one."
+                : "Daily protein target is now \(Int(grams.rounded()))g."
+            return Applied(message: msg,
+                           undo: { profile.proteinTargetOverride = old; try? context.save() })
+
+        case .toggleStepsInBudget(let enabled):
+            let old = profile.stepsAdjustCalories
+            profile.stepsAdjustCalories = enabled
+            try? context.save()
+            let msg = enabled
+                ? "Your steps above baseline will now add a little to your daily budget."
+                : "Steps will no longer add to your daily budget."
+            return Applied(message: msg,
+                           undo: { profile.stepsAdjustCalories = old; try? context.save() })
         }
     }
 
@@ -1551,6 +2343,21 @@ enum CoachTools {
         if let i = any as? Int { return Double(i) }
         if let n = any as? NSNumber { return n.doubleValue }
         if let s = any as? String { return Double(s) }
+        return nil
+    }
+
+    /// Accepts a JSON boolean (Bool/NSNumber) or a common truthy/falsy string ("true"/"on"/"yes",
+    /// "false"/"off"/"no") — the model occasionally sends the toggle value as a word.
+    private static func boolValue(_ any: Any?) -> Bool? {
+        if let b = any as? Bool { return b }
+        if let n = any as? NSNumber { return n.boolValue }
+        if let s = (any as? String)?.trimmingCharacters(in: .whitespaces).lowercased() {
+            switch s {
+            case "true", "on", "yes", "1":  return true
+            case "false", "off", "no", "0": return false
+            default: return nil
+            }
+        }
         return nil
     }
 
