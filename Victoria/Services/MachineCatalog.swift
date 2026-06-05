@@ -296,9 +296,17 @@ struct MachineImage: View {
 
     var body: some View {
         if hasPhoto {
+            // Product shots are white-background. Render each on a clean white rounded chip so it
+            // reads as a deliberate product thumbnail on BOTH the cream and dark themes — a bare
+            // white photo otherwise looks like a jarring white box on the dark tiles. The white
+            // chip is seamless with the photos' own white background. Fills the call site's frame.
             Image(MachineCatalog.photoAssetName(for: key))
                 .resizable()
                 .scaledToFit()
+                .padding(2)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         } else {
             Image(systemName: symbolName)
         }
