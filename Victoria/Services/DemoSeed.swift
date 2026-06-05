@@ -52,6 +52,7 @@ enum DemoSeed {
         p.pace = gaining ? .leanGain : .relaxed
         p.themeStyle = gaining ? .cool : .cute     // Bryan = cool/dark, Victoria = cute/pastel
         p.companionAvatar = gaining ? .bryan : .victoria
+        p.homeGym = gaining ? .twentyFourHour : .usc   // Bryan trains at 24 Hour, Victoria at USC Rec
         p.dailyStepGoal = 8000
         p.onboardingComplete = true
         WhatsNew.markSeen()   // seeded demo user is "caught up" — show What's New only via --whats-new

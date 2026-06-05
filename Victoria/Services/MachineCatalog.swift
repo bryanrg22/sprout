@@ -1,4 +1,6 @@
 import Foundation
+import SwiftUI
+import UIKit
 
 // MARK: - Workout kind
 
@@ -39,6 +41,31 @@ enum WorkoutKind: String, Codable, CaseIterable, Identifiable {
 
     /// Only a gym session picks focuses + machines; every other kind is a simple duration log.
     var isGym: Bool { self == .gym }
+}
+
+// MARK: - Home gym
+
+/// The user's primary gym. Stored on `UserProfile` (as `homeGymRaw`) and shown in Settings; used
+/// for photo/context personalization only. **It does NOT filter the machine list** — the catalog
+/// stays universal (per-gym machine subsets are a later phase). Raw values are stable for CloudKit.
+enum HomeGym: String, Codable, CaseIterable, Identifiable {
+    case usc, twentyFourHour
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .usc:           return "USC Recreation"
+        case .twentyFourHour: return "24 Hour Fitness"
+        }
+    }
+
+    /// A one-line equipment hint shown under the label.
+    var subtitle: String {
+        switch self {
+        case .usc:           return "Hammer Strength · Lyon + Village"
+        case .twentyFourHour: return "Hoist ROC-IT machines"
+        }
+    }
 }
 
 // MARK: - Muscle focus
@@ -238,6 +265,42 @@ enum MachineCatalog {
             }
             // 4. Stable: keep catalog order.
             return (catalogIndex[lhs.key] ?? 0) < (catalogIndex[rhs.key] ?? 0)
+        }
+    }
+
+    /// The asset-image name a machine photo is looked up under, for a given catalog `key` /
+    /// `ExerciseEntry.machineKey`: e.g. `leg_press` → `machine_leg_press`. Keep bundled assets
+    /// named to match (lowercase, underscore — identical to the catalog key).
+    static func photoAssetName(for key: String) -> String { "machine_\(key)" }
+}
+
+// MARK: - Machine image (photo with SF-Symbol fallback)
+
+/// Renders a machine's real bundled photo when one exists, gracefully falling back to its SF
+/// Symbol otherwise. Photos are asset images named `machine_<key>` (see
+/// `MachineCatalog.photoAssetName`) keyed by `Machine.key` / `ExerciseEntry.machineKey`; until an
+/// asset is added the symbol shows, so this is safe for every machine today.
+///
+/// The view fills whatever frame the call site gives it (it has no intrinsic size of its own),
+/// so existing tile/disc framing + symbol styling is preserved as the fallback.
+struct MachineImage: View {
+    /// `Machine.key` / `ExerciseEntry.machineKey` — drives the `machine_<key>` asset lookup.
+    let key: String
+    /// The SF Symbol to fall back to (`Machine.icon` / `ExerciseEntry.iconName`).
+    let symbolName: String
+
+    /// True only when a matching `machine_<key>` asset is actually bundled.
+    private var hasPhoto: Bool {
+        UIImage(named: MachineCatalog.photoAssetName(for: key)) != nil
+    }
+
+    var body: some View {
+        if hasPhoto {
+            Image(MachineCatalog.photoAssetName(for: key))
+                .resizable()
+                .scaledToFit()
+        } else {
+            Image(systemName: symbolName)
         }
     }
 }
