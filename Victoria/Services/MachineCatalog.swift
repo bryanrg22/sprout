@@ -132,48 +132,50 @@ enum MachineCatalog {
     /// The full curated list, grouped by focus in catalog order (Chest → Back → Shoulders →
     /// Arms → Legs → Core → Cardio). This order is the tiebreak after the user's own history.
     static let all: [Machine] = [
-        // Chest
+        // Chest — ordered most-popular first within the focus (web-researched: chest press &
+        // bench press are the staples, pec deck the classic isolation). Personal recents still
+        // float above this via `ranked(history:)`.
         Machine(key: "chest_press",        name: "Chest press",        icon: strength,   focus: .chest),
-        Machine(key: "incline_chest_press",name: "Incline chest press",icon: strength,   focus: .chest),
-        Machine(key: "pec_deck",           name: "Pec deck",           icon: "figure.arms.open", focus: .chest),
-        Machine(key: "cable_crossover",    name: "Cable crossover",    icon: "figure.arms.open", focus: .chest),
         Machine(key: "bench_press",        name: "Bench press",        icon: "dumbbell.fill", focus: .chest),
+        Machine(key: "pec_deck",           name: "Pec deck",           icon: "figure.arms.open", focus: .chest),
+        Machine(key: "incline_chest_press",name: "Incline chest press",icon: strength,   focus: .chest),
+        Machine(key: "cable_crossover",    name: "Cable crossover",    icon: "figure.arms.open", focus: .chest),
         Machine(key: "push_up",            name: "Push-up",            icon: "figure.core.training", focus: .chest),
 
-        // Back
+        // Back — lat pulldown & seated row are the most-used; deadlift is a staple pull.
         Machine(key: "lat_pulldown",       name: "Lat pulldown",       icon: strength,   focus: .back),
         Machine(key: "seated_cable_row",   name: "Seated cable row",   icon: strength,   focus: .back),
-        Machine(key: "assisted_pull_up",   name: "Assisted pull-up",   icon: functional, focus: .back),
         Machine(key: "t_bar_row",          name: "T-bar row",          icon: "dumbbell.fill", focus: .back),
-        Machine(key: "back_extension",     name: "Back extension",     icon: "figure.core.training", focus: .back),
         Machine(key: "deadlift",           name: "Deadlift",           icon: "dumbbell.fill", focus: .back),
+        Machine(key: "assisted_pull_up",   name: "Assisted pull-up",   icon: functional, focus: .back),
+        Machine(key: "back_extension",     name: "Back extension",     icon: "figure.core.training", focus: .back),
 
-        // Shoulders
+        // Shoulders — press first, then the lateral/overhead staples, rear delt last.
         Machine(key: "shoulder_press",     name: "Shoulder press",     icon: strength,   focus: .shoulders),
         Machine(key: "lateral_raise",      name: "Lateral raise",      icon: "dumbbell.fill", focus: .shoulders),
+        Machine(key: "overhead_press",     name: "Overhead press",     icon: "dumbbell.fill", focus: .shoulders),
         Machine(key: "reverse_pec_deck",   name: "Reverse pec deck",   icon: "figure.arms.open", focus: .shoulders),
         Machine(key: "cable_lateral_raise",name: "Cable lateral raise",icon: "dumbbell.fill", focus: .shoulders),
-        Machine(key: "overhead_press",     name: "Overhead press",     icon: "dumbbell.fill", focus: .shoulders),
 
-        // Arms
+        // Arms — the curl + pushdown staples first.
         Machine(key: "bicep_curl",         name: "Bicep curl",         icon: "dumbbell.fill", focus: .arms),
-        Machine(key: "preacher_curl",      name: "Preacher curl",      icon: "dumbbell.fill", focus: .arms),
         Machine(key: "tricep_pushdown",    name: "Tricep pushdown",    icon: strength,   focus: .arms),
-        Machine(key: "assisted_dip",       name: "Assisted dip",       icon: functional, focus: .arms),
         Machine(key: "cable_curl",         name: "Cable curl",         icon: "dumbbell.fill", focus: .arms),
+        Machine(key: "preacher_curl",      name: "Preacher curl",      icon: "dumbbell.fill", focus: .arms),
+        Machine(key: "assisted_dip",       name: "Assisted dip",       icon: functional, focus: .arms),
         Machine(key: "skullcrusher",       name: "Skullcrusher",       icon: "dumbbell.fill", focus: .arms),
 
-        // Legs
+        // Legs — leg press is THE staple; squat rack & extension/curl next.
         Machine(key: "leg_press",          name: "Leg press",          icon: strength,   focus: .legs),
+        Machine(key: "squat_rack",         name: "Squat rack",         icon: functional, focus: .legs),
         Machine(key: "leg_extension",      name: "Leg extension",      icon: strength,   focus: .legs),
         Machine(key: "leg_curl",           name: "Leg curl",           icon: strength,   focus: .legs),
         Machine(key: "hack_squat",         name: "Hack squat",         icon: functional, focus: .legs),
-        Machine(key: "smith_machine",      name: "Smith machine",      icon: functional, focus: .legs),
         Machine(key: "calf_raise",         name: "Calf raise",         icon: "figure.strengthtraining.functional", focus: .legs),
+        Machine(key: "smith_machine",      name: "Smith machine",      icon: functional, focus: .legs),
         Machine(key: "hip_thrust",         name: "Hip thrust",         icon: functional, focus: .legs),
         Machine(key: "hip_abductor",       name: "Hip abductor",       icon: strength,   focus: .legs),
         Machine(key: "hip_adductor",       name: "Hip adductor",       icon: strength,   focus: .legs),
-        Machine(key: "squat_rack",         name: "Squat rack",         icon: functional, focus: .legs),
 
         // Core
         Machine(key: "ab_crunch_machine",  name: "Ab crunch machine",  icon: "figure.core.training", focus: .core),
