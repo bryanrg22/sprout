@@ -13,8 +13,8 @@ struct WhatsNewFeature: Identifiable {
     let detail: String
 }
 
-/// A single release's notes: the headline, the highlighted features (the FIRST is rendered as
-/// a hero card), and a plain list of bug-fix one-liners.
+/// A single release's notes: the headline, the highlighted features (each is rendered as its
+/// OWN swipeable page in the carousel), and a plain list of bug-fix one-liners (the finale page).
 struct WhatsNewRelease {
     let version: String
     let title: String
@@ -32,7 +32,7 @@ enum WhatsNew {
 
     private static let key = "whatsnew.lastSeenVersion"
 
-    /// The app's marketing version (e.g. "1.7"), from the bundle.
+    /// The app's marketing version (e.g. "2.0"), from the bundle.
     static var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     }
@@ -57,177 +57,219 @@ enum WhatsNew {
     /// The notes for the current release. Editing this (and bumping MARKETING_VERSION) is all
     /// it takes to ship a new "What's New".
     static let current = WhatsNewRelease(
-        version: "1.8.1",
-        title: "Meet the new Vita 🌱",
+        version: "2.0",
+        title: "A whole new Sprout 🌱",
         features: [
             WhatsNewFeature(
-                icon: "text.bubble.fill", tint: Theme.brand,
-                title: "A beautiful new way to chat",
-                detail: "Vita's replies now read like a real conversation — clean lists and highlights instead of walls of text. Your suggestions stay put, the text box grows as you type, and a goal you approve stays right in your chat history."),
+                icon: "figure.strengthtraining.traditional", tint: Theme.brand,
+                title: "Workouts, done right",
+                detail: "Your training finally has a home. Log a gym day machine by machine — or a quick run, walk, or ride — see your whole week at a glance, and tap any day for the full breakdown."),
             WhatsNewFeature(
-                icon: "brain.head.profile", tint: Theme.protein,
-                title: "Vita remembers you",
-                detail: "Tell her you take creatine, train Mon/Wed/Fri, or see a nutritionist — and she'll keep it in mind in every future chat, building up a picture of you over time."),
+                icon: "sparkles", tint: Theme.protein,
+                title: "Just ask Vita",
+                detail: "Tell her in plain words and she handles it. \"Log chest day — chest press 90 for 3 sets,\" \"I forgot my oatmeal yesterday,\" \"switch me to pounds.\" Vita logs it, back-dates it, even updates your settings — no menus."),
             WhatsNewFeature(
-                icon: "barcode.viewfinder", tint: Theme.water,
-                title: "One scan for everything",
-                detail: "Point your camera at a barcode or a nutrition label — one Scan button figures out which, and asks how many servings you had."),
+                icon: "square.grid.2x2.fill", tint: Theme.water,
+                title: "Your machines, in your order",
+                detail: "The machines you actually use rise to the top. Sprout learns your go-to lifts for each muscle — and the most popular ones — so your next set is always a tap away."),
+            WhatsNewFeature(
+                icon: "chart.bar.fill", tint: Theme.positive,
+                title: "Your whole day, in rings",
+                detail: "Macros, steps, and water — for today or any day last week — each with a ring that fills as you hit your goal. Plus a plain-English progress recap with your starting weight right on the chart."),
         ],
         fixes: [
-            "Yesterday's step count now fills in to its real total instead of freezing at a partial number.",
-            "Smart Picks no longer re-shuffle every time you open the app, and won't re-pitch something you've already eaten.",
-            "Fixed a calorie undercount when logging more than one serving (like 2 apples).",
+            "Your streak now counts only the days you actually log — auto-imported steps and scale syncs don't pad it anymore.",
+            "Vita's calorie math now matches your Nutrients card to the calorie.",
+            "A protein goal you set with Vita now sticks, even when you're following a plan.",
         ])
 }
 
 // MARK: - View
 
-/// The "What's New" sheet — a celebratory header, a hero feature, the rest of the highlights,
-/// and a plain "Also fixed" list, over a pinned "Let's go" button. Skin-aware via `Theme`.
+/// The "What's New" sheet — a swipeable, paged carousel. Each release feature is its own
+/// full-screen page (a big tinted medallion + title + detail), with an "Also fixed" checklist
+/// as the finale. A fixed header carries the version, and pinned Back / Next controls drive the
+/// page (the TabView's dots show progress). Skin-aware via `Theme`.
 struct WhatsNewView: View {
     let release: WhatsNewRelease
     @Environment(\.dismiss) private var dismiss
 
+    /// The current carousel page (also the TabView selection). 0-based.
+    @State private var page = 0
+
+    // MARK: Page bookkeeping
+
+    /// Whether the release has a trailing "Also fixed" page (omitted gracefully when empty).
+    private var hasFixesPage: Bool { !release.fixes.isEmpty }
+
+    /// Total pages: one per feature, plus the fixes finale when there are fixes.
+    private var pageCount: Int { release.features.count + (hasFixesPage ? 1 : 0) }
+
+    /// Index of the last page (where "Next" becomes "Let's go").
+    private var lastIndex: Int { max(0, pageCount - 1) }
+
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Theme.Space.md) {
-                    header
-                    if let hero = release.features.first {
-                        heroCard(hero)
-                    }
-                    ForEach(release.features.dropFirst()) { FeatureRow(feature: $0) }
-                    if !release.fixes.isEmpty { fixesSection }
+            header
+
+            TabView(selection: $page) {
+                ForEach(Array(release.features.enumerated()), id: \.element.id) { index, feature in
+                    featurePage(feature).tag(index)
                 }
-                .padding(Theme.Space.lg)
-                .padding(.bottom, Theme.Space.xl)   // breathing room above the pinned button
+                if hasFixesPage {
+                    fixesPage.tag(release.features.count)
+                }
             }
+            .tabViewStyle(.page(indexDisplayMode: .always))
+            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: page)
+
             footer
         }
         .background(Theme.background.ignoresSafeArea())
+        // The page dots are a UIPageControl under the hood and default to white-ish — invisible
+        // on the cream (cute) canvas. Tint them to the brand (active) + a faint primary (inactive)
+        // so progress reads clearly in BOTH skins.
+        .onAppear {
+            UIPageControl.appearance().currentPageIndicatorTintColor = UIColor(Theme.brand)
+            UIPageControl.appearance().pageIndicatorTintColor = UIColor(Theme.textPrimary.opacity(0.18))
+        }
     }
 
-    // MARK: Header
+    // MARK: Header (fixed — same across pages)
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(spacing: 4) {
             Text("WHAT'S NEW")
                 .font(.caption.weight(.heavy)).tracking(2)
                 .foregroundStyle(Theme.brand)
-            Text(release.title)
-                .font(.largeTitle.weight(.bold))
-                .foregroundStyle(Theme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
             Text("Version \(release.version)")
-                .font(.subheadline.weight(.medium))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.textSecondary)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, Theme.Space.sm)
+        .frame(maxWidth: .infinity)
+        .padding(.top, Theme.Space.lg)
+        .padding(.bottom, Theme.Space.sm)
     }
 
-    // MARK: Hero (first feature gets a bigger, brand-tinted card)
+    // MARK: Feature page (one per feature — big, centered, celebratory)
 
-    private func heroCard(_ f: WhatsNewFeature) -> some View {
-        HStack(alignment: .top, spacing: Theme.Space.md) {
+    private func featurePage(_ f: WhatsNewFeature) -> some View {
+        VStack(spacing: Theme.Space.xl) {
+            Spacer(minLength: Theme.Space.lg)
+
+            // Tinted medallion — large circular chip with the symbol over a soft tint fill.
             ZStack {
-                RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous)
-                    .fill(Theme.brand.opacity(0.22))
+                Circle()
+                    .fill(f.tint.opacity(0.16))
+                Circle()
+                    .strokeBorder(f.tint.opacity(0.28), lineWidth: 1)
                 Image(systemName: f.icon)
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(Theme.brand)
+                    .font(.system(size: 40, weight: .semibold))
+                    .foregroundStyle(f.tint)
             }
-            .frame(width: 58, height: 58)
-            VStack(alignment: .leading, spacing: 5) {
+            .frame(width: 92, height: 92)
+
+            VStack(spacing: Theme.Space.md) {
                 Text(f.title)
-                    .font(.title3.weight(.bold))
+                    .font(.largeTitle.weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
+                    .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(f.detail)
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(5)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 0)
+
+            Spacer(minLength: Theme.Space.lg)
         }
-        .padding(Theme.Space.lg)
-        .background(
-            RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous)
-                .fill(Theme.brand.opacity(0.10))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous)
-                .stroke(Theme.brand.opacity(0.28), lineWidth: 1)
-        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, Theme.Space.xl)
     }
 
-    // MARK: Fixes
+    // MARK: Fixes page (the finale — a clean green checklist)
 
-    private var fixesSection: some View {
-        VStack(alignment: .leading, spacing: Theme.Space.sm) {
-            Text("Also fixed")
-                .font(.headline)
-                .foregroundStyle(Theme.textPrimary)
-            ForEach(release.fixes, id: \.self) { fix in
-                HStack(alignment: .top, spacing: 8) {
+    private var fixesPage: some View {
+        VStack(spacing: Theme.Space.xl) {
+            Spacer(minLength: Theme.Space.lg)
+
+            VStack(spacing: Theme.Space.md) {
+                ZStack {
+                    Circle()
+                        .fill(Theme.positive.opacity(0.16))
+                    Circle()
+                        .strokeBorder(Theme.positive.opacity(0.28), lineWidth: 1)
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.footnote)
+                        .font(.system(size: 40, weight: .semibold))
                         .foregroundStyle(Theme.positive)
-                        .padding(.top, 2)
-                    Text(fix)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(width: 92, height: 92)
+
+                Text("Also fixed 🛠️")
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .multilineTextAlignment(.center)
+            }
+
+            // The fixes as a checklist — same green checkmark + text treatment as before.
+            VStack(alignment: .leading, spacing: Theme.Space.md) {
+                ForEach(release.fixes, id: \.self) { fix in
+                    HStack(alignment: .top, spacing: Theme.Space.sm) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.positive)
+                            .padding(.top, 2)
+                        Text(fix)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Theme.Space.lg)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+
+            Spacer(minLength: Theme.Space.lg)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Theme.Space.md)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
-        .padding(.top, Theme.Space.xs)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, Theme.Space.xl)
     }
 
-    // MARK: Footer button (pinned)
+    // MARK: Footer (pinned navigation — Back + Next / Let's go)
 
     private var footer: some View {
-        Button("Let's go") {
-            WhatsNew.markSeen()
-            dismiss()
+        VStack(spacing: Theme.Space.sm) {
+            Button(page == lastIndex ? "Let's go" : "Next") {
+                if page == lastIndex {
+                    WhatsNew.markSeen()
+                    dismiss()
+                } else {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { page += 1 }
+                }
+            }
+            .buttonStyle(.primary)
+
+            // "Back" — subtle, secondary, and only once there's a page to go back to.
+            Button {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { page -= 1 }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left").font(.footnote.weight(.semibold))
+                    Text("Back")
+                }
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Theme.textSecondary)
+            }
+            .opacity(page > 0 ? 1 : 0)
+            .disabled(page == 0)          // keep layout height stable; just hide when on page 0
+            .accessibilityHidden(page == 0)
         }
-        .buttonStyle(.primary)
         .padding(.horizontal, Theme.Space.lg)
         .padding(.top, Theme.Space.sm)
         .padding(.bottom, Theme.Space.md)
         .background(Theme.background)
-    }
-}
-
-/// A standard (non-hero) highlight row: tinted icon chip + title + one-line benefit.
-private struct FeatureRow: View {
-    let feature: WhatsNewFeature
-    var body: some View {
-        HStack(alignment: .top, spacing: Theme.Space.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous)
-                    .fill(feature.tint.opacity(0.18))
-                Image(systemName: feature.icon)
-                    .font(.system(size: 19, weight: .semibold))
-                    .foregroundStyle(feature.tint)
-            }
-            .frame(width: 46, height: 46)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(feature.title)
-                    .font(.headline)
-                    .foregroundStyle(Theme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(feature.detail)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(Theme.Space.md)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
     }
 }
