@@ -37,6 +37,9 @@ struct WorkoutLogFlow: View {
     /// Custom (off-catalog) machines added via "＋ Add a machine", in add order.
     @State private var customs: [ExercisePick] = []
 
+    /// Free-text filter for the machine grid (the catalog is ~75 deep — type to narrow by name).
+    @State private var search = ""
+
     /// Cardio duration (minutes), as editable text.
     @State private var durationText: String = ""
 
@@ -122,24 +125,42 @@ struct WorkoutLogFlow: View {
         return focused + others
     }
 
+    /// The grid contents after the search filter: composes *on top of* `rankedMachines`, so focus
+    /// still orders/highlights and search just narrows the visible set by name. Empty query → all.
+    private var displayedMachines: [Machine] {
+        let query = search.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return rankedMachines }
+        return rankedMachines.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
     private var machinesStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Space.md) {
                 stepHeading("Tap the machines you did",
                             "Each one logs a comfy 3×10 — open it to set weight or tweak reps/sets.")
 
+                searchField
+
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: Theme.Space.sm),
                                     GridItem(.flexible(), spacing: Theme.Space.sm)],
                           spacing: Theme.Space.sm) {
-                    ForEach(rankedMachines) { machine in
+                    ForEach(displayedMachines) { machine in
                         MachineTile(machine: machine,
                                     selected: picks[machine.key] != nil,
                                     highlighted: focuses.contains(machine.focus)) {
                             toggleMachine(machine)
                         }
                     }
-                    // "＋ Add a machine" tile.
+                    // "＋ Add a machine" tile — always present, so a machine the search can't find
+                    // (or one that isn't in the catalog) can still be added.
                     AddTile { showAddCustom = true }
+                }
+
+                // When a search matches nothing, nudge toward the still-visible Add tile.
+                if displayedMachines.isEmpty && !search.trimmingCharacters(in: .whitespaces).isEmpty {
+                    Text("No match — add it below.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
                 }
 
                 // Inline editors for every selected machine (catalog + custom), so weight / reps /
@@ -156,6 +177,41 @@ struct WorkoutLogFlow: View {
             }
             .padding(Theme.Space.md)
         }
+    }
+
+    /// Search field above the machine grid — a `magnifyingglass`-led rounded input that filters
+    /// `displayedMachines` by name. Mirrors the cardio duration field's icon-in-soft-square idiom
+    /// and the app's `card()` surface (Theme.card fill + divider hairline).
+    private var searchField: some View {
+        HStack(spacing: Theme.Space.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.textSecondary)
+            TextField("Search machines", text: $search)
+                .font(.body)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+                .submitLabel(.search)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if !search.isEmpty {
+                Button {
+                    search = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary.opacity(0.6))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .padding(.horizontal, Theme.Space.md)
+        .padding(.vertical, Theme.Space.sm)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous)
+            .strokeBorder(Theme.divider, lineWidth: 1))
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: search.isEmpty)
     }
 
     // 4. Cardio ------------------------------------------------------------
