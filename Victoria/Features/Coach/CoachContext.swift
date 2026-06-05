@@ -26,9 +26,13 @@ enum CoachContext {
     ///   memory is qualitative only — it never carries weights/calories/targets (those stay in
     ///   the data snapshot above), so it can't override the authoritative numbers.
     ///
-    /// - Parameter workouts: her logged gym/cardio sessions. Optional and defaulting to `[]` so
-    ///   every existing call site and test keeps its exact behavior; when non-empty, a compact
-    ///   "recent workouts" block is folded into the snapshot so Vita can see she's training.
+    /// - Parameter workouts: her logged (legacy dashboard) `WorkoutEntry` rows. Optional and
+    ///   defaulting to `[]` so every existing call site and test keeps its exact behavior; when
+    ///   non-empty, a compact "recent workouts" block is folded into the snapshot.
+    /// - Parameter sessions/exercises: her rich Workouts-tab data — `WorkoutSession`s and their
+    ///   `ExerciseEntry`s (linked by `sessionID`). Both default to `[]` for the same reason; when
+    ///   present, a "recent gym sessions" block (with the machines she trained) is added so Vita
+    ///   can see exactly what she lifted, not just that she worked out.
     /// - Parameter water: today's `WaterEntry` rows. Optional and defaulting to `[]` for the same
     ///   reason; when present, today's hydration is summed against her goal in the snapshot.
     static func system(profile: UserProfile,
@@ -37,6 +41,8 @@ enum CoachContext {
                        workouts: [WorkoutEntry] = [],
                        water: [WaterEntry] = [],
                        steps: [StepsEntry] = [],
+                       sessions: [WorkoutSession] = [],
+                       exercises: [ExerciseEntry] = [],
                        memory: CoachMemory? = nil,
                        plan: CoachPlan? = nil) -> String {
         // Assembled in a few named parts (not one long `+` chain) so the Swift type-checker
@@ -44,7 +50,8 @@ enum CoachContext {
         // carry their own leading "\n\n" (or "" when empty), so they're appended directly.
         let header = persona(profile: profile) + bioLine(profile: profile)
         let data = "\n\nHere is her current data:\n"
-            + summary(profile: profile, foods: foods, weights: weights, workouts: workouts, water: water, steps: steps)
+            + summary(profile: profile, foods: foods, weights: weights, workouts: workouts,
+                      water: water, steps: steps, sessions: sessions, exercises: exercises)
         let usage = "\n\nUse this data — including the exact foods she logged today and this week, "
             + "their per-item breakdown/notes, her water, and her recent workouts — to make "
             + "your replies specific and personal, but speak naturally — "
@@ -152,8 +159,9 @@ enum CoachContext {
         clarifying question instead of guessing.
 
         You ALSO have tools to log and edit her data on request — log_food, edit_food, \
-        delete_food, log_water, log_weight, log_workout (log a gym/run/walk session — use it \
-        whenever she mentions training), set_weight_goal — and to SAVE durable facts about \
+        delete_food, log_water, log_weight, log_workout (log a training session — its kind plus, \
+        for a gym day, the muscle groups and the actual machines/moves she did with weight·reps·sets; \
+        use it whenever she mentions training), set_weight_goal — and to SAVE durable facts about \
         her with remember_about_user (e.g. she takes creatine, sees a nutritionist, is \
         vegetarian, her gym days are Mon/Wed/Fri) — and to forget_about_user when she says a \
         remembered fact is wrong or no longer true (to CORRECT one: forget the old, remember the new). \
@@ -214,15 +222,18 @@ enum CoachContext {
     }
 
     /// A compact, human-readable snapshot of the user's current numbers and momentum.
-    /// Safe to call with empty `foods`/`weights`/`workouts`/`water` — it degrades gracefully.
-    /// `workouts`/`water` default to empty so existing callers (and tests) are byte-for-byte
-    /// unchanged; pass them to give Vita the full picture (so she never says "I can't see X").
+    /// Safe to call with empty `foods`/`weights`/`workouts`/`water`/`sessions` — it degrades
+    /// gracefully. All of `workouts`/`water`/`steps`/`sessions`/`exercises` default to empty so
+    /// existing callers (and tests) are byte-for-byte unchanged; pass them to give Vita the full
+    /// picture (so she never says "I can't see X").
     static func summary(profile: UserProfile,
                         foods: [FoodEntry],
                         weights: [WeightEntry],
                         workouts: [WorkoutEntry] = [],
                         water: [WaterEntry] = [],
-                        steps: [StepsEntry] = []) -> String {
+                        steps: [StepsEntry] = [],
+                        sessions: [WorkoutSession] = [],
+                        exercises: [ExerciseEntry] = []) -> String {
         var lines: [String] = []
 
         let unit = profile.unitSystem.weightUnit
@@ -316,6 +327,15 @@ enum CoachContext {
         if !recentWorkouts.isEmpty {
             lines.append("Recent workouts (most recent first):")
             lines.append(contentsOf: recentWorkouts)
+        }
+
+        // Recent Workouts-tab sessions — the richer model behind the Workouts tab, with the actual
+        // machines she trained (weight × sets). This is what lets Vita say "nice work on that 90lb
+        // chest press" instead of just "you worked out". Kept alongside the legacy block above.
+        let recentSessions = sessionLines(sessions, exercises: exercises)
+        if !recentSessions.isEmpty {
+            lines.append("Recent gym/training sessions (most recent first):")
+            lines.append(contentsOf: recentSessions)
         }
 
         // Weight trend + weekly rate + assessment wording.
@@ -412,6 +432,73 @@ enum CoachContext {
             out.append("…and \(extra) more workout\(extra == 1 ? "" : "s")")
         }
         return out
+    }
+
+    /// One compact line per recent **Workouts-tab** session (the rich `WorkoutSession` model), newest
+    /// first, capped at `limit`. Each reads like:
+    ///   "Today — Gym (Chest, Arms), 50 min, 3 exercises: Chest press 90lb 3x10, Incline press 50lb 3x10, …"
+    /// The session's kind/focuses/duration come from `WorkoutSession`; the per-machine detail is its
+    /// `ExerciseEntry` rows (filtered by `sessionID`, kept in catalog order so it reads intentionally,
+    /// then capped so a marathon day can't blow up the prompt). Cardio sessions have no exercises, so
+    /// they just show kind + duration. Empty when there are no sessions.
+    static func sessionLines(_ sessions: [WorkoutSession],
+                             exercises: [ExerciseEntry],
+                             limit: Int = 5,
+                             exerciseLimit: Int = 8,
+                             now: Date = .now,
+                             calendar: Calendar = .current) -> [String] {
+        guard !sessions.isEmpty else { return [] }
+        let sorted = sessions.sorted { $0.date > $1.date }
+        let startToday = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: startToday)
+        // Group exercises by session once, so each line is a cheap dictionary lookup.
+        let bySession = Dictionary(grouping: exercises, by: { $0.sessionID })
+
+        var out = sorted.prefix(limit).map { s -> String in
+            let day = calendar.startOfDay(for: s.date)
+            let when: String
+            if calendar.isDate(day, inSameDayAs: startToday) { when = "Today" }
+            else if let y = yesterday, calendar.isDate(day, inSameDayAs: y) { when = "Yesterday" }
+            else { when = Self.weekdayDate.string(from: day) }
+
+            var line = "\(when) — \(s.kind.label)"
+            if !s.focuses.isEmpty {
+                line += " (\(s.focuses.map { $0.label }.joined(separator: ", ")))"
+            }
+            if s.durationMinutes > 0 { line += ", \(s.durationMinutes) min" }
+
+            // The machines she trained — catalog order (the same tidy order the day-detail uses), then
+            // capped with a "+N more" tail.
+            let entries = (bySession[s.id] ?? []).sorted {
+                (MachineCatalog.catalogIndex[$0.machineKey] ?? Int.max)
+                    < (MachineCatalog.catalogIndex[$1.machineKey] ?? Int.max)
+            }
+            if !entries.isEmpty {
+                line += ", \(entries.count) exercise\(entries.count == 1 ? "" : "s"): "
+                var parts = entries.prefix(exerciseLimit).map { exerciseDetail($0) }
+                if entries.count > exerciseLimit { parts.append("+\(entries.count - exerciseLimit) more") }
+                line += parts.joined(separator: ", ")
+            }
+            let notes = s.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !notes.isEmpty { line += " — \(trimmedNote(notes, max: 200))" }
+            return line
+        }
+        if sorted.count > limit {
+            let extra = sorted.count - limit
+            out.append("…and \(extra) more session\(extra == 1 ? "" : "s")")
+        }
+        return out
+    }
+
+    /// One exercise rendered for `sessionLines`: "Chest press 90lb 3x10" (name + working weight if
+    /// set + sets×reps). Weight is dropped when unset (0), matching the day-detail's "—".
+    private static func exerciseDetail(_ e: ExerciseEntry) -> String {
+        let raw = e.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = raw.isEmpty ? (MachineCatalog.machine(for: e.machineKey)?.name ?? "Exercise") : raw
+        var s = name
+        if e.weightLbs > 0 { s += " \(Int(e.weightLbs.rounded()))lb" }
+        if e.sets > 0 && e.reps > 0 { s += " \(e.sets)x\(e.reps)" }
+        return s
     }
 
     /// One compact line per logged item: "Name ×qty (Meal) — X kcal, Pg / Cg / Fg", with the
