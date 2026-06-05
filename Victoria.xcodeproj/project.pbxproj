@@ -139,6 +139,7 @@
 		CDEC6AD7C5A3045065BBFC7B /* ChecklistPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0E4CDE039B26F00BB51C618 /* ChecklistPlanTests.swift */; };
 		CFDBC22741FA262566D0D573 /* PlanIntakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C70EBCA532010AA2CD1CA8 /* PlanIntakeView.swift */; };
 		D661A8ABE2D0C4BAD400C4E9 /* NudgeWire.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3933C80A3AC6DD759CB9EAA /* NudgeWire.swift */; };
+		A6DDD52F9541DD8A8A3163CB /* MachineCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2634614BE837638C1873610 /* MachineCatalogTests.swift */; };
 		D66F79B79BF27E2B0D58D990 /* WorkoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABE861A5C8143F25210D2402 /* WorkoutTests.swift */; };
 		D78C7A75B68145701B14A1DB /* AskVita.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877647FE1441882C0B236B86 /* AskVita.swift */; };
 		D8619E921EA999900BA5D754 /* NudgeInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B4F51B49943A36D2B97164 /* NudgeInboxView.swift */; };
@@ -303,6 +304,7 @@
 		AAA11F9853F548753DF12D9E /* VictoriaWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VictoriaWidgets.entitlements; sourceTree = "<group>"; };
 		AB4362F0D33B85508A10FF7E /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
 		ABE861A5C8143F25210D2402 /* WorkoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTests.swift; sourceTree = "<group>"; };
+		E2634614BE837638C1873610 /* MachineCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachineCatalogTests.swift; sourceTree = "<group>"; };
 		AE29D613778CDEAD930E5730 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		AEC0129D7D2895ADFB2B2250 /* NudgeStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeStyle.swift; sourceTree = "<group>"; };
 		AF23E7F3E305D7A9894B3416 /* DataExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExport.swift; sourceTree = "<group>"; };
@@ -570,6 +572,7 @@
 				7A2A0E45CA2A4CFE08936DB2 /* DataExportTests.swift */,
 				94F0C97480042EED99E868CA /* FoodEntryTotalsTests.swift */,
 				19061CEB334011B4266ADFA5 /* FoodSuggestionEngineTests.swift */,
+				E2634614BE837638C1873610 /* MachineCatalogTests.swift */,
 				F26D83015D34BD18470A73BA /* MarkdownParsingTests.swift */,
 				2AB509A7A61B2B0B31522E6E /* NutritionMathTests.swift */,
 				8B8C07C9180A0D4AE18A5B8E /* NutritionSanityTests.swift */,
@@ -1017,6 +1020,7 @@
 				19AAF14829B397A7CFCA2A65 /* DataExportTests.swift in Sources */,
 				657C9F8E84DE04B026F65469 /* FoodEntryTotalsTests.swift in Sources */,
 				BD446B8FF3EB2499B9C89FD5 /* FoodSuggestionEngineTests.swift in Sources */,
+				A6DDD52F9541DD8A8A3163CB /* MachineCatalogTests.swift in Sources */,
 				7EB554354DE6CB359CE845C7 /* MarkdownParsingTests.swift in Sources */,
 				77AE54878F67A385DA82A3FF /* NutritionMathTests.swift in Sources */,
 				6BC72325D34B568D98360563 /* NutritionSanityTests.swift in Sources */,
