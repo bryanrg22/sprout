@@ -226,13 +226,16 @@ enum WorkoutSummary {
     }
 
     /// "45 min · 3 machines" — drops the duration when unset, and the machine count when 0.
+    /// When nothing concrete was logged (just opened a gym session, or cardio with no duration),
+    /// reads "Showed up" — still counts. NOT the kind label, which the title already shows (that
+    /// duplicated to "Gym · Gym" / "Run · Run").
     static func summary(for session: WorkoutSession, exerciseCount: Int) -> String {
         var parts: [String] = []
         if session.durationMinutes > 0 { parts.append("\(session.durationMinutes) min") }
         if exerciseCount > 0 {
             parts.append(exerciseCount == 1 ? "1 machine" : "\(exerciseCount) machines")
         }
-        return parts.isEmpty ? session.kind.label : parts.joined(separator: " · ")
+        return parts.isEmpty ? "Showed up" : parts.joined(separator: " · ")
     }
 }
 

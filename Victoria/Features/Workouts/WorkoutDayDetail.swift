@@ -77,7 +77,8 @@ struct WorkoutDayDetail: View {
 
     private var emptyExercises: some View {
         HStack(spacing: Theme.Space.sm) {
-            Image(systemName: "dumbbell")
+            // The session's own icon (a dumbbell for a run reads wrong) — matches the header.
+            Image(systemName: session.kind.systemImage)
                 .foregroundStyle(Theme.textSecondary)
             Text(session.kind.isGym ? "No machines logged for this one." : "A \(session.kind.label.lowercased()) session.")
                 .font(.subheadline)
