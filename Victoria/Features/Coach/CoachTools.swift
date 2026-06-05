@@ -2261,9 +2261,30 @@ enum CoachTools {
                            })
 
         case .setProteinGoal(let grams):
-            // Write the override DIRECTLY so it works even with no plan (macroTargets honors it).
             // 0 clears it → back to the calculated target.
             let old = profile.proteinTargetOverride
+            // If she has an active Plan, the protein target LIVES on the plan — `RootView.syncPlanTargets()`
+            // re-derives `proteinTargetOverride` from it on every launch / plan change. Writing only the
+            // override would therefore silently revert on the next sync. So when a plan exists we edit the
+            // PLAN (exactly like edit_plan) and mirror the override; with no plan we just set the override
+            // (which `macroTargets` honors directly).
+            if let plan = CoachPlan.current(in: context) {
+                let before = (plan.proteinTarget, plan.changelog, plan.updatedAt, old)
+                plan.proteinTarget = grams
+                plan.changelog = plan.changelog + [PlanChange(date: .now,
+                    summary: grams == 0 ? "Cleared the protein target" : "Set protein target to \(Int(grams.rounded()))g")]
+                plan.updatedAt = .now
+                profile.proteinTargetOverride = grams
+                try? context.save()
+                let msg = grams == 0
+                    ? "Cleared your protein target — back to the calculated one."
+                    : "Daily protein target is now \(Int(grams.rounded()))g (saved to your plan, so it sticks)."
+                return Applied(message: msg, undo: {
+                    plan.proteinTarget = before.0; plan.changelog = before.1; plan.updatedAt = before.2
+                    profile.proteinTargetOverride = before.3
+                    try? context.save()
+                })
+            }
             profile.proteinTargetOverride = grams
             try? context.save()
             let msg = grams == 0
