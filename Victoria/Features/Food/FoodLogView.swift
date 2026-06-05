@@ -12,6 +12,7 @@ struct FoodLogView: View {
     @Query(sort: \FoodEntry.date, order: .reverse) private var food: [FoodEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
     @Query private var water: [WaterEntry]
+    @Query(sort: \StepsEntry.date) private var stepsEntries: [StepsEntry]
 
     @State private var sheet: FoodSheet?
     @State private var showWaterSheet = false
@@ -117,23 +118,22 @@ struct FoodLogView: View {
                 VStack(spacing: Theme.Space.md) {
                     dayNav
                     summaryCard
-                    // Water belongs in Nutrients too — quick-add your bottle or tap for custom.
-                    if isViewingToday {
-                        waterCard
-                    }
-                    // Smart, data-grounded food picks for the current meal. Only on today
-                    // (suggestions are forward-looking for the current slot; they'd be
-                    // meaningless while browsing a past day). The section self-manages its
-                    // loading / empty / error / no-key states.
-                    if isViewingToday {
-                        SmartSuggestionsView(profile: profile)
-                    }
+                    // Macros as goal rings, for any day.
+                    macrosCard
+                    // Steps + Water — each its own card (steps above water), with a goal ring.
+                    stepsCard
+                    waterCard
+                    // Food logging comes FIRST so the suggestions never bury it.
                     if dayEntries.isEmpty && isViewingToday {
                         todayEmptyState
                     } else if dayEntries.isEmpty {
                         pastDayEmptyState
                     } else {
                         ForEach(meals) { mealCard($0) }
+                    }
+                    // Smart picks — moved BELOW the meals (was burying them), today only.
+                    if isViewingToday {
+                        SmartSuggestionsView(profile: profile)
                     }
                 }
                 .padding(.horizontal)
@@ -289,39 +289,97 @@ struct FoodLogView: View {
 
     /// Water card on the Nutrients tab: the "＋" quick-adds your bottle; tapping the card
     /// opens `WaterLogSheet` to log a custom amount or change your bottle's size.
-    private var waterCard: some View {
-        HStack(spacing: Theme.Space.md) {
+    // MARK: Steps (its own card, above water — same style she liked)
+
+    /// Steps logged for the selected day (mirrored from Health), 0 if none.
+    private var stepsForDay: Int {
+        stepsEntries.first { cal.isDate($0.date, inSameDayAs: selectedDay) }?.count ?? 0
+    }
+
+    private var stepsCard: some View {
+        let goal = max(profile.dailyStepGoal, 0)
+        let steps = stepsForDay
+        let pct = goal > 0 ? Double(steps) / Double(goal) : 0
+        let reached = goal > 0 && steps >= Int(Double(goal) * 0.97)
+        return HStack(spacing: Theme.Space.md) {
             ZStack {
-                Circle().fill(Theme.water.opacity(0.15)).frame(width: 40, height: 40)
-                Image(systemName: "drop.fill").foregroundStyle(Theme.water)
+                ProgressRing(progress: pct, lineWidth: 5, color: Theme.positive)
+                    .frame(width: 44, height: 44)
+                Image(systemName: "figure.walk").font(.subheadline).foregroundStyle(Theme.positive)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("Water")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                Text("\(Int(waterToday.rounded())) of \(Int(profile.waterTargetOz.rounded())) oz today")
+                HStack(spacing: 5) {
+                    Text("Steps")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    if reached {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption).foregroundStyle(Theme.positive)
+                    }
+                }
+                Text("\(steps.formatted()) of \(goal.formatted()) steps\(isViewingToday ? " today" : "")")
                     .font(.caption)
                     .foregroundStyle(Theme.textSecondary)
             }
             Spacer(minLength: 0)
-            Button {
-                context.insert(WaterEntry(amountOz: waterContainerOz))
-                try? context.save()
-            } label: {
-                Image(systemName: "plus")
-                    .font(.footnote.weight(.bold))
-                    .foregroundStyle(Theme.water)
-                    .frame(width: 32, height: 32)
-                    .background(Theme.water.opacity(0.15), in: Circle())
-                    .overlay(Circle().strokeBorder(Theme.water.opacity(0.30), lineWidth: 1))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardElevated()
+    }
+
+    /// Water logged on the selected day (today or a past day being browsed).
+    private var waterForDay: Double {
+        water.filter { cal.isDate($0.date, inSameDayAs: selectedDay) }.reduce(0) { $0 + $1.amountOz }
+    }
+
+    private var waterCard: some View {
+        let goal = profile.waterTargetOz
+        let amount = waterForDay
+        let pct = goal > 0 ? amount / goal : 0
+        let reached = goal > 0 && amount >= goal * 0.97
+        return HStack(spacing: Theme.Space.md) {
+            // A goal ring around the drop, so you can see if you hit your water target.
+            ZStack {
+                ProgressRing(progress: pct, lineWidth: 5, color: Theme.water)
+                    .frame(width: 44, height: 44)
+                Image(systemName: "drop.fill").font(.subheadline).foregroundStyle(Theme.water)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Add one \(profile.waterContainerLabel) of water")
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text("Water")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    if reached {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption).foregroundStyle(Theme.water)
+                    }
+                }
+                Text("\(Int(amount.rounded())) of \(Int(goal.rounded())) oz\(isViewingToday ? " today" : "")")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer(minLength: 0)
+            // Quick-add is today-only (water is logged for today); past days are read-only.
+            if isViewingToday {
+                Button {
+                    context.insert(WaterEntry(amountOz: waterContainerOz))
+                    try? context.save()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(Theme.water)
+                        .frame(width: 32, height: 32)
+                        .background(Theme.water.opacity(0.15), in: Circle())
+                        .overlay(Circle().strokeBorder(Theme.water.opacity(0.30), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add one \(profile.waterContainerLabel) of water")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardElevated()
         .contentShape(Rectangle())
-        .onTapGesture { showWaterSheet = true }
+        .onTapGesture { if isViewingToday { showWaterSheet = true } }
     }
 
     /// Today, nothing logged yet — warm + inviting, with a gently breathing
@@ -372,7 +430,7 @@ struct FoodLogView: View {
 
     /// A past day with nothing on it — friendly nudge back to today.
     private var pastDayEmptyState: some View {
-        VStack(spacing: Theme.Space.sm) {
+        VStack(spacing: Theme.Space.md) {
             ZStack {
                 Circle()
                     .fill(Theme.brandSoft)
@@ -382,18 +440,50 @@ struct FoodLogView: View {
                     .foregroundStyle(Theme.brand)
                     .wiggle()
             }
-            Text("A quiet day here 🌙")
-                .font(.headline)
-                .foregroundStyle(Theme.textPrimary)
-            Text("Nothing logged. Tap ＋ to add what you ate, or use ▶ to hop back to today.")
-                .font(.subheadline)
-                .foregroundStyle(Theme.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: Theme.Space.xs) {
+                Text("A quiet day here 🌙")
+                    .font(.headline)
+                    .foregroundStyle(Theme.textPrimary)
+                Text("Nothing logged. Forgot to add what you ate? Add it for this day, or ask \(profile.coachName) to help.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: Theme.Space.sm) {
+                Button { open(.manual) } label: {
+                    Label("Add food", systemImage: "plus.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Theme.brandGradient, in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+                Button { askToAddPastFood() } label: {
+                    Label("Ask \(profile.coachName)", systemImage: "sparkles")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Theme.brandSoft, in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
+                        .foregroundStyle(Theme.brand)
+                }
+                .buttonStyle(.plain)
+                .disabled(askVita == nil)
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, Theme.Space.lg)
+        .padding(.vertical, Theme.Space.md)
         .cardElevated()
+    }
+
+    /// Deep-link the coach to help back-fill a forgotten meal for the day being viewed.
+    private func askToAddPastFood() {
+        askVita?.ask(AskVitaTopic(
+            name: "Add a past meal",
+            icon: "fork.knife",
+            value: dayLabel,
+            question: "I forgot to log what I ate on \(selectedDay.formatted(.dateTime.weekday(.wide).month().day())). Can you help me add it for that day? Ask me what I had, then log it."))
     }
 
     // MARK: Add menu
@@ -422,6 +512,60 @@ struct FoodLogView: View {
 
     private var mealChooserTitle: String {
         preferredMeal.map { "Add to \($0.label)" } ?? "Add food"
+    }
+
+    // MARK: Macros
+
+    /// The selected day's macros — protein / carbs / fat totals — as a compact 3-column card right
+    /// under the calorie summary. Shown for ANY day with food (so PAST-day macros are visible, the
+    /// thing Victoria asked for), using the same colored-dot language as the food detail card.
+    /// The selected day's macros as goal RINGS — protein / carbs / fat filling toward their targets,
+    /// so you can SEE whether you hit each goal (alive + glanceable, vs the old flat numbers). Shown
+    /// for ANY day with food (past days too — what Victoria asked for).
+    @ViewBuilder
+    private var macrosCard: some View {
+        if !dayEntries.isEmpty {
+            let targets = profile.macroTargets(weightLbs: basisWeight)
+            let p = dayEntries.reduce(0) { $0 + $1.totalProteinG }
+            let c = dayEntries.reduce(0) { $0 + $1.totalCarbsG }
+            let f = dayEntries.reduce(0) { $0 + $1.totalFatG }
+            HStack(spacing: Theme.Space.sm) {
+                macroRing("Protein", value: p, target: targets.proteinG, color: Theme.protein)
+                macroRing("Carbs", value: c, target: targets.carbsG, color: Theme.carbs)
+                macroRing("Fat", value: f, target: targets.fatG, color: Theme.fat)
+            }
+            .frame(maxWidth: .infinity)
+            .cardElevated()
+        }
+    }
+
+    /// One macro goal ring: grams in the center, the ring filling toward the target, and a small ✓
+    /// once the goal is reached (≥97%).
+    private func macroRing(_ label: String, value: Double, target: Double, color: Color) -> some View {
+        let pct = target > 0 ? value / target : 0
+        let reached = target > 0 && value >= target * 0.97
+        return VStack(spacing: 7) {
+            ZStack {
+                ProgressRing(progress: pct, lineWidth: 7, color: color)
+                    .frame(width: 62, height: 62)
+                VStack(spacing: -1) {
+                    Text("\(Int(value.rounded()))")
+                        .font(.headline.weight(.bold)).monospacedDigit()
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("g").font(.caption2).foregroundStyle(Theme.textSecondary)
+                }
+            }
+            HStack(spacing: 4) {
+                Text(label).font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary)
+                if reached {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 10)).foregroundStyle(color)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label) \(Int(value.rounded())) of \(Int(target.rounded())) grams\(reached ? ", goal reached" : "")")
     }
 
     // MARK: Summary

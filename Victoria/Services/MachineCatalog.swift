@@ -118,26 +118,55 @@ enum MuscleFocus: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Exercise form
+
+/// How a move is performed / what it uses — this drives the tile ICON. A muscle can be trained
+/// several ways (a bicep curl is "bicep work" with dumbbells, a cable, or a machine), so the
+/// catalog lists the variations and the icon signals the form at a glance:
+///   • `.machine` / `.cardio` → a real product PHOTO (`machine_<key>`)
+///   • `.barbell`/`.dumbbell`/`.cable`/`.bodyweight` → a shared PICTOGRAM (`form_<form>`), unless the
+///     move has its own bundled pictogram (e.g. `machine_push_up`, `machine_deadlift`).
+enum ExerciseForm: String, Codable {
+    case machine, barbell, dumbbell, cable, bodyweight, cardio
+
+    /// The shared pictogram asset for a free-weight form, or nil to fall back to a photo / SF Symbol.
+    var pictogramAsset: String? {
+        switch self {
+        case .barbell:    return "form_barbell"
+        case .dumbbell:   return "form_dumbbell"
+        case .cable:      return "form_cable"
+        // Bodyweight is too varied for one glyph — a pull-up, a crunch and a squat share nothing —
+        // so it has NO shared pictogram. A bodyweight move either ships its own `machine_<key>`
+        // pictogram (push-up, plank) or falls back to its SF Symbol. (`form_bodyweight` is unused.)
+        case .bodyweight: return nil
+        case .machine, .cardio: return nil
+        }
+    }
+}
+
 // MARK: - Machine
 
 /// One catalog entry: a gym machine / exercise (or a piece of cardio equipment). `key` is the
 /// stable id stored on `ExerciseEntry.machineKey`; `focus` ties it to a muscle group so the grid
-/// can highlight + float matches to the top when that focus is selected.
+/// can highlight + float matches to the top when that focus is selected. `form` drives the icon.
 struct Machine: Identifiable, Hashable {
     let key: String
     let name: String
-    let icon: String          // SF Symbol
+    let icon: String          // SF Symbol fallback
     let focus: MuscleFocus
     let isCardio: Bool
+    let form: ExerciseForm
 
     var id: String { key }
 
-    init(key: String, name: String, icon: String, focus: MuscleFocus, isCardio: Bool = false) {
+    init(key: String, name: String, icon: String, focus: MuscleFocus,
+         isCardio: Bool = false, form: ExerciseForm = .machine) {
         self.key = key
         self.name = name
         self.icon = icon
         self.focus = focus
         self.isCardio = isCardio
+        self.form = form
     }
 }
 
@@ -155,71 +184,110 @@ enum MachineCatalog {
     private static let strength = "figure.strengthtraining.traditional"
     private static let functional = "figure.strengthtraining.functional"
     private static let dumbbell = "dumbbell.fill"
+    private static let core = "figure.core.training"
 
     /// The full curated list, grouped by focus in catalog order (Chest → Back → Shoulders →
     /// Arms → Legs → Core → Cardio). This order is the tiebreak after the user's own history.
     static let all: [Machine] = [
-        // Chest — ordered most-popular first within the focus (web-researched: chest press &
-        // bench press are the staples, pec deck the classic isolation). Personal recents still
-        // float above this via `ranked(history:)`.
-        Machine(key: "chest_press",        name: "Chest press",        icon: strength,   focus: .chest),
-        Machine(key: "bench_press",        name: "Bench press",        icon: "dumbbell.fill", focus: .chest),
-        Machine(key: "pec_deck",           name: "Pec deck",           icon: "figure.arms.open", focus: .chest),
-        Machine(key: "incline_chest_press",name: "Incline chest press",icon: strength,   focus: .chest),
-        Machine(key: "cable_crossover",    name: "Cable crossover",    icon: "figure.arms.open", focus: .chest),
-        Machine(key: "push_up",            name: "Push-up",            icon: "figure.core.training", focus: .chest),
+        // CHEST — machine staples first (chest/bench press, pec deck), then the dumbbell, incline
+        // and bodyweight variations. The form drives the icon: machine → photo, free-weight → a
+        // shared pictogram. Personal recents still float above all of this via `ranked(history:)`.
+        Machine(key: "chest_press",           name: "Chest press",            icon: strength,           focus: .chest),
+        Machine(key: "bench_press",           name: "Bench press",            icon: dumbbell,           focus: .chest, form: .barbell),
+        Machine(key: "db_bench_press",        name: "Dumbbell press",         icon: dumbbell,           focus: .chest, form: .dumbbell),
+        Machine(key: "incline_chest_press",   name: "Incline chest press",    icon: strength,           focus: .chest),
+        Machine(key: "incline_db_press",      name: "Incline dumbbell press", icon: dumbbell,           focus: .chest, form: .dumbbell),
+        Machine(key: "incline_barbell_press", name: "Incline barbell press",  icon: dumbbell,           focus: .chest, form: .barbell),
+        Machine(key: "pec_deck",              name: "Pec deck",               icon: "figure.arms.open", focus: .chest),
+        Machine(key: "cable_crossover",       name: "Cable crossover",        icon: "figure.arms.open", focus: .chest, form: .cable),
+        Machine(key: "push_up",               name: "Push-up",                icon: functional,         focus: .chest, form: .bodyweight),
+        Machine(key: "chest_dip",             name: "Chest dip",              icon: functional,         focus: .chest, form: .bodyweight),
 
-        // Back — lat pulldown & seated row are the most-used; deadlift is a staple pull.
-        Machine(key: "lat_pulldown",       name: "Lat pulldown",       icon: strength,   focus: .back),
-        Machine(key: "seated_cable_row",   name: "Seated cable row",   icon: strength,   focus: .back),
-        Machine(key: "t_bar_row",          name: "T-bar row",          icon: "dumbbell.fill", focus: .back),
-        Machine(key: "deadlift",           name: "Deadlift",           icon: "dumbbell.fill", focus: .back),
-        Machine(key: "assisted_pull_up",   name: "Assisted pull-up",   icon: functional, focus: .back),
-        Machine(key: "back_extension",     name: "Back extension",     icon: "figure.core.training", focus: .back),
+        // BACK — lat pulldown & rows are the most-used; deadlift is the staple pull.
+        Machine(key: "lat_pulldown",          name: "Lat pulldown",           icon: strength,           focus: .back),
+        Machine(key: "pull_up",               name: "Pull-up",                icon: functional,         focus: .back, form: .bodyweight),
+        Machine(key: "seated_cable_row",      name: "Seated cable row",       icon: strength,           focus: .back, form: .cable),
+        Machine(key: "barbell_row",           name: "Barbell row",            icon: dumbbell,           focus: .back, form: .barbell),
+        Machine(key: "db_row",                name: "Dumbbell row",           icon: dumbbell,           focus: .back, form: .dumbbell),
+        Machine(key: "t_bar_row",             name: "T-bar row",              icon: dumbbell,           focus: .back, form: .barbell),
+        Machine(key: "chest_supported_row",   name: "Chest-supported row",    icon: dumbbell,           focus: .back, form: .dumbbell),
+        Machine(key: "straight_arm_pulldown", name: "Straight-arm pulldown",  icon: strength,           focus: .back, form: .cable),
+        Machine(key: "deadlift",              name: "Deadlift",               icon: dumbbell,           focus: .back, form: .barbell),
+        Machine(key: "assisted_pull_up",      name: "Assisted pull-up",       icon: functional,         focus: .back),
+        Machine(key: "back_extension",        name: "Back extension",         icon: core,               focus: .back, form: .bodyweight),
+        Machine(key: "shrug",                 name: "Shrug",                  icon: dumbbell,           focus: .back, form: .dumbbell),
 
-        // Shoulders — press first, then the lateral/overhead staples, rear delt last.
-        Machine(key: "shoulder_press",     name: "Shoulder press",     icon: strength,   focus: .shoulders),
-        Machine(key: "lateral_raise",      name: "Lateral raise",      icon: "dumbbell.fill", focus: .shoulders),
-        Machine(key: "overhead_press",     name: "Overhead press",     icon: "dumbbell.fill", focus: .shoulders),
-        Machine(key: "reverse_pec_deck",   name: "Reverse pec deck",   icon: "figure.arms.open", focus: .shoulders),
-        Machine(key: "cable_lateral_raise",name: "Cable lateral raise",icon: "dumbbell.fill", focus: .shoulders),
+        // SHOULDERS — press first, then the lateral / front / rear-delt raises.
+        Machine(key: "shoulder_press",        name: "Shoulder press",         icon: strength,           focus: .shoulders),
+        Machine(key: "db_shoulder_press",     name: "Dumbbell shoulder press",icon: dumbbell,           focus: .shoulders, form: .dumbbell),
+        Machine(key: "overhead_press",        name: "Overhead press",         icon: dumbbell,           focus: .shoulders, form: .barbell),
+        Machine(key: "arnold_press",          name: "Arnold press",           icon: dumbbell,           focus: .shoulders, form: .dumbbell),
+        Machine(key: "lateral_raise",         name: "Lateral raise",          icon: dumbbell,           focus: .shoulders),
+        Machine(key: "db_lateral_raise",      name: "Dumbbell lateral raise", icon: dumbbell,           focus: .shoulders, form: .dumbbell),
+        Machine(key: "cable_lateral_raise",   name: "Cable lateral raise",    icon: dumbbell,           focus: .shoulders, form: .cable),
+        Machine(key: "front_raise",           name: "Front raise",            icon: dumbbell,           focus: .shoulders, form: .dumbbell),
+        Machine(key: "reverse_pec_deck",      name: "Reverse pec deck",       icon: "figure.arms.open", focus: .shoulders),
+        Machine(key: "rear_delt_fly",         name: "Rear delt fly",          icon: dumbbell,           focus: .shoulders, form: .dumbbell),
+        Machine(key: "face_pull",             name: "Face pull",              icon: strength,           focus: .shoulders, form: .cable),
+        Machine(key: "upright_row",           name: "Upright row",            icon: dumbbell,           focus: .shoulders, form: .barbell),
 
-        // Arms — the curl + pushdown staples first.
-        Machine(key: "bicep_curl",         name: "Bicep curl",         icon: "dumbbell.fill", focus: .arms),
-        Machine(key: "tricep_pushdown",    name: "Tricep pushdown",    icon: strength,   focus: .arms),
-        Machine(key: "cable_curl",         name: "Cable curl",         icon: "dumbbell.fill", focus: .arms),
-        Machine(key: "preacher_curl",      name: "Preacher curl",      icon: "dumbbell.fill", focus: .arms),
-        Machine(key: "assisted_dip",       name: "Assisted dip",       icon: functional, focus: .arms),
-        Machine(key: "skullcrusher",       name: "Skullcrusher",       icon: "dumbbell.fill", focus: .arms),
+        // ARMS — biceps (machine / dumbbell / barbell / cable curls), then triceps.
+        Machine(key: "bicep_curl",            name: "Bicep curl",             icon: dumbbell,           focus: .arms),
+        Machine(key: "db_curl",               name: "Dumbbell curl",          icon: dumbbell,           focus: .arms, form: .dumbbell),
+        Machine(key: "barbell_curl",          name: "Barbell curl",           icon: dumbbell,           focus: .arms, form: .barbell),
+        Machine(key: "hammer_curl",           name: "Hammer curl",            icon: dumbbell,           focus: .arms, form: .dumbbell),
+        Machine(key: "cable_curl",            name: "Cable curl",             icon: dumbbell,           focus: .arms, form: .cable),
+        Machine(key: "preacher_curl",         name: "Preacher curl",          icon: dumbbell,           focus: .arms),
+        Machine(key: "tricep_pushdown",       name: "Tricep pushdown",        icon: strength,           focus: .arms, form: .cable),
+        Machine(key: "overhead_tricep_extension", name: "Overhead extension", icon: dumbbell,           focus: .arms, form: .dumbbell),
+        Machine(key: "close_grip_bench",      name: "Close-grip bench",       icon: dumbbell,           focus: .arms, form: .barbell),
+        Machine(key: "skullcrusher",          name: "Skullcrusher",           icon: dumbbell,           focus: .arms, form: .barbell),
+        Machine(key: "tricep_kickback",       name: "Tricep kickback",        icon: dumbbell,           focus: .arms, form: .dumbbell),
+        Machine(key: "assisted_dip",          name: "Assisted dip",           icon: functional,         focus: .arms),
 
-        // Legs — leg press is THE staple; squat rack & extension/curl next.
-        Machine(key: "leg_press",          name: "Leg press",          icon: strength,   focus: .legs),
-        Machine(key: "squat_rack",         name: "Squat rack",         icon: functional, focus: .legs),
-        Machine(key: "leg_extension",      name: "Leg extension",      icon: strength,   focus: .legs),
-        Machine(key: "leg_curl",           name: "Leg curl",           icon: strength,   focus: .legs),
-        Machine(key: "hack_squat",         name: "Hack squat",         icon: functional, focus: .legs),
-        Machine(key: "calf_raise",         name: "Calf raise",         icon: "figure.strengthtraining.functional", focus: .legs),
-        Machine(key: "smith_machine",      name: "Smith machine",      icon: functional, focus: .legs),
-        Machine(key: "hip_thrust",         name: "Hip thrust",         icon: functional, focus: .legs),
-        Machine(key: "hip_abductor",       name: "Hip abductor",       icon: strength,   focus: .legs),
-        Machine(key: "hip_adductor",       name: "Hip adductor",       icon: strength,   focus: .legs),
+        // LEGS — leg press is THE staple; squats, the posterior-chain & accessory work follow.
+        Machine(key: "leg_press",             name: "Leg press",              icon: strength,           focus: .legs),
+        Machine(key: "squat_rack",            name: "Squat rack",             icon: functional,         focus: .legs, form: .barbell),
+        Machine(key: "front_squat",           name: "Front squat",            icon: dumbbell,           focus: .legs, form: .barbell),
+        Machine(key: "goblet_squat",          name: "Goblet squat",           icon: dumbbell,           focus: .legs, form: .dumbbell),
+        Machine(key: "hack_squat",            name: "Hack squat",             icon: functional,         focus: .legs),
+        Machine(key: "leg_extension",         name: "Leg extension",          icon: strength,           focus: .legs),
+        Machine(key: "leg_curl",              name: "Leg curl",               icon: strength,           focus: .legs),
+        Machine(key: "romanian_deadlift",     name: "Romanian deadlift",      icon: dumbbell,           focus: .legs, form: .barbell),
+        Machine(key: "lunge",                 name: "Lunge",                  icon: dumbbell,           focus: .legs, form: .dumbbell),
+        Machine(key: "bulgarian_split_squat", name: "Bulgarian split squat",  icon: dumbbell,           focus: .legs, form: .dumbbell),
+        Machine(key: "step_up",               name: "Step-up",                icon: dumbbell,           focus: .legs, form: .dumbbell),
+        Machine(key: "smith_machine",         name: "Smith machine",          icon: functional,         focus: .legs),
+        Machine(key: "hip_thrust",            name: "Hip thrust",             icon: functional,         focus: .legs, form: .barbell),
+        Machine(key: "hip_abductor",          name: "Hip abductor",           icon: strength,           focus: .legs),
+        Machine(key: "hip_adductor",          name: "Hip adductor",           icon: strength,           focus: .legs),
+        Machine(key: "calf_raise",            name: "Calf raise",             icon: functional,         focus: .legs),
 
-        // Core
-        Machine(key: "ab_crunch_machine",  name: "Ab crunch machine",  icon: "figure.core.training", focus: .core),
-        Machine(key: "cable_crunch",       name: "Cable crunch",       icon: "figure.core.training", focus: .core),
-        Machine(key: "captains_chair",     name: "Captain's chair",    icon: "figure.core.training", focus: .core),
-        Machine(key: "roman_chair",        name: "Roman chair",        icon: "figure.core.training", focus: .core),
+        // CORE — the machine stations, then the bodyweight ab work.
+        Machine(key: "ab_crunch_machine",     name: "Ab crunch machine",      icon: core,               focus: .core),
+        Machine(key: "crunch",                name: "Crunch",                 icon: core,               focus: .core, form: .bodyweight),
+        Machine(key: "cable_crunch",          name: "Cable crunch",           icon: core,               focus: .core, form: .cable),
+        Machine(key: "captains_chair",        name: "Captain's chair",        icon: core,               focus: .core),
+        Machine(key: "hanging_knee_raise",    name: "Hanging knee raise",     icon: core,               focus: .core, form: .bodyweight),
+        Machine(key: "roman_chair",           name: "Roman chair",            icon: core,               focus: .core),
+        Machine(key: "plank",                 name: "Plank",                  icon: core,               focus: .core, form: .bodyweight),
+        Machine(key: "russian_twist",         name: "Russian twist",          icon: core,               focus: .core, form: .bodyweight),
 
-        // Cardio (shown for run / other kinds, and tagged isCardio)
-        Machine(key: "treadmill",          name: "Treadmill",          icon: "figure.run",            focus: .legs, isCardio: true),
-        Machine(key: "bike",               name: "Bike",               icon: "figure.indoor.cycle",   focus: .legs, isCardio: true),
-        Machine(key: "elliptical",         name: "Elliptical",         icon: "figure.elliptical",     focus: .legs, isCardio: true),
-        Machine(key: "rower",              name: "Rower",              icon: "figure.indoor.rowing",  focus: .back, isCardio: true),
-        Machine(key: "stairmaster",        name: "Stairmaster",        icon: "figure.stair.stepper",  focus: .legs, isCardio: true),
+        // CARDIO (shown for run / other kinds, and tagged isCardio).
+        Machine(key: "treadmill",             name: "Treadmill",              icon: "figure.run",            focus: .legs, isCardio: true, form: .cardio),
+        Machine(key: "bike",                  name: "Bike",                   icon: "figure.indoor.cycle",   focus: .legs, isCardio: true, form: .cardio),
+        Machine(key: "elliptical",            name: "Elliptical",             icon: "figure.elliptical",     focus: .legs, isCardio: true, form: .cardio),
+        Machine(key: "rower",                 name: "Rower",                  icon: "figure.indoor.rowing",  focus: .back, isCardio: true, form: .cardio),
+        Machine(key: "stairmaster",           name: "Stairmaster",            icon: "figure.stair.stepper",  focus: .legs, isCardio: true, form: .cardio),
     ]
 
     /// Fast key → machine lookup (e.g. to resolve a stored `ExerciseEntry.machineKey`).
     static let byKey: [String: Machine] = Dictionary(uniqueKeysWithValues: all.map { ($0.key, $0) })
+
+    /// key → position in `all`, for the stable catalog-order tiebreak (ranking) and for sorting a
+    /// session's logged exercises into a tidy, intentional order on the detail page.
+    static let catalogIndex: [String: Int] = Dictionary(
+        uniqueKeysWithValues: all.enumerated().map { ($0.element.key, $0.offset) })
 
     static func machine(for key: String) -> Machine? { byKey[key] }
 
@@ -246,9 +314,7 @@ enum MachineCatalog {
             if firstSeenIndex[entry.machineKey] == nil { firstSeenIndex[entry.machineKey] = i }
         }
 
-        // Stable index for the final tiebreak.
-        let catalogIndex = Dictionary(uniqueKeysWithValues: all.enumerated().map { ($0.element.key, $0.offset) })
-
+        // `catalogIndex` (static) is the stable final tiebreak.
         return all.sorted { lhs, rhs in
             let lUsed = frequency[lhs.key] != nil
             let rUsed = frequency[rhs.key] != nil
@@ -276,7 +342,7 @@ enum MachineCatalog {
     /// Keys whose bundled `machine_<key>` asset is a flat exercise PICTOGRAM (a hand-sourced
     /// silhouette for moves with no machine to photograph), not a product photo. `MachineImage`
     /// scales these down so their solid ink doesn't outweigh the detailed machine shots.
-    static let pictogramKeys: Set<String> = ["push_up", "deadlift", "skullcrusher", "cable_curl"]
+    static let pictogramKeys: Set<String> = ["push_up", "deadlift", "skullcrusher", "cable_curl", "plank"]
 }
 
 // MARK: - Machine image (photo with SF-Symbol fallback)
@@ -296,29 +362,42 @@ struct MachineImage: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    /// True only when a matching `machine_<key>` asset is actually bundled.
-    private var hasPhoto: Bool {
-        UIImage(named: MachineCatalog.photoAssetName(for: key)) != nil
-    }
+    /// This key's catalog form, which drives the shared-pictogram fallback. Off-catalog / custom
+    /// keys have no catalog entry → `.machine` (so they render a photo if one happens to exist,
+    /// else the SF Symbol — never a free-weight pictogram).
+    private var form: ExerciseForm { MachineCatalog.machine(for: key)?.form ?? .machine }
 
-    private func photo() -> some View {
-        Image(MachineCatalog.photoAssetName(for: key)).resizable().scaledToFit()
+    /// The artwork to draw, resolved in priority order, plus whether it's a flat PICTOGRAM (scaled
+    /// down so its solid ink doesn't outweigh the airy product photos beside it):
+    ///   1. a bundled `machine_<key>` — a product PHOTO, unless it's a hand-drawn pictogram
+    ///      (`pictogramKeys`: push-up, plank, deadlift, skullcrusher, cable curl);
+    ///   2. else the shared `form_<form>` pictogram for a free-weight move (dumbbell / barbell / cable);
+    ///   3. else `nil` → the SF-Symbol fallback (`symbolName`).
+    private var artwork: (name: String, isPictogram: Bool)? {
+        let photoName = MachineCatalog.photoAssetName(for: key)
+        if UIImage(named: photoName) != nil {
+            return (photoName, MachineCatalog.pictogramKeys.contains(key))
+        }
+        if let shared = form.pictogramAsset, UIImage(named: shared) != nil {
+            return (shared, true)
+        }
+        return nil
     }
-
-    /// Flat exercise PICTOGRAMS (push-up etc.) are bold solid silhouettes; rendered full-bleed they
-    /// visually outweigh the airy machine product shots beside them, so we scale them down to match.
-    private var scale: CGFloat { MachineCatalog.pictogramKeys.contains(key) ? 0.58 : 1 }
 
     var body: some View {
-        if !hasPhoto {
-            Image(systemName: symbolName)
-        } else if colorScheme == .dark {
-            // The machine cut-outs are dark metal — invisible on the near-black dark-theme tiles.
-            // Flip their luminance so they render as clean LIGHT machines (still transparent — no
-            // white box). The shots are greyscale, so this reads as a natural light/chrome machine.
-            photo().colorInvert().scaleEffect(scale)
+        if let artwork {
+            let image = Image(artwork.name).resizable().scaledToFit()
+                .scaleEffect(artwork.isPictogram ? 0.58 : 1)
+            // The cut-outs / ink are dark — invisible on the near-black dark-theme tiles. Flip their
+            // luminance so they render LIGHT (still transparent, no white box). The art is greyscale,
+            // so this reads as a natural light/chrome machine or a clean light pictogram.
+            if colorScheme == .dark {
+                image.colorInvert()
+            } else {
+                image
+            }
         } else {
-            photo().scaleEffect(scale)   // light (cream) theme: dark machine reads cleanly on the tile
+            Image(systemName: symbolName)
         }
     }
 }

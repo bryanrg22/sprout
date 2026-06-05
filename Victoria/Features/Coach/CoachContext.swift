@@ -36,6 +36,7 @@ enum CoachContext {
                        weights: [WeightEntry],
                        workouts: [WorkoutEntry] = [],
                        water: [WaterEntry] = [],
+                       steps: [StepsEntry] = [],
                        memory: CoachMemory? = nil,
                        plan: CoachPlan? = nil) -> String {
         // Assembled in a few named parts (not one long `+` chain) so the Swift type-checker
@@ -43,7 +44,7 @@ enum CoachContext {
         // carry their own leading "\n\n" (or "" when empty), so they're appended directly.
         let header = persona(profile: profile) + bioLine(profile: profile)
         let data = "\n\nHere is her current data:\n"
-            + summary(profile: profile, foods: foods, weights: weights, workouts: workouts, water: water)
+            + summary(profile: profile, foods: foods, weights: weights, workouts: workouts, water: water, steps: steps)
         let usage = "\n\nUse this data — including the exact foods she logged today and this week, "
             + "their per-item breakdown/notes, her water, and her recent workouts — to make "
             + "your replies specific and personal, but speak naturally — "
@@ -220,7 +221,8 @@ enum CoachContext {
                         foods: [FoodEntry],
                         weights: [WeightEntry],
                         workouts: [WorkoutEntry] = [],
-                        water: [WaterEntry] = []) -> String {
+                        water: [WaterEntry] = [],
+                        steps: [StepsEntry] = []) -> String {
         var lines: [String] = []
 
         let unit = profile.unitSystem.weightUnit
@@ -290,6 +292,15 @@ enum CoachContext {
         if waterOz <= 0 { waterLine += " — none logged yet today" }
         else if waterOz >= goalOz { waterLine += " — goal met, nice" }
         lines.append(waterLine)
+
+        // Today's steps vs her goal — so "how many steps today?" / "did I move enough?" is
+        // answerable, and Vita can factor real activity into advice (not just the goal number).
+        let stepGoal = max(profile.dailyStepGoal, 0)
+        if let todaySteps = steps.first(where: { Calendar.current.isDateInToday($0.date) })?.count {
+            var stepLine = "Today's steps: \(todaySteps.formatted())"
+            if stepGoal > 0 { stepLine += " of \(stepGoal.formatted()) goal" + (todaySteps >= stepGoal ? " — goal met" : "") }
+            lines.append(stepLine)
+        }
 
         // This week at a glance — per-day food totals for the last 7 days that have logs, so
         // "how's my week?" is answerable from real food numbers (not just the weight trend).

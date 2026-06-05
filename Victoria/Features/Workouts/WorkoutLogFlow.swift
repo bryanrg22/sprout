@@ -16,12 +16,24 @@ import SwiftData
 ///
 /// "Save" inserts the `WorkoutSession` plus one `ExerciseEntry` per selected machine.
 struct WorkoutLogFlow: View {
+    /// When set, the flow EDITS this existing session instead of creating a new one: all state is
+    /// prefilled from it on appear, and Save updates it (replacing its exercise rows) rather than
+    /// inserting a fresh session. `nil` = the normal "log a new workout" flow.
+    var editing: WorkoutSession? = nil
+
+    /// The day a NEW session is logged for. nil = now (today); set to a past day to back-date a
+    /// workout you forgot to log. Ignored when `editing`.
+    var logDate: Date? = nil
+
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
     /// The user's exercise history, newest-first — feeds `MachineCatalog.ranked` so her recents
     /// surface first in the grid.
     @Query(sort: \ExerciseEntry.date, order: .reverse) private var history: [ExerciseEntry]
+
+    /// Guards the one-time prefill from `editing` (so re-renders don't clobber edits in progress).
+    @State private var didPrefill = false
 
     // MARK: Flow state
 
@@ -56,7 +68,32 @@ struct WorkoutLogFlow: View {
                 .sheet(isPresented: $showAddCustom) {
                     AddMachineSheet { name in addCustom(named: name) }
                 }
+                .onAppear { prefillIfEditing() }
         }
+    }
+
+    /// One-time prefill of all flow state from the session being edited, jumping straight to the
+    /// relevant step (machines for a gym session, duration for cardio) — there's no kind to pick.
+    private func prefillIfEditing() {
+        guard let session = editing, !didPrefill else { return }
+        didPrefill = true
+        kind = session.kind
+        focuses = Set(session.focuses)
+        durationText = session.durationMinutes > 0 ? String(session.durationMinutes) : ""
+        for entry in history where entry.sessionID == session.id {
+            let pick = ExercisePick(machineKey: entry.machineKey,
+                                    displayName: entry.displayName,
+                                    iconName: entry.iconName,
+                                    weightLbs: entry.weightLbs,
+                                    reps: entry.reps,
+                                    sets: entry.sets)
+            if MachineCatalog.machine(for: entry.machineKey) != nil {
+                picks[entry.machineKey] = pick
+            } else {
+                customs.append(pick)
+            }
+        }
+        step = session.kind.isGym ? .machines : .cardio
     }
 
     // MARK: Steps
@@ -262,7 +299,9 @@ struct WorkoutLogFlow: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            if step == .kind {
+            // In edit mode the flow opens at the machines/cardio step (no kind to pick), so the
+            // leading control is always "Cancel" rather than a Back that would step into kind.
+            if step == .kind || editing != nil {
                 Button("Cancel") { dismiss() }
                     .foregroundStyle(Theme.textSecondary)
             } else {
@@ -286,6 +325,7 @@ struct WorkoutLogFlow: View {
     }
 
     private var navTitle: String {
+        if editing != nil { return "Edit workout" }
         switch step {
         case .kind:     return "New workout"
         case .focus:    return "Focus"
@@ -382,29 +422,46 @@ struct WorkoutLogFlow: View {
     }
 
     private func save() {
-        // Preserve time-of-day for ordering; day-comparisons still work via Calendar.
-        let session = WorkoutSession(date: .now,
+        if let session = editing {
+            // EDIT: update the session in place and REPLACE its exercise rows wholesale (the
+            // simplest correct reconciliation — no per-row diffing). Kind is fixed in edit mode.
+            session.focuses = session.kind.isGym ? orderedFocuses : []
+            // `parsedDuration` is 0 for gym (the flow only captures duration on the cardio step), so
+            // only write it for cardio — otherwise editing a gym session would wipe its duration.
+            if !session.kind.isGym { session.durationMinutes = parsedDuration }
+            for entry in history where entry.sessionID == session.id { context.delete(entry) }
+            insertExercises(into: session)
+            try? context.save()
+            dismiss()
+            return
+        }
+
+        // CREATE: a fresh session — for today, or back-dated to `logDate` if the user logged from a
+        // past day. Preserve time-of-day for ordering; day-comparisons still work via Calendar.
+        let session = WorkoutSession(date: logDate ?? .now,
                                      kind: kind,
                                      focuses: kind.isGym ? orderedFocuses : [],
                                      durationMinutes: parsedDuration,
                                      notes: "")
         context.insert(session)
-
-        if kind.isGym {
-            for pick in selectedPicks {
-                let entry = ExerciseEntry(sessionID: session.id,
-                                          date: session.date,
-                                          machineKey: pick.machineKey,
-                                          displayName: pick.displayName,
-                                          iconName: pick.iconName,
-                                          weightLbs: pick.weightLbs,
-                                          reps: pick.reps,
-                                          sets: pick.sets)
-                context.insert(entry)
-            }
-        }
+        insertExercises(into: session)
         try? context.save()
         dismiss()
+    }
+
+    /// Insert one `ExerciseEntry` per selected pick (gym only) for the given session.
+    private func insertExercises(into session: WorkoutSession) {
+        guard kind.isGym else { return }
+        for pick in selectedPicks {
+            context.insert(ExerciseEntry(sessionID: session.id,
+                                         date: session.date,
+                                         machineKey: pick.machineKey,
+                                         displayName: pick.displayName,
+                                         iconName: pick.iconName,
+                                         weightLbs: pick.weightLbs,
+                                         reps: pick.reps,
+                                         sets: pick.sets))
+        }
     }
 
     /// Focuses in canonical `MuscleFocus` order (so storage is deterministic regardless of tap

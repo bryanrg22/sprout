@@ -175,7 +175,7 @@ struct DashboardView: View {
                     Text("Buddy")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text("Cheer each other on 💛")
+                    Text("Cheer each other on 🫶")
                         .font(.caption)
                         .foregroundStyle(Theme.textSecondary)
                 }
