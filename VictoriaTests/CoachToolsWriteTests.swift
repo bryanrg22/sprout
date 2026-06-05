@@ -213,6 +213,42 @@ final class CoachToolsWriteTests: XCTestCase {
         XCTAssertEqual(reverted.calorieMax, 1750)
     }
 
+    func testSetProteinGoalWithPlanWritesToPlanSoItSticks() throws {
+        // P2 fix: when a Plan exists, set_protein_goal must write the target ONTO the plan (not just
+        // the profile override) — else RootView.syncPlanTargets re-derives the override from the
+        // unchanged plan on the next launch and silently reverts it. Verify the plan carries the goal.
+        let ctx = try makeContext()
+        let profile = lossProfile()
+        let plan = CoachPlan(headline: "Old", calorieMin: 1600, calorieMax: 1750, proteinTarget: 120)
+        ctx.insert(plan); try? ctx.save()
+
+        guard let req = expectOK(.setProteinGoal, ["grams": 140], profile: profile) else { return }
+        let applied = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
+
+        let updated = try XCTUnwrap(CoachPlan.current(in: ctx))
+        XCTAssertEqual(updated.proteinTarget, 140, "goal must be written onto the plan so a re-sync keeps it")
+        XCTAssertEqual(profile.proteinTargetOverride, 140, "override mirrors the plan value immediately")
+
+        applied.undo?()
+        let reverted = try XCTUnwrap(CoachPlan.current(in: ctx))
+        XCTAssertEqual(reverted.proteinTarget, 120, "undo restores the plan's protein target")
+        // The override reverts to its pre-apply value (0 here — RootView.syncPlanTargets, which would
+        // have mirrored the plan's 120 onto it for a real plan-user, doesn't run in a unit test).
+        XCTAssertEqual(profile.proteinTargetOverride, 0)
+    }
+
+    func testSetProteinGoalWithNoPlanWritesOverrideDirectly() throws {
+        let ctx = try makeContext()
+        let profile = lossProfile()
+        let original = profile.proteinTargetOverride
+        guard let req = expectOK(.setProteinGoal, ["grams": 130], profile: profile) else { return }
+        let applied = CoachTools.applyReturningUndo(req, to: profile, context: ctx)
+        XCTAssertEqual(profile.proteinTargetOverride, 130)
+        XCTAssertNil(CoachPlan.current(in: ctx), "no plan should have been created")
+        applied.undo?()
+        XCTAssertEqual(profile.proteinTargetOverride, original)
+    }
+
     func testEditPlanRejectsInvertedRange() {
         _ = expectInvalid(.editPlan, ["calorie_min": 2000, "calorie_max": 1500, "change_note": "x"], profile: lossProfile())
     }
