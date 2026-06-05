@@ -291,46 +291,81 @@ enum MachineCatalog {
 
     static func machine(for key: String) -> Machine? { byKey[key] }
 
-    /// "Popular / recent first": rank the catalog by the user's own history so the machines she
-    /// actually uses float to the top, with everything else keeping catalog order behind them.
+    /// "Go-to lifts first": rank the catalog by the user's own history so the machines she actually
+    /// reaches for float to the top, with everything else keeping catalog order behind them.
     ///
-    /// Ranking key, in order:
+    /// Scoring is **frecency** (Mozilla's frequency-+-recency model, as used for awesomebar URL
+    /// ranking): every logged use contributes a weight that *decays* with how long ago it was, and a
+    /// machine's score is the SUM of those weights. So a fresh streak dominates and "sticks" for
+    /// weeks (5 bicep curls this week beat 8 from three months ago), while stale usage fades on its
+    /// own — exactly the "my current go-to pins to the top, and doesn't get switched out from under
+    /// me" behavior, without ever fully forgetting an old favorite.
+    ///
+    /// Recency buckets (by whole calendar days ago, `Calendar.current`):
+    ///   • ≤ 2 days → 8   • ≤ 7 days → 4   • ≤ 30 days → 2   • else → 1
+    ///
+    /// Sort key, in order:
     ///  1. **Used before any unused** — anything in `history` outranks anything that isn't.
-    ///  2. **Most-frequent first** — a machine used more often ranks higher ("most-popular").
-    ///  3. **Most-recent breaks ties** — equal frequency → the one used more recently wins.
-    ///  4. **Catalog order is the final, stable tiebreak** — so the grid never jitters.
+    ///  2. **Higher frecency first** — the current go-to (recent + frequent) outranks the rest.
+    ///  3. **Most-recent breaks ties** — equal frecency → the one used more recently wins.
+    ///  4. **Catalog order is the final, stable tiebreak** — so the grid never jitters. This is also
+    ///     the *popularity prior*: it's "most-popular-first" within each focus, so before she has any
+    ///     history (and for moves she's never tried), the grid already leads with the popular picks.
     ///
-    /// `history` is expected newest-first (the `@Query(order: .reverse)` order); recency is taken
-    /// from first-appearance index, so a newest-first list reads correctly.
-    static func ranked(history: [ExerciseEntry]) -> [Machine] {
+    /// `now` is injectable so the recency math is deterministic in tests (defaults to wall-clock, so
+    /// the existing `ranked(history:)` call site keeps compiling unchanged). `history` order doesn't
+    /// matter — scoring reads each entry's `date`, not its position.
+    static func ranked(history: [ExerciseEntry], now: Date = .now) -> [Machine] {
         guard !history.isEmpty else { return all }
 
-        var frequency: [String: Int] = [:]
-        // Recency rank: 0 = most-recent appearance (smaller index = more recent, since the list
-        // is newest-first). `nil` for unused machines.
-        var firstSeenIndex: [String: Int] = [:]
-        for (i, entry) in history.enumerated() {
-            frequency[entry.machineKey, default: 0] += 1
-            if firstSeenIndex[entry.machineKey] == nil { firstSeenIndex[entry.machineKey] = i }
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: now)
+
+        var frecency: [String: Int] = [:]
+        // Tiebreak signal: the single most-recent use of each machine. `nil` for unused machines.
+        var mostRecent: [String: Date] = [:]
+        for entry in history {
+            // Whole calendar days between the use and today; future-dated rows clamp to 0 (today).
+            let entryDay = cal.startOfDay(for: entry.date)
+            let daysAgo = max(0, cal.dateComponents([.day], from: entryDay, to: today).day ?? 0)
+            frecency[entry.machineKey, default: 0] += weight(daysAgo: daysAgo)
+            if let seen = mostRecent[entry.machineKey] {
+                if entry.date > seen { mostRecent[entry.machineKey] = entry.date }
+            } else {
+                mostRecent[entry.machineKey] = entry.date
+            }
         }
 
-        // `catalogIndex` (static) is the stable final tiebreak.
+        // `catalogIndex` (static) is the stable final tiebreak / popularity prior.
         return all.sorted { lhs, rhs in
-            let lUsed = frequency[lhs.key] != nil
-            let rUsed = frequency[rhs.key] != nil
+            let lUsed = frecency[lhs.key] != nil
+            let rUsed = frecency[rhs.key] != nil
             // 1. Used machines come first.
             if lUsed != rUsed { return lUsed }
 
             if lUsed && rUsed {
-                // 2. Most-frequent first.
-                let lf = frequency[lhs.key] ?? 0, rf = frequency[rhs.key] ?? 0
+                // 2. Higher frecency first.
+                let lf = frecency[lhs.key] ?? 0, rf = frecency[rhs.key] ?? 0
                 if lf != rf { return lf > rf }
-                // 3. Then most-recent (smaller firstSeenIndex) first.
-                let lr = firstSeenIndex[lhs.key] ?? Int.max, rr = firstSeenIndex[rhs.key] ?? Int.max
-                if lr != rr { return lr < rr }
+                // 3. Then more-recent first.
+                let lr = mostRecent[lhs.key] ?? .distantPast, rr = mostRecent[rhs.key] ?? .distantPast
+                if lr != rr { return lr > rr }
             }
             // 4. Stable: keep catalog order.
             return (catalogIndex[lhs.key] ?? 0) < (catalogIndex[rhs.key] ?? 0)
+        }
+    }
+
+    /// The frecency weight for a single use that happened `daysAgo` whole calendar days ago — the
+    /// recency decay buckets (Mozilla-style). A machine's frecency is the SUM of these across its
+    /// uses, so both *how recent* and *how often* feed the score.
+    private static func weight(daysAgo: Int) -> Int {
+        switch daysAgo {
+        case ..<0:  return 8   // defensive: callers clamp negatives, but treat future as "today".
+        case 0...2: return 8
+        case 3...7: return 4
+        case 8...30: return 2
+        default:    return 1
         }
     }
 
