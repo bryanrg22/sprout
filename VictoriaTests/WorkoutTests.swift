@@ -45,14 +45,19 @@ final class WorkoutTests: XCTestCase {
     }
 
     func testRankedRecencyBreaksFrequencyTies() {
-        // Equal frequency (each used once) → the MORE-RECENT one wins. History is newest-first,
-        // so "lat_pulldown" (index 0) should rank ahead of "seated_cable_row" (index 1).
-        let history = [entry("lat_pulldown"),       // most recent
-                       entry("seated_cable_row")]   // older
-        let ranked = MachineCatalog.ranked(history: history)
+        // Equal frecency (each used once, both in the same recency bucket) → the MORE-RECENT one
+        // wins. Dates are explicit (not array order) so the tie is broken deterministically: with
+        // ranking now date-driven (frecency), "lat_pulldown" used 1 day ago must rank ahead of
+        // "seated_cable_row" used 2 days ago. (Detailed frecency cases live in MachineCatalogTests.)
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let history = [ExerciseEntry(sessionID: UUID(), date: now.addingTimeInterval(-1 * 86_400),
+                                     machineKey: "lat_pulldown", displayName: "lat_pulldown", iconName: "dumbbell.fill"),
+                       ExerciseEntry(sessionID: UUID(), date: now.addingTimeInterval(-2 * 86_400),
+                                     machineKey: "seated_cable_row", displayName: "seated_cable_row", iconName: "dumbbell.fill")]
+        let ranked = MachineCatalog.ranked(history: history, now: now)
         let pull = ranked.firstIndex { $0.key == "lat_pulldown" }!
         let row  = ranked.firstIndex { $0.key == "seated_cable_row" }!
-        XCTAssertLessThan(pull, row, "Equal frequency: the most-recent machine ranks first.")
+        XCTAssertLessThan(pull, row, "Equal frecency: the most-recent machine ranks first.")
         XCTAssertEqual(ranked.first?.key, "lat_pulldown")
     }
 
