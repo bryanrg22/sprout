@@ -1140,7 +1140,7 @@ enum CoachTools {
             return parseSetCoachName(input: input)
 
         case .setWaterContainer:
-            return parseSetWaterContainer(input: input)
+            return parseSetWaterContainer(input: input, profile: profile)
 
         case .setProteinGoal:
             return parseSetProteinGoal(input: input)
@@ -1558,7 +1558,7 @@ enum CoachTools {
             action: .setCoachName(name)))
     }
 
-    private static func parseSetWaterContainer(input: [String: Any]) -> ParseResult {
+    private static func parseSetWaterContainer(input: [String: Any], profile: UserProfile) -> ParseResult {
         guard let oz = doubleValue(input["oz"]) else {
             return .invalid("Tell me the size of your drink in ounces. Nothing was changed.")
         }
@@ -1573,10 +1573,20 @@ enum CoachTools {
             }
             label = l
         }
-        let labelNote = label.map { " (\($0))" } ?? ""
+        let ounces = Int(oz.rounded())
+        // Name the container the way the apply-side success message will ("One <label> is now N oz."):
+        // when she's renaming, reference the new name; when it's a size-only change, use her current
+        // word ("drink" only as a last resort if she's never named it) — never the generic "drink".
+        let summary: String
+        if let label {
+            summary = "set your drink to \(ounces) oz and call it \"\(label)\""
+        } else {
+            let current = profile.waterContainerLabel.isEmpty ? "drink" : profile.waterContainerLabel
+            summary = "set your \(current) to \(ounces) oz"
+        }
         return .ok(ParsedRequest(
             name: .setWaterContainer,
-            confirmSummary: "set one drink to \(Int(oz.rounded())) oz\(labelNote)",
+            confirmSummary: summary,
             action: .setWaterContainer(oz: oz, label: label)))
     }
 
