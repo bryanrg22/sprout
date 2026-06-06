@@ -85,6 +85,9 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
     var waterToday: Double = 0
     var waterGoal: Double = 0
     var workedOutToday: Bool = false
+    /// Short, SAFE label of today's workout for the face-off ("Chest · Arms", "Run · 30 min").
+    /// Empty when no session was logged. Movement only — never weight/reps/intensity.
+    var workoutSummary: String = ""
 
     // Full shared data (OPT-IN — weight / calories / food). Mirrors the matching block on
     // the `BuddySnapshot` @Model. Only meaningful when `sharesFullData` is true (the owner
@@ -101,6 +104,12 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
     var calorieTarget: Double = 0
     var proteinEaten: Double = 0
     var proteinTarget: Double = 0
+    /// Carbs eaten today (g) + daily carb target (opt-in, gated by `sharesFullData`).
+    var carbsEaten: Double = 0
+    var carbTarget: Double = 0
+    /// Fat eaten today (g) + daily fat target (opt-in, gated by `sharesFullData`).
+    var fatEaten: Double = 0
+    var fatTarget: Double = 0
     /// Today's logged food names, comma-joined.
     var todayFoods: String = ""
 
@@ -127,6 +136,7 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
          waterToday: Double = 0,
          waterGoal: Double = 0,
          workedOutToday: Bool = false,
+         workoutSummary: String = "",
          sharesFullData: Bool = false,
          trendWeightLbs: Double = 0,
          goalWeightLbs: Double = 0,
@@ -135,6 +145,10 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
          calorieTarget: Double = 0,
          proteinEaten: Double = 0,
          proteinTarget: Double = 0,
+         carbsEaten: Double = 0,
+         carbTarget: Double = 0,
+         fatEaten: Double = 0,
+         fatTarget: Double = 0,
          todayFoods: String = "") {
         self.ownerUserID = ownerUserID
         self.displayName = displayName
@@ -147,6 +161,7 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
         self.waterToday = waterToday
         self.waterGoal = waterGoal
         self.workedOutToday = workedOutToday
+        self.workoutSummary = workoutSummary
         self.sharesFullData = sharesFullData
         self.trendWeightLbs = trendWeightLbs
         self.goalWeightLbs = goalWeightLbs
@@ -155,6 +170,10 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
         self.calorieTarget = calorieTarget
         self.proteinEaten = proteinEaten
         self.proteinTarget = proteinTarget
+        self.carbsEaten = carbsEaten
+        self.carbTarget = carbTarget
+        self.fatEaten = fatEaten
+        self.fatTarget = fatTarget
         self.todayFoods = todayFoods
     }
 
@@ -180,6 +199,7 @@ extension BuddySnapshotPayload {
                   waterToday: model.waterToday,
                   waterGoal: model.waterGoal,
                   workedOutToday: model.workedOutToday,
+                  workoutSummary: model.workoutSummary,
                   sharesFullData: model.sharesFullData,
                   trendWeightLbs: model.trendWeightLbs,
                   goalWeightLbs: model.goalWeightLbs,
@@ -188,6 +208,10 @@ extension BuddySnapshotPayload {
                   calorieTarget: model.calorieTarget,
                   proteinEaten: model.proteinEaten,
                   proteinTarget: model.proteinTarget,
+                  carbsEaten: model.carbsEaten,
+                  carbTarget: model.carbTarget,
+                  fatEaten: model.fatEaten,
+                  fatTarget: model.fatTarget,
                   todayFoods: model.todayFoods)
     }
 
@@ -205,6 +229,7 @@ extension BuddySnapshotPayload {
                       waterToday: waterToday,
                       waterGoal: waterGoal,
                       workedOutToday: workedOutToday,
+                      workoutSummary: workoutSummary,
                       sharesFullData: sharesFullData,
                       trendWeightLbs: trendWeightLbs,
                       goalWeightLbs: goalWeightLbs,
@@ -213,6 +238,10 @@ extension BuddySnapshotPayload {
                       calorieTarget: calorieTarget,
                       proteinEaten: proteinEaten,
                       proteinTarget: proteinTarget,
+                      carbsEaten: carbsEaten,
+                      carbTarget: carbTarget,
+                      fatEaten: fatEaten,
+                      fatTarget: fatTarget,
                       todayFoods: todayFoods)
     }
 }

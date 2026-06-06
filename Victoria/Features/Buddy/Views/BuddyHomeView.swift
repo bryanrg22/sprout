@@ -27,7 +27,10 @@ struct BuddyHomeView: View {
     // "moved today" flag (same read as DashboardView.workoutToday); the profile supplies my
     // step/water goals + which pixel avatar is me. Read with @Query the way RootView fetches
     // the single profile — BuddyHomeView() takes no args, so this stays self-contained.
-    @Query(sort: \WorkoutEntry.date) private var workouts: [WorkoutEntry]
+    // Reads `WorkoutSession` — the model the shipping Workouts tab actually writes. (The legacy
+    // `WorkoutEntry` is only written by a debug-only screen, so a real gym session never set this
+    // flag and the face-off "Exercise" row stayed "Not yet" even after a logged workout.)
+    @Query(sort: \WorkoutSession.date) private var workouts: [WorkoutSession]
     @Query private var profiles: [UserProfile]
     // Weigh-ins, for the OPT-IN full-stats share (weight trend + weekly rate). Read the same
     // way SettingsView/Dashboard do, so the trend the buddy sees matches what I see. Only
@@ -152,54 +155,26 @@ struct BuddyHomeView: View {
     /// sends nothing meaningful, and the buddy's card hides itself). A nil profile degrades
     /// gracefully to "not sharing".
     private func publishMyState() async {
-        // Basis weight for target math — smoothed trend, else start weight, else a safe 150
-        // (mirrors UserProfile.currentWeightLbs / SettingsView.currentWeightLbs).
-        // Real (non-future-dated) weigh-ins only — a clock-skewed future entry would otherwise slide
-        // TrendCalculator's window and skew the trend/rate the buddy sees (matches PlanService).
-        let realWeights = weights.filter { $0.date <= .now }
-        let basis = TrendCalculator.currentTrend(realWeights)
-            ?? ((profile?.startWeightLbs ?? 0) > 0 ? profile!.startWeightLbs : 150)
-
-        // Opt-in flag — gate everything below on it (nil profile → not sharing).
-        let sharesFull = profile?.shareFullStatsWithBuddy ?? false
-        // My real name, so the buddy sees "Bryan"/"Victoria" — never the literal "You".
-        let myName = (profile?.name).flatMap { $0.isEmpty ? nil : $0 } ?? "Your buddy"
-
-        await model.publishMine(
-            loggedToday: myLoggedToday,
-            dayStreak: myStreak,
-            stepsToday: todaySteps,
-            stepGoal: myStepGoal,
-            waterToday: waterToday,
-            waterGoal: myWaterGoal,
-            workedOutToday: myWorkedOutToday,
-            sharesFullData: sharesFull,
-            trendWeightLbs: TrendCalculator.currentTrend(realWeights) ?? 0,
-            goalWeightLbs: profile?.goalWeightLbs ?? 0,
-            weeklyRateLbs: TrendCalculator.ratePerWeek(realWeights),    // SIGNED (negative = losing)
-            caloriesEaten: todayFood.reduce(0) { $0 + $1.totalCalories },
-            calorieTarget: profile.map { $0.dailyCalorieTarget(weightLbs: basis) } ?? 0,
-            proteinEaten: todayFood.reduce(0) { $0 + $1.totalProteinG },
-            proteinTarget: profile.map { $0.macroTargets(weightLbs: basis).proteinG } ?? 0,
-            todayFoods: todayFood.map(\.name).filter { !$0.isEmpty }.prefix(8).joined(separator: ", "),
-            displayName: myName
-        )
+        // One source of truth for the snapshot (shared with the always-on `BuddyAutoPublisher`).
+        let s = BuddyStateComposer.compose(profile: profile, foods: allFood, water: water,
+                                           steps: steps, sessions: workouts, weights: weights)
+        await model.publishMine(s)
 
         // Live buddy: if I just crossed a goal today, auto-cheer my buddy (once per goal per
         // day) — they get the existing nudge push, "🎉 Bryan just hit their calorie goal!"
         let milestoneInput = BuddyMilestoneInput(
-            caloriesEaten: todayFood.reduce(0) { $0 + $1.totalCalories },
-            calorieTarget: profile.map { $0.dailyCalorieTarget(weightLbs: basis) } ?? 0,
-            proteinEaten: todayFood.reduce(0) { $0 + $1.totalProteinG },
-            proteinTarget: profile.map { $0.macroTargets(weightLbs: basis).proteinG } ?? 0,
-            steps: todaySteps,
-            stepGoal: myStepGoal,
-            waterOz: waterToday,
-            waterGoal: myWaterGoal,
-            dayStreak: myStreak
+            caloriesEaten: s.caloriesEaten,
+            calorieTarget: s.calorieTarget,
+            proteinEaten: s.proteinEaten,
+            proteinTarget: s.proteinTarget,
+            steps: s.stepsToday,
+            stepGoal: s.stepGoal,
+            waterOz: s.waterToday,
+            waterGoal: s.waterGoal,
+            dayStreak: s.dayStreak
         )
         let fresh = BuddyMilestones.consumeNewlyReached(milestoneInput, myUserID: model.myUserID)
-        await model.celebrate(fresh, myName: myName)
+        await model.celebrate(fresh, myName: s.displayName)
     }
 
     // MARK: - Linked content
@@ -225,6 +200,7 @@ struct BuddyHomeView: View {
                 myWaterOz: waterToday,
                 myWaterGoal: myWaterGoal,
                 myWorkedOut: myWorkedOutToday,
+                myWorkoutSummary: BuddyStateComposer.workoutSummary(workouts),
                 myAvatar: myAvatar,
                 buddy: snap
             )
@@ -363,5 +339,5 @@ struct BuddyHomeView: View {
         BuddyHomeView()
     }
     .modelContainer(for: [FoodEntry.self, WaterEntry.self, StepsEntry.self,
-                          WorkoutEntry.self, WeightEntry.self, UserProfile.self], inMemory: true)
+                          WorkoutSession.self, WeightEntry.self, UserProfile.self], inMemory: true)
 }

@@ -1890,12 +1890,17 @@ enum CoachTools {
             ?? (profile.startWeightLbs > 0 ? profile.startWeightLbs : 150)
         let target = profile.dailyCalorieTarget(weightLbs: basis)
         guard target > 0 else { return nil }
-        let consumedI = Int(consumed.rounded()), targetI = Int(target.rounded())
-        let remaining = targetI - consumedI
-        if remaining >= 0 {
-            return "Today so far: \(consumedI) of \(targetI) kcal (\(remaining) left)."
+        let consumedI = Int(consumed.rounded())
+        let goalText = profile.calorieGoalText(weightLbs: basis)
+        let range = profile.calorieGoalRange(weightLbs: basis)
+        switch profile.calorieStatus(consumed: consumed, weightLbs: basis) {
+        case .under:
+            return "Today so far: \(consumedI) kcal — goal \(goalText) (\(Int((range.low - consumed).rounded())) to reach her range; she has room to eat more)."
+        case .inRange:
+            return "Today so far: \(consumedI) kcal — right in her range (\(goalText)). That's the win."
+        case .over:
+            return "Today so far: \(consumedI) kcal — \(Int((consumed - range.high).rounded())) over her range ceiling (\(goalText)), and that's okay, one day doesn't define the week."
         }
-        return "Today so far: \(consumedI) of \(targetI) kcal (\(-remaining) over — and that's okay, one day doesn't define the week)."
     }
 
     /// Apply a confirmed change and return just the message. Thin wrapper over

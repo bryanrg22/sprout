@@ -123,25 +123,24 @@ struct SettingsView: View {
     }
 
     private var avatar: some View {
-        ZStack {
-            Circle().fill(Theme.brand.opacity(0.15))
-            Text(initials)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(Theme.brand)
+        // The pixel companion — same character shown on the Dashboard pfp button, not a flat initial.
+        Group {
+            switch profile.companionAvatar {
+            case .bryan:    PixelArtView(rows: PixelBryan.rows(mood: .happy, eyesOpen: true), palette: PixelBryan.palette)
+            case .victoria: PixelArtView(rows: PixelVictoria.rows(mood: .happy, eyesOpen: true), palette: PixelVictoria.palette)
+            }
         }
+        .frame(width: 34, height: 41)
         .frame(width: 52, height: 52)
+        .background(Theme.brandSoft, in: Circle())
+        .overlay(Circle().strokeBorder(Theme.divider, lineWidth: 1))
+        .clipShape(Circle())
         .accessibilityHidden(true)
     }
 
     private var displayName: String {
         let trimmed = profile.name.trimmingCharacters(in: .whitespaces)
         return trimmed.isEmpty ? "Your profile" : trimmed
-    }
-
-    private var initials: String {
-        let trimmed = profile.name.trimmingCharacters(in: .whitespaces)
-        guard let first = trimmed.first else { return "V" }
-        return String(first).uppercased()
     }
 
     private var paceSummary: String {

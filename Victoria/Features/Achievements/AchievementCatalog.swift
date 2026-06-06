@@ -160,7 +160,7 @@ enum AchievementCatalog {
         weights: [WeightEntry],
         water: [WaterEntry],
         steps: [StepsEntry],
-        workouts: [WorkoutEntry],
+        workouts: [WorkoutSession],
         profile: UserProfile,
         alreadyUnlocked: Set<String>
     ) -> [Achievement] {

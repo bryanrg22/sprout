@@ -163,7 +163,7 @@ struct CoachView: View {
     private func loadQuickPrompts() async {
         let prompts = await CoachPromptService.prompts(
             profile: profile, foods: foods, weights: weights,
-            workouts: workouts, water: water, memory: coachMemory()
+            sessions: sessions, water: water, memory: coachMemory()
         )
         // Only animate/replace if something actually changed (the common cache-hit re-run returns
         // the same list), so the row doesn't flicker on every appear.
@@ -969,15 +969,17 @@ private struct MessageRow: View {
         )) ?? AttributedString(s)
     }
 
+    /// The EXACT time a message was sent ("3:05 PM"), not a relative "12 minutes ago" — so it
+    /// reads like a real messages thread and you can see precisely when you talked to Vita. Older
+    /// messages carry a "Yesterday" / dated prefix so the time is never ambiguous.
     private var timestamp: String {
-        Self.formatter.localizedString(for: message.createdAt, relativeTo: .now).capitalizedFirst
+        let cal = Calendar.current
+        let date = message.createdAt
+        let time = date.formatted(date: .omitted, time: .shortened)
+        if cal.isDateInToday(date) { return time }
+        if cal.isDateInYesterday(date) { return "Yesterday \(time)" }
+        return date.formatted(date: .abbreviated, time: .shortened)
     }
-
-    private static let formatter: RelativeDateTimeFormatter = {
-        let f = RelativeDateTimeFormatter()
-        f.unitsStyle = .full
-        return f
-    }()
 }
 
 private extension String {

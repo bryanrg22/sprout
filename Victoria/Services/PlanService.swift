@@ -19,10 +19,13 @@ enum PlanService {
                          weights: [WeightEntry],
                          intake: String,
                          context: ModelContext) async throws -> CoachPlan {
-        let workouts = (try? context.fetch(FetchDescriptor<WorkoutEntry>())) ?? []
+        // Real Workouts-tab data (sessions + per-machine exercises). The legacy `WorkoutEntry` is
+        // debug-only, so fetching it left the AI plan blind to her actual training.
+        let sessions = (try? context.fetch(FetchDescriptor<WorkoutSession>())) ?? []
+        let exercises = (try? context.fetch(FetchDescriptor<ExerciseEntry>())) ?? []
         let water = (try? context.fetch(FetchDescriptor<WaterEntry>())) ?? []
         let dataSummary = CoachContext.summary(profile: profile, foods: foods, weights: weights,
-                                               workouts: workouts, water: water)
+                                               water: water, sessions: sessions, exercises: exercises)
         let points = loggedDayCount(foods: foods, weights: weights)
 
         let coaching = coachingNote(profile: profile, foods: foods, weights: weights)
@@ -95,10 +98,13 @@ enum PlanService {
                                       intake: "", context: context)
         }
 
-        let workouts = (try? context.fetch(FetchDescriptor<WorkoutEntry>())) ?? []
+        // Real Workouts-tab data (sessions + per-machine exercises). The legacy `WorkoutEntry` is
+        // debug-only, so fetching it left the AI plan blind to her actual training.
+        let sessions = (try? context.fetch(FetchDescriptor<WorkoutSession>())) ?? []
+        let exercises = (try? context.fetch(FetchDescriptor<ExerciseEntry>())) ?? []
         let water = (try? context.fetch(FetchDescriptor<WaterEntry>())) ?? []
         let dataSummary = CoachContext.summary(profile: profile, foods: foods, weights: weights,
-                                               workouts: workouts, water: water)
+                                               water: water, sessions: sessions, exercises: exercises)
         let points = loggedDayCount(foods: foods, weights: weights)
         let elapsed = daysSince(existing.updatedAt)
 

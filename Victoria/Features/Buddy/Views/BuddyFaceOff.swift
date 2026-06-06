@@ -28,6 +28,9 @@ struct BuddyFaceOff: View {
     let myWaterOz: Double
     let myWaterGoal: Double
     let myWorkedOut: Bool
+    /// A short label of MY workout today ("Chest · Arms", "Run · 30 min") so the Exercise row can
+    /// say WHAT I did, not just "Moved!". Empty when I didn't log a session.
+    let myWorkoutSummary: String
     /// Which pixel avatar represents me (from `profile.companionAvatar`).
     let myAvatar: CompanionAvatar
 
@@ -43,6 +46,7 @@ struct BuddyFaceOff: View {
                     steps: mySteps, stepGoal: myStepGoal,
                     waterOz: myWaterOz, waterGoal: myWaterGoal,
                     workedOut: myWorkedOut,
+                    workoutSummary: myWorkoutSummary,
                     avatar: myAvatar)
     }
 
@@ -55,6 +59,7 @@ struct BuddyFaceOff: View {
                     steps: buddy.stepsToday, stepGoal: buddy.stepGoal,
                     waterOz: buddy.waterToday, waterGoal: buddy.waterGoal,
                     workedOut: buddy.workedOutToday,
+                    workoutSummary: buddy.workoutSummary,
                     avatar: theirAvatar)
     }
 
@@ -63,13 +68,13 @@ struct BuddyFaceOff: View {
     }
 
     /// A warm headline summarizing the whole day (counts only metrics both have a goal for).
-    private var summary: String {
+    private var summary: (text: String, tone: FaceOffTone) {
         let bothWon = rows.filter { $0.bothReachedGoal }.count
         let scored = rows.filter { $0.isScorable }.count
-        if scored == 0 { return "Log a little movement to kick off today's face-off 💛" }
-        if bothWon == scored { return "You both crushed every goal today! 🎉🎉" }
-        if bothWon > 0 { return "You both showed up today — go you two! 💛" }
-        return "Day's underway — every little bit counts 💪"
+        if scored == 0 { return ("Log a little movement to kick off today's face-off", .cheer) }
+        if bothWon == scored { return ("You both crushed every goal today!", .win) }
+        if bothWon > 0 { return ("You both showed up today — go you two!", .win) }
+        return ("Day's underway — every little bit counts", .cheer)
     }
 
     var body: some View {
@@ -81,12 +86,17 @@ struct BuddyFaceOff: View {
                     FaceOffMetricRow(metric: metric)
                 }
             }
-            Text(summary)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Theme.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .multilineTextAlignment(.center)
-                .padding(.top, 2)
+            HStack(spacing: 7) {
+                Image(systemName: summary.tone.symbol).font(.footnote.weight(.bold))
+                Text(summary.text).font(.subheadline.weight(.semibold))
+                    .multilineTextAlignment(.center)
+            }
+            .foregroundStyle(summary.tone.tint)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(summary.tone.tint.opacity(0.10),
+                        in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
+            .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardElevated()
@@ -150,6 +160,9 @@ struct FaceOffSide {
     let waterOz: Double
     let waterGoal: Double
     let workedOut: Bool
+    /// Short label of today's workout ("Chest · Arms") — shown in the Exercise row instead of a
+    /// bare "Moved!". Empty when no session was logged.
+    var workoutSummary: String = ""
     let avatar: CompanionAvatar
 
     /// Fraction (0...1, clamped) of MY OWN step goal reached. `nil` when no goal is set.
@@ -192,6 +205,16 @@ enum FaceOffMetricKind: CaseIterable, Identifiable {
         case .gym:   return "💪"
         }
     }
+    /// The clean SF Symbol shown in the metric's tinted disc — the app speaks in symbols
+    /// everywhere else, so a flat multicolor emoji (the sneaker especially) read as generic and
+    /// broke the flow. These match the rest of the app's icon language (steps / water / strength).
+    var symbol: String {
+        switch self {
+        case .steps: return "figure.walk"
+        case .water: return "drop.fill"
+        case .gym:   return "figure.strengthtraining.traditional"
+        }
+    }
     var title: String {
         switch self {
         case .steps: return "Steps"
@@ -215,6 +238,9 @@ struct FaceOffMetric: Identifiable {
     let theirStat: String?
     let myName: String
     let theirName: String
+    /// What each side did today (used by the gym row) — "Chest · Arms". Empty = no session logged.
+    let myWorkoutSummary: String
+    let theirWorkoutSummary: String
 
     var id: FaceOffMetricKind { kind }
 
@@ -222,6 +248,8 @@ struct FaceOffMetric: Identifiable {
         self.kind = kind
         self.myName = me.name
         self.theirName = them.name
+        self.myWorkoutSummary = me.workoutSummary
+        self.theirWorkoutSummary = them.workoutSummary
         switch kind {
         case .steps:
             myFraction = me.stepFraction
@@ -251,42 +279,74 @@ struct FaceOffMetric: Identifiable {
         return m >= 1 && t >= 1
     }
 
-    /// Warm, non-shaming outcome copy. Celebrates a "both" day, gently cheers a leader while
-    /// rooting for the other, and stays encouraging when neither has hit goal yet.
-    var copy: String {
+    /// Warm, non-shaming outcome — clean text + a TONE that drives the styled result chip below (no
+    /// baked emoji; the chip supplies a matching SF Symbol + tint). Celebrates a "both" day, gently
+    /// cheers a leader while rooting for the other, stays encouraging when neither has hit goal yet.
+    var outcome: (text: String, tone: FaceOffTone) {
         guard let m = myFraction, let t = theirFraction else {
-            // A goal isn't set on one side — keep it light, never a "you're losing".
-            return "\(kind.emoji) cheering you both on"
+            return ("Cheering you both on", .cheer)
         }
-
         // Gym is binary — phrase it as showing up, never as a score.
         if kind == .gym {
             switch (m >= 1, t >= 1) {
-            case (true, true):   return "💪 you both moved today! 🎉"
-            case (true, false):  return "💪 you moved today — nice one!"
-            case (false, true):  return "💪 \(theirName) moved today — your turn 💛"
-            case (false, false): return "💪 a little movement is a win — no rush 💛"
+            case (true, true):   return ("You both moved today!", .win)
+            case (true, false):  return ("You moved today — nice one", .win)
+            case (false, true):  return ("\(theirName) moved today — your turn", .nudge)
+            case (false, false): return ("A little movement is a win — no rush", .cheer)
             }
         }
-
-        if m >= 1 && t >= 1 {
-            return "\(kind.emoji) you both hit your goal! 🎉"
-        }
-
-        // Compare progress, but frame it warmly. A small lead is "edged"; a clear one "ahead".
+        if m >= 1 && t >= 1 { return ("You both hit your goal!", .win) }
+        // Compare progress, framed warmly. A small lead is "edged"; a clear one "ahead".
         let lead = m - t
-        let near = abs(lead) < 0.08   // within 8 pts → call it neck-and-neck
-        if near {
-            return "\(kind.emoji) neck and neck — keep going!"
+        if abs(lead) < 0.08 { return ("Neck and neck — keep going!", .cheer) }
+        if lead > 0 { return ("You're ahead on \(kind.title.lowercased()) — go you!", .win) }
+        let verb = abs(lead) < 0.2 ? "edged you" : "is ahead"
+        return ("\(theirName) \(verb) on \(kind.title.lowercased()) — go get it", .nudge)
+    }
+}
+
+/// The emotional tone of a face-off outcome — drives the result chip's tint + SF Symbol so the copy
+/// reads as a designed status, never a bare line of text + emoji.
+enum FaceOffTone {
+    case win    // both hit / you're ahead / you moved — a celebration
+    case cheer  // neck-and-neck / no goal yet / no rush — warm encouragement
+    case nudge  // buddy's ahead / your turn — a gentle "go get it"
+
+    var tint: Color {
+        switch self {
+        case .win:   return Theme.positive
+        case .cheer: return Theme.brand
+        case .nudge: return Theme.info
         }
-        if lead > 0 {
-            // I'm ahead — celebrate me, stay kind about the gap.
-            return "\(kind.emoji) you're ahead on \(kind.title.lowercased()) — go you!"
-        } else {
-            // Buddy is ahead — celebrate them, warmly root for me (never shame).
-            let verb = abs(lead) < 0.2 ? "edged you" : "is ahead"
-            return "\(kind.emoji) \(theirName) \(verb) on \(kind.title.lowercased()) — go get it"
+    }
+    var symbol: String {
+        switch self {
+        case .win:   return "checkmark.seal.fill"
+        case .cheer: return "flame.fill"
+        case .nudge: return "arrow.up.forward.circle.fill"
         }
+    }
+}
+
+/// A small, centered, soft-tinted result pill — an SF Symbol + the outcome text. Replaces the old
+/// left-aligned "text + emoji" line so each metric's verdict reads as a designed component that sits
+/// in the SAME visual language as the rings, the metric discs, and the nudge chips.
+private struct OutcomeChip: View {
+    let text: String
+    let tone: FaceOffTone
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: tone.symbol).font(.caption2.weight(.bold))
+            Text(text)
+                .font(.caption.weight(.semibold))
+                .multilineTextAlignment(.center)
+        }
+        .foregroundStyle(tone.tint)
+        .padding(.horizontal, 11).padding(.vertical, 5)
+        .background(tone.tint.opacity(0.12), in: Capsule())
+        .overlay(Capsule().strokeBorder(tone.tint.opacity(0.22), lineWidth: 1))
+        .frame(maxWidth: .infinity, alignment: .center)   // center the hugging pill
     }
 }
 
@@ -310,21 +370,25 @@ struct FaceOffMetricRow: View {
                         .fill(Theme.brandSoft)
                         .overlay(Circle().strokeBorder(Theme.brand.opacity(0.22), lineWidth: 1))
                         .frame(width: 30, height: 30)
-                    Text(metric.kind.emoji)
-                        .font(.footnote)
+                    Image(systemName: metric.kind.symbol)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.brand)
                 }
                 Text(metric.kind.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer(minLength: 0)
                 if metric.bothReachedGoal {
-                    Text("both 🎉")
-                        .font(.caption2.weight(.bold))
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Theme.positive.opacity(0.18), in: Capsule())
-                        .overlay(Capsule().strokeBorder(Theme.positive.opacity(0.35), lineWidth: 1))
-                        .foregroundStyle(Theme.positive)
-                        .popIn(true)
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.seal.fill")
+                        Text("both")
+                    }
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 9).padding(.vertical, 3)
+                    .background(Theme.positive.opacity(0.18), in: Capsule())
+                    .overlay(Capsule().strokeBorder(Theme.positive.opacity(0.35), lineWidth: 1))
+                    .foregroundStyle(Theme.positive)
+                    .popIn(true)
                 }
             }
 
@@ -335,7 +399,9 @@ struct FaceOffMetricRow: View {
                 MovementRow(iMoved: (metric.myFraction ?? 0) >= 1,
                             theyMoved: (metric.theirFraction ?? 0) >= 1,
                             myName: metric.myName,
-                            theirName: metric.theirName)
+                            theirName: metric.theirName,
+                            mySummary: metric.myWorkoutSummary,
+                            theirSummary: metric.theirWorkoutSummary)
             } else {
                 PairedBarGraph(
                     myFraction: metric.myFraction,
@@ -347,9 +413,8 @@ struct FaceOffMetricRow: View {
                 )
             }
 
-            Text(metric.copy)
-                .font(.caption)
-                .foregroundStyle(Theme.textSecondary)
+            OutcomeChip(text: metric.outcome.text, tone: metric.outcome.tone)
+                .padding(.top, 2)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibility)
@@ -357,7 +422,7 @@ struct FaceOffMetricRow: View {
 
     private var accessibility: String {
         func pct(_ f: Double?) -> String { f.map { "\(Int(($0 * 100).rounded())) percent of goal" } ?? "no goal set" }
-        return "\(metric.kind.title): you \(pct(metric.myFraction)), \(metric.theirName) \(pct(metric.theirFraction)). \(metric.copy)"
+        return "\(metric.kind.title): you \(pct(metric.myFraction)), \(metric.theirName) \(pct(metric.theirFraction)). \(metric.outcome.text)"
     }
 }
 
@@ -435,19 +500,21 @@ private struct MovementRow: View {
     let theyMoved: Bool
     let myName: String
     let theirName: String
+    var mySummary: String = ""
+    var theirSummary: String = ""
 
     var body: some View {
         HStack(spacing: Theme.Space.md) {
             Spacer(minLength: 0)
-            badge(name: firstName(myName), moved: iMoved, tint: Theme.brand)
-            badge(name: firstName(theirName), moved: theyMoved, tint: Theme.info)
+            badge(name: firstName(myName), moved: iMoved, summary: mySummary, tint: Theme.brand)
+            badge(name: firstName(theirName), moved: theyMoved, summary: theirSummary, tint: Theme.info)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
     }
 
-    private func badge(name: String, moved: Bool, tint: Color) -> some View {
+    private func badge(name: String, moved: Bool, summary: String, tint: Color) -> some View {
         let color = moved ? tint : Theme.textSecondary
         return VStack(spacing: 6) {
             ZStack {
@@ -463,9 +530,14 @@ private struct MovementRow: View {
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
-            Text(moved ? "Moved! 💪" : "Not yet")
+            // Show WHAT they did when we know it ("Chest · Arms") — cooler + more telling than a bare
+            // "Moved!"; falls back to "Moved!" / "Not yet". Still no numbers, reps, or intensity.
+            Text(moved ? (summary.isEmpty ? "Moved! 💪" : summary) : "Not yet")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(color)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
         }
         .frame(width: 104)
         .opacity(moved ? 1 : 0.85)
@@ -526,26 +598,28 @@ private struct LivelyAvatar: ViewModifier {
                     mySteps: 9200, myStepGoal: 8000,
                     myWaterOz: 60, myWaterGoal: 90,
                     myWorkedOut: true,
+                    myWorkoutSummary: "Chest · Arms",
                     myAvatar: .victoria,
                     buddy: .init(ownerUserID: "b", displayName: "Bryan",
                                  dayStreak: 9, characterMood: .thriving,
                                  loggedToday: true, lastActive: .now,
                                  stepsToday: 8800, stepGoal: 10000,
                                  waterToday: 96, waterGoal: 96,
-                                 workedOutToday: true))
+                                 workedOutToday: true, workoutSummary: "Legs · Glutes"))
 
                 // Both crush everything.
                 BuddyFaceOff(
                     mySteps: 8200, myStepGoal: 8000,
                     myWaterOz: 95, myWaterGoal: 90,
                     myWorkedOut: true,
+                    myWorkoutSummary: "Push day",
                     myAvatar: .bryan,
                     buddy: .init(ownerUserID: "b", displayName: "Victoria",
                                  dayStreak: 12, characterMood: .thriving,
                                  loggedToday: true, lastActive: .now,
                                  stepsToday: 11000, stepGoal: 10000,
                                  waterToday: 100, waterGoal: 96,
-                                 workedOutToday: true))
+                                 workedOutToday: true, workoutSummary: "Run · 30 min"))
             }
             .padding()
         }

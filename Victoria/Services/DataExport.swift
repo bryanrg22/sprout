@@ -63,8 +63,10 @@ enum DataExport {
             weights: fetch(WeightEntry.self).map { WeightDTO(date: $0.date, weightLbs: $0.weightLbs, note: $0.note) },
             water: fetch(WaterEntry.self).map { WaterDTO(date: $0.date, amountOz: $0.amountOz) },
             steps: fetch(StepsEntry.self).map { StepsDTO(date: $0.date, count: $0.count) },
-            workouts: fetch(WorkoutEntry.self).map {
-                WorkoutDTO(date: $0.date, type: $0.typeRaw, title: $0.title,
+            // Export the real Workouts-tab sessions — the legacy `WorkoutEntry` table is debug-only,
+            // so a real user's backup was silently empty of workouts. Focuses stand in for "title".
+            workouts: fetch(WorkoutSession.self).map {
+                WorkoutDTO(date: $0.date, type: $0.typeRaw, title: $0.focusesRaw,
                            minutes: $0.durationMinutes, notes: $0.notes)
             },
             chat: fetch(ChatMessage.self)

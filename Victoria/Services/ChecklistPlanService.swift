@@ -230,13 +230,15 @@ enum ChecklistPlanService {
     static func make(profile: UserProfile,
                      foods: [FoodEntry],
                      weights: [WeightEntry],
-                     workouts: [WorkoutEntry],
+                     sessions: [WorkoutSession],
                      water: [WaterEntry],
                      memory: CoachMemory?) async throws -> ChecklistPlan {
         let client = try AnthropicClient()
 
+        // Pass the user's real Workouts-tab sessions through the `sessions` channel — the legacy
+        // `workouts: [WorkoutEntry]` arg never carried real data, so the plan couldn't see training.
         let dataSummary = CoachContext.summary(profile: profile, foods: foods,
-                                               weights: weights, workouts: workouts, water: water)
+                                               weights: weights, water: water, sessions: sessions)
         let prompt = userPrompt(name: profile.name,
                                 direction: profile.pace.direction,
                                 dataSummary: dataSummary,

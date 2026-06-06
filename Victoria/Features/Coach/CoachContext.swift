@@ -254,12 +254,19 @@ enum CoachContext {
                          + "(~\(rate(profile.pace.weeklyRateLbs)) \(unit)/week)")
         }
 
-        // Daily calorie + macro targets (computed from the profile + basis weight).
-        let goal = profile.calorieGoal(weightLbs: basisWeight)
+        // Daily calorie + macro targets — the SAME numbers the rings show. Read the OVERRIDE-AWARE
+        // `dailyCalorieTarget` (not the raw computed `calorieGoal`) so that when a Plan is active its
+        // calorie target reaches Vita too — otherwise she'd quote a different number than Nutrients/Today.
+        let calTarget = profile.dailyCalorieTarget(weightLbs: basisWeight)
         let macros = profile.macroTargets(weightLbs: basisWeight)
-        var targetLine = "Daily targets: \(Int(goal.dailyCalories.rounded())) kcal, "
-            + "\(Int(macros.proteinG)) g protein, \(Int(macros.carbsG)) g carbs, \(Int(macros.fatG)) g fat"
-        if goal.wasClampedToFloor {
+        let calRange = profile.calorieGoalRange(weightLbs: basisWeight)
+        let calGoalText = profile.calorieGoalText(weightLbs: basisWeight)
+        let calLead = (calRange.high.isFinite && calRange.high > calRange.low)
+            ? "Daily calorie RANGE: \(calGoalText) kcal (a floor to reach + a soft ceiling — being IN the range is the win, not one exact number)"
+            : "Daily calorie target: \(calGoalText) kcal"
+        var targetLine = calLead
+            + ", \(Int(macros.proteinG)) g protein, \(Int(macros.carbsG)) g carbs, \(Int(macros.fatG)) g fat"
+        if profile.calorieGoal(weightLbs: basisWeight).wasClampedToFloor {
             targetLine += " (calories held at a safe minimum — don't suggest eating less)"
         }
         lines.append(targetLine)
@@ -275,14 +282,16 @@ enum CoachContext {
             let protein = today.reduce(0) { $0 + $1.totalProteinG }
             let carbs = today.reduce(0) { $0 + $1.totalCarbsG }
             let fat = today.reduce(0) { $0 + $1.totalFatG }
-            let remaining = goal.dailyCalories - cals
             var intake = "Today's intake so far: \(Int(cals.rounded())) kcal, "
                 + "\(Int(protein.rounded())) g protein, \(Int(carbs.rounded())) g carbs, "
                 + "\(Int(fat.rounded())) g fat across \(today.count) item\(today.count == 1 ? "" : "s")"
-            if remaining > 0 {
-                intake += " (\(Int(remaining.rounded())) kcal of room left today)"
-            } else {
-                intake += " (at or over the calorie target — that's okay, one day doesn't define the week)"
+            switch profile.calorieStatus(consumed: cals, weightLbs: basisWeight) {
+            case .under:
+                intake += " (\(Int((calRange.low - cals).rounded())) kcal under her range floor — she has room to eat more; encourage it, never restriction)"
+            case .inRange:
+                intake += " (right in her calorie range — that's the win)"
+            case .over:
+                intake += " (a bit over her range's soft ceiling — that's okay, one day doesn't define the week; never shame)"
             }
             lines.append(intake)
 

@@ -24,7 +24,9 @@ struct WeeklyReflectionCard: View {
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
     @Query private var water: [WaterEntry]
     @Query(sort: \StepsEntry.date) private var steps: [StepsEntry]
-    @Query(sort: \WorkoutEntry.date) private var workouts: [WorkoutEntry]
+    // `WorkoutSession` is what the Workouts tab writes; the legacy `WorkoutEntry` is debug-only, so
+    // reading it under-counted the week's workouts for real users (only `.date` is used here).
+    @Query(sort: \WorkoutSession.date) private var workouts: [WorkoutSession]
 
     /// The finished note. `nil` while it's being written → shimmer placeholder.
     @State private var note: String?
@@ -132,7 +134,7 @@ struct WeeklyReflectionCard: View {
     /// smoothed-trend *shape* from `TrendCalculator`. No calorie/weight number leaves here.
     static func buildInputs(profile: UserProfile,
                             food: [FoodEntry], weights: [WeightEntry], water: [WaterEntry],
-                            steps: [StepsEntry], workouts: [WorkoutEntry],
+                            steps: [StepsEntry], workouts: [WorkoutSession],
                             now: Date = .now,
                             calendar: Calendar = .current) -> WeeklyReflection.Inputs {
         // The 7 day-starts we score over (today and the previous six).

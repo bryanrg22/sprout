@@ -16,6 +16,17 @@ struct RecentFoodsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
 
+    /// Which meal a one-tap re-log lands in. Defaults to the tapped meal section, else the
+    /// time-of-day guess — but she can change it on the chips up top (so a snack never silently
+    /// becomes "dinner" the way it used to). Search results still confirm in `AddFoodSheet`.
+    @State private var selectedMeal: MealType
+
+    init(date: Date, preferredMeal: MealType? = nil) {
+        self.date = date
+        self.preferredMeal = preferredMeal
+        _selectedMeal = State(initialValue: preferredMeal ?? MealTime.current())
+    }
+
     /// Newest-first across all history; we derive favorites + de-duped recents from this.
     @Query(sort: \FoodEntry.createdAt, order: .reverse) private var allFoods: [FoodEntry]
 
@@ -103,8 +114,23 @@ struct RecentFoodsSheet: View {
         }
     }
 
+    /// The meal a one-tap re-log lands in — clearly visible + changeable up top, so re-logging a
+    /// snack in the evening doesn't silently file it under "Dinner."
+    private var mealChips: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Log to which meal?").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+            MealChipsRow(selection: $selectedMeal)
+        }
+        .padding(.vertical, 4)
+    }
+
     private var listContent: some View {
         List {
+            Section {
+                mealChips
+            }
+            .listRowBackground(Color.clear)
+
             if !favorites.isEmpty {
                 Section {
                     ForEach(favorites) { food in
@@ -423,7 +449,7 @@ struct RecentFoodsSheet: View {
     private func logAgain(_ food: FoodEntry) {
         let copy = FoodEntry(
             date: date,
-            mealType: MealTime.current(),
+            mealType: selectedMeal,
             name: food.name,
             servingDescription: food.servingDescription,
             quantity: food.quantity,

@@ -28,6 +28,8 @@ enum WidgetDataWriter {
         let stepCount = steps.first { cal.isDateInToday($0.date) }?.count ?? 0
         let stepBonus = profile.stepBonusCalories(weightLbs: basis, steps: stepCount)
         let target = profile.dailyCalorieTarget(weightLbs: basis) + stepBonus
+        let calRange = profile.calorieGoalRange(weightLbs: basis)
+        let calMax = calRange.high.isFinite ? calRange.high + stepBonus : 0   // 0 = single-number (gain) goal
         let macros = profile.macroTargets(weightLbs: basis)
         let waterToday = waters.filter { cal.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz }
         let spark = Array(TrendCalculator.trend(weights).suffix(14).map(\.value))
@@ -38,6 +40,7 @@ enum WidgetDataWriter {
             themeStyleRaw: profile.themeStyle.rawValue,            // so the widget paints in her/his skin
             companionAvatarRaw: profile.companionAvatar.rawValue,  // so the widget shows the right buddy
             calorieTarget: target,
+            calorieMax: calMax,
             caloriesEaten: eaten,
             stepBonus: stepBonus,
             protein: protein, proteinTarget: macros.proteinG,

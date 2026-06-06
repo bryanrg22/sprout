@@ -29,7 +29,9 @@ struct PlanCard: View {
             }
         }
         .sheet(isPresented: $showIntake) {
-            PlanIntakeView(profile: profile, foods: foods, weights: weights)
+            // Pass the current plan when one exists → the intake opens in "adjust" framing (shows her
+            // current targets, asks what's changed). nil → the first-time "build" framing.
+            PlanIntakeView(profile: profile, foods: foods, weights: weights, existingPlan: plan)
         }
     }
 
@@ -41,7 +43,7 @@ struct PlanCard: View {
                 Image(systemName: "sparkles").foregroundStyle(Theme.brand)
                 Text("Your plan").font(.headline).foregroundStyle(Theme.textPrimary)
             }
-            Text("Let \(coachName) study your goals and every day you've logged, then build a personal plan — real targets, honest insights, and it adapts as you go.")
+            Text("\(coachName) will do deep research on your goals and every day you've logged — then build a plan that truly helps you reach them, with real targets that adapt as you go.")
                 .font(.subheadline).foregroundStyle(Theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button { showIntake = true } label: {
@@ -60,9 +62,13 @@ struct PlanCard: View {
 
     // MARK: - Plan view
 
+    /// Compact on Progress by design: just the headline + the live targets, then a clear "adjust"
+    /// block. The deep narrative (assessment, insights, the research brief) lives in the "Your
+    /// progress" recap above and inside Vita — the plan card here is the at-a-glance + the way in to
+    /// changing it, not a wall of text.
     private func planView(_ plan: CoachPlan) -> some View {
         VStack(alignment: .leading, spacing: Theme.Space.md) {
-            // Header: label + refresh
+            // Header: label + a light "re-check against my latest data" refresh.
             HStack {
                 HStack(spacing: Theme.Space.sm) {
                     Image(systemName: "sparkles").foregroundStyle(Theme.brand)
@@ -76,7 +82,7 @@ struct PlanCard: View {
                         Image(systemName: "arrow.clockwise").font(.subheadline.weight(.semibold))
                     }
                     .buttonStyle(.plain).foregroundStyle(Theme.brand)
-                    .accessibilityLabel("Update my plan from my latest data")
+                    .accessibilityLabel("Re-check my plan against my latest data")
                 }
             }
 
@@ -89,11 +95,7 @@ struct PlanCard: View {
                     .font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary)
             }
 
-            if !plan.assessment.isEmpty {
-                MarkdownMessage(plan.assessment, color: Theme.textPrimary)
-            }
-
-            // Targets — the RANGE + protein.
+            // Targets — the RANGE + protein (the live numbers driving the whole app).
             if plan.hasRange || plan.proteinTarget > 0 {
                 HStack(spacing: Theme.Space.lg) {
                     if plan.hasRange {
@@ -106,40 +108,25 @@ struct PlanCard: View {
                 .padding(.top, 2)
             }
 
-            // Insight "tickets".
-            if !plan.insights.isEmpty {
-                VStack(spacing: Theme.Space.sm) {
-                    ForEach(plan.insights) { insight in
-                        InsightRow(insight: insight) { askInsight(insight) }
-                    }
+            // The "adjust" block — got new details, or want a fresh deep-research pass?
+            Divider().overlay(Theme.divider).padding(.vertical, 2)
+            VStack(alignment: .leading, spacing: Theme.Space.sm) {
+                Text("Got new details, or want to go deeper?")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+                Text("Tell \(coachName) what's changed and she'll do fresh deep research and update your whole plan — your targets adjust everywhere.")
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button { showIntake = true } label: {
+                    Label("Adjust my plan", systemImage: "sparkles").frame(maxWidth: .infinity)
                 }
-                .padding(.top, Theme.Space.xs)
-            }
-
-            // Most recent adaptation — the plan changing is visible, never silent.
-            if let last = plan.changelog.last {
-                HStack(alignment: .top, spacing: 6) {
-                    Image(systemName: "clock.arrow.circlepath").font(.caption2)
-                    Text(last.summary).font(.caption).fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
+                .buttonStyle(.primary)
+                Button { askAdjust(plan) } label: {
+                    Text("or ask \(coachName) to tweak it")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.brand)
+                        .frame(maxWidth: .infinity)
                 }
-                .foregroundStyle(Theme.textSecondary)
-                .padding(.top, 2)
-            }
-
-            // What grounded the build — the live-web research brief (with its sources named), tucked
-            // behind a disclosure so it's there for trust without cluttering the card.
-            if !plan.researchNotes.isEmpty {
-                DisclosureGroup {
-                    MarkdownMessage(plan.researchNotes, color: Theme.textSecondary)
-                        .padding(.top, Theme.Space.xs)
-                } label: {
-                    Label("What this is based on", systemImage: "books.vertical.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.textSecondary)
-                }
-                .tint(Theme.textSecondary)
-                .padding(.top, 2)
+                .buttonStyle(.plain)
             }
 
             if let reviewError {
@@ -152,6 +139,19 @@ struct PlanCard: View {
         .overlay(
             RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous).strokeBorder(Color.white.opacity(0.06), lineWidth: 1)
         )
+    }
+
+    /// Conversational adjust: hand Vita the current plan + a "what should change?" prompt so she can
+    /// tweak it in chat (she has the plan in context + the edit_plan tools). The deep-research path is
+    /// the "Adjust my plan" button above (re-opens the intake). Mirrors `askInsight`.
+    private func askAdjust(_ plan: CoachPlan) {
+        let targets = plan.hasRange ? "My plan's fuel range is \(plan.calorieRangeText) kcal"
+            + (plan.proteinTarget > 0 ? " and protein is \(Int(plan.proteinTarget))g. " : ". ") : ""
+        askVita?.ask(AskVitaTopic(
+            name: "Adjust my plan",
+            icon: "slider.horizontal.3",
+            value: "",
+            question: "I'd like to adjust my plan. \(targets)Look at how I've actually been doing (weight trend, calories, protein, steps, consistency) and tell me what to tweak and why — and make the change if it helps."))
     }
 
     // MARK: - Adapt (the P3 review pass)
@@ -173,65 +173,10 @@ struct PlanCard: View {
         isReviewing = false
     }
 
-    /// Tap an insight → hand it to Vita (who already has the plan in her context) so the user can
-    /// dig in. Sets the AskVita topic; MainTabView flips to the Vita tab and Vita answers it.
-    private func askInsight(_ insight: PlanInsight) {
-        askVita?.ask(AskVitaTopic(
-            name: insight.title,
-            icon: "sparkles",
-            value: "",
-            question: "About my plan — \"\(insight.title)\": \(insight.body)\n\nCan you explain this more and tell me what I should actually do?"))
-    }
-
     private func targetStat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label.uppercased()).font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
             Text(value).font(.headline).foregroundStyle(Theme.brand)
         }
-    }
-}
-
-/// One insight ticket — tone-colored dot + title + body.
-private struct InsightRow: View {
-    let insight: PlanInsight
-    var onTap: () -> Void = {}
-
-    private var tint: Color {
-        switch insight.tone {
-        case .win:   return Theme.positive
-        case .watch: return Theme.warning
-        case .nudge: return Theme.brand
-        }
-    }
-    private var icon: String {
-        switch insight.tone {
-        case .win:   return "checkmark.circle.fill"
-        case .watch: return "exclamationmark.circle.fill"
-        case .nudge: return "arrow.up.forward.circle.fill"
-        }
-    }
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(alignment: .top, spacing: Theme.Space.sm) {
-                Image(systemName: icon).font(.subheadline).foregroundStyle(tint).padding(.top, 1)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(insight.title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(insight.body).font(.subheadline).foregroundStyle(Theme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: Theme.Space.xs)
-                // Hints it's tappable — taps open Vita to dig into this insight.
-                Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary.opacity(0.6))
-                    .padding(.top, 3)
-            }
-            .padding(Theme.Space.md)
-            .frame(maxWidth: .infinity)
-            .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }

@@ -20,6 +20,14 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
+    # Strip extended attributes (esp. com.apple.FinderInfo, which macOS keeps re-adding to the
+    # built .app bundle during packaging) right before Xcode's CodeSign step — otherwise codesign
+    # aborts with "resource fork, Finder information, or similar detritus not allowed". Runs every
+    # build (no dependency analysis) so it can't be skipped incrementally.
+    postBuildScripts:
+      - name: "Strip xattrs (codesign hygiene)"
+        basedOnDependencyAnalysis: false
+        script: '/usr/bin/xattr -cr "${TARGET_BUILD_DIR}/${WRAPPER_NAME}" 2>/dev/null || true'
     scheme:
       testTargets:
         - VictoriaTests
@@ -69,6 +77,11 @@ targets:
     type: app-extension
     platform: iOS
     deploymentTarget: "18.0"
+    # Same codesign hygiene as the app target — strip xattrs from the .appex before its CodeSign.
+    postBuildScripts:
+      - name: "Strip xattrs (codesign hygiene)"
+        basedOnDependencyAnalysis: false
+        script: '/usr/bin/xattr -cr "${TARGET_BUILD_DIR}/${WRAPPER_NAME}" 2>/dev/null || true'
     sources:
       - path: VictoriaWidgets
       - path: Shared

@@ -83,17 +83,21 @@ extension View {
 // MARK: - Breathing (gentle scale pulse, "alive" feel)
 
 private struct Breathing: ViewModifier {
+    var active: Bool = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func body(content: Content) -> some View {
         // See Wiggle: phaseAnimator keeps the pulse a pure transform, so it can never drag layout
         // (the old repeatForever-via-onAppear pattern could, causing animated icons to drift).
-        content.phaseAnimator([false, true]) { view, big in
-            view.scaleEffect(big && !reduceMotion ? 1.04 : 1.0)
-        } animation: { _ in reduceMotion ? nil : .easeInOut(duration: 2.2) }
+        // `active` lets a caller hold the idle until the view has SETTLED, so it never animates in
+        // from a mid-transition position when the screen first appears.
+        let on = active && !reduceMotion
+        return content.phaseAnimator([false, true]) { view, big in
+            view.scaleEffect(big && on ? 1.04 : 1.0)
+        } animation: { _ in on ? .easeInOut(duration: 2.2) : nil }
     }
 }
 extension View {
-    func breathing() -> some View { modifier(Breathing()) }
+    func breathing(_ active: Bool = true) -> some View { modifier(Breathing(active: active)) }
 }
 
 // MARK: - Confetti

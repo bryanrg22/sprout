@@ -99,6 +99,7 @@ final class CloudKitSyncService: BuddySyncService {
         static let waterToday       = "waterToday"
         static let waterGoal        = "waterGoal"
         static let workedOutToday   = "workedOutToday"
+        static let workoutSummary   = "workoutSummary"
         // Snapshot — FULL shared data (OPT-IN: weight / calories / food). Only carries
         // meaning when `sharesFullData` is true (the owner opted in via
         // `UserProfile.shareFullStatsWithBuddy`). `sharesFullData` is stored Bool-as-Int
@@ -112,6 +113,10 @@ final class CloudKitSyncService: BuddySyncService {
         static let calorieTarget    = "calorieTarget"
         static let proteinEaten     = "proteinEaten"
         static let proteinTarget    = "proteinTarget"
+        static let carbsEaten       = "carbsEaten"
+        static let carbTarget       = "carbTarget"
+        static let fatEaten         = "fatEaten"
+        static let fatTarget        = "fatTarget"
         static let todayFoods       = "todayFoods"
     }
 
@@ -490,6 +495,7 @@ final class CloudKitSyncService: BuddySyncService {
         record[Field.waterToday]       = snapshot.waterToday as CKRecordValue
         record[Field.waterGoal]        = snapshot.waterGoal as CKRecordValue
         record[Field.workedOutToday]   = (snapshot.workedOutToday ? 1 : 0) as CKRecordValue
+        record[Field.workoutSummary]   = snapshot.workoutSummary as CKRecordValue
         // FULL shared data (OPT-IN: weight / calories / food). `sharesFullData` stores
         // Bool-as-Int (CloudKit has no Bool type) like `loggedToday`. The caller only fills
         // these with real values when the owner opted in; otherwise they're 0/"".
@@ -501,6 +507,10 @@ final class CloudKitSyncService: BuddySyncService {
         record[Field.calorieTarget]    = snapshot.calorieTarget as CKRecordValue
         record[Field.proteinEaten]     = snapshot.proteinEaten as CKRecordValue
         record[Field.proteinTarget]    = snapshot.proteinTarget as CKRecordValue
+        record[Field.carbsEaten]       = snapshot.carbsEaten as CKRecordValue
+        record[Field.carbTarget]       = snapshot.carbTarget as CKRecordValue
+        record[Field.fatEaten]         = snapshot.fatEaten as CKRecordValue
+        record[Field.fatTarget]        = snapshot.fatTarget as CKRecordValue
         record[Field.todayFoods]       = snapshot.todayFoods as CKRecordValue
 
         do {
@@ -574,6 +584,7 @@ final class CloudKitSyncService: BuddySyncService {
         snap[Field.waterToday]       = 0.0 as CKRecordValue
         snap[Field.waterGoal]        = 0.0 as CKRecordValue
         snap[Field.workedOutToday]   = 0 as CKRecordValue
+        snap[Field.workoutSummary]   = "" as CKRecordValue
         snap[Field.sharesFullData]   = 0 as CKRecordValue
         snap[Field.trendWeightLbs]   = 0.0 as CKRecordValue
         snap[Field.goalWeightLbs]    = 0.0 as CKRecordValue
@@ -582,6 +593,10 @@ final class CloudKitSyncService: BuddySyncService {
         snap[Field.calorieTarget]    = 0.0 as CKRecordValue
         snap[Field.proteinEaten]     = 0.0 as CKRecordValue
         snap[Field.proteinTarget]    = 0.0 as CKRecordValue
+        snap[Field.carbsEaten]       = 0.0 as CKRecordValue
+        snap[Field.carbTarget]       = 0.0 as CKRecordValue
+        snap[Field.fatEaten]         = 0.0 as CKRecordValue
+        snap[Field.fatTarget]        = 0.0 as CKRecordValue
         snap[Field.todayFoods]       = "" as CKRecordValue
         _ = try await database.save(snap)
 
@@ -706,6 +721,7 @@ final class CloudKitSyncService: BuddySyncService {
         let water   = record[Field.waterToday] as? Double ?? 0
         let waterGl = record[Field.waterGoal] as? Double ?? 0
         let workout = (record[Field.workedOutToday] as? Int ?? 0) == 1
+        let workoutSum = record[Field.workoutSummary] as? String ?? ""
         // FULL shared data (OPT-IN: weight / calories / food). Absent on older records →
         // 0/false/"" (the display card self-hides when `sharesFullData` is false).
         // `sharesFullData` decodes Bool-as-Int like `loggedToday`.
@@ -717,6 +733,10 @@ final class CloudKitSyncService: BuddySyncService {
         let calTarget  = record[Field.calorieTarget] as? Double ?? 0
         let protEaten  = record[Field.proteinEaten] as? Double ?? 0
         let protTarget = record[Field.proteinTarget] as? Double ?? 0
+        let carbEaten  = record[Field.carbsEaten] as? Double ?? 0
+        let carbTgt    = record[Field.carbTarget] as? Double ?? 0
+        let fatEat     = record[Field.fatEaten] as? Double ?? 0
+        let fatTgt     = record[Field.fatTarget] as? Double ?? 0
         let foods      = record[Field.todayFoods] as? String ?? ""
         return BuddySnapshotPayload(ownerUserID: owner,
                                     displayName: name,
@@ -729,6 +749,7 @@ final class CloudKitSyncService: BuddySyncService {
                                     waterToday: water,
                                     waterGoal: waterGl,
                                     workedOutToday: workout,
+                                    workoutSummary: workoutSum,
                                     sharesFullData: sharesFull,
                                     trendWeightLbs: trendWt,
                                     goalWeightLbs: goalWt,
@@ -737,6 +758,10 @@ final class CloudKitSyncService: BuddySyncService {
                                     calorieTarget: calTarget,
                                     proteinEaten: protEaten,
                                     proteinTarget: protTarget,
+                                    carbsEaten: carbEaten,
+                                    carbTarget: carbTgt,
+                                    fatEaten: fatEat,
+                                    fatTarget: fatTgt,
                                     todayFoods: foods)
     }
 }
