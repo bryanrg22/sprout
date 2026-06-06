@@ -89,13 +89,13 @@ struct FoodLogView: View {
     }
     private var target: Double { profile.dailyCalorieTarget(weightLbs: basisWeight) }
     private var remaining: Double { target - consumed }
-    private var isOver: Bool { remaining < 0 }
+    private var isOver: Bool { profile.calorieStatus(consumed: consumed, weightLbs: basisWeight) == .over }
     private var progress: Double { target > 0 ? consumed / target : 0 }
     private var ringColor: Color { isOver ? Theme.warning : Theme.calories }
     /// True once she's reached ~97%+ of her fuel goal. We celebrate "fueled up"
     /// rather than counting calories "remaining"/"over" — kinder for someone who
     /// tends to under-eat, and consistent with the Dashboard hero's framing.
-    private var reachedFuel: Bool { target > 0 && consumed >= target * 0.97 }
+    private var reachedFuel: Bool { profile.hasReachedCalorieGoal(consumed: consumed, weightLbs: basisWeight) }
 
     private var meals: [MealType] { MealType.allCases.sorted { $0.sortOrder < $1.sortOrder } }
 
@@ -614,7 +614,7 @@ struct FoodLogView: View {
             HStack {
                 footStat("Eaten", value: consumed, tint: Theme.textPrimary)
                 Spacer()
-                footStat("Goal", value: target, tint: Theme.textSecondary)
+                footStatText("Goal", text: profile.calorieGoalText(weightLbs: basisWeight), tint: Theme.textSecondary)
             }
         }
         .cardElevated()
@@ -655,6 +655,19 @@ struct FoodLogView: View {
                     .foregroundStyle(tint)
                     .contentTransition(.numericText())
                     .animation(.spring(response: 0.5, dampingFraction: 0.85), value: value)
+                Text("kcal").font(.caption).foregroundStyle(Theme.textSecondary)
+            }
+        }
+    }
+
+    /// Like `footStat` but shows a pre-formatted string (e.g. the "1,580–1,750" goal range).
+    private func footStatText(_ title: String, text: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.caption).foregroundStyle(Theme.textSecondary)
+            HStack(spacing: 3) {
+                Text(text)
+                    .font(.subheadline.weight(.semibold)).monospacedDigit()
+                    .foregroundStyle(tint)
                 Text("kcal").font(.caption).foregroundStyle(Theme.textSecondary)
             }
         }
@@ -718,6 +731,7 @@ struct FoodLogView: View {
         case .lunch:     return "Add your lunch when you're ready 🥗"
         case .dinner:    return "Dinner goes here 🌙"
         case .snack:     return "Any little snacks? 🍓"
+        case .other:     return "Anything else? 🍴"
         }
     }
 

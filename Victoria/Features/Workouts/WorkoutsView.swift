@@ -30,6 +30,9 @@ struct WorkoutsView: View {
     @State private var selectedDay: Date = Calendar.current.startOfDay(for: .now)
     @State private var showDatePicker = false
     @State private var navTick = 0
+    /// Held false until the Workouts screen settles, then true — gates the empty-state hero's idle
+    /// so the dumbbell never animates IN from a mid-transition spot on first open (just then sways).
+    @State private var heroSettled = false
 
     /// Exercises for one session, in insertion order (by their own ascending nothing — stable on
     /// the array). Keyed lookup keeps the per-row cost tiny.
@@ -319,13 +322,16 @@ struct WorkoutsView: View {
                 Circle()
                     .fill(Theme.brandSoft)
                     .frame(width: 108, height: 108)
-                    .breathing()
+                    .breathing(heroSettled)
                 Image(systemName: "dumbbell.fill")
                     .font(.system(size: 48, weight: .semibold))
                     .foregroundStyle(Theme.brand)
-                    .wiggle()
+                    .wiggle(heroSettled)
             }
             .frame(width: 120, height: 120)   // stable bounds so the pulse/wiggle never reflow the column
+            // Hold the idle until the screen has SETTLED, so the dumbbell never animates IN from a
+            // mid-transition spot when you first open Workouts — it just sits, then gently comes alive.
+            .task { try? await Task.sleep(for: .seconds(0.45)); heroSettled = true }
             VStack(spacing: Theme.Space.xs) {
                 Text("Let's log a workout! 🏋️‍♀️")
                     .font(.title3.weight(.bold))

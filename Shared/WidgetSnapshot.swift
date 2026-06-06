@@ -17,7 +17,8 @@ struct WidgetSnapshot: Codable {
     var companionAvatarRaw: String = "victoria"                  // "victoria" | "bryan"
 
     // Calories
-    var calorieTarget: Double        // includes step bonus when steps-adjust is on
+    var calorieTarget: Double        // the FLOOR / target (includes step bonus when steps-adjust is on)
+    var calorieMax: Double = 0       // soft CEILING — top of her range; 0 = single-number (gain) goal / pre-range snapshot
     var caloriesEaten: Double
     var stepBonus: Double
 
@@ -48,6 +49,11 @@ struct WidgetSnapshot: Codable {
     var usesBryanAvatar: Bool { companionAvatarRaw == "bryan" }
 
     var caloriesRemaining: Double { calorieTarget - caloriesEaten }
+    /// A real calorie RANGE is available (0 = single-number gain goal / pre-range snapshot).
+    var hasCalorieRange: Bool { calorieMax > calorieTarget }
+    /// "Over" only once past the soft CEILING — never the instant she crosses the floor into her
+    /// range. No range → never over (kind default, matching the in-app anti-restriction framing).
+    var calorieOver: Bool { hasCalorieRange && caloriesEaten > calorieMax }
     var calorieProgress: Double { calorieTarget > 0 ? min(caloriesEaten / calorieTarget, 1) : 0 }
     var stepProgress: Double { stepGoal > 0 ? min(Double(steps) / Double(stepGoal), 1) : 0 }
     var waterProgress: Double { waterGoalOz > 0 ? min(waterOz / waterGoalOz, 1) : 0 }
@@ -58,7 +64,7 @@ struct WidgetSnapshot: Codable {
     static let placeholder = WidgetSnapshot(
         updated: .now, name: "Victoria",
         themeStyleRaw: ThemeStyle.cute.rawValue, companionAvatarRaw: "victoria",
-        calorieTarget: 1740, caloriesEaten: 1355, stepBonus: 0,
+        calorieTarget: 1740, calorieMax: 1900, caloriesEaten: 1355, stepBonus: 0,
         protein: 98, proteinTarget: 126,
         carbs: 132, carbsTarget: 184,
         fat: 45, fatTarget: 56,
@@ -86,6 +92,7 @@ extension WidgetSnapshot {
         themeStyleRaw     = try c.decodeIfPresent(String.self, forKey: .themeStyleRaw) ?? ThemeStyle.cute.rawValue
         companionAvatarRaw = try c.decodeIfPresent(String.self, forKey: .companionAvatarRaw) ?? "victoria"
         calorieTarget = try c.decode(Double.self, forKey: .calorieTarget)
+        calorieMax    = try c.decodeIfPresent(Double.self, forKey: .calorieMax) ?? 0
         caloriesEaten = try c.decode(Double.self, forKey: .caloriesEaten)
         stepBonus     = try c.decode(Double.self, forKey: .stepBonus)
         protein       = try c.decode(Double.self, forKey: .protein)

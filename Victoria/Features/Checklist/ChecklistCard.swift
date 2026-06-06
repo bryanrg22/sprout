@@ -34,7 +34,9 @@ struct ChecklistCard: View {
     // Data the personalized plan is built from — same sources the coach/weekly card @Query.
     @Query(sort: \FoodEntry.date, order: .reverse) private var foods: [FoodEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
-    @Query(sort: \WorkoutEntry.date) private var workouts: [WorkoutEntry]
+    // Real workouts are `WorkoutSession`s from the Workouts tab; the legacy `WorkoutEntry` is
+    // debug-only, so the daily plan never saw the user's training. Feed the AI the real sessions.
+    @Query(sort: \WorkoutSession.date) private var sessions: [WorkoutSession]
     @Query private var water: [WaterEntry]
     @Query private var memories: [CoachMemory]
 
@@ -457,7 +459,7 @@ struct ChecklistCard: View {
                 profile: profile,
                 foods: foods,
                 weights: weights,
-                workouts: workouts,
+                sessions: sessions,
                 water: water,
                 memory: memories.first
             )
@@ -712,6 +714,6 @@ private struct ChecklistShimmerLine: View {
     }
     .background(Theme.background.ignoresSafeArea())
     .modelContainer(for: [ChecklistItem.self, FoodEntry.self, WeightEntry.self,
-                          WorkoutEntry.self, WaterEntry.self, CoachMemory.self],
+                          WorkoutSession.self, WaterEntry.self, CoachMemory.self],
                     inMemory: true)
 }

@@ -19,7 +19,9 @@ struct AchievementsView: View {
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
     @Query private var water: [WaterEntry]
     @Query(sort: \StepsEntry.date) private var steps: [StepsEntry]
-    @Query(sort: \WorkoutEntry.date) private var workouts: [WorkoutEntry]
+    // Real workouts go through the Workouts tab as `WorkoutSession`; the legacy `WorkoutEntry` is
+    // debug-only, so reading it meant the "logged a workout" achievement never fired for real users.
+    @Query(sort: \WorkoutSession.date) private var workouts: [WorkoutSession]
 
     /// Drives the staggered card entrance.
     @State private var didAppear = false

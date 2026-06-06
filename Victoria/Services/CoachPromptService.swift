@@ -165,7 +165,7 @@ enum CoachPromptService {
     static func prompts(profile: UserProfile,
                         foods: [FoodEntry],
                         weights: [WeightEntry],
-                        workouts: [WorkoutEntry],
+                        sessions: [WorkoutSession],
                         water: [WaterEntry],
                         memory: CoachMemory?,
                         now: Date = .now) async -> [String] {
@@ -186,7 +186,7 @@ enum CoachPromptService {
 
         do {
             let personalized = try await generate(profile: profile, foods: foods, weights: weights,
-                                                  workouts: workouts, water: water, memory: memory)
+                                                  sessions: sessions, water: water, memory: memory)
             guard !personalized.isEmpty else { return fallback }
             writeCache(key, personalized)
             return dedupedAppending(personalized, to: constants)
@@ -202,13 +202,13 @@ enum CoachPromptService {
     static func generate(profile: UserProfile,
                          foods: [FoodEntry],
                          weights: [WeightEntry],
-                         workouts: [WorkoutEntry],
+                         sessions: [WorkoutSession],
                          water: [WaterEntry],
                          memory: CoachMemory?) async throws -> [String] {
         let client = try AnthropicClient()
 
         let dataSummary = CoachContext.summary(profile: profile, foods: foods,
-                                               weights: weights, workouts: workouts, water: water)
+                                               weights: weights, water: water, sessions: sessions)
         let prompt = userPrompt(name: profile.name,
                                 direction: profile.pace.direction,
                                 dataSummary: dataSummary,

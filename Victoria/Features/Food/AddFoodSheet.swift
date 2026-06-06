@@ -11,7 +11,9 @@ import SwiftData
 struct FoodDraft: Identifiable {
     let id = UUID()
     var name: String = ""
-    var meal: MealType = .snack
+    /// Smart default by time of day (breakfast/lunch/dinner, else snack) — she can change it on the
+    /// chip row before saving. Flows that know the meal (a meal section's "+") pass it explicitly.
+    var meal: MealType = MealTime.current()
     var servingDescription: String = ""
     var quantity: Double = 1
     var calories: Double = 0
@@ -188,11 +190,7 @@ struct AddFoodSheet: View {
 
                 Section("What did you eat?") {
                     TextField("Name", text: $name)
-                    Picker("Meal", selection: $meal) {
-                        ForEach(MealType.allCases) { m in
-                            Text(m.title).tag(m)
-                        }
-                    }
+                    mealSelectorRow
                     TextField("Serving (e.g. 1 cup)", text: $servingDescription)
                     HStack {
                         Text("Quantity")
@@ -240,6 +238,17 @@ struct AddFoodSheet: View {
                 }
             }
         }
+    }
+
+    /// Prominent, always-visible meal picker. The old inline `Picker` row was easy to miss, so a
+    /// snack could silently land in "Dinner" with no obvious way to change it. These chips make the
+    /// choice — and that it's changeable — unmissable; a meal is always selected so nothing is unfiled.
+    private var mealSelectorRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Meal").font(.caption).foregroundStyle(Theme.textSecondary)
+            MealChipsRow(selection: $meal)
+        }
+        .padding(.vertical, 4)
     }
 
     private var estimateSection: some View {
@@ -416,5 +425,63 @@ struct AddFoodSheet: View {
     private static func numberString(_ value: Double, fallback: String = "") -> String {
         guard value != 0 else { return fallback }
         return value == value.rounded() ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+/// A row of tappable meal chips (Breakfast · Lunch · Dinner · Snack · Other), the selected one
+/// filled. Each chip is sized to its own text with consistent padding (so "Breakfast" isn't cramped
+/// the way equal-width made it) and the row wraps to a second line if they don't all fit. Shared by
+/// the add-food sheet and the recents quick-log so the "which meal?" choice looks the same everywhere.
+struct MealChipsRow: View {
+    @Binding var selection: MealType
+    var body: some View {
+        MealFlowLayout(spacing: 8) {
+            ForEach(MealType.allCases) { m in
+                let selected = m == selection
+                Button { selection = m } label: {
+                    Text(m.label)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                        .padding(.horizontal, 14).padding(.vertical, 9)
+                        .background(selected ? Theme.brand : Theme.brandSoft, in: Capsule())
+                        .foregroundStyle(selected ? Color.white : Theme.textPrimary)
+                        .overlay(Capsule().strokeBorder(selected ? Color.clear : Theme.brand.opacity(0.25), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+/// A minimal wrap layout (chips flow left-to-right, drop to the next line when they'd overflow).
+/// Mirrors the `FlowLayout`/`ChecklistFlowLayout` used elsewhere; kept local to the food flow.
+fileprivate struct MealFlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0; y += rowHeight + spacing; rowHeight = 0
+            }
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return CGSize(width: maxWidth == .infinity ? x : maxWidth, height: y + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) {
+        var x = bounds.minX, y = bounds.minY, rowHeight: CGFloat = 0
+        for view in subviews {
+            let size = view.sizeThatFits(.unspecified)
+            if x + size.width > bounds.minX + bounds.width && x > bounds.minX {
+                x = bounds.minX; y += rowHeight + spacing; rowHeight = 0
+            }
+            view.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
     }
 }

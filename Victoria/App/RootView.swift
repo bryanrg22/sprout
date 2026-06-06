@@ -106,19 +106,10 @@ struct MainTabView: View {
     @State private var askVita = AskVitaCenter()
     /// "What's New" sheet — shown once per marketing version (see `WhatsNew`).
     @State private var showWhatsNew = false
-    /// After What's New, invite a planless user to build their adaptive plan ("let's personalize you").
-    @State private var showPlanInvite = false
-    @State private var showPlanIntake = false
-    /// Fire the plan invite at most once, ever. Decoupled from the volatile `coachPlans` @Query so a
-    /// CloudKit cold-start (reinstall / new device, plan not yet hydrated) can't re-invite a user who
-    /// already has a plan — accepting it would rebuild and wipe their existing plan's history.
-    @AppStorage("planInviteShown") private var planInviteShown = false
     // Sorted newest-first so `coachPlans.first` is the CURRENT plan (matches CoachPlan.current /
     // PlanCard) — `syncPlanTargets` mirrors that plan's targets, so an unsorted `.first` could
     // mirror a stale plan if CloudKit ever transiently has two rows.
     @Query(sort: \CoachPlan.updatedAt, order: .reverse) private var coachPlans: [CoachPlan]
-    @Query private var allFoods: [FoodEntry]
-    @Query private var allWeights: [WeightEntry]
 
     var body: some View {
         TabView(selection: $selection) {
@@ -138,6 +129,9 @@ struct MainTabView: View {
                 .tabItem { Label(profile.coachName, systemImage: "sparkles") }.tag(4)
         }
         .environment(askVita)
+        // Keep my buddy snapshot fresh app-wide — publish the moment I log on ANY tab (debounced) and
+        // when the app backgrounds, not only while the Buddy page is open. (See `BuddyAutoPublisher`.)
+        .background(BuddyAutoPublisher())
         // Five tabs is iOS's max before it collapses the rest into a "More" list — which would bury
         // Vita (the flagship coach). So the bar is Today · Nutrients · Progress · Workouts · Vita,
         // and Buddy lives as a Dashboard quick-link (it was one before, and stays one tap away).
@@ -145,29 +139,12 @@ struct MainTabView: View {
         .onChange(of: askVita.pendingTopic) { _, topic in
             if topic != nil { selection = 4 }
         }
-        // "What's New" once per update — a celebratory rundown of the release.
-        .sheet(isPresented: $showWhatsNew, onDismiss: {
-            WhatsNew.markSeen()
-            // Right after the rundown, invite a planless user to make Sprout theirs — but only once
-            // ever, so a not-yet-synced plan on a fresh install can't trigger a history-wiping rebuild.
-            if coachPlans.isEmpty && !planInviteShown {
-                planInviteShown = true
-                showPlanInvite = true
-            }
-        }) {
+        // "What's New" once per update — a celebratory rundown of the release. The adaptive-plan
+        // invite is intentionally NOT chained here: building a plan is something the user opts into
+        // from the "Build my plan" card on Progress, never an auto-popping dialog the instant they
+        // land on Today (it read as intrusive + ugly stacked right on top of the home screen).
+        .sheet(isPresented: $showWhatsNew, onDismiss: { WhatsNew.markSeen() }) {
             WhatsNewView(release: WhatsNew.current)
-        }
-        // "Let's personalize you" — the entry into the adaptive Plan, surfaced once after What's New.
-        .confirmationDialog("Make Sprout yours 🌱", isPresented: $showPlanInvite, titleVisibility: .visible) {
-            // Defer to the next runloop tick: presenting the intake sheet synchronously from the
-            // dialog button collides with the dialog's own dismissal and SwiftUI drops the sheet.
-            Button("Build my plan") { DispatchQueue.main.async { showPlanIntake = true } }
-            Button("Maybe later", role: .cancel) {}
-        } message: {
-            Text("Let \(profile.coachName.isEmpty ? "Vita" : profile.coachName) study your goals and every day you've logged, then build a personal plan that adapts as you go.")
-        }
-        .sheet(isPresented: $showPlanIntake) {
-            PlanIntakeView(profile: profile, foods: allFoods, weights: allWeights)
         }
         .task {
             if WhatsNew.shouldShow() { showWhatsNew = true }
@@ -185,8 +162,10 @@ struct MainTabView: View {
     private func syncPlanTargets() {
         let plan = coachPlans.first
         let newCalorie = (plan?.hasRange == true) ? (plan?.calorieMin ?? 0) : 0
+        let newCalorieMax = (plan?.hasRange == true) ? (plan?.calorieMax ?? 0) : 0
         let newProtein = max(0, plan?.proteinTarget ?? 0)
         if profile.calorieTargetOverride != newCalorie { profile.calorieTargetOverride = newCalorie }
+        if profile.calorieMaxOverride != newCalorieMax { profile.calorieMaxOverride = newCalorieMax }
         if profile.proteinTargetOverride != newProtein { profile.proteinTargetOverride = newProtein }
     }
 }

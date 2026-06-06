@@ -125,7 +125,7 @@ enum UnitSystem: String, Codable, CaseIterable, Identifiable {
 }
 
 enum MealType: String, Codable, CaseIterable, Identifiable {
-    case breakfast, lunch, dinner, snack
+    case breakfast, lunch, dinner, snack, other
     var id: String { rawValue }
     var label: String { rawValue.capitalized }
     var systemImage: String {
@@ -134,6 +134,7 @@ enum MealType: String, Codable, CaseIterable, Identifiable {
         case .lunch:     return "sun.max.fill"
         case .dinner:    return "moon.stars.fill"
         case .snack:     return "carrot.fill"
+        case .other:     return "fork.knife"
         }
     }
     var sortOrder: Int {
@@ -142,6 +143,7 @@ enum MealType: String, Codable, CaseIterable, Identifiable {
         case .lunch:     return 1
         case .dinner:    return 2
         case .snack:     return 3
+        case .other:     return 4
         }
     }
 }

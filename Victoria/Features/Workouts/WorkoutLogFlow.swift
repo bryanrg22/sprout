@@ -117,7 +117,10 @@ struct WorkoutLogFlow: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: Theme.Space.sm)],
                           spacing: Theme.Space.sm) {
                     ForEach(WorkoutKind.allCases) { k in
-                        KindTile(kind: k, selected: kind == k) {
+                        // Nothing is pre-selected. Tapping a kind auto-advances, so a default
+                        // highlight only ever read as "Gym is already chosen" — confusing. Let the
+                        // user make the first move; every tile sits neutral until tapped.
+                        KindTile(kind: k, selected: false) {
                             kind = k
                             advanceFromKind()
                         }

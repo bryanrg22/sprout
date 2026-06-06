@@ -9,6 +9,10 @@ struct PlanIntakeView: View {
     let profile: UserProfile
     let foods: [FoodEntry]
     let weights: [WeightEntry]
+    /// When set, this is an ADJUST (a plan already exists): we show her current targets and ask
+    /// what's changed, rather than the first-time "let's build it" framing. Either way the build
+    /// runs the same deep-research `generate` pass, so an adjust is a genuine re-research.
+    var existingPlan: CoachPlan? = nil
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -16,9 +20,12 @@ struct PlanIntakeView: View {
     @State private var timeframe = ""
     @State private var dayToDay = ""
     @State private var exercise = ""
+    @State private var whatsChanged = ""   // adjust mode: the single "what's different now" box
     @State private var isBuilding = false
     @State private var errorText: String?
+    @FocusState private var fieldFocused: Bool   // any intake box; drives the keyboard "Done" button
 
+    private var isAdjust: Bool { existingPlan != nil }
     private var coachName: String { profile.coachName.isEmpty ? "Vita" : profile.coachName }
     private var unit: String { profile.unitSystem.weightUnit }
     private var currentWeight: Double { TrendCalculator.currentTrend(weights) ?? profile.startWeightLbs }
@@ -33,11 +40,19 @@ struct PlanIntakeView: View {
                     form
                 }
             }
-            .navigationTitle("Build your plan")
+            .navigationTitle(isAdjust ? "Adjust your plan" : "Build your plan")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     if !isBuilding { Button("Cancel") { dismiss() } }
+                }
+                // A "Done" above the keyboard so the submit button is always reachable — the boxes
+                // grow as she types and can otherwise hide it (esp. on the single big adjust box).
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { fieldFocused = false }
+                        .font(.body.weight(.semibold))
+                        .tint(Theme.brand)
                 }
             }
         }
@@ -49,7 +64,9 @@ struct PlanIntakeView: View {
     private var form: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Space.lg) {
-                Text("Tell \(coachName) what you're going for, in your own words. The more real the better — she reasons over this **and** every day you've logged to build a plan just for you.")
+                Text(isAdjust
+                     ? "Tell \(coachName) what's changed since your last plan — a new goal or timeframe, a different schedule, new training, anything. She'll do fresh deep research over this **and** every day you've logged, and update your whole plan."
+                     : "Tell \(coachName) what you're going for, in your own words. The more real the better — she reasons over this **and** every day you've logged to build a plan just for you.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -62,17 +79,34 @@ struct PlanIntakeView: View {
                     }
                 }
 
-                field(title: "By when?",
-                      placeholder: "e.g. by the end of summer, before school starts",
-                      text: $timeframe, minHeight: 44)
+                // When adjusting, show the plan she has now so she can see what she's changing from.
+                if let plan = existingPlan, plan.hasRange || plan.proteinTarget > 0 {
+                    HStack(spacing: Theme.Space.lg) {
+                        if plan.hasRange { labeledStat("Plan fuel", "\(plan.calorieRangeText) kcal") }
+                        if plan.proteinTarget > 0 { labeledStat("Plan protein", "\(Int(plan.proteinTarget)) g") }
+                    }
+                }
 
-                field(title: "What's your day-to-day like?",
-                      placeholder: "Work / school, schedule, how much time you have, anything going on…",
-                      text: $dayToDay, minHeight: 96)
+                if isAdjust {
+                    // She already told Vita the whole picture when she built the plan — re-asking the
+                    // full intake would be making a NEW plan. Adjusting just needs ONE open space for
+                    // what's different now; Vita re-researches that against everything she's logged.
+                    field(title: "What's changed?",
+                          placeholder: "e.g. I want to go faster now · my schedule freed up · I started lifting 5×/week · I've hit a plateau · my goal shifted to 135…",
+                          text: $whatsChanged, minHeight: 160)
+                } else {
+                    field(title: "By when?",
+                          placeholder: "e.g. by the end of summer, before school starts",
+                          text: $timeframe, minHeight: 44)
 
-                field(title: "Your exercise & training",
-                      placeholder: "Gym days, running, sports — or if you're just getting started…",
-                      text: $exercise, minHeight: 96)
+                    field(title: "What's your day-to-day like?",
+                          placeholder: "Work / school, schedule, how much time you have, anything going on…",
+                          text: $dayToDay, minHeight: 96)
+
+                    field(title: "Your exercise & training",
+                          placeholder: "Gym days, running, sports — or if you're just getting started…",
+                          text: $exercise, minHeight: 96)
+                }
 
                 if let errorText {
                     Text(errorText)
@@ -82,7 +116,7 @@ struct PlanIntakeView: View {
                 }
 
                 Button(action: build) {
-                    Text("Build my plan")
+                    Text(isAdjust ? "Update my plan" : "Build my plan")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.primary)
@@ -90,6 +124,9 @@ struct PlanIntakeView: View {
             }
             .padding(Theme.Space.lg)
         }
+        // Let her swipe the keyboard down to reach "Build my plan" — the boxes grow as she writes, so
+        // without this the button can sit under the keyboard after she types in the last field.
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private func labeledStat(_ label: String, _ value: String) -> some View {
@@ -106,6 +143,7 @@ struct PlanIntakeView: View {
                 .font(.body)
                 .foregroundStyle(Theme.textPrimary)
                 .tint(Theme.brand)
+                .focused($fieldFocused)
                 .padding(Theme.Space.md)
                 .frame(minHeight: minHeight, alignment: .topLeading)
                 .background(
@@ -178,11 +216,12 @@ struct PlanIntakeView: View {
     }
 
     private func build() {
-        let intake = """
+        let intake = isAdjust ? adjustIntake : """
         Timeframe: \(timeframe.trimmingCharacters(in: .whitespacesAndNewlines))
         Day-to-day: \(dayToDay.trimmingCharacters(in: .whitespacesAndNewlines))
         Exercise & schedule: \(exercise.trimmingCharacters(in: .whitespacesAndNewlines))
         """
+        let verb = isAdjust ? "update" : "build"
         errorText = nil
         isBuilding = true
         Task {
@@ -190,20 +229,33 @@ struct PlanIntakeView: View {
                 _ = try await PlanService.generate(profile: profile, foods: foods, weights: weights,
                                                    intake: intake, context: context)
                 await MainActor.run {
-                    foldContextIntoProfile()   // what she shared also grows her durable profile
+                    if !isAdjust { foldContextIntoProfile() }   // the first build grows her durable profile
                     dismiss()
                 }
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {
                     isBuilding = false
-                    errorText = "\(coachName) needs an Anthropic key to build your plan — add one in More → AI."
+                    errorText = "\(coachName) needs an Anthropic key to \(verb) your plan — add one in More → AI."
                 }
             } catch {
                 await MainActor.run {
                     isBuilding = false
-                    errorText = "Something went wrong building your plan. Let's try again in a moment."
+                    errorText = "Something went wrong \(verb == "update" ? "updating" : "building") your plan. Let's try again in a moment."
                 }
             }
         }
+    }
+
+    /// The adjust-mode intake: the current plan (so the model adjusts FROM it, not blind) + what she
+    /// said is different now. `generate` still re-researches it against every day she's logged.
+    private var adjustIntake: String {
+        var out = "This is an ADJUSTMENT to an existing plan."
+        if let plan = existingPlan {
+            if plan.hasRange { out += "\nCurrent plan fuel range: \(plan.calorieRangeText) kcal." }
+            if plan.proteinTarget > 0 { out += "\nCurrent plan protein: \(Int(plan.proteinTarget)) g." }
+            if !plan.headline.isEmpty { out += "\nCurrent plan headline: \(plan.headline)" }
+        }
+        out += "\n\nWhat's changed since that plan, in her words:\n\(whatsChanged.trimmingCharacters(in: .whitespacesAndNewlines))"
+        return out
     }
 }

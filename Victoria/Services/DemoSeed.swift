@@ -83,6 +83,7 @@ enum DemoSeed {
             case .lunch:     return (12, 30)
             case .snack:     return (15, 30)
             case .dinner:    return (19, 0)
+            case .other:     return (14, 0)
             }
         }
         func mealDate(_ meal: MealType, on day: Date) -> Date {

@@ -28,7 +28,8 @@ struct CalorieBudgetView: View {
     }
 
     private var remaining: Int { Int(max(snap.caloriesRemaining, 0).rounded()) }
-    private var over: Bool { snap.caloriesRemaining < 0 }
+    /// Over only once past the soft CEILING — entering her range (crossing the floor) is NOT "over".
+    private var over: Bool { snap.calorieOver }
 
     // systemSmall — the ring + big number
     private var small: some View {

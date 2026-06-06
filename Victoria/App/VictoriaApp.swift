@@ -54,8 +54,20 @@ struct VictoriaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .fontDesign(.rounded)
+            Group {
+                #if DEBUG
+                // DEBUG-ONLY: `--pixel-gallery` shows the pixel-character roster for eyeballing new
+                // sprites (Peso, Tito, …). Compiled out of Release.
+                if CommandLine.arguments.contains("--pixel-gallery") {
+                    PixelGalleryView()
+                } else {
+                    RootView()
+                }
+                #else
+                RootView()
+                #endif
+            }
+            .fontDesign(.rounded)
         }
         .modelContainer(container)
     }

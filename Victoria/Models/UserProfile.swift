@@ -51,6 +51,10 @@ final class UserProfile {
     /// SwiftData migration (older rows read as 0 → computed).
     var calorieTargetOverride: Double = 0
     var proteinTargetOverride: Double = 0
+    /// The plan's soft calorie CEILING (kcal) — the top of her daily range — mirrored from
+    /// `CoachPlan.calorieMax`. `0` = no plan ceiling (a band is synthesized around the target).
+    /// Defaulted so the @Model stays SwiftData-migration- and CloudKit-ready.
+    var calorieMaxOverride: Double = 0
 
     // Buddy
     /// Opt-IN to sharing the FULL daily picture (weight trend, calories, protein, today's
@@ -67,6 +71,19 @@ final class UserProfile {
     var companionName: String = "Sprout"
     /// Which pixel avatar the solo companion uses (Victoria vs Bryan).
     var companionAvatarRaw: String = CompanionAvatar.victoria.rawValue
+
+    // Artist Easter-egg cameos — rare "guest star" appearances on a good day (see
+    // `ArtistCameo` / `CameoDirector`). Concrete defaults (not optional) so the @Model stays
+    // SwiftData-migration- and CloudKit-ready (older rows read as ".distantPast" / "").
+    /// Last day a guest actually appeared (drives the floor + pity timing).
+    var lastCameoDate: Date = Date.distantPast
+    /// Last day we rolled the cameo chance — caps it to one roll/day, win or lose.
+    var lastCameoRollDate: Date = Date.distantPast
+    /// Which guest last appeared (raw `ArtistCameo` value), for rotation.
+    var lastCameoArtistRaw: String = ""
+    /// Last day the Alejandro "rival" goal-hit gag played — caps it to once per day. The rival
+    /// is a motivational figure only (no data sync). See `AlejandroGagOverlay`.
+    var lastAlejandroGagDate: Date = Date.distantPast
 
     // Appearance
     /// Visual theme/skin: `.cute` (Victoria — warm pastel, light) or `.cool`

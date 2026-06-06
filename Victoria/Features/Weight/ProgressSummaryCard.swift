@@ -13,7 +13,9 @@ struct ProgressSummaryCard: View {
     @Query(sort: \FoodEntry.date, order: .reverse) private var foods: [FoodEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
     @Query(sort: \StepsEntry.date) private var steps: [StepsEntry]
-    @Query(sort: \WorkoutEntry.date) private var workouts: [WorkoutEntry]
+    // `WorkoutSession` is what the Workouts tab writes; the legacy `WorkoutEntry` is debug-only, so
+    // reading it counted zero real workouts for real users (only `.date` is used here).
+    @Query(sort: \WorkoutSession.date) private var workouts: [WorkoutSession]
 
     @State private var phase: Phase = .idle
     @State private var reloadTick = 0
@@ -34,7 +36,9 @@ struct ProgressSummaryCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .card(padding: Theme.spacingL)
-            .task(id: reloadTick) { await load() }
+            // Re-run when the user refreshes (reloadTick) OR when the targets change — so adjusting
+            // the plan refreshes this recap right away instead of leaving yesterday's-numbers story.
+            .task(id: "\(reloadTick)|\(targetSignature)") { await load() }
         }
     }
 
@@ -244,8 +248,15 @@ struct ProgressSummaryCard: View {
 
     // MARK: - Daily cache
 
+    /// The targets that drive the recap — calorie/protein/water overrides + step goal. Folded into
+    /// the cache key so that the moment the plan (or Vita) changes a goal, the previously-cached recap
+    /// is bypassed and a fresh one is written against the new numbers — no stale "your progress" story.
+    private var targetSignature: String {
+        "\(Int(profile.calorieTargetOverride))-\(Int(profile.proteinTargetOverride))-"
+        + "\(Int(profile.waterGoalOzOverride))-\(profile.dailyStepGoal)"
+    }
     private var cacheKey: String {
-        "progress.summary." + Date.now.formatted(.iso8601.year().month().day())
+        "progress.summary." + Date.now.formatted(.iso8601.year().month().day()) + "." + targetSignature
     }
     private func cachedSummary() -> ProgressSummary? {
         guard let data = UserDefaults.standard.data(forKey: cacheKey) else { return nil }

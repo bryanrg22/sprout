@@ -79,14 +79,17 @@ final class BuddyViewModel {
 
     // MARK: Init
 
-    init(defaults: UserDefaults = .standard) {
+    /// - Parameter observePushes: subscribe to remote-change pushes and auto-refresh. The Buddy hub
+    ///   wants this; the always-on `BuddyAutoPublisher` (which only publishes, never displays) passes
+    ///   `false` so we don't run a second redundant refresh loop.
+    init(defaults: UserDefaults = .standard, observePushes: Bool = true) {
         self.myUserID = Self.resolveMyUserID(defaults: defaults)
         self.service = BuddySync.makeDefault(myUserID: myUserID)
         self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service, defaults: defaults)
         // Restore the paired state at launch from the service's persisted link, so we don't
         // flash the pairing screen (and lose the pairing) every time the app reopens.
         self.isLinked = (service.linkedBuddyID != nil)
-        observeRemotePushes()
+        if observePushes { observeRemotePushes() }
     }
 
     /// Test / preview seam: inject a specific service + id.
@@ -371,6 +374,7 @@ final class BuddyViewModel {
                      waterToday: Double = 0,
                      waterGoal: Double = 0,
                      workedOutToday: Bool = false,
+                     workoutSummary: String = "",
                      sharesFullData: Bool = false,
                      trendWeightLbs: Double = 0,
                      goalWeightLbs: Double = 0,
@@ -379,6 +383,10 @@ final class BuddyViewModel {
                      calorieTarget: Double = 0,
                      proteinEaten: Double = 0,
                      proteinTarget: Double = 0,
+                     carbsEaten: Double = 0,
+                     carbTarget: Double = 0,
+                     fatEaten: Double = 0,
+                     fatTarget: Double = 0,
                      todayFoods: String = "",
                      displayName: String = "Your buddy") async {
         let mood: BuddyCharacterMood = dayStreak >= 7 ? .thriving : (loggedToday ? .happy : .sleepy)
@@ -395,6 +403,7 @@ final class BuddyViewModel {
             waterToday: max(waterToday, 0),
             waterGoal: max(waterGoal, 0),
             workedOutToday: workedOutToday,
+            workoutSummary: workoutSummary,
             sharesFullData: sharesFullData,
             trendWeightLbs: max(trendWeightLbs, 0),
             goalWeightLbs: max(goalWeightLbs, 0),
@@ -403,6 +412,10 @@ final class BuddyViewModel {
             calorieTarget: max(calorieTarget, 0),
             proteinEaten: max(proteinEaten, 0),
             proteinTarget: max(proteinTarget, 0),
+            carbsEaten: max(carbsEaten, 0),
+            carbTarget: max(carbTarget, 0),
+            fatEaten: max(fatEaten, 0),
+            fatTarget: max(fatTarget, 0),
             todayFoods: todayFoods
         )
         do {

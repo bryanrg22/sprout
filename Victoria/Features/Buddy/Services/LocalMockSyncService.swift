@@ -192,6 +192,7 @@ final class LocalMockSyncService: BuddySyncService {
                                     waterToday: buddyWater,
                                     waterGoal: buddyWaterGoal,
                                     workedOutToday: buddyWorkedOut,
+                                    workoutSummary: buddyWorkedOut ? "Chest · Arms" : "",
                                     sharesFullData: true,
                                     trendWeightLbs: 153.8,
                                     goalWeightLbs: 140,

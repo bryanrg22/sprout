@@ -5,11 +5,7 @@ import Charts
 struct WeightView: View {
     @Bindable var profile: UserProfile
     @Environment(\.modelContext) private var context
-    @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
-    // Mirrors PlanCard's own query so the "Adjust plan" chip appears only once a plan exists
-    // (PlanCard shows "Build my plan" when this is empty — adjusting a plan you don't have is nonsense).
-    @Query(sort: \CoachPlan.updatedAt, order: .reverse) private var coachPlans: [CoachPlan]
 
     @State private var range: ChartRange = .threeMonths
     @State private var showingLog = false
@@ -84,9 +80,9 @@ struct WeightView: View {
                         // reframe right above it.
                         if rawIsDiscouragingBlip { reframeCard }
                         trendCard
-                        // The adaptive Plan + its "Adjust plan" chip.
+                        // The adaptive Plan — compact, with its own "Adjust my plan" / "ask Vita"
+                        // actions built in (so no separate chip is needed here anymore).
                         PlanCard(profile: profile)
-                        if coachPlans.first != nil { adjustPlanChip }
                         // Metrics at a glance — calories/protein/steps/water sparklines.
                         ProgressMetricsSection(profile: profile)
                         // GitHub-style "days you showed up" consistency heatmap.
@@ -108,37 +104,6 @@ struct WeightView: View {
                 )
             }
         }
-    }
-
-    // MARK: - Adjust-plan chip
-
-    /// A small, secondary affordance under the plan card: deep-links to Vita with a
-    /// plan-adjustment prompt. Reuses the Ask-Vita bus exactly like `PlanCard.askInsight`
-    /// — setting the topic makes RootView flip to the Vita tab and Vita answers it.
-    /// Kept deliberately small (a chip, not a card) so the plan stays the hero.
-    private var adjustPlanChip: some View {
-        HStack {
-            Spacer(minLength: 0)
-            Button {
-                askVita?.ask(AskVitaTopic(
-                    name: "Adjust my plan",
-                    icon: "slider.horizontal.3",
-                    value: currentTrend.map { "\($0.formatted(.number.precision(.fractionLength(1)))) \(unitLabel) now" } ?? "",
-                    question: "I'd like to adjust my plan — what should change? Look at how I've actually been doing (weight trend, calories, protein, steps, consistency) and tell me what to tweak and why."))
-            } label: {
-                Label("Adjust plan", systemImage: "slider.horizontal.3")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.brand)
-                    .padding(.horizontal, Theme.spacingM)
-                    .padding(.vertical, Theme.spacingXS + 1)
-                    .background(Theme.brandSoft, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Theme.brand.opacity(0.28), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .bouncyPress()
-            .accessibilityLabel("Adjust my plan with \(profile.coachName.isEmpty ? "Vita" : profile.coachName)")
-        }
-        .padding(.top, -(Theme.spacingS))   // tuck it up snug under the plan card
     }
 
     // MARK: - Trend (the one weight card: big number + rate, then the chart)

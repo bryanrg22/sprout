@@ -61,6 +61,10 @@ struct CalorieSpeedometer<Center: View>: View {
     var size: CGFloat = 150
     var lineWidth: CGFloat = 13
     var track: Color = Theme.divider
+    /// Optional "in range" zone (as fractions of the full scale) drawn as a soft band on the
+    /// track — e.g. ~0.9...1.0 marks where her healthy calorie range sits on the gauge.
+    var rangeBand: ClosedRange<Double>? = nil
+    var rangeColor: Color = Theme.info
 
     @ViewBuilder var center: () -> Center
 
@@ -89,6 +93,16 @@ struct CalorieSpeedometer<Center: View>: View {
                     .frame(width: 2, height: i % 2 == 0 ? 9 : 5)
                     .offset(y: -(size / 2 - lineWidth - 7))
                     .rotationEffect(.degrees(angle(Double(i) / 8)))
+            }
+
+            // The healthy "in range" zone — a soft band on the track so she can see where to aim
+            // (the gauge spans to the ceiling; this marks floor→ceiling).
+            if let band = rangeBand {
+                Circle()
+                    .trim(from: sweep * min(max(band.lowerBound, 0), 1),
+                          to: sweep * min(max(band.upperBound, 0), 1))
+                    .stroke(rangeColor.opacity(0.55), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    .rotationEffect(.degrees(baseRotation))
             }
 
             // Gradient progress sweep, growing from the empty (lower-left) end. A round cap

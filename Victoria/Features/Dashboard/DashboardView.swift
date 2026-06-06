@@ -13,7 +13,9 @@ struct DashboardView: View {
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
     @Query private var water: [WaterEntry]
     @Query(sort: \StepsEntry.date) private var steps: [StepsEntry]
-    @Query(sort: \WorkoutEntry.date) private var workouts: [WorkoutEntry]
+    // `WorkoutSession` is what the Workouts tab actually writes — `workoutToday` (and the Buddy
+    // face-off, which mirrors this) must read it, not the legacy debug-only `WorkoutEntry`.
+    @Query(sort: \WorkoutSession.date) private var workouts: [WorkoutSession]
 
     /// Bumped on each water log so `.sensoryFeedback` fires a success tap.
     @State private var waterPulse = 0
@@ -21,6 +23,14 @@ struct DashboardView: View {
     @State private var didAppear = false
     /// Presents Settings (opened from the pixel-avatar button in the header).
     @State private var showSettings = false
+    /// Re-opens the "What's New" carousel from the quick-link tile (a manual re-watch; the
+    /// once-per-version auto-show in RootView is unaffected).
+    @State private var showReplayWhatsNew = false
+    /// The current rare "guest star" cameo (Peso / Tito / …), shown in its OWN card under
+    /// Sprout when one is visiting today. Decided by `CameoDirector` on a good day.
+    @State private var cameo: ArtistCameo?
+    /// Drives the rival Alejandro bomb-gag overlay (a transient goal-hit celebration).
+    @State private var alejandroGag = false
 
     // MARK: Derived
     private var todayFood: [FoodEntry] { allFood.filter { Calendar.current.isDateInToday($0.date) } }
@@ -38,10 +48,19 @@ struct DashboardView: View {
     private var stepBonus: Double { profile.stepBonusCalories(weightLbs: basisWeight, steps: todaySteps) }
     private var target: Double { baseTarget + stepBonus }
     private var remaining: Double { target - consumed }
-    private var ringProgress: Double { target > 0 ? consumed / target : 0 }
+    /// Her calorie goal as a range (low floor … high ceiling); high is infinite for a gain goal.
+    private var calRange: (low: Double, high: Double) { profile.calorieGoalRange(weightLbs: basisWeight) }
+    /// The gauge spans the WHOLE range (to the ceiling) for loss/maintain; to the single target for gain.
+    private var gaugeMax: Double { (calRange.high.isFinite && calRange.high > calRange.low) ? calRange.high : max(target, 1) }
+    private var ringProgress: Double { gaugeMax > 0 ? consumed / gaugeMax : 0 }
+    /// Where the "in range" zone sits on the gauge (floor→ceiling); nil for a single-number gain goal.
+    private var calRangeBand: ClosedRange<Double>? {
+        guard calRange.high.isFinite, calRange.high > calRange.low, gaugeMax > 0 else { return nil }
+        return min(max(calRange.low / gaugeMax, 0), 1)...1.0
+    }
     /// She's reached her fuel target for the day (within a small grace band). Shown as
     /// a win, not "budget gone" — the anti-restriction framing for an under-eater.
-    private var reachedFuel: Bool { target > 0 && consumed >= target * 0.97 }
+    private var reachedFuel: Bool { profile.hasReachedCalorieGoal(consumed: consumed, weightLbs: basisWeight) }
     private var macros: NutritionMath.Macros { profile.macroTargets(weightLbs: basisWeight) }
     private var waterToday: Double { water.filter { Calendar.current.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz } }
     private var workoutToday: Bool { workouts.contains { Calendar.current.isDateInToday($0.date) } }
@@ -88,7 +107,8 @@ struct DashboardView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        ZStack {
+            NavigationStack {
             ScrollView {
                 VStack(spacing: Theme.Space.md) {
                     header.appearLift(didAppear, index: 0)
@@ -122,6 +142,13 @@ struct DashboardView: View {
                                 question: "What makes my little companion happy, and what is it really telling me about how my day is going?")
                         }
                         .appearLift(didAppear, index: 5)
+                    // A rare "guest star" drops by in its OWN card right under Sprout (she's
+                    // never displaced) — one artist at a time, decided by `CameoDirector`.
+                    if let cameo {
+                        GuestCameoCard(artist: cameo)
+                            .id(cameo)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
                     buddyCard.appearLift(didAppear, index: 6)
                     activityRow
                         .askVita {
@@ -156,8 +183,100 @@ struct DashboardView: View {
                     didAppear = true
                 }
             }
+            // A guest may already be visiting (good day) or arrive the moment she hits her goal;
+            // the same goal-hit also fires Alejandro's rival gag (once/day).
+            .task {
+                #if DEBUG
+                debugSeedIfNeeded()
+                #endif
+                evaluateCameo(); maybeAlejandroGag()
+            }
+            .onChange(of: reachedFuel) { _, _ in evaluateCameo(); maybeAlejandroGag() }
+        }
+            // Alejandro's rival gag — a transient FULL-SCREEN celebration on a goal-hit, placed
+            // as a sibling in the top-level ZStack so it gets the full screen size (an .overlay
+            // here only sized to the gag's own content, leaving the scrim tiny + content off-center).
+            if alejandroGag {
+                AlejandroGagOverlay(onDone: { alejandroGag = false })
+                    .transition(.opacity)
+            }
         }
     }
+
+    /// Decide whether a rare guest cameo should be visiting today — only on a good day, via
+    /// `CameoDirector`'s pity timer — and show it. Persists the director's bookkeeping (roll
+    /// date / shown guest) so the timing survives relaunches.
+    private func evaluateCameo() {
+        #if DEBUG
+        if let forced = CameoDirector.debugForced() {
+            if cameo != forced {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { cameo = forced }
+            }
+            return
+        }
+        #endif
+        let active = CameoDirector.evaluate(profile: profile, isGoodDay: reachedFuel)
+        if context.hasChanges { try? context.save() }   // persists the director's roll/visit dates
+        if let active, cameo != active {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { cameo = active }
+        }
+    }
+
+    /// Alejandro's rival gag — when she hits her daily fuel goal, he pops in, gets bombed, and
+    /// keels over with a "$200 closer" 💸. At most once per day. (Alejandro is a motivational
+    /// figure — no data sync.)
+    private func maybeAlejandroGag() {
+        #if DEBUG
+        let dbg = CommandLine.arguments
+        if dbg.contains("--alejandro-gag") || dbg.contains("-alejandroGag") {
+            // Delay so the dashboard's entrance settles first (mirrors a real goal-hit trigger).
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                if !alejandroGag { withAnimation { alejandroGag = true } }
+            }
+            return
+        }
+        #endif
+        let cal = Calendar.current
+        let now = Date.now
+        // Already celebrated today → nothing to do.
+        guard !cal.isDate(profile.lastAlejandroGagDate, inSameDayAs: now) else { return }
+        // Today's win, live.
+        if reachedFuel { fireAlejandroGag(forDay: now); return }
+        // Deferred: she hit her range YESTERDAY but never saw it (didn't open the app before the
+        // day rolled over). Acknowledge it on her next open — most recent missed day only.
+        if let yesterday = cal.date(byAdding: .day, value: -1, to: now),
+           profile.lastAlejandroGagDate < cal.startOfDay(for: yesterday),
+           profile.hasReachedCalorieGoal(consumed: consumed(on: yesterday), weightLbs: basisWeight) {
+            fireAlejandroGag(forDay: yesterday)
+        }
+    }
+
+    /// Record + play the rival gag for a given goal-hit day (caps it to once per day).
+    private func fireAlejandroGag(forDay day: Date) {
+        profile.lastAlejandroGagDate = day
+        if context.hasChanges { try? context.save() }
+        withAnimation { alejandroGag = true }
+    }
+
+    /// Total calories logged on a given calendar day (for the deferred "you still did it" check).
+    private func consumed(on day: Date) -> Double {
+        allFood.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }.reduce(0) { $0 + $1.totalCalories }
+    }
+
+    #if DEBUG
+    /// DEBUG: seed today's calories via `--seed-cals=N` so the calorie-range states (under / in
+    /// range / over) + the goal-hit gag can be verified without hand-logging. Replaces any prior seed.
+    private func debugSeedIfNeeded() {
+        guard let arg = CommandLine.arguments.first(where: { $0.hasPrefix("--seed-cals=") }),
+              let n = Double(arg.dropFirst("--seed-cals=".count)) else { return }
+        for e in allFood where e.name == "Debug seed" && Calendar.current.isDateInToday(e.date) {
+            context.delete(e)
+        }
+        let e = FoodEntry(date: .now, mealType: .other, name: "Debug seed", calories: n)
+        context.insert(e)
+        try? context.save()
+    }
+    #endif
 
     /// Buddy lives here — a prominent full-width card right under Sprout (above Steps/Water),
     /// fronted by the shared pixel panda, instead of a small tile buried at the bottom.
@@ -194,12 +313,24 @@ struct DashboardView: View {
     private var quickLinks: some View {
         // Buddy moved up to its own card under Sprout. Achievements stays here as a full-width
         // tile (no tab of its own — 5-tab max keeps Vita on the bar).
-        NavigationLink {
-            AchievementsView(profile: profile)
-        } label: {
-            quickLinkTile(title: "Achievements", icon: "trophy.fill", tint: Theme.warning)
+        VStack(spacing: Theme.Space.sm) {
+            NavigationLink {
+                AchievementsView(profile: profile)
+            } label: {
+                quickLinkTile(title: "Achievements", icon: "trophy.fill", tint: Theme.warning)
+            }
+            .buttonStyle(.plain)
+
+            // Re-watch the release rundown anytime. The carousel still auto-shows only ONCE per
+            // update (see RootView); this is just a way back in — it's too nice to see only once.
+            Button { showReplayWhatsNew = true } label: {
+                quickLinkTile(title: "What's new in \(WhatsNew.appVersion)", icon: "sparkles", tint: Theme.brand)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .sheet(isPresented: $showReplayWhatsNew) {
+            WhatsNewView(release: WhatsNew.current)
+        }
     }
 
     private func quickLinkTile(title: String, icon: String, tint: Color) -> some View {
@@ -251,10 +382,44 @@ struct DashboardView: View {
             }
             Spacer(minLength: Theme.Space.sm)
             if streak > 0 { streakPill }
+            #if DEBUG
+            debugCameoButton
+            #endif
             pfpButton
         }
         .padding(.top, Theme.Space.sm)
     }
+
+    #if DEBUG
+    /// DEBUG-only: summon / cycle the guest cameo (off → Peso → Tito → off) to eyeball it
+    /// without waiting for the pity timer. Compiled out of Release.
+    private var debugCameoButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
+                let all = ArtistCameo.allCases
+                if let c = cameo, let i = all.firstIndex(of: c) {
+                    cameo = (i + 1 < all.count) ? all[i + 1] : nil   // cycle … → nil → …
+                } else {
+                    cameo = all.first
+                }
+            }
+        } label: {
+            Image(systemName: "theatermasks.fill")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Theme.textSecondary)
+                .frame(width: 46, height: 46)
+                .background(Theme.brandSoft, in: Circle())
+                .overlay(Circle().strokeBorder(Theme.divider, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .bouncyPress()
+        // Long-press also fires Alejandro's gag for quick testing.
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+            withAnimation { alejandroGag = true }
+        })
+        .accessibilityLabel("Debug: tap = cycle guest, long-press = Alejandro gag")
+    }
+    #endif
 
     /// Top-right pixel-avatar that opens Settings (Gmail-style account button).
     private var pfpButton: some View {
@@ -303,7 +468,8 @@ struct DashboardView: View {
     private var caloriesHero: some View {
         HStack(spacing: Theme.Space.lg) {
             CalorieSpeedometer(progress: didAppear ? ringProgress : 0,
-                               gradient: .brandSweep) {
+                               gradient: .brandSweep,
+                               rangeBand: calRangeBand) {
                 VStack(spacing: 0) {
                     // For an under-eater we frame the goal as fuel to REACH, not a budget
                     // to drain. Still room to eat → "TO GO" (encouraging). Reached the
@@ -339,7 +505,7 @@ struct DashboardView: View {
             .animation(.spring(response: 0.5, dampingFraction: 0.85), value: ringProgress)
 
             VStack(alignment: .leading, spacing: 11) {
-                heroRow("Goal", Int(target.rounded()), Theme.brand)
+                heroRow("Goal", profile.calorieGoalText(weightLbs: basisWeight), Theme.brand, monospaced: true)
                 heroRow("Eaten", Int(consumed.rounded()), Theme.textSecondary)
                 Divider().overlay(Theme.divider)
                 // Once fueled, a remaining number ("26 to go") contradicts "Reached",

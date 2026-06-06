@@ -56,6 +56,10 @@ final class BuddySnapshot {
     /// Did they get any movement / a workout in today? A simple "showed up" flag —
     /// never a duration or intensity that invites comparison.
     var workedOutToday: Bool = false
+    /// A short, SAFE label of today's workout for the face-off ("Chest · Arms", "Run · 30 min").
+    /// Empty when no session was logged. Movement only — never weight/reps/intensity numbers that
+    /// invite comparison; it just says WHAT they did so "Moved!" can read "Chest day."
+    var workoutSummary: String = ""
 
     // MARK: Full shared data (OPT-IN — weight / calories / food)
     //
@@ -86,6 +90,13 @@ final class BuddySnapshot {
     var proteinEaten: Double = 0
     /// Their daily protein target (g).
     var proteinTarget: Double = 0
+    /// Carbs eaten so far today (g) + their daily carb target — completes the macro picture
+    /// alongside protein (opt-in, gated by `sharesFullData`).
+    var carbsEaten: Double = 0
+    var carbTarget: Double = 0
+    /// Fat eaten so far today (g) + their daily fat target (opt-in, gated by `sharesFullData`).
+    var fatEaten: Double = 0
+    var fatTarget: Double = 0
     /// Today's logged food names, comma-joined (already trimmed/limited at publish time).
     var todayFoods: String = ""
 
@@ -100,6 +111,7 @@ final class BuddySnapshot {
          waterToday: Double = 0,
          waterGoal: Double = 0,
          workedOutToday: Bool = false,
+         workoutSummary: String = "",
          sharesFullData: Bool = false,
          trendWeightLbs: Double = 0,
          goalWeightLbs: Double = 0,
@@ -108,6 +120,10 @@ final class BuddySnapshot {
          calorieTarget: Double = 0,
          proteinEaten: Double = 0,
          proteinTarget: Double = 0,
+         carbsEaten: Double = 0,
+         carbTarget: Double = 0,
+         fatEaten: Double = 0,
+         fatTarget: Double = 0,
          todayFoods: String = "") {
         self.ownerUserID = ownerUserID
         self.displayName = displayName
@@ -120,6 +136,7 @@ final class BuddySnapshot {
         self.waterToday = waterToday
         self.waterGoal = waterGoal
         self.workedOutToday = workedOutToday
+        self.workoutSummary = workoutSummary
         self.sharesFullData = sharesFullData
         self.trendWeightLbs = trendWeightLbs
         self.goalWeightLbs = goalWeightLbs
@@ -128,6 +145,10 @@ final class BuddySnapshot {
         self.calorieTarget = calorieTarget
         self.proteinEaten = proteinEaten
         self.proteinTarget = proteinTarget
+        self.carbsEaten = carbsEaten
+        self.carbTarget = carbTarget
+        self.fatEaten = fatEaten
+        self.fatTarget = fatTarget
         self.todayFoods = todayFoods
     }
 
