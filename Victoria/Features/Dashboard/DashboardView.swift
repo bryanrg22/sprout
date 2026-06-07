@@ -26,9 +26,6 @@ struct DashboardView: View {
     /// Re-opens the "What's New" carousel from the quick-link tile (a manual re-watch; the
     /// once-per-version auto-show in RootView is unaffected).
     @State private var showReplayWhatsNew = false
-    /// The current rare "guest star" cameo (Peso / Tito / …), shown in its OWN card under
-    /// Sprout when one is visiting today. Decided by `CameoDirector` on a good day.
-    @State private var cameo: ArtistCameo?
     /// Drives the rival Alejandro bomb-gag overlay (a transient goal-hit celebration).
     @State private var alejandroGag = false
 
@@ -64,6 +61,8 @@ struct DashboardView: View {
     private var macros: NutritionMath.Macros { profile.macroTargets(weightLbs: basisWeight) }
     private var waterToday: Double { water.filter { Calendar.current.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz } }
     private var workoutToday: Bool { workouts.contains { Calendar.current.isDateInToday($0.date) } }
+    /// "Did she move today?" — a logged workout (gym/cardio/run) OR hitting her step goal.
+    private var movedToday: Bool { workoutToday || todaySteps >= profile.dailyStepGoal }
 
     /// Snapshot handed to the free on-device insight engine. Streak fields use
     /// multi-day helpers below; single-day wins read straight off today's totals.
@@ -142,13 +141,6 @@ struct DashboardView: View {
                                 question: "What makes my little companion happy, and what is it really telling me about how my day is going?")
                         }
                         .appearLift(didAppear, index: 5)
-                    // A rare "guest star" drops by in its OWN card right under Sprout (she's
-                    // never displaced) — one artist at a time, decided by `CameoDirector`.
-                    if let cameo {
-                        GuestCameoCard(artist: cameo)
-                            .id(cameo)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
                     buddyCard.appearLift(didAppear, index: 6)
                     activityRow
                         .askVita {
@@ -189,9 +181,9 @@ struct DashboardView: View {
                 #if DEBUG
                 debugSeedIfNeeded()
                 #endif
-                evaluateCameo(); maybeAlejandroGag()
+                maybeAlejandroGag()
             }
-            .onChange(of: reachedFuel) { _, _ in evaluateCameo(); maybeAlejandroGag() }
+            .onChange(of: reachedFuel) { _, _ in maybeAlejandroGag() }
         }
             // Alejandro's rival gag — a transient FULL-SCREEN celebration on a goal-hit, placed
             // as a sibling in the top-level ZStack so it gets the full screen size (an .overlay
@@ -200,25 +192,6 @@ struct DashboardView: View {
                 AlejandroGagOverlay(onDone: { alejandroGag = false })
                     .transition(.opacity)
             }
-        }
-    }
-
-    /// Decide whether a rare guest cameo should be visiting today — only on a good day, via
-    /// `CameoDirector`'s pity timer — and show it. Persists the director's bookkeeping (roll
-    /// date / shown guest) so the timing survives relaunches.
-    private func evaluateCameo() {
-        #if DEBUG
-        if let forced = CameoDirector.debugForced() {
-            if cameo != forced {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { cameo = forced }
-            }
-            return
-        }
-        #endif
-        let active = CameoDirector.evaluate(profile: profile, isGoodDay: reachedFuel)
-        if context.hasChanges { try? context.save() }   // persists the director's roll/visit dates
-        if let active, cameo != active {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { cameo = active }
         }
     }
 
@@ -241,12 +214,14 @@ struct DashboardView: View {
         // Already celebrated today → nothing to do.
         guard !cal.isDate(profile.lastAlejandroGagDate, inSameDayAs: now) else { return }
         // Today's win, live.
-        if reachedFuel { fireAlejandroGag(forDay: now); return }
-        // Deferred: she hit her range YESTERDAY but never saw it (didn't open the app before the
-        // day rolled over). Acknowledge it on her next open — most recent missed day only.
+        // Today: a FULL day = IN her calorie range AND she moved (a workout, or her step goal).
+        if reachedFuel && movedToday { fireAlejandroGag(forDay: now); return }
+        // Deferred: she completed everything YESTERDAY but never opened the app before the day
+        // rolled over. Acknowledge it on her next open — most recent missed day only.
         if let yesterday = cal.date(byAdding: .day, value: -1, to: now),
            profile.lastAlejandroGagDate < cal.startOfDay(for: yesterday),
-           profile.hasReachedCalorieGoal(consumed: consumed(on: yesterday), weightLbs: basisWeight) {
+           profile.hasReachedCalorieGoal(consumed: consumed(on: yesterday), weightLbs: basisWeight),
+           moved(on: yesterday) {
             fireAlejandroGag(forDay: yesterday)
         }
     }
@@ -261,6 +236,14 @@ struct DashboardView: View {
     /// Total calories logged on a given calendar day (for the deferred "you still did it" check).
     private func consumed(on day: Date) -> Double {
         allFood.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }.reduce(0) { $0 + $1.totalCalories }
+    }
+
+    /// Did she move on a given day (for the deferred check): a workout logged OR steps >= goal.
+    private func moved(on day: Date) -> Bool {
+        let cal = Calendar.current
+        if workouts.contains(where: { cal.isDate($0.date, inSameDayAs: day) }) { return true }
+        let s = steps.first { cal.isDate($0.date, inSameDayAs: day) }?.count ?? 0
+        return s >= profile.dailyStepGoal
     }
 
     #if DEBUG
@@ -383,7 +366,7 @@ struct DashboardView: View {
             Spacer(minLength: Theme.Space.sm)
             if streak > 0 { streakPill }
             #if DEBUG
-            debugCameoButton
+            debugGagButton
             #endif
             pfpButton
         }
@@ -391,18 +374,10 @@ struct DashboardView: View {
     }
 
     #if DEBUG
-    /// DEBUG-only: summon / cycle the guest cameo (off → Peso → Tito → off) to eyeball it
-    /// without waiting for the pity timer. Compiled out of Release.
-    private var debugCameoButton: some View {
+    /// DEBUG-only: fire Alejandro's gag on demand (compiled out of Release).
+    private var debugGagButton: some View {
         Button {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
-                let all = ArtistCameo.allCases
-                if let c = cameo, let i = all.firstIndex(of: c) {
-                    cameo = (i + 1 < all.count) ? all[i + 1] : nil   // cycle … → nil → …
-                } else {
-                    cameo = all.first
-                }
-            }
+            withAnimation { alejandroGag = true }
         } label: {
             Image(systemName: "theatermasks.fill")
                 .font(.subheadline.weight(.bold))
@@ -413,11 +388,7 @@ struct DashboardView: View {
         }
         .buttonStyle(.plain)
         .bouncyPress()
-        // Long-press also fires Alejandro's gag for quick testing.
-        .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
-            withAnimation { alejandroGag = true }
-        })
-        .accessibilityLabel("Debug: tap = cycle guest, long-press = Alejandro gag")
+        .accessibilityLabel("Debug: fire Alejandro gag")
     }
     #endif
 
