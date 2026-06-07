@@ -72,15 +72,6 @@ final class UserProfile {
     /// Which pixel avatar the solo companion uses (Victoria vs Bryan).
     var companionAvatarRaw: String = CompanionAvatar.victoria.rawValue
 
-    // Artist Easter-egg cameos — rare "guest star" appearances on a good day (see
-    // `ArtistCameo` / `CameoDirector`). Concrete defaults (not optional) so the @Model stays
-    // SwiftData-migration- and CloudKit-ready (older rows read as ".distantPast" / "").
-    /// Last day a guest actually appeared (drives the floor + pity timing).
-    var lastCameoDate: Date = Date.distantPast
-    /// Last day we rolled the cameo chance — caps it to one roll/day, win or lose.
-    var lastCameoRollDate: Date = Date.distantPast
-    /// Which guest last appeared (raw `ArtistCameo` value), for rotation.
-    var lastCameoArtistRaw: String = ""
     /// Last day the Alejandro "rival" goal-hit gag played — caps it to once per day. The rival
     /// is a motivational figure only (no data sync). See `AlejandroGagOverlay`.
     var lastAlejandroGagDate: Date = Date.distantPast

@@ -61,13 +61,15 @@ extension UserProfile {
     /// ± band (kcal) added above a computed target when there's no explicit plan ceiling.
     static let calorieGoalBand: Double = 150
 
-    /// The day's calorie goal as a range. `high` is `.greatestFiniteMagnitude` for a gain goal
-    /// (no ceiling — over is the point). Uses the active plan's min/max when set.
+    /// The day's calorie goal as a range. `high` is `.infinity` for a gain goal — NOT
+    /// `.greatestFiniteMagnitude`, which is finite and slips past `.isFinite` guards (it once
+    /// rendered as a 1.8e308 "goal"). Every consumer guards `high.isFinite` and falls back to a
+    /// single number for gain. Uses the active plan's min/max when set.
     func calorieGoalRange(weightLbs: Double) -> (low: Double, high: Double) {
         let target = dailyCalorieTarget(weightLbs: weightLbs)   // floor-clamped; = plan min when active
         switch pace.direction {
         case .gain:
-            return (target, .greatestFiniteMagnitude)
+            return (target, .infinity)
         case .lose, .maintain:
             let high = calorieMaxOverride > target ? calorieMaxOverride : target + Self.calorieGoalBand
             return (target, high)

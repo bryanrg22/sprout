@@ -124,7 +124,6 @@
 		B3E7A2E64AA611E31259D29B /* WidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E068E1518FA921CACEF67EBC /* WidgetViews.swift */; };
 		B62BF6C6FD41715FABC5229D /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95FFCEC3E35084F35904F238 /* PairingView.swift */; };
 		B7CC2C1A5EE08BF5D5B9B481 /* StreakCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B36AAB291B880B1284FC07A /* StreakCalculator.swift */; };
-		B814DBB7C1224712B160A101 /* PixelArtists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3595B2D187E0B17276BCFB80 /* PixelArtists.swift */; };
 		B9649EBD3CF3D881AD9D2D39 /* CompanionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81BC1CDFB2921C3A2145384 /* CompanionCard.swift */; };
 		B9743FFE74938D2364D7BCE1 /* CompanionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = D207DF2D14F12D5402219B72 /* CompanionWidget.swift */; };
 		BAE285FFCE15DFD8ED258A06 /* CompanionPercentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C4F83F8027A4F1EC7F5441 /* CompanionPercentTests.swift */; };
@@ -147,14 +146,12 @@
 		D78C7A75B68145701B14A1DB /* AskVita.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877647FE1441882C0B236B86 /* AskVita.swift */; };
 		D8619E921EA999900BA5D754 /* NudgeInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B4F51B49943A36D2B97164 /* NudgeInboxView.swift */; };
 		D9AF14B7935E55848439B355 /* FoodSuggestionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 838653814EF4B3FABB37065D /* FoodSuggestionService.swift */; };
-		DA9E04F3552EB403B6373D07 /* GuestCameoCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21B605F939025A7A261A5ACB /* GuestCameoCard.swift */; };
 		DDDDBD91C7DEAC32EBC774F5 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D78F0C2E1353FFC3CEA830 /* ScanView.swift */; };
 		DE41FFADE9DBF826CCF20C31 /* Diagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C4CA5F5D180DFADDDE951B /* Diagnostics.swift */; };
 		DE4F901A4A052EC68F8F585A /* WorkoutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3818882D403D7B694B2C73E4 /* WorkoutsView.swift */; };
 		E0BFF4B21A38057313A05E43 /* TrendCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66D5227E0D2EE0A0A4F30FF /* TrendCalculator.swift */; };
 		E10D9D029469C0DEDE5B97E7 /* CoachMemoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FCF6B4B7233CDA34F9E2D69 /* CoachMemoryService.swift */; };
 		E222376F00F9BC4B1C898D90 /* AddFoodSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0629E4D01F839FB22C070693 /* AddFoodSheet.swift */; };
-		E2A3573B665B5866597DCF85 /* ArtistCameo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94C15A6B59FF12FFE8260BB9 /* ArtistCameo.swift */; };
 		E348494079E2B5D0F01965CD /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53D5739FC39DCF615DF984F9 /* WeightEntry.swift */; };
 		E35CAB09619F1888A90D849A /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BC77A3AEEC07846D74AE1AB /* DashboardView.swift */; };
 		E49392A2B044CE4A92E1E69D /* NudgeStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEC0129D7D2895ADFB2B2250 /* NudgeStyle.swift */; };
@@ -228,7 +225,6 @@
 		1F1D21D18B3C96DD028AF731 /* ChecklistCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistCard.swift; sourceTree = "<group>"; };
 		1F855D2CB0ECA33EE29D20FB /* BuddyHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyHomeView.swift; sourceTree = "<group>"; };
 		207514F0DF609FA2EE6818F2 /* NearbyPlacesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlacesService.swift; sourceTree = "<group>"; };
-		21B605F939025A7A261A5ACB /* GuestCameoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCameoCard.swift; sourceTree = "<group>"; };
 		292A02402539016C9A899EB1 /* CoachToolsWriteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachToolsWriteTests.swift; sourceTree = "<group>"; };
 		29C4F83F8027A4F1EC7F5441 /* CompanionPercentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionPercentTests.swift; sourceTree = "<group>"; };
 		2AB509A7A61B2B0B31522E6E /* NutritionMathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionMathTests.swift; sourceTree = "<group>"; };
@@ -241,7 +237,6 @@
 		32E4B6EDFA5E8E67D5E2DB61 /* PixelCompanion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelCompanion.swift; sourceTree = "<group>"; };
 		334986CD1AE75547FDC8EFEC /* WeightTrendWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendWidget.swift; sourceTree = "<group>"; };
 		33D2BE6DD4AB20EC3C6FC9C8 /* WidgetPixelArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPixelArt.swift; sourceTree = "<group>"; };
-		3595B2D187E0B17276BCFB80 /* PixelArtists.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelArtists.swift; sourceTree = "<group>"; };
 		36F2A31D52930268B344618C /* VictoriaWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = VictoriaWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3818882D403D7B694B2C73E4 /* WorkoutsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutsView.swift; sourceTree = "<group>"; };
 		39C4CA5F5D180DFADDDE951B /* Diagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostics.swift; sourceTree = "<group>"; };
@@ -300,7 +295,6 @@
 		8FB9D6CD7896AC651710369E /* WorkoutLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLogView.swift; sourceTree = "<group>"; };
 		916DE65AB42E40566D66C45A /* CoachMemoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachMemoryTests.swift; sourceTree = "<group>"; };
 		919F01860F3CAF092AF99598 /* BuddyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyViewModel.swift; sourceTree = "<group>"; };
-		94C15A6B59FF12FFE8260BB9 /* ArtistCameo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistCameo.swift; sourceTree = "<group>"; };
 		94F0C97480042EED99E868CA /* FoodEntryTotalsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodEntryTotalsTests.swift; sourceTree = "<group>"; };
 		95FFCEC3E35084F35904F238 /* PairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingView.swift; sourceTree = "<group>"; };
 		97873B755C72389BB72439F6 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
@@ -634,12 +628,9 @@
 			isa = PBXGroup;
 			children = (
 				8DA98E87B543055485E7395F /* AlejandroGagOverlay.swift */,
-				94C15A6B59FF12FFE8260BB9 /* ArtistCameo.swift */,
 				B81BC1CDFB2921C3A2145384 /* CompanionCard.swift */,
 				01A77E62146C85D65BC7CE57 /* CompanionEngine.swift */,
 				D291CE0399A8EAA34FA9E4BB /* CompanionPhrases.swift */,
-				21B605F939025A7A261A5ACB /* GuestCameoCard.swift */,
-				3595B2D187E0B17276BCFB80 /* PixelArtists.swift */,
 				32E4B6EDFA5E8E67D5E2DB61 /* PixelCompanion.swift */,
 			);
 			path = Companion;
@@ -942,7 +933,6 @@
 				610FB41ABF12F268214498BF /* AnthropicClient.swift in Sources */,
 				F0A856B463156AE57288E1CF /* AppDelegate.swift in Sources */,
 				BEA1711039178AFB45F2207A /* AppIconPickerView.swift in Sources */,
-				E2A3573B665B5866597DCF85 /* ArtistCameo.swift in Sources */,
 				D78C7A75B68145701B14A1DB /* AskVita.swift in Sources */,
 				9386D2360A86BF815E2F1CD5 /* BuddyAutoPublisher.swift in Sources */,
 				14648DDF43EE25841D5124A6 /* BuddyChallengeCard.swift in Sources */,
@@ -986,7 +976,6 @@
 				13C494B09E2C2F21D5E97A31 /* FoodPhotoAnalyzer.swift in Sources */,
 				66C7E2BEFBA44062FCC8A991 /* FoodSuggestionEngine.swift in Sources */,
 				D9AF14B7935E55848439B355 /* FoodSuggestionService.swift in Sources */,
-				DA9E04F3552EB403B6373D07 /* GuestCameoCard.swift in Sources */,
 				26BFCEAB4DFD64AFB6A22ED9 /* HealthKitService.swift in Sources */,
 				4BEE706DCC6FB619DA87E377 /* HealthKitSteps.swift in Sources */,
 				A6EA31F3DBA857DDB5294B27 /* HealthSettingsView.swift in Sources */,
@@ -1015,7 +1004,6 @@
 				0CC58981F8FD094F22D1040C /* OpenFoodFactsService.swift in Sources */,
 				B62BF6C6FD41715FABC5229D /* PairingView.swift in Sources */,
 				37897EE96533112AB82B6ED6 /* PhotoFoodFlow.swift in Sources */,
-				B814DBB7C1224712B160A101 /* PixelArtists.swift in Sources */,
 				55C7CCF294775BDF69DAD689 /* PixelCompanion.swift in Sources */,
 				556329D7DA7449E41989F672 /* PlanCard.swift in Sources */,
 				CFDBC22741FA262566D0D573 /* PlanIntakeView.swift in Sources */,
@@ -1132,7 +1120,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VictoriaWidgets/VictoriaWidgets.entitlements;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				INFOPLIST_FILE = VictoriaWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1156,7 +1144,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Victoria/Victoria.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Sprout;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Sprout uses the camera so you can snap a photo of your meal and get an instant calorie and macro estimate.";
@@ -1189,7 +1177,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Victoria/Victoria.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Sprout;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Sprout uses the camera so you can snap a photo of your meal and get an instant calorie and macro estimate.";
@@ -1249,7 +1237,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = C924TNC23B;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -1310,7 +1298,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = C924TNC23B;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1365,7 +1353,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VictoriaWidgets/VictoriaWidgets.entitlements;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				INFOPLIST_FILE = VictoriaWidgets/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
