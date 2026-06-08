@@ -613,7 +613,7 @@ struct DashboardView: View {
                         .font(.title3.weight(.bold)).monospacedDigit()
                         .contentTransition(.numericText())
                         .minimumScaleFactor(0.7).lineLimit(1)
-                    Text("\(profile.waterContainerLabel)s · \(Int(waterToday)) oz")
+                    Text(profile.waterText(waterToday, goalOz: waterGoal))
                         .font(.caption2).foregroundStyle(Theme.textSecondary)
                         .monospacedDigit().lineLimit(1)
                 }

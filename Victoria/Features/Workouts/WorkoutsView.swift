@@ -92,6 +92,9 @@ struct WorkoutsView: View {
     private var startOfToday: Date { cal.startOfDay(for: .now) }
     private var isViewingToday: Bool { cal.isDateInToday(selectedDay) }
     private var canGoForward: Bool { selectedDay < startOfToday }
+    /// The day the account began — no data exists before it, so don't browse earlier (mirrors Nutrients).
+    private var accountStart: Date { min(cal.startOfDay(for: profiles.first?.createdAt ?? startOfToday), startOfToday) }
+    private var canGoBack: Bool { selectedDay > accountStart }
 
     private var dayLabel: String {
         if cal.isDateInToday(selectedDay) { return "Today" }
@@ -101,7 +104,7 @@ struct WorkoutsView: View {
 
     private func step(_ days: Int) {
         let next = cal.date(byAdding: .day, value: days, to: selectedDay) ?? selectedDay
-        let clamped = min(cal.startOfDay(for: next), startOfToday)
+        let clamped = min(max(cal.startOfDay(for: next), accountStart), startOfToday)
         navTick += 1
         withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) { selectedDay = clamped }
     }
@@ -113,7 +116,7 @@ struct WorkoutsView: View {
 
     private var dayNav: some View {
         HStack(spacing: Theme.Space.sm) {
-            navChevron("chevron.left", enabled: true) { step(-1) }
+            navChevron("chevron.left", enabled: canGoBack) { step(-1) }
                 .accessibilityLabel("Previous day")
 
             Button {
@@ -169,8 +172,8 @@ struct WorkoutsView: View {
         NavigationStack {
             DatePicker("Jump to a day",
                        selection: Binding(get: { selectedDay },
-                                          set: { selectedDay = min(cal.startOfDay(for: $0), startOfToday) }),
-                       in: ...startOfToday, displayedComponents: .date)
+                                          set: { selectedDay = min(max(cal.startOfDay(for: $0), accountStart), startOfToday) }),
+                       in: accountStart...startOfToday, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .tint(Theme.brand)
                 .padding()

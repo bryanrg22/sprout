@@ -9,7 +9,7 @@ options:
 settings:
   base:
     MARKETING_VERSION: "2.0"
-    CURRENT_PROJECT_VERSION: "12"
+    CURRENT_PROJECT_VERSION: "13"
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: "C924TNC23B"
     CODE_SIGN_STYLE: Automatic
@@ -57,7 +57,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: "AppIconPanda AppIconVictoria AppIconBryan"
-        CURRENT_PROJECT_VERSION: "12"
+        CURRENT_PROJECT_VERSION: "13"
         MARKETING_VERSION: "2.0"
         INFOPLIST_KEY_CFBundleDisplayName: Sprout
         # Lets CloudKit's SILENT snapshot-changed push (ensureSnapshotSubscription) wake the app in
@@ -101,7 +101,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.widgets
         PRODUCT_NAME: VictoriaWidgets
         TARGETED_DEVICE_FAMILY: "1"
-        CURRENT_PROJECT_VERSION: "12"
+        CURRENT_PROJECT_VERSION: "13"
         MARKETING_VERSION: "2.0"
 
   VictoriaTests:

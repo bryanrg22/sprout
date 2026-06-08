@@ -119,6 +119,18 @@ struct BuddyHomeView: View {
             withAnimation { didAppear = true }
         }
         .refreshable { await model.refresh() }
+        // While the hub is OPEN, re-pull my buddy's snapshot every ~20s. CloudKit's public-DB
+        // query-subscription push is unreliable (and at best only wakes a backgrounded app), so
+        // without this a buddy's update wouldn't appear while you're sitting on the page — exactly
+        // the "she's been on the buddy page and it still isn't updating" report. Auto-cancels when
+        // the view disappears.
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(20))
+                if Task.isCancelled { break }
+                if model.isLinked { await model.refresh() }
+            }
+        }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:

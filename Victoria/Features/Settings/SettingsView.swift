@@ -287,7 +287,9 @@ struct SettingsView: View {
         return Section {
             TextField("e.g. I'm a busy nurse, weekends are hard, I love spicy food, salads bore me…",
                       text: $profile.onboardingNote, axis: .vertical)
-                .lineLimit(3...8)
+                // No upper line cap — the field grows to show the WHOLE profile (the plan now writes a
+                // multi-sentence summary here), instead of clipping it into a tiny internal scroll.
+                .lineLimit(3...)
                 .foregroundStyle(Theme.textPrimary)
         } header: {
             sectionHeader("About you")
@@ -338,11 +340,19 @@ struct SettingsView: View {
 
     private var waterSection: some View {
         Section {
+            // Units (oz / mL) — affects display + input only; storage stays canonical oz.
+            row(icon: "ruler", tint: Theme.water) {
+                Picker("Units", selection: Binding(get: { profile.waterUnit },
+                                                   set: { profile.waterUnit = $0 })) {
+                    ForEach(WaterUnit.allCases) { u in Text(u.label).tag(u) }
+                }
+                .pickerStyle(.segmented)
+            }
             // Pick the container she actually drinks from.
             row(icon: "drop.fill", tint: Theme.water) {
                 Picker("One drink is a", selection: containerBinding) {
                     ForEach(Self.waterContainers, id: \.label) { c in
-                        Text("\(c.label.capitalized) (\(Int(c.oz)) oz)").tag(c.label)
+                        Text("\(c.label.capitalized) (\(profile.waterAmount(c.oz)))").tag(c.label)
                     }
                 }
             }
@@ -361,7 +371,7 @@ struct SettingsView: View {
             }
 
             if profile.waterGoalOzOverride > 0 {
-                Button("Reset to recommended (\(Int(NutritionMath.dailyWaterOz(weightLbs: currentWeightLbs))) oz)") {
+                Button("Reset to recommended (\(profile.waterAmount(NutritionMath.dailyWaterOz(weightLbs: currentWeightLbs))))") {
                     profile.waterGoalOzOverride = 0
                 }
                 .foregroundStyle(Theme.water)
@@ -369,7 +379,7 @@ struct SettingsView: View {
         } header: {
             sectionHeader("Water")
         } footer: {
-            footer("Tap the + on the Water card to log one \(profile.waterContainerLabel). Goal ≈ \(Int(profile.waterTargetOz)) oz a day.")
+            footer("Tap the + on the Water card to log one \(profile.waterContainerLabel). Goal ≈ \(profile.waterAmount(profile.waterTargetOz)) a day.")
         }
         .listRowBackground(Theme.card)
     }

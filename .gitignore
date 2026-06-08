@@ -17,3 +17,5 @@ Victoria [0-9]*.xcodeproj/
 
 # Claude Code git worktrees (transient agent scratch)
 .claude/worktrees/
+
+build_rel/

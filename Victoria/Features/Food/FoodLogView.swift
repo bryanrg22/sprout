@@ -55,6 +55,10 @@ struct FoodLogView: View {
     private var isViewingToday: Bool { cal.isDateInToday(selectedDay) }
     /// Can't log or browse into the future.
     private var canGoForward: Bool { selectedDay < startOfToday }
+    /// The day the account began — there's no data before this, so browsing earlier is meaningless.
+    private var accountStart: Date { min(cal.startOfDay(for: profile.createdAt), startOfToday) }
+    /// Can't browse earlier than the account start.
+    private var canGoBack: Bool { selectedDay > accountStart }
 
     /// "Today" / "Yesterday" / "Mon, Jun 1" (with year if it's an older year).
     private var dayLabel: String {
@@ -70,7 +74,7 @@ struct FoodLogView: View {
 
     private func step(_ days: Int) {
         guard let next = cal.date(byAdding: .day, value: days, to: selectedDay) else { return }
-        let clamped = min(cal.startOfDay(for: next), startOfToday)
+        let clamped = min(max(cal.startOfDay(for: next), accountStart), startOfToday)
         guard clamped != selectedDay else { return }
         navTick += 1
         withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
@@ -195,7 +199,7 @@ struct FoodLogView: View {
 
     private var dayNav: some View {
         HStack(spacing: Theme.Space.sm) {
-            navChevron("chevron.left", enabled: true) { step(-1) }
+            navChevron("chevron.left", enabled: canGoBack) { step(-1) }
                 .accessibilityLabel("Previous day")
 
             Button {
@@ -255,9 +259,9 @@ struct FoodLogView: View {
                 "Jump to a day",
                 selection: Binding(
                     get: { selectedDay },
-                    set: { selectedDay = min(cal.startOfDay(for: $0), startOfToday) }
+                    set: { selectedDay = min(max(cal.startOfDay(for: $0), accountStart), startOfToday) }
                 ),
-                in: ...startOfToday,
+                in: accountStart...startOfToday,
                 displayedComponents: .date
             )
             .datePickerStyle(.graphical)
@@ -354,7 +358,7 @@ struct FoodLogView: View {
                             .font(.caption).foregroundStyle(Theme.water)
                     }
                 }
-                Text("\(Int(amount.rounded())) of \(Int(goal.rounded())) oz\(isViewingToday ? " today" : "")")
+                Text("\(profile.waterText(amount, goalOz: goal))\(isViewingToday ? " today" : "")")
                     .font(.caption)
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -406,12 +410,7 @@ struct FoodLogView: View {
             // Same four options as the toolbar "＋", surfaced as a friendly,
             // filled brand-gradient pill so the empty state has an obvious,
             // inviting next step. (A real Button keeps the menu's tap reliable.)
-            Menu {
-                Button { open(.recents) } label: { Label("Recents & favorites", systemImage: "clock.arrow.circlepath") }
-                Button { open(.photo) }   label: { Label("Snap or describe a meal", systemImage: "camera.fill") }
-                Button { open(.scan) }    label: { Label("Scan", systemImage: "barcode.viewfinder") }
-                Button { open(.manual) }  label: { Label("Add manually", systemImage: "square.and.pencil") }
-            } label: {
+            Menu { addMenuItems } label: {
                 Label("Log your first bite", systemImage: "plus.circle.fill")
                     .font(.headline)
                     .foregroundStyle(.white)
@@ -451,7 +450,7 @@ struct FoodLogView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: Theme.Space.sm) {
-                Button { open(.manual) } label: {
+                Menu { addMenuItems } label: {
                     Label("Add food", systemImage: "plus.circle.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
@@ -488,13 +487,17 @@ struct FoodLogView: View {
 
     // MARK: Add menu
 
+    /// The four add-food entry points — shared by the toolbar "＋", the empty-state pill, and the
+    /// past-day card so all three offer the SAME choices (Recents / Snap / Scan / Add manually).
+    @ViewBuilder private var addMenuItems: some View {
+        Button { open(.recents) } label: { Label("Recents & favorites", systemImage: "clock.arrow.circlepath") }
+        Button { open(.photo) }   label: { Label("Snap or describe a meal", systemImage: "camera.fill") }
+        Button { open(.scan) }    label: { Label("Scan", systemImage: "barcode.viewfinder") }
+        Button { open(.manual) }  label: { Label("Add manually", systemImage: "square.and.pencil") }
+    }
+
     private var addMenu: some View {
-        Menu {
-            Button { open(.recents) } label: { Label("Recents & favorites", systemImage: "clock.arrow.circlepath") }
-            Button { open(.photo) }   label: { Label("Snap or describe a meal", systemImage: "camera.fill") }
-            Button { open(.scan) }    label: { Label("Scan", systemImage: "barcode.viewfinder") }
-            Button { open(.manual) }  label: { Label("Add manually", systemImage: "square.and.pencil") }
-        } label: {
+        Menu { addMenuItems } label: {
             Image(systemName: "plus.circle.fill")
                 .font(.title2)
                 .foregroundStyle(Theme.brand)

@@ -166,15 +166,15 @@ struct ConsistencyHeatmapCard: View {
 
     @Query(sort: \FoodEntry.date) private var foods: [FoodEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
-    @Query(sort: \StepsEntry.date) private var steps: [StepsEntry]
+    @Query(sort: \WaterEntry.date) private var water: [WaterEntry]
 
     private let weeks = 12
     private let cell: CGFloat = 13
     private let gap: CGFloat = 3
 
     var body: some View {
-        // Only show once there's any history to fill it in.
-        if foods.isEmpty && weights.isEmpty && steps.isEmpty {
+        // Only show once there's any ACTIVE logging history to fill it in (matches the cells).
+        if foods.isEmpty && weights.isEmpty && water.isEmpty {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
@@ -229,12 +229,15 @@ struct ConsistencyHeatmapCard: View {
         return cal.date(byAdding: .day, value: -7 * (weeks - 1), to: weekStart) ?? today
     }
 
-    /// 0 = nothing, 0.45 = showed up (weight/steps), 1.0 = logged food that day.
+    /// 0 = nothing, 0.45 = showed up (water or a manual weigh-in), 1.0 = logged food that day.
+    /// Counts ACTIVE logging only, on/after the account start — never auto-imported steps or
+    /// scale-synced weights, which used to light up ~30 days she never logged (the staircase bug).
     private func intensity(for day: Date) -> Double {
         let cal = Calendar.current
+        if day < cal.startOfDay(for: profile.createdAt) { return 0.0 }
         if foods.contains(where: { cal.isDate($0.date, inSameDayAs: day) }) { return 1.0 }
-        let other = weights.contains { cal.isDate($0.date, inSameDayAs: day) }
-            || steps.contains { cal.isDate($0.date, inSameDayAs: day) && $0.count > 0 }
+        let other = water.contains { cal.isDate($0.date, inSameDayAs: day) }
+            || weights.contains { $0.healthKitUUID == nil && cal.isDate($0.date, inSameDayAs: day) }
         return other ? 0.45 : 0.0
     }
 

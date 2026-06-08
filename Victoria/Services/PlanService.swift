@@ -39,7 +39,7 @@ enum PlanService {
         // PHASE 2 — author the structured plan, now grounded in the research.
         let result = try await client.structured(
             system: systemPrompt(profile: profile),
-            userContent: userContent(dataSummary: dataSummary, intake: intake) + coaching + research.grounding,
+            userContent: userContent(dataSummary: dataSummary, intake: intake, about: profile.onboardingNote) + coaching + research.grounding,
             toolName: "write_plan",
             toolDescription: "Author the user's personalized, data-grounded coaching plan.",
             schema: planSchema,
@@ -48,6 +48,12 @@ enum PlanService {
         )
 
         let fresh = makePlan(from: result, dataPoints: points)
+        // Fold the model's structured profile summary into her editable "About You" (the single
+        // canonical bio every coach surface reads) — this is why the plan-intake answers now show
+        // up in Settings → About You instead of vanishing into Vita's hidden memory. Only overwrite
+        // when the model actually returned one.
+        let aboutYou = str(result["about_you"]).trimmingCharacters(in: .whitespacesAndNewlines)
+        if !aboutYou.isEmpty { profile.onboardingNote = aboutYou }
         // One plan per user. If one exists, rebuild it IN PLACE (same row) rather than
         // delete-and-insert. Deleting the row could (a) tombstone a CoachPlan that an in-flight
         // `review()` is about to mutate across its await, and (b) invalidate the live reference a
@@ -115,7 +121,7 @@ enum PlanService {
         let client = try AnthropicClient()
         let result = try await client.structured(
             system: reviewSystemPrompt(profile: profile),
-            userContent: reviewUserContent(plan: existing, dataSummary: dataSummary, daysSince: elapsed) + coaching,
+            userContent: reviewUserContent(plan: existing, dataSummary: dataSummary, daysSince: elapsed, about: profile.onboardingNote) + coaching,
             toolName: "write_plan",
             toolDescription: "Re-emit the user's plan, adapted to the latest data (same shape as the build).",
             schema: planSchema,
@@ -125,6 +131,9 @@ enum PlanService {
 
         // Map the fresh result, then keep history: merge changelogs + carry the original createdAt.
         let fresh = makePlan(from: result, dataPoints: points)
+        // Keep her editable About You in sync as the plan adapts (the canonical bio all surfaces read).
+        let aboutYou = str(result["about_you"]).trimmingCharacters(in: .whitespacesAndNewlines)
+        if !aboutYou.isEmpty { profile.onboardingNote = aboutYou }
         let merged = mergedChangelog(old: existing.changelog, new: fresh.changelog)
 
         // Update in place so the row's identity / CloudKit record survives the review.
@@ -189,13 +198,23 @@ enum PlanService {
         (e.g. "current guidance puts protein around…") — it's there so she can trust the plan, not just \
         take your word. Don't cite for its own sake; weave it in where it sharpens a target.
         - changelog_note is one line summarizing what this build set up.
+        - about_you is a clean, organized profile summary (third-person notes) of who they are — \
+        routine/schedule, training, food habits + preferences, constraints, and motivation — \
+        synthesized from their own words and their data. NOT a greeting or a verbatim echo. Carry \
+        forward whatever still holds from their existing About You (shown below if present). This is \
+        saved as their editable About You and read by every coach surface, so make it accurate, \
+        durable, and kind.
         """
     }
 
     /// The data + the user's own intake words, handed to the model as the user turn.
-    static func userContent(dataSummary: String, intake: String) -> String {
+    static func userContent(dataSummary: String, intake: String, about: String = "") -> String {
         let trimmed = intake.trimmingCharacters(in: .whitespacesAndNewlines)
         var out = "Here is everything I know about them from the app:\n\n\(dataSummary)"
+        let bio = about.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !bio.isEmpty {
+            out += "\n\nTheir current About You profile (keep whatever still holds and refine it for about_you):\n\"\(bio)\""
+        }
         if !trimmed.isEmpty {
             out += "\n\nAnd here is what they told me, in their own words, about their goals and life:\n\"\(trimmed)\""
         } else {
@@ -284,6 +303,8 @@ enum PlanService {
         - 3 to 5 insights, each short and actionable. tone = "win", "watch", or "nudge".
         - assessment and strategy are short markdown for a phone, not an essay.
         - changelog_note is the ONE new line for this review (what changed, or "No change needed — on track").
+        - about_you: carry forward their existing About You profile (shown below), refining it only if \
+        the data or their situation clearly changed. Keep it clean third-person profile notes, not a greeting.
 
         Re-emit the FULL plan (every field) by calling write_plan, carrying forward whatever still \
         holds and updating only what the data moved.
@@ -292,7 +313,7 @@ enum PlanService {
 
     /// The review user turn: the current plan (so the model can compare against it), the fresh data
     /// summary, and how long it's been since the plan was last touched.
-    static func reviewUserContent(plan: CoachPlan, dataSummary: String, daysSince: Int) -> String {
+    static func reviewUserContent(plan: CoachPlan, dataSummary: String, daysSince: Int, about: String = "") -> String {
         let when: String
         switch daysSince {
         case 0:  when = "today"
@@ -314,6 +335,10 @@ enum PlanService {
             }
         }
         out += "\nHere is the latest data from the app:\n\n\(dataSummary)\n\n"
+        let bio = about.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !bio.isEmpty {
+            out += "Their current About You profile (carry forward what still holds, refine for about_you):\n\"\(bio)\"\n\n"
+        }
         out += "Review it against the plan above and re-emit the plan by calling write_plan."
         return out
     }
@@ -502,7 +527,8 @@ enum PlanService {
                 ],
             ],
             "changelog_note": ["type": "string", "description": "One line: what this build set up."],
+            "about_you": ["type": "string", "description": "A clean, organized, notes-style summary of WHO THIS PERSON IS, for durable coaching context — their routine/schedule, training, food habits + preferences, constraints, and what motivates them. Third-person profile notes (NOT a greeting, NOT a verbatim echo of their words). 2-4 short sentences or compact lines. Synthesized from their own words + their data; carry forward anything still true from their existing About You. This becomes their editable 'About You' profile that every part of the app reads."],
         ],
-        "required": ["headline", "assessment", "strategy", "calorie_min", "calorie_max", "protein_target", "insights", "changelog_note"],
+        "required": ["headline", "assessment", "strategy", "calorie_min", "calorie_max", "protein_target", "insights", "changelog_note", "about_you"],
     ]
 }
