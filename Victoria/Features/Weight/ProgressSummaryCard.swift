@@ -12,6 +12,7 @@ struct ProgressSummaryCard: View {
 
     @Query(sort: \FoodEntry.date, order: .reverse) private var foods: [FoodEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
+    @Query(sort: \WaterEntry.date) private var water: [WaterEntry]
     @Query(sort: \StepsEntry.date) private var steps: [StepsEntry]
     // `WorkoutSession` is what the Workouts tab writes; the legacy `WorkoutEntry` is debug-only, so
     // reading it counted zero real workouts for real users (only `.date` is used here).
@@ -209,8 +210,18 @@ struct ProgressSummaryCard: View {
         let workoutDays = last7.filter { day in workouts.contains { cal.isDate($0.date, inSameDayAs: day) } }.count
         if workoutDays > 0 { lines.append("Workouts this week: \(workoutDays)") }
 
-        // Consistency
-        lines.append("Current logging streak: \(loggingStreak()) day(s)")
+        // Consistency — the SAME calc the Today streak chip uses (active logging only: food /
+        // water / manual weigh-in, clamped to the account start), so the recap can never disagree
+        // with the flame. Steps are auto-imported (~30 days backfilled), so counting them here was
+        // the "34-day streak" bug.
+        let streak = StreakCalculator.loggingStreak(foods: foods, waters: water,
+                                                    weights: weights, since: profile.createdAt)
+        lines.append("Current logging streak: \(streak) day(s)")
+
+        // Who she is — her editable About You profile, so the recap speaks to her real life, not just
+        // numbers (the same canonical bio chat + the plan read). Keeps every AI surface consistent.
+        let bio = profile.onboardingNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !bio.isEmpty { lines.append("About her, in her own profile: \(bio)") }
 
         // Need at least a weigh-in or some food to say anything real.
         guard !weights.isEmpty || !dayCalories.isEmpty else { return nil }
@@ -224,24 +235,6 @@ struct ProgressSummaryCard: View {
         case .gain: return max(0, profile.goalWeightLbs - trend)
         case .maintain: return nil
         }
-    }
-
-    /// Consecutive days (ending today, or yesterday if today isn't logged yet) with ANY
-    /// log — food, weigh-in, or steps.
-    private func loggingStreak() -> Int {
-        let cal = Calendar.current
-        var days = Set<Date>()
-        for f in foods { days.insert(cal.startOfDay(for: f.date)) }
-        for w in weights { days.insert(cal.startOfDay(for: w.date)) }
-        for s in steps where s.count > 0 { days.insert(cal.startOfDay(for: s.date)) }
-        var day = cal.startOfDay(for: .now)
-        if !days.contains(day) { day = cal.date(byAdding: .day, value: -1, to: day) ?? day }
-        var streak = 0
-        while days.contains(day) {
-            streak += 1
-            day = cal.date(byAdding: .day, value: -1, to: day) ?? day
-        }
-        return streak
     }
 
     private func fmt1(_ v: Double) -> String { String(format: "%.1f", v) }

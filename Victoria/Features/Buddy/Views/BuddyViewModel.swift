@@ -400,22 +400,22 @@ final class BuddyViewModel {
             lastActive: .now,
             stepsToday: max(stepsToday, 0),
             stepGoal: max(stepGoal, 0),
-            waterToday: max(waterToday, 0),
-            waterGoal: max(waterGoal, 0),
+            waterToday: Self.fin(waterToday),
+            waterGoal: Self.fin(waterGoal),
             workedOutToday: workedOutToday,
             workoutSummary: workoutSummary,
             sharesFullData: sharesFullData,
-            trendWeightLbs: max(trendWeightLbs, 0),
-            goalWeightLbs: max(goalWeightLbs, 0),
-            weeklyRateLbs: weeklyRateLbs,                 // SIGNED — do not clamp
-            caloriesEaten: max(caloriesEaten, 0),
-            calorieTarget: max(calorieTarget, 0),
-            proteinEaten: max(proteinEaten, 0),
-            proteinTarget: max(proteinTarget, 0),
-            carbsEaten: max(carbsEaten, 0),
-            carbTarget: max(carbTarget, 0),
-            fatEaten: max(fatEaten, 0),
-            fatTarget: max(fatTarget, 0),
+            trendWeightLbs: Self.fin(trendWeightLbs),
+            goalWeightLbs: Self.fin(goalWeightLbs),
+            weeklyRateLbs: Self.finSigned(weeklyRateLbs),   // SIGNED — keep sign, strip ∞/NaN
+            caloriesEaten: Self.fin(caloriesEaten),
+            calorieTarget: Self.fin(calorieTarget),
+            proteinEaten: Self.fin(proteinEaten),
+            proteinTarget: Self.fin(proteinTarget),
+            carbsEaten: Self.fin(carbsEaten),
+            carbTarget: Self.fin(carbTarget),
+            fatEaten: Self.fin(fatEaten),
+            fatTarget: Self.fin(fatTarget),
             todayFoods: todayFoods
         )
         do {
@@ -424,6 +424,12 @@ final class BuddyViewModel {
             handleSilently(error)
         }
     }
+
+    /// Strip any non-finite garbage (∞ / NaN — e.g. a stray sentinel) before it reaches a CloudKit
+    /// record and shows up as "a million calories" on the buddy's screen. Non-negative.
+    private static func fin(_ v: Double) -> Double { v.isFinite ? max(v, 0) : 0 }
+    /// Finite but sign-preserving (weekly rate can be negative = losing).
+    private static func finSigned(_ v: Double) -> Double { v.isFinite ? v : 0 }
 
     // MARK: - Error → kind copy
 

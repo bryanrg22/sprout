@@ -36,7 +36,9 @@ enum WidgetDataWriter {
 
         let snap = WidgetSnapshot(
             updated: .now,
-            name: profile.name.isEmpty ? "Your" : profile.name.capitalized,
+            // First name only — the widget is narrow and a full name truncates ("Bryan Ramir…").
+            name: profile.name.isEmpty ? "Your"
+                : (profile.name.split(separator: " ").first.map(String.init) ?? profile.name).capitalized,
             themeStyleRaw: profile.themeStyle.rawValue,            // so the widget paints in her/his skin
             companionAvatarRaw: profile.companionAvatar.rawValue,  // so the widget shows the right buddy
             calorieTarget: target,

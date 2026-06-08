@@ -2,9 +2,10 @@ import SwiftUI
 import SwiftData
 
 /// Flexible water logging — opened from the Today water card and the Nutrients tab.
-/// Three ways to log, so you're never locked into one container:
+/// Storage is ALWAYS canonical ounces (`WaterEntry.amountOz`); the display + the typed inputs use
+/// the user's chosen unit (`profile.waterUnit`, oz or mL) and convert only at the edges.
 ///   1. Quick-tap your usual bottle (fast path).
-///   2. Add any custom ounce amount.
+///   2. Add any custom amount (in your chosen unit).
 ///   3. Edit your bottle's size + name so the quick button matches what you actually drink.
 struct WaterLogSheet: View {
     @Bindable var profile: UserProfile
@@ -12,8 +13,9 @@ struct WaterLogSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \WaterEntry.date, order: .reverse) private var allWater: [WaterEntry]
 
-    @State private var customOz: String = ""
-    @State private var bottleOzDraft: String = ""
+    /// Typed in the chosen display unit (oz or mL); converted to oz on save.
+    @State private var customAmount: String = ""
+    @State private var bottleSizeDraft: String = ""
     @State private var bottleLabelDraft: String = ""
 
     private var todayEntries: [WaterEntry] {
@@ -23,15 +25,26 @@ struct WaterLogSheet: View {
     private var containerOz: Double { profile.waterContainerOz > 0 ? profile.waterContainerOz : 16.9 }
     private var goalOz: Double { profile.waterTargetOz }
     private var label: String { profile.waterContainerLabel.isEmpty ? "bottle" : profile.waterContainerLabel }
-    private var customValue: Double { Double(customOz.trimmingCharacters(in: .whitespaces)) ?? 0 }
+    private var unitLabel: String { profile.waterUnitLabel }
+    /// The custom-amount field parsed from the chosen unit into canonical oz.
+    private var customOz: Double { profile.waterToOz(Double(customAmount.trimmingCharacters(in: .whitespaces)) ?? 0) }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
+                    Picker("Units", selection: Binding(get: { profile.waterUnit },
+                                                       set: { profile.waterUnit = $0; try? context.save() })) {
+                        ForEach(WaterUnit.allCases) { u in Text(u.label).tag(u) }
+                    }
+                    .pickerStyle(.segmented)
+                } header: { header("Units") }
+                .listRowBackground(Theme.card)
+
+                Section {
                     HStack(spacing: Theme.Space.sm) {
                         Image(systemName: "drop.fill").foregroundStyle(Theme.water)
-                        Text("\(oz(todayOz)) of \(oz(goalOz)) oz today")
+                        Text("\(profile.waterText(todayOz, goalOz: goalOz)) today")
                             .foregroundStyle(Theme.textPrimary)
                         Spacer()
                         if let last = todayEntries.first {
@@ -47,7 +60,7 @@ struct WaterLogSheet: View {
 
                 Section {
                     Button { add(containerOz) } label: {
-                        Label("Add 1 \(label) (\(oz(containerOz)) oz)", systemImage: "plus.circle.fill")
+                        Label("Add 1 \(label) (\(profile.waterAmount(containerOz)))", systemImage: "plus.circle.fill")
                             .foregroundStyle(Theme.brand)
                     }
                 } header: { header("Quick add") }
@@ -55,36 +68,36 @@ struct WaterLogSheet: View {
 
                 Section {
                     HStack(spacing: Theme.Space.sm) {
-                        TextField("Amount", text: $customOz)
+                        TextField("Amount", text: $customAmount)
                             .keyboardType(.decimalPad)
                             .foregroundStyle(Theme.textPrimary)
-                        Text("oz").foregroundStyle(Theme.textSecondary)
+                        Text(unitLabel).foregroundStyle(Theme.textSecondary)
                         Spacer()
                         Button("Add") {
-                            if customValue > 0 { add(customValue); customOz = "" }
+                            if customOz > 0 { add(customOz); customAmount = "" }
                         }
                         .fontWeight(.semibold)
-                        .foregroundStyle(customValue > 0 ? Theme.brand : Theme.textSecondary)
-                        .disabled(customValue <= 0)
+                        .foregroundStyle(customOz > 0 ? Theme.brand : Theme.textSecondary)
+                        .disabled(customOz <= 0)
                     }
                 } header: { header("Custom amount") } footer: {
-                    footer("Drank a different amount? Add exactly how many ounces.")
+                    footer("Drank a different amount? Add exactly how much in \(unitLabel).")
                 }
                 .listRowBackground(Theme.card)
 
                 Section {
                     HStack(spacing: Theme.Space.sm) {
-                        TextField("Size", text: $bottleOzDraft)
+                        TextField("Size", text: $bottleSizeDraft)
                             .keyboardType(.decimalPad)
                             .foregroundStyle(Theme.textPrimary)
-                        Text("oz").foregroundStyle(Theme.textSecondary)
+                        Text(unitLabel).foregroundStyle(Theme.textSecondary)
                     }
                     TextField("Name (e.g. bottle, glass, cup)", text: $bottleLabelDraft)
                         .autocorrectionDisabled()
                         .foregroundStyle(Theme.textPrimary)
-                    Button("Save my bottle") {
-                        if let v = Double(bottleOzDraft.trimmingCharacters(in: .whitespaces)), v > 0 {
-                            profile.waterContainerOz = v
+                    Button("Save my \(label)") {
+                        if let v = Double(bottleSizeDraft.trimmingCharacters(in: .whitespaces)), v > 0 {
+                            profile.waterContainerOz = profile.waterToOz(v)
                         }
                         let l = bottleLabelDraft.trimmingCharacters(in: .whitespaces)
                         if !l.isEmpty { profile.waterContainerLabel = l }
@@ -92,7 +105,7 @@ struct WaterLogSheet: View {
                     }
                     .fontWeight(.semibold)
                     .foregroundStyle(Theme.brand)
-                } header: { header("Your bottle") } footer: {
+                } header: { header("Your \(label)") } footer: {
                     footer("Set your usual container so the quick button matches what you actually drink from.")
                 }
                 .listRowBackground(Theme.card)
@@ -108,8 +121,14 @@ struct WaterLogSheet: View {
             }
             .tint(Theme.brand)
             .onAppear {
-                bottleOzDraft = oz(containerOz)
+                bottleSizeDraft = profile.waterAmountValue(containerOz)
                 bottleLabelDraft = label
+            }
+            // When the unit flips, re-read the bottle draft in the new unit and clear the half-typed
+            // custom amount so a number typed as oz isn't silently reinterpreted as mL.
+            .onChange(of: profile.waterUnitRaw) { _, _ in
+                bottleSizeDraft = profile.waterAmountValue(containerOz)
+                customAmount = ""
             }
         }
     }
@@ -117,11 +136,6 @@ struct WaterLogSheet: View {
     private func add(_ amountOz: Double) {
         context.insert(WaterEntry(amountOz: amountOz))
         try? context.save()
-    }
-
-    /// Whole numbers show as "16", fractional as "16.9".
-    private func oz(_ v: Double) -> String {
-        v == v.rounded() ? String(Int(v)) : String(format: "%.1f", v)
     }
 
     private func header(_ t: String) -> some View {

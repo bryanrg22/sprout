@@ -40,6 +40,10 @@ final class UserProfile {
     var waterContainerOz: Double = 16.9
     /// Friendly label for that container ("bottle", "glass", "cup").
     var waterContainerLabel: String = "bottle"
+    /// Display/input unit for water — "oz" (canonical) or "ml". Storage always stays in oz
+    /// (`WaterEntry.amountOz`); only the display and the custom-amount input convert. Defaulted
+    /// so the @Model stays SwiftData-migration- and CloudKit-ready (older rows read as oz).
+    var waterUnitRaw: String = "oz"
 
     // Plan-driven targets (single source of truth)
     /// When the adaptive Plan is active, ITS targets become the app's targets: these mirror the

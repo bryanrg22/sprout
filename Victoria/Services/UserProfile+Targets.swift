@@ -3,6 +3,15 @@ import Foundation
 /// Where the day's calorie intake sits relative to her goal range (see `UserProfile.calorieStatus`).
 enum CalorieGoalStatus { case under, inRange, over }
 
+/// How the user prefers to see + enter water. Storage is ALWAYS canonical ounces
+/// (`WaterEntry.amountOz`); this only affects display and the custom-amount input.
+enum WaterUnit: String, CaseIterable, Identifiable {
+    case oz, ml
+    var id: String { rawValue }
+    var label: String { self == .oz ? "oz" : "mL" }
+    static let mlPerOz = 29.5735
+}
+
 /// Convenience computed targets derived from the profile via `NutritionMath`.
 /// These recompute on demand so they always reflect the latest profile + weight.
 extension UserProfile {
@@ -35,8 +44,11 @@ extension UserProfile {
 
     func dailyCalorieTarget(weightLbs: Double) -> Double {
         // The adaptive Plan, when active, is the single source of truth (mirrored into the override
-        // and kept in sync from CoachPlan) — but still clamped to the safe floor.
-        if calorieTargetOverride > 0 { return max(calorieTargetOverride, safeCalorieFloor) }
+        // and kept in sync from CoachPlan) — but still clamped to the safe floor. Ignore a garbage
+        // override (non-finite or absurdly high, e.g. a stray 1.8e308) so it can never become the target.
+        if calorieTargetOverride > 0, calorieTargetOverride.isFinite, calorieTargetOverride < 20_000 {
+            return max(calorieTargetOverride, safeCalorieFloor)
+        }
         return calorieGoal(weightLbs: weightLbs).dailyCalories
     }
 
@@ -71,7 +83,11 @@ extension UserProfile {
         case .gain:
             return (target, .infinity)
         case .lose, .maintain:
-            let high = calorieMaxOverride > target ? calorieMaxOverride : target + Self.calorieGoalBand
+            // Only honor a plan ceiling that's FINITE and sane. A stray/garbage override (e.g. an
+            // old 1.8e308 value persisted or synced from CloudKit) is finite, so it would slip past
+            // `.isFinite` and render as the "goal" — guard the absurd-high case here at the source.
+            let sane = calorieMaxOverride.isFinite && calorieMaxOverride > target && calorieMaxOverride < 20_000
+            let high = sane ? calorieMaxOverride : target + Self.calorieGoalBand
             return (target, high)
         }
     }
@@ -113,4 +129,33 @@ extension UserProfile {
         let size = waterContainerOz > 0 ? waterContainerOz : 16.9
         return max(1, Int((waterTargetOz / size).rounded()))
     }
+
+    // MARK: Water unit (display + input)
+
+    var waterUnit: WaterUnit {
+        get { WaterUnit(rawValue: waterUnitRaw) ?? .oz }
+        set { waterUnitRaw = newValue.rawValue }
+    }
+    var waterUnitLabel: String { waterUnit.label }
+
+    /// Canonical oz → the user's chosen display unit.
+    func waterDisplay(_ oz: Double) -> Double {
+        waterUnit == .ml ? oz * WaterUnit.mlPerOz : oz
+    }
+    /// A value typed in the user's chosen unit → canonical oz (for storage).
+    func waterToOz(_ value: Double) -> Double {
+        waterUnit == .ml ? value / WaterUnit.mlPerOz : value
+    }
+    /// "<amount> of <goal> <unit>" in the chosen unit (mL rounded to the nearest 10 to read cleanly).
+    func waterText(_ oz: Double, goalOz: Double) -> String {
+        let round: (Double) -> Int = { self.waterUnit == .ml ? Int(($0 / 10).rounded()) * 10 : Int($0.rounded()) }
+        return "\(round(waterDisplay(oz))) of \(round(waterDisplay(goalOz))) \(waterUnitLabel)"
+    }
+    /// Just the number (no unit) in the chosen unit — for editable fields. mL → nearest 10; oz keeps .9.
+    func waterAmountValue(_ oz: Double) -> String {
+        if waterUnit == .ml { return String(Int((waterDisplay(oz) / 10).rounded()) * 10) }
+        return oz == oz.rounded() ? String(Int(oz)) : String(format: "%.1f", oz)
+    }
+    /// A single amount with its unit, e.g. "16 oz" / "500 mL".
+    func waterAmount(_ oz: Double) -> String { "\(waterAmountValue(oz)) \(waterUnitLabel)" }
 }
