@@ -35,11 +35,8 @@ order — it's ~30–45 min the first time, minutes for every update after.
   No App ID capability needed. Note for App Review: the feature that *uses* the location isn't
   live yet, so if a reviewer ever flags an unused permission, either ship the nearby feature
   or temporarily remove the location step — it's isolated to the onboarding "Connect" screen.
-- **Push for TestFlight:** the `aps-environment` entitlement is currently `development`. For a
-  TestFlight/App-Store build, push uses the **production** APNs environment — set
-  `aps-environment` to **`production`** before archiving (in
-  `Victoria/App/Victoria.entitlements`, or let Xcode's distribution signing handle it). Push
-  is the only thing this affects; everything else works regardless.
+- **Push for TestFlight:** ✅ already done — `aps-environment` is set to `production` in
+  `project.yml`, so archived builds use the production APNs environment with no extra step.
 
 ## 3. CloudKit Dashboard (one-time, for buddy sync to work cross-device)
 At <https://icloud.developer.apple.com> → your container:
