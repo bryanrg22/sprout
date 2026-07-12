@@ -156,7 +156,7 @@ Victoria/
 │   ├── Weight/ Food/ Workout/ …
 │   └── Settings/         # AI provider picker, Fitbit connect, Apple Health, goals
 ├── Services/
-│   ├── AnthropicClient / OpenAIClient / AIConfig / LLMClient   # the provider layer
+│   ├── AI/               # the provider layer: AIConfig, LLMClient, Anthropic + OpenAI clients
 │   ├── GoogleHealth/     # OAuth PKCE + REST client + sync orchestration
 │   ├── DailyBriefService / DailyInsightEngine / RecoverySignal / CoachMemoryService
 │   └── HealthKit* / StreakCalculator / Diagnostics …
