@@ -122,6 +122,8 @@ flowchart TD
 
 **Buddy sync** — two paired users share daily snapshots through CloudKit's public DB with deterministic record IDs and silent-push refresh; a privacy toggle controls whether a buddy sees everything or only the activity face-off. Sync health is user-visible (publish status, staleness warnings, one-tap diagnostic).
 
+**Design decision: serverless by design.** There is no backend anywhere in this app — deliberately. AI is bring-your-own-key straight to the provider; buddy sync rides CloudKit's public database (deterministic record IDs, silent-push refresh, dev→prod schema discipline) instead of a custom service. The trade-offs are understood and documented: at consumer scale you'd want a dedicated service (server-side validation, E2E encryption, abuse controls) — for a two-user product, a backend would add an operational surface, a privacy liability, and a monthly bill while delivering nothing the platform doesn't already provide. Same doctrine as the AI layer: use the most boring infrastructure that honestly does the job.
+
 **Every feature degrades gracefully** — no key → templates and manual logging still work; no network → the coach apologizes kindly; no tracker → the app is still a complete manual logger. AI is seasoning, not a dependency.
 
 ---
@@ -164,12 +166,19 @@ Victoria/
 └── docs/                 # screenshots, deep-dives, GOOGLE_HEALTH_SETUP.md
 ```
 
-## Running it
+## Running it yourself
 
-1. `brew install xcodegen && xcodegen generate` → open `Victoria.xcodeproj`
-2. AI: Settings → AI Provider → pick a vendor, paste your own API key (Keychain-only)
-3. Fitbit: follow [GOOGLE_HEALTH_SETUP.md](GOOGLE_HEALTH_SETUP.md) (~15 min, one-time Google Cloud setup)
-4. Everything works without steps 2–3 — that's the point.
+Anyone can clone and run this — there's no server to stand up and no secrets in the repo (AI is bring-your-own-key).
+
+1. `brew install xcodegen`
+2. In `project.yml`, make three identifiers yours, then `xcodegen generate`:
+   - `DEVELOPMENT_TEAM` → your Apple Team ID
+   - `bundleIdPrefix` / `PRODUCT_BUNDLE_IDENTIFIER` → your reverse-DNS prefix
+   - the iCloud container (`iCloud.com.bryanram.victoria`) and app group (`group.com.bryanram.victoria`) → your own (also referenced in `Victoria/Features/Buddy/Services/CloudKitSyncService.swift` and the widget) — or skip iCloud entirely; the app runs fully local without it
+3. Open `Victoria.xcodeproj`, let automatic signing register the App IDs, Run.
+4. AI: Settings → AI Provider → pick a vendor, paste your own API key (Keychain-only).
+5. Fitbit (optional): follow [GOOGLE_HEALTH_SETUP.md](GOOGLE_HEALTH_SETUP.md) (~15 min, one-time Google Cloud setup for YOUR account).
+6. Everything works without steps 4–5 — graceful degradation is the point.
 
 ---
 
