@@ -114,7 +114,26 @@ final class GoogleHealthTests: XCTestCase {
         }}]
         """
         let out = GoogleHealthClient.parseSleep(dataPoints: json(segmentsOnly))
-        XCTAssertEqual(out.values.first?.asleep, 120)   // AWAKE segment not counted
+        let night = out.values.first
+        XCTAssertEqual(night?.asleep, 120)   // AWAKE segment not counted as sleep…
+        XCTAssertEqual(night?.awake, 30)     // …but it IS counted as awake time,
+        XCTAssertEqual(night?.inBed, 150)    // so the in-bed total comes out right.
+    }
+
+    /// Totals-only wire shape: a summary with a sleep period but no asleep minutes must
+    /// still count as a night (mirrors the HealthKit path's in-bed fallback).
+    func testPeriodOnlySummaryFallsBackToInBed() {
+        let periodOnly = """
+        [{"sleep": {
+            "type": "CLASSIC",
+            "interval": {"civilEndTime": {"date": {"year": 2026, "month": 7, "day": 8}}},
+            "summary": {"minutesInSleepPeriod": "410"},
+            "metadata": {"nap": false}
+        }}]
+        """
+        let out = GoogleHealthClient.parseSleep(dataPoints: json(periodOnly))
+        XCTAssertEqual(out.values.first?.asleep, 410)
+        XCTAssertEqual(out.values.first?.inBed, 410)
     }
 
     func testGarbageSleepPointIsSkippedNotFatal() {
@@ -212,6 +231,27 @@ final class GoogleHealthTests: XCTestCase {
                                       caloriesBurned: 95, sourceName: "Health Sync")
         let out = GoogleHealthSync.dedupAgainstExisting([google], existing: [bridged])
         XCTAssertTrue(out.isEmpty)
+    }
+
+    /// The dedup is SYMMETRIC: a HealthKit candidate must also be dropped when the same
+    /// session already landed through the Google pipe first (both pipes live).
+    func testDedupDropsHealthKitCandidateAgainstExistingGoogleRow() {
+        let hkCandidate = HealthKitService.ImportableWorkout(
+            healthKitUUID: UUID().uuidString,
+            date: Date(timeIntervalSinceNow: -3600),
+            activity: "Running", durationMinutes: 30,
+            caloriesBurned: 100, sourceName: "Health Sync")
+        let googleRow = DetectedWorkout(healthKitUUID: "ghealth:users/me/dataTypes/exercise/dataPoints/1",
+                                        date: hkCandidate.date.addingTimeInterval(-4 * 60),
+                                        activity: "Running", durationMinutes: 31,
+                                        caloriesBurned: 104, sourceName: "Fitbit Air")
+        XCTAssertTrue(GoogleHealthSync.dedupAgainstExisting([hkCandidate], existing: [googleRow]).isEmpty)
+        // Same-pipe rows are NOT window-deduped (exact-ID dedup owns that case).
+        let hkRow = DetectedWorkout(healthKitUUID: UUID().uuidString,
+                                    date: hkCandidate.date,
+                                    activity: "Running", durationMinutes: 30,
+                                    caloriesBurned: 100, sourceName: "Health Sync")
+        XCTAssertEqual(GoogleHealthSync.dedupAgainstExisting([hkCandidate], existing: [hkRow]).count, 1)
     }
 
     func testDedupKeepsDistinctWorkoutsAndIgnoresOwnGoogleRows() {

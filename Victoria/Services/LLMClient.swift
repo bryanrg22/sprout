@@ -1,9 +1,10 @@
 import Foundation
 
 /// One turn of a plain-text conversation, provider-agnostic. This is the *common
-/// denominator* the app needs across vendors: a role plus plain text. (Anthropic's
-/// richer `AnthropicClient.Msg` carries `Any` content for images/tool blocks — those
-/// vision/tool features stay Anthropic-specific and are NOT part of this protocol.)
+/// denominator* the app needs across vendors: a role plus plain text. (The richer
+/// `AnthropicClient.Msg` carries `Any` content for images/tool blocks — those
+/// vision/tool features live on `ToolCapableClient`, which BOTH vendors implement;
+/// they're just not part of this minimal chat protocol.)
 ///
 /// `Sendable` so it can cross actor boundaries (the coach/insight calls hop to a
 /// background `Task` and back to the main actor).

@@ -167,21 +167,32 @@ final class GoogleHealthAuth: NSObject {
         let scheme = Self.reversedClientID(clientID)
 
         let callback: URL = try await withCheckedThrowingContinuation { cont in
+            // A continuation may resume exactly once. The completion handler fires once
+            // by contract, but the `start() == false` branch below ALSO resumes — the
+            // flag makes the two paths mutually exclusive instead of trusting AS not to
+            // call the handler after a failed start.
+            var resumed = false
+            func resumeOnce(_ result: Result<URL, Error>) {
+                guard !resumed else { return }
+                resumed = true
+                cont.resume(with: result)
+            }
             let session = ASWebAuthenticationSession(url: url, callbackURLScheme: scheme) { url, error in
                 if let url {
-                    cont.resume(returning: url)
+                    resumeOnce(.success(url))
                 } else if let error = error as? ASWebAuthenticationSessionError,
                           error.code == .canceledLogin {
-                    cont.resume(throwing: AuthError.cancelled)
+                    resumeOnce(.failure(AuthError.cancelled))
                 } else {
-                    cont.resume(throwing: error ?? AuthError.noCode)
+                    resumeOnce(.failure(error ?? AuthError.noCode))
                 }
             }
             session.presentationContextProvider = self
             session.prefersEphemeralWebBrowserSession = false
             self.activeSession = session
             if !session.start() {
-                cont.resume(throwing: AuthError.tokenExchange("couldn't open the sign-in window"))
+                self.activeSession = nil   // don't retain a dead session
+                resumeOnce(.failure(AuthError.tokenExchange("couldn't open the sign-in window")))
             }
         }
         activeSession = nil
@@ -240,6 +251,9 @@ final class GoogleHealthAuth: NSObject {
             "grant_type": "refresh_token",
         ]
         let json = try await postTokenForm(fields)
+        // The user may have tapped Disconnect while the refresh was in flight — writing
+        // the new tokens now would silently resurrect the connection (zombie tokens).
+        guard tokens != nil else { throw AuthError.notConnected }
         guard let access = json["access_token"] as? String,
               let expiresIn = json["expires_in"] as? Double else {
             let detail = Self.errorDetail(json)

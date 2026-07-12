@@ -38,7 +38,7 @@ struct HealthSettingsView: View {
                     Label("Apple Health", systemImage: "heart.fill")
                         .font(.headline)
                         .foregroundStyle(Theme.brand)
-                    Text("Syncing with Apple Health is completely optional. Connect it to pull in weigh-ins, steps, sleep, and workouts from your other apps and devices — including a Fitbit or other tracker that feeds Apple Health — all in one place.")
+                    Text("Syncing with Apple Health is completely optional. Connect it to pull in weigh-ins, steps, sleep, and workouts from your other apps and devices. (Have a Fitbit? The Fitbit (Google Health) option in Settings connects to it directly — no Apple Health needed.)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

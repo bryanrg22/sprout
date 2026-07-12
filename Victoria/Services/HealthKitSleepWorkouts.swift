@@ -2,10 +2,11 @@ import Foundation
 import HealthKit
 import SwiftData
 
-/// Sleep + auto-detected-workout ingestion from Apple Health — how a Fitbit (or any
-/// tracker) feeds the app. The tracker's own app writes to Apple Health (today via a
-/// Fitbit→Health bridge app; natively once Google Health ships Health write-back), and
-/// we mirror SPARSE DAILY AGGREGATES here, exactly like `HealthKitSteps`:
+/// Sleep + auto-detected-workout ingestion from Apple Health — the SECOND pipe for
+/// tracker data (the primary is the direct Google Health API in `GoogleHealth/`,
+/// which needs no bridge app). Anything that lands in Apple Health — an Apple Watch,
+/// a bridge app, another tracker — gets mirrored as SPARSE DAILY AGGREGATES here,
+/// exactly like `HealthKitSteps`:
 ///
 ///   - one `SleepEntry` per night (asleep + in-bed minutes)
 ///   - one `DetectedWorkout` per HKWorkout (activity, duration, kcal), deduped by UUID
@@ -271,14 +272,17 @@ extension HealthKitService {
         }
     }
 
-    /// Insert any newly-detected workouts (deduped by HealthKit UUID). Returns rows added.
+    /// Insert any newly-detected workouts (deduped by HealthKit UUID, and against the
+    /// direct Google Health pipe by time window — the same session seen through both
+    /// pipes must land as ONE row, whichever pipe delivered first). Returns rows added.
     @MainActor
     @discardableResult
     func importRecentDetectedWorkouts(days: Int = 14,
                                       into context: ModelContext,
                                       existing: [DetectedWorkout]) async -> Int {
         let found = await recentDetectedWorkouts(days: days)
-        return HealthKitService.mergeDetectedWorkouts(found, into: context, existing: existing)
+        let fresh = GoogleHealthSync.dedupAgainstExisting(found, existing: existing)
+        return HealthKitService.mergeDetectedWorkouts(fresh, into: context, existing: existing)
     }
 
     /// Pure, testable merge: inserts workouts whose UUID isn't known yet; never duplicates.

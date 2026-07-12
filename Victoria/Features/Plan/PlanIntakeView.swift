@@ -3,8 +3,9 @@ import SwiftData
 
 /// The opt-in "let's build your plan" intake — a HYBRID, deliberately not a rigid Q&A: a little
 /// structured context (her goal + current weight, read from the profile) plus two open boxes she
-/// free-writes. On submit it runs the heavy Opus authoring pass behind a real "thinking it through"
-/// state, then dismisses; the Plan card on Progress picks up the new plan. (See docs/adaptive-plan.md.)
+/// free-writes. On submit it runs the heavy authoring pass (the provider's top tier — Opus on
+/// Anthropic) behind a real "thinking it through" state, then dismisses; the Plan card on Progress
+/// picks up the new plan. (See docs/adaptive-plan.md.)
 struct PlanIntakeView: View {
     let profile: UserProfile
     let foods: [FoodEntry]
@@ -235,7 +236,7 @@ struct PlanIntakeView: View {
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {
                     isBuilding = false
-                    errorText = "\(coachName) needs an Anthropic key to \(verb) your plan — add one in More → AI."
+                    errorText = "\(coachName) needs your \(AIConfig.provider.label) key to \(verb) your plan — add one in More → AI."
                 }
             } catch {
                 await MainActor.run {

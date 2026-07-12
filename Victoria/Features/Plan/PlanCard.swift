@@ -166,7 +166,7 @@ struct PlanCard: View {
         do {
             _ = try await PlanService.review(profile: profile, foods: foods, weights: weights, context: context)
         } catch AIConfig.AIError.missingKey {
-            reviewError = "\(coachName) needs an Anthropic key to update your plan."
+            reviewError = "\(coachName) needs your \(AIConfig.provider.label) key to update your plan."
         } catch {
             reviewError = "Couldn't update your plan just now — try again in a moment."
         }

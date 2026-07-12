@@ -6,10 +6,19 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query private var profiles: [UserProfile]
     @Query(sort: \StepsEntry.date) private var stepEntries: [StepsEntry]
-    // Passive tracker mirrors (Fitbit etc. via Apple Health) — refreshed the same way steps are.
+    // Passive tracker mirrors (direct Google Health pipe and/or Apple Health) —
+    // refreshed the same way steps are.
     @Query(sort: \SleepEntry.date) private var sleepEntries: [SleepEntry]
     @Query(sort: \DetectedWorkout.date) private var detectedWorkouts: [DetectedWorkout]
     @Query(sort: \VitalsEntry.date) private var vitalsEntries: [VitalsEntry]
+
+    /// Single-flight guard for the tracker-data refresh. At cold launch BOTH `.task`
+    /// and the scenePhase `.active` handler fire; two concurrent passes would each
+    /// snapshot `existing` rows before the other's inserts land — the classic
+    /// duplicate-row race — and could interleave the HealthKit and Google merges out
+    /// of order (Google must run AFTER HealthKit so its richer data wins the upsert).
+    /// The second caller just skips; the next foreground catches anything missed.
+    @State private var trackerRefreshInFlight = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -68,21 +77,7 @@ struct RootView: View {
             // Backfill the last 30 days of REAL per-day step totals from Apple Health on launch,
             // so the Progress average reflects full days — not the partial/missing history that
             // `importTodaySteps` alone left behind (it only ever captured "today so far").
-            if HealthKitService.isAvailable {
-                await HealthKitService.shared.importRecentSteps(days: 30, into: context, existing: stepEntries)
-                // Tracker data (Fitbit etc. bridged into Apple Health): last 2 weeks of
-                // sleep (+stages), auto-detected workouts, and daily recovery vitals.
-                await HealthKitService.shared.importRecentSleep(days: 14, into: context, existing: sleepEntries)
-                await HealthKitService.shared.importRecentDetectedWorkouts(days: 14, into: context, existing: detectedWorkouts)
-                await HealthKitService.shared.importRecentVitals(days: 14, into: context, existing: vitalsEntries)
-            }
-            // Direct Fitbit pipe (Google Health API) — runs AFTER HealthKit so its richer
-            // stage/vitals numbers win the per-day upsert on any overlapping day.
-            // (refresh() re-reads existing rows itself — the imports above may have
-            // just inserted rows that our captured @Query arrays don't include.)
-            if GoogleHealthSync.isConnected {
-                await GoogleHealthSync.refresh(days: 14, into: context)
-            }
+            await refreshTrackerData(stepsDays: 30, days: 14)
             WidgetDataWriter.refresh(context: context, profile: profile)
             // Ask for notification permission + (re)build gentle reminders once on launch.
             if let profile, profile.onboardingComplete {
@@ -95,20 +90,11 @@ struct RootView: View {
                 Diagnostics.shared.log("app active", .app)
                 // Re-pull steps on every foreground, then refresh the widget with fresh data.
                 Task {
-                    if HealthKitService.isAvailable {
-                        // Re-pull the last 7 days (not just today) so yesterday gets finalized to
-                        // its FULL total when she reopens the app the next day — the exact case
-                        // where a day was frozen at a partial count.
-                        await HealthKitService.shared.importRecentSteps(days: 7, into: context, existing: stepEntries)
-                        // Tracker sleep/workouts/vitals land in Health whenever the bridge runs —
-                        // re-pull a week on every foreground so last night shows up by morning.
-                        await HealthKitService.shared.importRecentSleep(days: 7, into: context, existing: sleepEntries)
-                        await HealthKitService.shared.importRecentDetectedWorkouts(days: 7, into: context, existing: detectedWorkouts)
-                        await HealthKitService.shared.importRecentVitals(days: 7, into: context, existing: vitalsEntries)
-                    }
-                    if GoogleHealthSync.isConnected {
-                        await GoogleHealthSync.refresh(days: 7, into: context)
-                    }
+                    // Re-pull the last 7 days (not just today) so yesterday gets finalized to
+                    // its FULL total when she reopens the app the next day — the exact case
+                    // where a day was frozen at a partial count. Tracker sleep/workouts/vitals
+                    // re-pull too, so last night shows up by morning.
+                    await refreshTrackerData(stepsDays: 7, days: 7)
                     WidgetDataWriter.refresh(context: context, profile: profile)
                 }
             case .background:
@@ -118,6 +104,28 @@ struct RootView: View {
             default:
                 break
             }
+        }
+    }
+
+    /// One serialized pass over both tracker pipes: Apple Health first, then the direct
+    /// Google Health pipe — in that order, so Google's richer stage/vitals numbers win
+    /// the per-day upsert on any overlapping day. Single-flight (see
+    /// `trackerRefreshInFlight`); a caller that finds a pass in flight simply skips.
+    private func refreshTrackerData(stepsDays: Int, days: Int) async {
+        guard !trackerRefreshInFlight else { return }
+        trackerRefreshInFlight = true
+        defer { trackerRefreshInFlight = false }
+
+        if HealthKitService.isAvailable {
+            await HealthKitService.shared.importRecentSteps(days: stepsDays, into: context, existing: stepEntries)
+            await HealthKitService.shared.importRecentSleep(days: days, into: context, existing: sleepEntries)
+            await HealthKitService.shared.importRecentDetectedWorkouts(days: days, into: context, existing: detectedWorkouts)
+            await HealthKitService.shared.importRecentVitals(days: days, into: context, existing: vitalsEntries)
+        }
+        if GoogleHealthSync.isConnected {
+            // refresh() re-reads existing rows from the context itself — the imports
+            // above may have just inserted rows the captured @Query arrays don't include.
+            await GoogleHealthSync.refresh(days: days, into: context)
         }
     }
 }

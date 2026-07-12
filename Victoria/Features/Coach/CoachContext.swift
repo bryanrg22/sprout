@@ -657,7 +657,7 @@ enum CoachContext {
     }
 
     /// "Recovery vitals today: resting HR 58 bpm, HRV 46 ms (7-day avg: 60 bpm / 42 ms)".
-    /// Uses the most recent day within 3 days (vitals can lag the bridge sync); nil when
+    /// Uses the most recent day within 3 days (vitals can lag the tracker's sync); nil when
     /// there's nothing recent. Values of 0 mean "not reported" and are omitted.
     static func recoveryVitalsLine(_ vitals: [VitalsEntry],
                                    now: Date = .now,

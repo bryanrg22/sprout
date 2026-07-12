@@ -73,7 +73,8 @@ struct AnthropicClient {
                        tools: [[String: Any]],
                        model: String = AIConfig.chatModel,
                        maxTokens: Int = 1500,
-                       cachedSystemPrefix: String? = nil) async throws -> ChatTurn {
+                       cachedSystemPrefix: String? = nil,
+                       forbidToolUse: Bool = false) async throws -> ChatTurn {
         var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
@@ -81,6 +82,9 @@ struct AnthropicClient {
             "messages": messages.map { ["role": $0.role, "content": $0.content] },
         ]
         if !tools.isEmpty { body["tools"] = tools }   // omit `tool_choice` → defaults to "auto"
+        // Depth cap: tools STAY in the request (history contains tool blocks, which the
+        // API rejects without them) but the model may not call another one.
+        if forbidToolUse { body["tool_choice"] = ["type": "none"] }
 
         let json = try await send(body)
         guard let content = json["content"] as? [[String: Any]] else {
