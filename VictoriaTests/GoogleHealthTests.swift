@@ -397,7 +397,8 @@ final class GoogleHealthTests: XCTestCase {
 
     func testAuthorizationURLCarriesPKCEAndScopes() throws {
         let id = "1234567-abc123.apps.googleusercontent.com"
-        let url = try XCTUnwrap(GoogleHealthAuth.authorizationURL(clientID: id, challenge: "CHAL"))
+        let url = try XCTUnwrap(GoogleHealthAuth.authorizationURL(clientID: id, challenge: "CHAL",
+                                                                  state: "STATE123"))
         let comps = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
         XCTAssertEqual(comps.host, "accounts.google.com")
         let items = Dictionary(uniqueKeysWithValues: (comps.queryItems ?? []).map { ($0.name, $0.value ?? "") })

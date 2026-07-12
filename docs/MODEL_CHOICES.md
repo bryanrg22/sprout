@@ -39,7 +39,7 @@ The June announcement described a rep-gated preview; the July 9 release opened i
 
 **Constraint discovered live, not in any docs we'd read:** on Chat Completions, the 5.6 family rejects function tools combined with a reasoning effort (400: *"use /v1/responses or set reasoning_effort to 'none'"*). Tool-carrying requests now pin `reasoning_effort: "none"` on 5.6 — which matches the doctrine anyway (chat tool turns shouldn't deliberate). Regression-tested.
 
-**Known open item — the Responses API port:** 5.6's explicit cache breakpoints (and reasoning+tools coexistence) live on the [Responses API only](https://learn.microsoft.com/en-in/answers/questions/5942997/gpt-5-6-implicit-prompt-caching-and-explicit-promp); Chat Completions implicit caching is measuring `cached 0` in our logs even with `prompt_cache_key`. Migrating the coach loop to `/v1/responses` unlocks Anthropic-style explicit breakpoints (90% cached-read discount, 30-min cache life) on OpenAI. Until then a coach turn costs ~1.7¢ uncached — acceptable, tracked, and visible in the on-device logs.
+**~~Known open item~~ → SHIPPED same day — the Responses API port, with the receipt:** gpt-5.6 models now run on `/v1/responses` with an explicit `prompt_cache_breakpoint` after the stable system prefix (`prompt_cache_options: {mode: "explicit", ttl: "30m"}`), because [explicit breakpoints are Responses-only](https://learn.microsoft.com/en-in/answers/questions/5942997/gpt-5-6-implicit-prompt-caching-and-explicit-promp) and Chat Completions implicit caching measured `cached 0` across every live test. Result, measured on a real key in the on-device logs: `in 6747 … cached 5512` — **82% of the coach prompt served from cache at the 90% discount, cutting a coach turn from ~1.69¢ to ~0.45¢ (−73%)**. Reasoning effort and tools also legally coexist on this surface (low effort, vs the forced `none` on Chat Completions). Older gpt-4.x models stay on Chat Completions. The whole translation layer is fixture-tested including echo round-trips.
 
 The plan's quality lever isn't model IQ — it's **context engineering** (a curated data summary + live web-search grounding) feeding an already-strong model.
 
@@ -50,7 +50,7 @@ Web search requires specific surfaces: OpenAI's `web_search` tool runs on gpt-5.
 
 | Trigger | Action |
 |---|---|
-| ~~GPT-5.6 family GA~~ ✅ done 2026-07-12 | Terra → strong ✅, Sol → heavy ✅ (both live-verified). Remaining: Luna evaluation, and the Responses-API port for explicit cache breakpoints. |
+| ~~GPT-5.6 family GA~~ ✅ done 2026-07-12 | Terra → strong ✅, Sol → heavy ✅, Responses-API port ✅ (cached 5512/6747 measured). Remaining: Luna evaluation for the cheap tier. |
 | Sonnet 5 intro pricing ends (2026-08-31) | No action — $3/$15 list was already the accepted price. |
 | gpt-4.1 family deprecation notice | Move cheap tier per the note above. |
 | Any provider price cut ≥25% on a higher tier | Re-run this table. |

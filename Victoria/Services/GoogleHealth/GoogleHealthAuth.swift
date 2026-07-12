@@ -117,7 +117,8 @@ final class GoogleHealthAuth: NSObject {
 
     // MARK: - Authorization URL
 
-    nonisolated static func authorizationURL(clientID: String, challenge: String) -> URL? {
+    nonisolated static func authorizationURL(clientID: String, challenge: String,
+                                             state: String) -> URL? {
         var comps = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")
         comps?.queryItems = [
             URLQueryItem(name: "client_id", value: clientID),
@@ -126,6 +127,10 @@ final class GoogleHealthAuth: NSObject {
             URLQueryItem(name: "scope", value: scopes.joined(separator: " ")),
             URLQueryItem(name: "code_challenge", value: challenge),
             URLQueryItem(name: "code_challenge_method", value: "S256"),
+            // CSRF binding per Google's guidance. PKCE already prevents code theft
+            // from being useful, but state ties the callback to THIS sign-in attempt
+            // (defense against a rogue app registering the same URL scheme).
+            URLQueryItem(name: "state", value: state),
         ]
         return comps?.url
     }
@@ -161,7 +166,9 @@ final class GoogleHealthAuth: NSObject {
 
         let verifier = Self.makeCodeVerifier()
         let challenge = Self.codeChallenge(for: verifier)
-        guard let url = Self.authorizationURL(clientID: clientID, challenge: challenge) else {
+        let state = Self.makeCodeVerifier()   // same entropy source; fresh per attempt
+        guard let url = Self.authorizationURL(clientID: clientID, challenge: challenge,
+                                              state: state) else {
             throw AuthError.badClientID
         }
         let scheme = Self.reversedClientID(clientID)
@@ -197,8 +204,12 @@ final class GoogleHealthAuth: NSObject {
         }
         activeSession = nil
 
-        guard let code = URLComponents(url: callback, resolvingAgainstBaseURL: false)?
-            .queryItems?.first(where: { $0.name == "code" })?.value else {
+        let query = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems
+        // The callback must echo OUR state — anything else is not this sign-in attempt.
+        guard query?.first(where: { $0.name == "state" })?.value == state else {
+            throw AuthError.noCode
+        }
+        guard let code = query?.first(where: { $0.name == "code" })?.value else {
             throw AuthError.noCode
         }
         try await exchangeCode(code, verifier: verifier, clientID: clientID)
