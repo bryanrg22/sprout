@@ -49,10 +49,13 @@ enum DailyBriefService {
         /// unfavorable trend is deliberately NOT a signal; we never lead with it).
         var trendEasedDown: Bool = false
         var proteinGoalYesterday: Bool = false
+        // Active travel shift (TravelSignal.current()), nil when not traveling.
+        var travelShiftHours: Int? = nil
+        var travelShiftDaysAgo: Int? = nil
     }
 
     enum Topic: String {
-        case gapReturn, milestone, crossSignal, quietDay, checkIn
+        case gapReturn, travel, milestone, crossSignal, quietDay, checkIn
     }
 
     // MARK: - Priority ladder (pure + testable)
@@ -68,6 +71,20 @@ enum DailyBriefService {
             return (.gapReturn,
                     "\(hey) — good to see you.",
                     "No catch-up owed and nothing to make up. The story just picks up from today — log one thing and we're rolling again.")
+        }
+
+        // 1b) Traveling — the body's on a new clock; reframe the next few days BEFORE
+        // any other topic could misread jet-lagged sleep or appetite as a problem.
+        if let hours = s.travelShiftHours, let daysAgo = s.travelShiftDaysAgo {
+            let dir = hours > 0 ? "east" : "west"
+            if daysAgo == 0 {
+                return (.travel,
+                        "New time zone — your body noticed.",
+                        "You moved \(abs(hours)) hours \(dir) today. Sleep and appetite usually take a few days to catch up, so keep it simple: water, daylight, and whatever logging feels easy. That's adjusting, not slipping.")
+            }
+            return (.travel,
+                    "Day \(daysAgo + 1) on the new clock.",
+                    "A \(abs(hours))-hour \(dir)ward shift takes most bodies a few days to absorb. If sleep looks ragged or hunger feels off-schedule, that's the trip talking — it settles on its own.")
         }
 
         // 2) Milestone — a result or a real streak, celebrated plainly.

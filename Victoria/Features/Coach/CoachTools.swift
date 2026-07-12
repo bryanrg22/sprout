@@ -2281,8 +2281,9 @@ enum CoachTools {
             // goal weight now on the wrong side of her current weight. Tell the model so it
             // follows up naturally instead of leaving stale numbers in charge.
             var staleNotes: [String] = []
-            if CoachPlan.current(in: context)?.hasRange == true {
+            if let activePlan = CoachPlan.current(in: context), activePlan.hasRange {
                 staleNotes.append("her adaptive Plan was written for the previous goal and still drives her calorie/protein targets — suggest rebuilding or adjusting the plan (edit_plan / the Plan card)")
+                activePlan.markGoalsChanged()   // PlanCard offers the full re-research rebuild
             }
             let current = currentWeightLbs(profile)
             if (direction == .lose && profile.goalWeightLbs >= current && profile.goalWeightLbs > 0)

@@ -188,6 +188,15 @@ struct SettingsView: View {
                     Text("Maintain").tag(GoalPace.Direction.maintain)
                     Text("Gain").tag(GoalPace.Direction.gain)
                 }
+                // A direction or goal-weight change invalidates the plan's PREMISES,
+                // not just its numbers — flag it so PlanCard offers the full
+                // re-research rebuild.
+                .onChange(of: profile.pace.direction) { _, _ in
+                    CoachPlan.current(in: context)?.markGoalsChanged()
+                }
+                .onChange(of: profile.goalWeightLbs) { _, _ in
+                    CoachPlan.current(in: context)?.markGoalsChanged()
+                }
             }
 
             // Pace options are scoped to the chosen goal direction, so flipping to

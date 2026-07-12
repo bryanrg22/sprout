@@ -74,6 +74,9 @@ struct RootView: View {
         .task {
             DemoSeed.seedIfNeeded(context, hasProfile: profile != nil)
             Diagnostics.shared.log("app launched (onboarded=\(profile?.onboardingComplete == true))", .app)
+            // Travel awareness: one timezone comparison — powers the jet-lag framing in
+            // Vita's context and the daily brief. (DST changes are filtered out.)
+            TravelSignal.checkNow()
             // Backfill the last 30 days of REAL per-day step totals from Apple Health on launch,
             // so the Progress average reflects full days — not the partial/missing history that
             // `importTodaySteps` alone left behind (it only ever captured "today so far").

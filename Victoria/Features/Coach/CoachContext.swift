@@ -391,6 +391,12 @@ enum CoachContext {
             lines.append(contentsOf: recentSessions)
         }
 
+        // Traveling? Tell Vita FIRST so every other number below gets read through the
+        // jet-lag lens (short sleep after a red-eye is adjustment, not decline).
+        if let shift = TravelSignal.current() {
+            lines.append(TravelSignal.coachLine(shift))
+        }
+
         // Tracker data mirrored from Apple Health (Fitbit etc.) — passive, so it's context
         // ("she moved / slept X") and never a logging achievement to praise as showing up.
         let sleepLine = lastNightSleepLine(sleep)
