@@ -174,8 +174,20 @@ final class OpenAIProviderTests: XCTestCase {
         defer { AIConfig.provider = original }
         AIConfig.provider = .anthropic
         XCTAssertEqual(AIConfig.planModel, "claude-opus-4-8")
+        // The heavy tier is deliberately a step ABOVE the coach tier on OpenAI.
         AIConfig.provider = .openai
-        XCTAssertEqual(AIConfig.planModel, AIProvider.openai.defaultCoachModel)
+        XCTAssertEqual(AIConfig.planModel, "gpt-5.5")
+        XCTAssertNotEqual(AIConfig.planModel, AIProvider.openai.defaultCoachModel)
+    }
+
+    /// Reasoning effort is pinned LOW on gpt-5-family models (thinking tokens bill as
+    /// output and count against our tight max_completion_tokens budgets) and absent on
+    /// non-reasoning models (the param would be rejected).
+    func testReasoningEffortOnlyForGPT5Family() {
+        XCTAssertEqual(OpenAIClient.reasoningEffort(for: "gpt-5.4"), "low")
+        XCTAssertEqual(OpenAIClient.reasoningEffort(for: "gpt-5.5"), "low")
+        XCTAssertNil(OpenAIClient.reasoningEffort(for: "gpt-4.1"))
+        XCTAssertNil(OpenAIClient.reasoningEffort(for: "gpt-4.1-mini"))
     }
 
     func testReasoningModelsUseMaxCompletionTokens() {

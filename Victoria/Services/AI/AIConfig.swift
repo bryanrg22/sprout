@@ -41,10 +41,17 @@ enum AIProvider: String, CaseIterable, Identifiable, Sendable {
     // for the 2026 lineup; the user may override the actual model string in settings.
 
     /// Strong model for the coach + food vision (`chatModel`/`foodModel` tier).
+    /// Full decision record with rejected alternatives: docs/MODEL_CHOICES.md.
     var defaultCoachModel: String {
         switch self {
-        case .anthropic: return "claude-sonnet-4-6"
-        case .openai:    return "gpt-4.1"
+        // Sonnet 5: same list price as Sonnet 4.6 ($3/$15, intro $2/$10 through
+        // 2026-08-31) but a generation newer — upgraded the day it hit price parity.
+        case .anthropic: return "claude-sonnet-5"
+        // gpt-5.4: OpenAI's $2.50/$15 workhorse tier (same price class as Sonnet).
+        // Runs with LOW reasoning effort in our chat loop (see OpenAIClient). The
+        // gpt-5.6 Sol/Terra/Luna family is preview-gated as of 2026-07, so it can't
+        // be a BYOK default yet; Terra is the planned successor at GA.
+        case .openai:    return "gpt-5.4"
         }
     }
 
@@ -52,6 +59,10 @@ enum AIProvider: String, CaseIterable, Identifiable, Sendable {
     var defaultInsightModel: String {
         switch self {
         case .anthropic: return "claude-haiku-4-5-20251001"
+        // Deliberately a NON-reasoning mini: this tier re-warms precomputed facts
+        // inside tight 80–420-token budgets. A reasoning mini would spend hidden
+        // thinking tokens against those budgets and add latency for zero quality
+        // gain on a rewording task.
         case .openai:    return "gpt-4.1-mini"
         }
     }
@@ -136,12 +147,15 @@ enum AIConfig {
     // via the resolvers above.
     static var foodModel: String { coachModel }
     static var chatModel: String { coachModel }
-    /// Heavy reasoning model for the one-time adaptive-Plan build/review pass (rare,
-    /// high-value, worth the tokens): Opus on Anthropic, the strong GPT tier on OpenAI.
+    /// Heavy model for the one-time adaptive-Plan build/review pass (rare, high-value,
+    /// worth the tokens): Opus 4.8 on Anthropic, gpt-5.5 on OpenAI. The frontier-plus
+    /// tiers (Fable 5 at 2× the price, preview-gated gpt-5.6 Sol) were evaluated and
+    /// rejected — their benchmark edge doesn't transfer to authoring a structured plan
+    /// from a small, well-curated context. See docs/MODEL_CHOICES.md.
     static var planModel: String {
         switch provider {
         case .anthropic: return "claude-opus-4-8"
-        case .openai:    return AIProvider.openai.defaultCoachModel
+        case .openai:    return "gpt-5.5"
         }
     }
 
