@@ -108,6 +108,28 @@ struct PlanCard: View {
                 .padding(.top, 2)
             }
 
+            // Goals changed since this plan was authored → its premises (not just its
+            // numbers) are stale. Offer the FULL rebuild with fresh research, loudly.
+            if plan.goalsChangedSinceBuild {
+                VStack(alignment: .leading, spacing: Theme.Space.sm) {
+                    Label("Your goals changed since this plan was built",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.warning)
+                    Text("These targets were researched for your old goal. A fresh build re-does the research around the new one.")
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button { showIntake = true } label: {
+                        Label("Rebuild with fresh research", systemImage: "arrow.triangle.2.circlepath")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.primary)
+                }
+                .padding(Theme.Space.md)
+                .background(Theme.warning.opacity(0.10),
+                            in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
+            }
+
             // The "adjust" block — got new details, or want a fresh deep-research pass?
             Divider().overlay(Theme.divider).padding(.vertical, 2)
             VStack(alignment: .leading, spacing: Theme.Space.sm) {

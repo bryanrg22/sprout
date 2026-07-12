@@ -86,6 +86,10 @@ struct DailyBriefCard: View {
         s.name = profile.name
         s.daysAway = StreakCalculator.daysSinceLastLog(foods: foods, waters: water, weights: weights)
         s.streak = StreakCalculator.loggingStreak(foods: foods, waters: water, weights: weights)
+        if let shift = TravelSignal.current() {
+            s.travelShiftHours = shift.hours
+            s.travelShiftDaysAgo = TravelSignal.daysAgo(shift)
+        }
 
         if let night = sleep.first(where: { cal.isDate($0.date, inSameDayAs: today) }),
            night.asleepMinutes > 0 {
