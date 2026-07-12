@@ -235,6 +235,16 @@ enum PlanService {
     /// following the Settings pick like every other AI call.
     @MainActor
     static func researchGrounding(profile: UserProfile, intake: String) async -> (grounding: String, notes: String) {
+        // Response-level cache first: same goal (direction + 10-lb band) within 30 days
+        // → reuse the stored brief instead of re-running the most expensive call in the
+        // app. A direction flip or big goal move misses naturally and researches fresh.
+        let cacheKey = ResearchCache.key(direction: profile.pace.direction,
+                                         goalWeightLbs: profile.goalWeightLbs)
+        if let cached = ResearchCache.lookup(key: cacheKey) {
+            Diagnostics.shared.log("plan research: cache hit (\(cached.count) chars, ≤\(ResearchCache.ttlDays)d old)", .ai)
+            return (groundingText(from: cached), cached)
+        }
+
         let system = researchSystemPrompt(profile: profile)
         let user = researchUserContent(profile: profile, intake: intake)
         let research: (text: String, usedSearch: Bool)?
@@ -249,10 +259,14 @@ enum PlanService {
             return ("", "")
         }
         Diagnostics.shared.log("plan research: \(research.usedSearch ? "searched · " : "")\(research.text.count) chars", .ai)
-        let grounding = "\n\nCURRENT RESEARCH (from a live web search) to ground your plan — use it, and briefly "
-            + "name the source where you lean on it so she can trust the numbers:\n\(research.text)"
-        // Return the raw brief too, so it can be stored on the plan + surfaced as "what this is based on".
-        return (grounding, research.text)
+        if research.usedSearch { ResearchCache.store(research.text, key: cacheKey) }
+        return (groundingText(from: research.text), research.text)
+    }
+
+    /// The prompt block that folds a research brief (fresh or cached) into the build.
+    private static func groundingText(from brief: String) -> String {
+        "\n\nCURRENT RESEARCH (from a live web search) to ground your plan — use it, and briefly "
+            + "name the source where you lean on it so she can trust the numbers:\n\(brief)"
     }
 
     /// The research-phase system prompt: a meticulous coach searching the live web for the few current,
