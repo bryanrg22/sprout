@@ -121,6 +121,11 @@ enum AIConfig {
         }
     }
 
+    /// Whether the ACTIVE provider has an API key stored — the gate every optional AI
+    /// feature should use (checking only the Anthropic slot would wrongly disable
+    /// features for an OpenAI user, and vice versa).
+    static var hasActiveKey: Bool { KeychainStore.hasAPIKey(for: provider) }
+
     /// Strong coach/food model for the ACTIVE provider (override-aware).
     static var coachModel: String { model(for: provider, tier: .coach) }
     /// Cheap insight model for the ACTIVE provider (override-aware).
@@ -131,10 +136,14 @@ enum AIConfig {
     // they now follow the active provider's strong/cheap model via the resolvers above.
     static var foodModel: String { coachModel }
     static var chatModel: String { coachModel }
-    /// Heavy reasoning model for the one-time adaptive-Plan build/review pass — the user explicitly
-    /// wants Opus here (rare, high-value, worth the tokens). Anthropic-only; the Plan feature runs on
-    /// Claude (like Vita's tool use), independent of the lighter coach model above.
-    static var planModel: String { "claude-opus-4-8" }
+    /// Heavy reasoning model for the one-time adaptive-Plan build/review pass (rare,
+    /// high-value, worth the tokens): Opus on Anthropic, the strong GPT tier on OpenAI.
+    static var planModel: String {
+        switch provider {
+        case .anthropic: return "claude-opus-4-8"
+        case .openai:    return AIProvider.openai.defaultCoachModel
+        }
+    }
 
     enum AIError: LocalizedError {
         case missingKey, badResponse(String), decoding(String)
@@ -149,17 +158,70 @@ enum AIConfig {
     }
 }
 
-/// Factory for "the active provider's client." Callers that only need plain-text chat
-/// (the coach, the insight/onboarding phrasers) should use this instead of constructing
-/// a specific vendor client, so switching providers in settings just works.
+/// The FULL cross-provider surface: plain chat (via `LLMClient`), forced-schema
+/// structured output, and the coach's optional-tool chat turn. Both vendors implement
+/// all three, so every AI feature in the app follows the provider picked in Settings.
 ///
-/// NOTE: meal-photo vision (`structured`) and tool-use (`chatWithTools`) are
-/// Anthropic-only features and still construct `AnthropicClient` directly — they are
-/// not part of the cross-provider `LLMClient` surface.
+/// The shared wire vocabulary is Anthropic's (`AnthropicClient.Msg` content blocks,
+/// `{name, description, input_schema}` tool schemas, `ChatTurn` results):
+/// `OpenAIClient` translates to/from OpenAI's function-calling format at its boundary,
+/// so call sites never branch on the vendor.
+protocol ToolCapableClient: LLMClient {
+    func chatWithTools(system: String,
+                       messages: [AnthropicClient.Msg],
+                       tools: [[String: Any]],
+                       model: String,
+                       maxTokens: Int,
+                       cachedSystemPrefix: String?) async throws -> AnthropicClient.ChatTurn
+
+    func structured(system: String,
+                    userContent: Any,
+                    toolName: String,
+                    toolDescription: String,
+                    schema: [String: Any],
+                    model: String,
+                    maxTokens: Int) async throws -> [String: Any]
+}
+
+// Protocol requirements can't carry default arguments — these overloads restore the
+// call shapes the app already uses (model defaults to the active provider's tier).
+extension ToolCapableClient {
+    func chatWithTools(system: String,
+                       messages: [AnthropicClient.Msg],
+                       tools: [[String: Any]],
+                       maxTokens: Int = 1500,
+                       cachedSystemPrefix: String? = nil) async throws -> AnthropicClient.ChatTurn {
+        try await chatWithTools(system: system, messages: messages, tools: tools,
+                                model: AIConfig.chatModel, maxTokens: maxTokens,
+                                cachedSystemPrefix: cachedSystemPrefix)
+    }
+
+    func structured(system: String,
+                    userContent: Any,
+                    toolName: String,
+                    toolDescription: String,
+                    schema: [String: Any],
+                    maxTokens: Int = 1300) async throws -> [String: Any] {
+        try await structured(system: system, userContent: userContent, toolName: toolName,
+                             toolDescription: toolDescription, schema: schema,
+                             model: AIConfig.foodModel, maxTokens: maxTokens)
+    }
+}
+
+/// Factory for "the active provider's client," so switching providers in Settings
+/// just works across every AI feature.
 enum AIClient {
-    /// Build the active provider's `LLMClient`. Throws `AIConfig.AIError.missingKey`
-    /// when that provider has no key stored yet.
+    /// Build the active provider's `LLMClient` (plain-text chat only). Throws
+    /// `AIConfig.AIError.missingKey` when that provider has no key stored yet.
     static func make() throws -> LLMClient {
+        switch AIConfig.provider {
+        case .anthropic: return try AnthropicClient()
+        case .openai:    return try OpenAIClient()
+        }
+    }
+
+    /// Build the active provider's full client (chat + structured + tool use).
+    static func makeFull() throws -> any ToolCapableClient {
         switch AIConfig.provider {
         case .anthropic: return try AnthropicClient()
         case .openai:    return try OpenAIClient()

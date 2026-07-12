@@ -20,6 +20,12 @@ struct VictoriaApp: App {
             // The adaptive Plan — the AI-authored, evolving "understanding of you" (see docs/adaptive-plan.md).
             CoachPlan.self,
             StepsEntry.self,
+            // Passive tracker data mirrored from Apple Health (Fitbit etc. via a bridge):
+            // nightly sleep (+stages), auto-detected workouts, daily recovery vitals.
+            // Never counts toward the streak.
+            SleepEntry.self,
+            DetectedWorkout.self,
+            VitalsEntry.self,
             AchievementUnlock.self,
             InsightShown.self,
             // Buddy / accountability-buddy layer (data + sync foundation).
@@ -35,7 +41,11 @@ struct VictoriaApp: App {
         do {
             container = try ModelContainer(for: schema)
         } catch {
-            // A fresh in-memory store is better than crashing on a migration hiccup.
+            // A fresh in-memory store is better than crashing on a migration hiccup — but it
+            // ALSO means the user silently re-onboards and everything they enter evaporates on
+            // relaunch. Leave a loud trace so a field report ("it made me start over") is
+            // diagnosable instead of a mystery.
+            Diagnostics.shared.log("CRITICAL: SwiftData store failed to open — running IN-MEMORY (data will not persist): \(error.localizedDescription)", .error)
             let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             container = try! ModelContainer(for: schema, configurations: fallback)
         }

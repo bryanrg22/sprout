@@ -27,17 +27,22 @@ import CloudKit
 /// │     Simulator to `LocalMockSyncService`.                                            │
 /// │  4. CLOUDKIT DASHBOARD — INDEXES. On first save CloudKit auto-creates the record    │
 /// │     types in the *Development* environment, but custom fields are NOT queryable/    │
-/// │     sortable by default. The ONLY query this service runs is the inbox fetch, so    │
-/// │     in the PUBLIC database schema add:                                              │
-/// │       - QUERYABLE index on `Nudge.toUserID`   (the inbox `records(matching:)` query)│
+/// │     sortable by default. In the PUBLIC database schema add:                          │
+/// │       - QUERYABLE index on `Nudge.toUserID`   (the inbox `records(matching:)` query │
+/// │         AND the nudge push subscription's predicate)                                │
 /// │       - SORTABLE  index on `Nudge.createdAt`  (the inbox sort)                      │
-/// │     Pairing + snapshot records are addressed by deterministic record ID (no query), │
-/// │     so `pairingCode` / `ownerUserID` do NOT need indexes unless a future query-     │
-/// │     based lookup is reintroduced. Without the two `Nudge` indexes, the inbox query  │
-/// │     fails (mapped here to `.cloudKitUnavailable`).                                  │
+/// │       - QUERYABLE index on `BuddySnapshot.ownerUserID` — the SNAPSHOT push          │
+/// │         subscription (`ensureSnapshotSubscription`) predicates on it. Fetches are   │
+/// │         by record ID (no index needed), but WITHOUT this index the silent "buddy    │
+/// │         just logged" wake-up never fires and the hub only updates via its 20s poll. │
+/// │     `BuddyPairing.pairingCode` needs no index (addressed by record ID only).        │
 /// │  5. DEPLOY the schema from Development to PRODUCTION in the CloudKit Dashboard      │
 /// │     before shipping a Release/TestFlight build (Development schema is not visible   │
-/// │     to production builds).                                                          │
+/// │     to production builds). ⚠️ REPEAT THIS EVERY TIME A NEW FIELD IS ADDED to any    │
+/// │     record type (e.g. the v2 full-share fields carbs/fat/workoutSummary): writing a │
+/// │     field that doesn't exist in the Production schema makes the WHOLE save fail on  │
+/// │     TestFlight builds — publishes silently stop and the buddy sees a frozen, stale  │
+/// │     snapshot even though the app "works". Re-seed (debugSeedSchema) + re-deploy.    │
 /// └─────────────────────────────────────────────────────────────────────────────────┘
 ///
 /// HARDENING TODO (future, not required to go live): the pairing rendezvous below uses
@@ -158,6 +163,13 @@ final class CloudKitSyncService: BuddySyncService {
         // Restore a previously-linked buddy so the pairing survives app relaunch.
         // (Property observers don't fire during init, so this read won't re-persist.)
         self.buddyUserID = UserDefaults.standard.string(forKey: Self.linkKey(myUserID))
+        // Restore the ANNOUNCED code too (the ViewModel persists it under this key). Without
+        // this, a relaunch mid-pairing left `myPublishedCode` nil, `resolveBuddyIfNeeded()`
+        // bailed on its guard, and the code-owner could NEVER discover that their buddy had
+        // claimed the code — the exact "we had to reinstall to pair" wedge.
+        self.myPublishedCode = UserDefaults.standard
+            .string(forKey: "buddy.myPairingCode.\(myUserID)")?
+            .trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
     }
 
     // MARK: - Link persistence (survives relaunch)
@@ -177,6 +189,25 @@ final class CloudKitSyncService: BuddySyncService {
         UserDefaults.standard.string(forKey: Self.linkKey(myUserID))
     }
 
+    // MARK: Error visibility
+
+    /// Log the REAL CloudKit error to the field Diagnostics log (readable in Release via the
+    /// hidden Settings viewer) BEFORE it gets flattened to the soft `.cloudKitUnavailable`.
+    /// This is the difference between diagnosing "publish failing: invalidArguments —
+    /// Production schema is missing a field" from a device in the field, and a buddy whose
+    /// snapshot silently freezes for a month with no trace anywhere.
+    private nonisolated static func logCK(_ op: String, _ error: Error) {
+        Diagnostics.shared.log("buddy/ck \(op): \(errLine(error))", .sync)
+    }
+
+    /// Compact one-line description of a (possibly CloudKit) error, for diagnostics.
+    private nonisolated static func errLine(_ error: Error) -> String {
+        if let ck = error as? CKError {
+            return "CKError \(ck.errorCode) (\(ck.code)) — \(ck.localizedDescription)"
+        }
+        return error.localizedDescription
+    }
+
     // MARK: Availability gate
 
     /// Throws `.cloudKitUnavailable` unless iCloud is signed in AND reachable. Every
@@ -187,9 +218,11 @@ final class CloudKitSyncService: BuddySyncService {
             status = try await container.accountStatus()
         } catch {
             // No entitlement / not provisioned / offline → treat as unavailable, softly.
+            Self.logCK("accountStatus", error)
             throw BuddySyncError.cloudKitUnavailable
         }
         guard status == .available else {
+            Diagnostics.shared.log("buddy/ck account not available (status \(status.rawValue))", .sync)
             throw BuddySyncError.cloudKitUnavailable
         }
     }
@@ -220,8 +253,9 @@ final class CloudKitSyncService: BuddySyncService {
             record[Field.pairingCode] = trimmed as CKRecordValue
             record[Field.ownerUserID] = myUserID as CKRecordValue
             do { _ = try await database.save(record) }
-            catch { throw BuddySyncError.cloudKitUnavailable }
+            catch { Self.logCK("pairing.save", error); throw BuddySyncError.cloudKitUnavailable }
         } catch {
+            Self.logCK("pairing.fetch", error)
             throw BuddySyncError.cloudKitUnavailable
         }
     }
@@ -275,6 +309,7 @@ final class CloudKitSyncService: BuddySyncService {
             UserDefaults.standard.set(true, forKey: key)   // created once
         } catch {
             // Best-effort: leave the flag unset so we retry next time (e.g. once iCloud is ready).
+            Self.logCK("nudgeSub.save", error)
         }
     }
 
@@ -302,6 +337,9 @@ final class CloudKitSyncService: BuddySyncService {
             UserDefaults.standard.set(true, forKey: key)   // created once per buddy
         } catch {
             // Best-effort: leave the flag unset so we retry next time (once iCloud is ready).
+            // Common cause worth reading in the field log: "Field 'ownerUserID' is not marked
+            // queryable" = the Dashboard index from header step 4 is missing.
+            Self.logCK("snapshotSub.save", error)
         }
     }
 
@@ -343,6 +381,7 @@ final class CloudKitSyncService: BuddySyncService {
             record = CKRecord(recordType: RecordType.pairing, recordID: recordID)
             isNew = true
         } catch {
+            Self.logCK("link.fetch", error)
             throw BuddySyncError.cloudKitUnavailable
         }
 
@@ -372,6 +411,7 @@ final class CloudKitSyncService: BuddySyncService {
         do {
             _ = try await database.save(record)
         } catch {
+            Self.logCK("link.save", error)
             throw BuddySyncError.cloudKitUnavailable
         }
     }
@@ -415,6 +455,7 @@ final class CloudKitSyncService: BuddySyncService {
         do {
             _ = try await database.save(record)
         } catch {
+            Self.logCK("nudge.save", error)
             throw BuddySyncError.cloudKitUnavailable
         }
     }
@@ -439,6 +480,7 @@ final class CloudKitSyncService: BuddySyncService {
                 return Self.nudgeWire(from: record)
             }
         } catch {
+            Self.logCK("inbox.query", error)
             throw BuddySyncError.cloudKitUnavailable
         }
         return wires.map { $0.makeModel() }
@@ -460,6 +502,7 @@ final class CloudKitSyncService: BuddySyncService {
             return
         } catch {
             // Genuinely couldn't reach CloudKit — surface as the soft, expected state.
+            Self.logCK("markRead", error)
             throw BuddySyncError.cloudKitUnavailable
         }
     }
@@ -481,6 +524,7 @@ final class CloudKitSyncService: BuddySyncService {
         } catch let ckError as CKError where ckError.code == .unknownItem {
             record = CKRecord(recordType: RecordType.snapshot, recordID: recordID)
         } catch {
+            Self.logCK("publish.fetch", error)
             throw BuddySyncError.cloudKitUnavailable
         }
         record[Field.ownerUserID]      = snapshot.ownerUserID as CKRecordValue
@@ -516,6 +560,10 @@ final class CloudKitSyncService: BuddySyncService {
         do {
             _ = try await database.save(record)
         } catch {
+            // THE line to look for when a buddy's snapshot goes stale: if this logs
+            // `invalidArguments` on a TestFlight build, the Production schema is missing a
+            // field this build writes — re-seed + re-deploy the schema (header steps 4–5).
+            Self.logCK("publish.save", error)
             throw BuddySyncError.cloudKitUnavailable
         }
     }
@@ -535,6 +583,7 @@ final class CloudKitSyncService: BuddySyncService {
             // Buddy simply hasn't published yet — that's a `nil`, not a failure.
             return nil
         } catch {
+            Self.logCK("snapshot.fetch", error)
             throw BuddySyncError.cloudKitUnavailable
         }
     }
@@ -612,13 +661,15 @@ final class CloudKitSyncService: BuddySyncService {
         nudge[Field.isRead]     = 0 as CKRecordValue
         _ = try await database.save(nudge)
     }
+    #endif
 
-    /// DEV-ONLY CloudKit diagnostic for Settings → "Diagnose CloudKit". Reports the iCloud
-    /// account status and attempts a REAL public-DB write + read on this device, surfacing the
-    /// EXACT CloudKit error — which the live buddy flow otherwise hides behind a soft
-    /// `.cloudKitUnavailable`. `accountStatus` is environment-independent, so a failure here
-    /// points at the iCloud account/entitlement regardless of Dev vs Production.
-    func debugDiagnose() async -> String {
+    /// CloudKit diagnostic (available in RELEASE too — TestFlight is where sync actually
+    /// breaks, so it must be runnable from a field device via the hidden Diagnostics screen).
+    /// Reports the iCloud account status and attempts a REAL public-DB write + read on this
+    /// device, surfacing the EXACT CloudKit error — which the live buddy flow otherwise hides
+    /// behind a soft `.cloudKitUnavailable`. `accountStatus` is environment-independent, so a
+    /// failure here points at the iCloud account/entitlement regardless of Dev vs Production.
+    func diagnose() async -> String {
         var out = "Container:\n\(Self.containerIdentifier)\n\n"
 
         // 1) iCloud account status — the same gate `ensureAvailable()` checks first.
@@ -669,20 +720,30 @@ final class CloudKitSyncService: BuddySyncService {
             return out
         }
 
-        out += "\n✅ Account + read/write all work on THIS device/environment.\n"
+        // 4) A REAL snapshot publish — the exact save that goes stale when the Production
+        //    schema is missing a newly-added field (the "buddy frozen for a month" failure).
+        //    Uses a diag-prefixed owner id so it can never clobber a real snapshot record.
+        let probe = BuddySnapshotPayload(ownerUserID: "diag-\(myUserID)",
+                                         displayName: "Diag",
+                                         dayStreak: 0,
+                                         characterMood: .happy,
+                                         loggedToday: false,
+                                         lastActive: .now)
+        do {
+            try await publish(mySnapshot: probe)
+            out += "Snapshot publish: ✅ OK\n"
+        } catch {
+            out += "Snapshot PUBLISH: ❌ failed (see the [sync] lines in this log for the exact "
+                 + "CKError). If it says invalidArguments on TestFlight, the Production schema "
+                 + "is missing a field this build writes — re-deploy the CloudKit schema.\n"
+            return out
+        }
+
+        out += "\n✅ Account + read/write + snapshot publish all work on THIS device/environment.\n"
              + "If TestFlight pairing still fails, it's Production-specific — check CloudKit "
              + "Dashboard → Production → Security Roles."
         return out
     }
-
-    /// Compact one-line description of a (possibly CloudKit) error, for diagnostics.
-    private static func errLine(_ error: Error) -> String {
-        if let ck = error as? CKError {
-            return "CKError \(ck.errorCode) (\(ck.code)) — \(ck.localizedDescription)"
-        }
-        return error.localizedDescription
-    }
-    #endif
 
     // MARK: - Record <-> model mapping
 

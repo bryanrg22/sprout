@@ -61,15 +61,23 @@ struct AnthropicClient {
 
     /// One turn of a tool-enabled conversation. `tools` is an array of Anthropic tool
     /// schemas (`{name, description, input_schema}`). Returns the assistant turn.
+    ///
+    /// **Prompt caching.** Pass `cachedSystemPrefix` with the STABLE part of the system prompt
+    /// (persona/rules — byte-identical across turns) and `system` with the volatile part (live
+    /// data). The prefix gets a `cache_control` breakpoint, so the API renders
+    /// tools → cached prefix → volatile system → messages and serves everything up to the
+    /// breakpoint from cache (~10% of input price) on every turn after the first. When
+    /// `cachedSystemPrefix` is nil, behavior is exactly as before (plain string system).
     func chatWithTools(system: String,
                        messages: [Msg],
                        tools: [[String: Any]],
                        model: String = AIConfig.chatModel,
-                       maxTokens: Int = 1500) async throws -> ChatTurn {
+                       maxTokens: Int = 1500,
+                       cachedSystemPrefix: String? = nil) async throws -> ChatTurn {
         var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
-            "system": system,
+            "system": Self.systemValue(system, cachedPrefix: cachedSystemPrefix),
             "messages": messages.map { ["role": $0.role, "content": $0.content] },
         ]
         if !tools.isEmpty { body["tools"] = tools }   // omit `tool_choice` → defaults to "auto"
@@ -205,6 +213,17 @@ struct AnthropicClient {
         return (text, usedSearch)
     }
 
+    /// The `system` field for a request: a plain string (no caching), or — when a stable
+    /// prefix is provided — an array of text blocks with a `cache_control` breakpoint on the
+    /// prefix. The breakpoint caches everything rendered before it (tool schemas included).
+    static func systemValue(_ system: String, cachedPrefix: String?) -> Any {
+        guard let cachedPrefix, !cachedPrefix.isEmpty else { return system }
+        return [
+            ["type": "text", "text": cachedPrefix, "cache_control": ["type": "ephemeral"]],
+            ["type": "text", "text": system],
+        ]
+    }
+
     /// Build an image content block from JPEG/PNG data.
     static func imageBlock(_ data: Data, mediaType: String = "image/jpeg") -> [String: Any] {
         ["type": "image",
@@ -251,7 +270,20 @@ struct AnthropicClient {
                 throw AIConfig.AIError.badResponse("no response")
             }
             let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-            if (200..<300).contains(http.statusCode) { return json }
+            if (200..<300).contains(http.statusCode) {
+                // Token/cache accounting → field log, so "is prompt caching actually working"
+                // and "what does a day of AI cost" are answerable from a device.
+                if let usage = json["usage"] as? [String: Any] {
+                    let input = usage["input_tokens"] as? Int ?? 0
+                    let output = usage["output_tokens"] as? Int ?? 0
+                    let cacheRead = usage["cache_read_input_tokens"] as? Int ?? 0
+                    let cacheWrite = usage["cache_creation_input_tokens"] as? Int ?? 0
+                    Diagnostics.shared.log(
+                        "anthropic usage: in \(input) out \(output) cacheRead \(cacheRead) cacheWrite \(cacheWrite)",
+                        .ai)
+                }
+                return json
+            }
 
             let msg = ((json["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"
             Diagnostics.shared.log("anthropic HTTP \(http.statusCode): \(msg)", .ai)
@@ -283,3 +315,7 @@ extension AnthropicClient: LLMClient {
         return try await chat(system: system, messages: mapped, model: model, maxTokens: maxTokens)
     }
 }
+
+// The native implementation of the cross-provider tool surface — `chatWithTools` and
+// `structured` above already match the protocol signatures exactly.
+extension AnthropicClient: ToolCapableClient {}

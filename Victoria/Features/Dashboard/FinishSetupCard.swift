@@ -10,7 +10,7 @@ struct FinishSetupCard: View {
     let coachName: String
 
     /// Re-checked locally so the card disappears the moment a key is saved.
-    @State private var hasKey = KeychainStore.hasAPIKey
+    @State private var hasKey = AIConfig.hasActiveKey
     @State private var draft = ""
     @FocusState private var focused: Bool
 
@@ -90,7 +90,7 @@ struct FinishSetupCard: View {
 
     private func save() {
         guard !trimmed.isEmpty else { return }
-        KeychainStore.setAPIKey(trimmed)
+        KeychainStore.setAPIKey(trimmed, for: AIConfig.provider)
         focused = false
         draft = ""
         withAnimation { hasKey = true }

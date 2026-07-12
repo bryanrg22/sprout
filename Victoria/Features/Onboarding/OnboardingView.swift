@@ -84,7 +84,7 @@ struct OnboardingView: View {
     /// What she pastes in (the key a friend texted her). Saved to the Keychain on tap.
     @State private var apiKeyDraft = ""
     /// Mirrors "is a key stored" so the card + footer react the instant she saves one.
-    @State private var keySaved = KeychainStore.hasAPIKey
+    @State private var keySaved = AIConfig.hasActiveKey
     /// Apple Health: optimistic "connected" flag once the system sheet has been answered.
     @State private var healthConnected = false
     @State private var healthBusy = false
@@ -564,7 +564,10 @@ struct OnboardingView: View {
                 }
 
                 fieldCard(icon: "calendar", label: "Birthday") {
-                    DatePicker("", selection: $birthDate, displayedComponents: .date)
+                    // Bounded 13–100 years (mirrors the coach tools' limits) — an unbounded
+                    // picker allowed a FUTURE birthday, which fed a negative age into the
+                    // calorie math.
+                    DatePicker("", selection: $birthDate, in: birthDateRange, displayedComponents: .date)
                         .labelsHidden()
                         .datePickerStyle(.compact)
                 }
@@ -598,10 +601,50 @@ struct OnboardingView: View {
             }
             .appearLift(appeared, index: 1)
 
+            // Direction/goal mismatch caught HERE, warmly, instead of silently hiding the
+            // projection later and confusing every downstream chart and coach read.
+            if let warning = goalMismatchWarning {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.caption)
+                        .foregroundStyle(Theme.warning)
+                    Text(warning)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(Theme.Space.md)
+                .background(Theme.warning.opacity(0.12),
+                            in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
+                .transition(.opacity)
+            }
+
             // Vita reflects gently — direction-aware, never about speed.
             vitaBubble(weightReassurance)
                 .appearLift(appeared, index: 2)
         }
+    }
+
+    /// Warm inline check that the goal weight actually lies in the chosen direction.
+    /// Nil when everything lines up (or when goal == current, which reads as "no target yet").
+    private var goalMismatchWarning: String? {
+        switch direction {
+        case .lose where goalWeight > currentWeight:
+            return "Small mix-up: you picked “lose weight,” but this goal is above where you are now. Nudge the goal below \(Int(currentWeight)) lb — or hop back a page if you meant to build instead."
+        case .gain where goalWeight < currentWeight:
+            return "Small mix-up: you picked “build,” but this goal is below where you are now. Nudge the goal above \(Int(currentWeight)) lb — or hop back a page if you meant to lose instead."
+        default:
+            return nil
+        }
+    }
+
+    /// Valid birthday window: 13–100 years old (same bounds Vita's set_birth_date enforces).
+    private var birthDateRange: ClosedRange<Date> {
+        let cal = Calendar.current
+        let now = Date.now
+        let oldest = cal.date(byAdding: .year, value: -100, to: now) ?? now
+        let youngest = cal.date(byAdding: .year, value: -13, to: now) ?? now
+        return oldest...youngest
     }
 
     /// Goal-weight label — direct, with "(optional)" so it never reads as mandatory.
@@ -1155,12 +1198,12 @@ struct OnboardingView: View {
 
     // MARK: - Connect actions
 
-    /// Store the pasted key on-device (Keychain). Defaults to the Anthropic slot, matching
-    /// the app's default provider; she can switch providers later in Settings → AI Provider.
+    /// Store the pasted key on-device (Keychain), under the ACTIVE provider's slot
+    /// (Anthropic on a fresh install; whatever's selected on a re-onboard).
     private func saveKey() {
         let trimmed = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        KeychainStore.setAPIKey(trimmed)
+        KeychainStore.setAPIKey(trimmed, for: AIConfig.provider)
         keyFocused = false
         apiKeyDraft = ""
         withAnimation { keySaved = true }
@@ -1547,8 +1590,8 @@ struct OnboardingView: View {
         // Safety net: if she typed a key but didn't tap "Save key", flush it now so she
         // isn't left unable to chat just because she skipped the explicit save.
         let typedKey = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !typedKey.isEmpty && !KeychainStore.hasAPIKey {
-            KeychainStore.setAPIKey(typedKey)
+        if !typedKey.isEmpty && !AIConfig.hasActiveKey {
+            KeychainStore.setAPIKey(typedKey, for: AIConfig.provider)
         }
     }
 }

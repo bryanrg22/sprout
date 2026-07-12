@@ -35,6 +35,27 @@ enum StreakCalculator {
         return days
     }
 
+    /// How many days ago the most recent active log BEFORE today was — the "comeback" signal.
+    /// `1` = logged yesterday (no gap), `14` = two silent weeks, `nil` = never logged before
+    /// today (brand-new user — a first log is a beginning, not a comeback).
+    ///
+    /// Today's own logs are deliberately excluded: the moment she logs after two weeks away,
+    /// today has entries but the gap she just crossed is still the story every surface needs
+    /// (Vita's framing, the welcome-back card, insight suppression). Counting today would
+    /// make the gap vanish at the exact moment it matters most.
+    static func daysSinceLastLog(foods: [FoodEntry],
+                                 waters: [WaterEntry] = [],
+                                 weights: [WeightEntry],
+                                 since: Date? = nil,
+                                 calendar cal: Calendar = .current,
+                                 now: Date = .now) -> Int? {
+        let today = cal.startOfDay(for: now)
+        let past = loggedDays(foods: foods, waters: waters, weights: weights, since: since, calendar: cal)
+            .filter { $0 < today }
+        guard let latest = past.max() else { return nil }
+        return cal.dateComponents([.day], from: latest, to: today).day
+    }
+
     /// Consecutive days with an active log, counting back from `now`. Returns 0 if today has none.
     /// Pass `since` to clamp to the account start so nothing before it can ever count.
     static func loggingStreak(foods: [FoodEntry],

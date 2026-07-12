@@ -182,7 +182,7 @@ enum CoachPromptService {
 
         // No key → just the fixed list. (Caching nothing here is deliberate: the moment she adds
         // a key, the next open personalizes — we don't want a no-key bucket to suppress that.)
-        guard KeychainStore.hasAPIKey else { return fallback }
+        guard AIConfig.hasActiveKey else { return fallback }
 
         do {
             let personalized = try await generate(profile: profile, foods: foods, weights: weights,
@@ -205,7 +205,7 @@ enum CoachPromptService {
                          sessions: [WorkoutSession],
                          water: [WaterEntry],
                          memory: CoachMemory?) async throws -> [String] {
-        let client = try AnthropicClient()
+        let client = try AIClient.makeFull()
 
         let dataSummary = CoachContext.summary(profile: profile, foods: foods,
                                                weights: weights, water: water, sessions: sessions)

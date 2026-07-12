@@ -230,6 +230,44 @@ struct BuddyHomeView: View {
 
         // (e) Recent nudges.
         recentNudges.appearLift(didAppear, index: 6)
+
+        // (f) Sync health, in plain words. Two silent failure modes used to be invisible:
+        // MY publishes quietly failing (buddy sees a frozen me) and THEIR device not
+        // uploading (I see a frozen them). One honest little footer surfaces both.
+        syncStatusFooter.appearLift(didAppear, index: 7)
+    }
+
+    /// A quiet footer that tells the truth about sync: when my day last reached iCloud
+    /// (with a soft warning if the last attempt failed), and how old the buddy's data is
+    /// when it's stale enough to mislead (> a day). Caption-sized — informative, not scary.
+    @ViewBuilder
+    private var syncStatusFooter: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if model.lastPublishFailed {
+                Label("Your last update hasn't reached iCloud yet — it'll retry on its own.",
+                      systemImage: "icloud.slash")
+                    .foregroundStyle(Theme.warning)
+            } else if let t = model.lastPublishAt {
+                Label("You shared your day \(Self.relative(t)).", systemImage: "icloud.and.arrow.up")
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            if let snap = model.buddySnapshot,
+               Date.now.timeIntervalSince(snap.lastActive) > 86_400 {
+                Label("\(snap.displayName.split(separator: " ").first.map(String.init) ?? snap.displayName)'s last sync was \(Self.relative(snap.lastActive)) — their phone may not be uploading. Ask them to open the app (and update it if there's a new build).",
+                      systemImage: "clock.arrow.circlepath")
+                    .foregroundStyle(Theme.warning)
+            }
+        }
+        .font(.caption)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, Theme.Space.xs)
+    }
+
+    private static func relative(_ date: Date) -> String {
+        if Date.now.timeIntervalSince(date) < 90 { return "just now" }
+        let fmt = RelativeDateTimeFormatter()
+        fmt.unitsStyle = .short
+        return fmt.localizedString(for: date, relativeTo: .now)
     }
 
     /// The shared panda inside an elevated card, with a header. Passes BOTH contributors so

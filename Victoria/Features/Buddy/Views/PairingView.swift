@@ -11,6 +11,8 @@ struct PairingView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var enteredCode = ""
     @State private var copied = false
+    @State private var diagRunning = false
+    @State private var diagReport: String?
     @FocusState private var codeFieldFocused: Bool
 
     var body: some View {
@@ -123,6 +125,15 @@ struct PairingView: View {
                 .buttonStyle(.bordered)
                 .tint(Theme.brand)
             }
+
+            // The waiting state, said out loud — without this the code-owner stares at a
+            // static code wondering if anything is happening.
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.mini)
+                Text("Watching for your buddy — the moment they enter this code, you're connected. ✨")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+            }
         }
         .cardElevated()
     }
@@ -180,6 +191,30 @@ struct PairingView: View {
             Text("No pressure — you can connect anytime. Your buddy only ever sees encouraging signals, never your weight or calories.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
+
+            // Escape hatch: two failed attempts usually means connection trouble (iCloud,
+            // network, backend), not typing. Offer the real diagnosis instead of an endless
+            // "check the code" loop.
+            if model.linkFailureCount >= 2 {
+                Button {
+                    diagRunning = true
+                    Task {
+                        diagReport = await model.diagnoseCloudKit()
+                        diagRunning = false
+                    }
+                } label: {
+                    Label(diagRunning ? "Checking the connection…" : "Still stuck? Check the connection",
+                          systemImage: "stethoscope")
+                        .font(.caption.weight(.semibold))
+                }
+                .disabled(diagRunning)
+                if let diagReport {
+                    Text(diagReport)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(Theme.textSecondary)
+                        .textSelection(.enabled)
+                }
+            }
         }
         .cardElevated()
     }
@@ -192,7 +227,7 @@ struct PairingView: View {
     // MARK: Helpers
 
     private var shareMessage: String {
-        "Be my accountability buddy on Victoria! Enter my code \(model.myPairingCode) to connect 💛🐼"
+        "Be my accountability buddy on Sprout! I'll SHOW my code, you TYPE it in (Buddy → Pair): \(model.myPairingCode) — that's all it takes 💛🐼"
     }
 
     private var backdrop: some View {

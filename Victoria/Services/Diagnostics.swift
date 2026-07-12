@@ -73,16 +73,41 @@ final class Diagnostics: @unchecked Sendable {
 struct DiagnosticsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var text = Diagnostics.shared.dump()
+    @State private var runningBuddyCheck = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                Text(text.isEmpty ? "No diagnostics captured yet." : text)
-                    .font(.system(.caption2, design: .monospaced))
-                    .foregroundStyle(Theme.textPrimary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-                    .padding()
+                VStack(alignment: .leading, spacing: Theme.Space.md) {
+                    // Field-runnable buddy sync check (works in RELEASE — TestFlight is where
+                    // sync breaks). Probes the iCloud account + a real CloudKit write/read/
+                    // publish and appends the verdict here, so either phone can answer "why
+                    // is my buddy's data a month old?" without a debugger.
+                    Button {
+                        guard !runningBuddyCheck else { return }
+                        runningBuddyCheck = true
+                        Task { @MainActor in
+                            let report = await BuddyViewModel(observePushes: false).diagnoseCloudKit()
+                            Diagnostics.shared.log("buddy sync check:\n\(report)", .sync)
+                            // Give the async log queue a beat, then re-dump.
+                            try? await Task.sleep(for: .milliseconds(200))
+                            text = Diagnostics.shared.dump()
+                            runningBuddyCheck = false
+                        }
+                    } label: {
+                        Label(runningBuddyCheck ? "Checking buddy sync…" : "Run buddy sync check",
+                              systemImage: "stethoscope")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .disabled(runningBuddyCheck)
+
+                    Text(text.isEmpty ? "No diagnostics captured yet." : text)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(Theme.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+                .padding()
             }
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Diagnostics")

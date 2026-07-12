@@ -38,7 +38,7 @@ struct HealthSettingsView: View {
                     Label("Apple Health", systemImage: "heart.fill")
                         .font(.headline)
                         .foregroundStyle(Theme.brand)
-                    Text("Syncing with Apple Health is completely optional. Connect it to pull in weigh-ins from your other apps and scales, all in one place.")
+                    Text("Syncing with Apple Health is completely optional. Connect it to pull in weigh-ins, steps, sleep, and workouts from your other apps and devices — including a Fitbit or other tracker that feeds Apple Health — all in one place.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -63,7 +63,7 @@ struct HealthSettingsView: View {
                 }
                 .disabled(isConnecting || !HealthKitService.isAvailable)
             } footer: {
-                Text("You'll be asked to allow Victoria to read and save weight. You can change this anytime in the Health app.")
+                Text("You'll be asked to allow reading weight, steps, sleep, and workouts (and saving weight). You can change this anytime in the Health app.")
             }
 
             // MARK: Import

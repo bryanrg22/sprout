@@ -110,4 +110,36 @@ final class CoachContextItemsTests: XCTestCase {
         XCTAssertFalse(s.contains("The exact foods she logged today"))
         XCTAssertFalse(s.contains("This week's daily food totals"))
     }
+
+    // MARK: - Comeback gap awareness
+
+    /// After a two-week break, the summary must tell Vita the user was AWAY — otherwise a
+    /// returning user is indistinguishable from a brand-new one and the model reads the gap
+    /// as under-eating / lost progress.
+    func testSummaryFlagsAReturnAfterAGap() {
+        let p = UserProfile()
+        let foods = [
+            FoodEntry(date: .now, name: "Comeback bowl", calories: 500),
+            FoodEntry(date: Calendar.current.date(byAdding: .day, value: -14, to: .now)!,
+                      name: "Old meal", calories: 600),
+        ]
+        let s = CoachContext.summary(profile: p, foods: foods, weights: [])
+        XCTAssertTrue(s.contains("coming back after 14 days away"))
+        XCTAssertTrue(s.contains("NOT that she wasn't eating"))
+    }
+
+    /// No gap (logged yesterday) and brand-new user (first log today): no away note.
+    func testSummaryHasNoGapNoteWithoutARealGap() {
+        let p = UserProfile()
+        let recent = [
+            FoodEntry(date: .now, name: "Lunch", calories: 500),
+            FoodEntry(date: Calendar.current.date(byAdding: .day, value: -1, to: .now)!,
+                      name: "Dinner", calories: 600),
+        ]
+        XCTAssertFalse(CoachContext.summary(profile: p, foods: recent, weights: [])
+            .contains("days away from the app"))
+        let firstEver = [FoodEntry(date: .now, name: "First log", calories: 500)]
+        XCTAssertFalse(CoachContext.summary(profile: p, foods: firstEver, weights: [])
+            .contains("days away from the app"))
+    }
 }

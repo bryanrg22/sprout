@@ -43,15 +43,54 @@ enum CoachContext {
                        steps: [StepsEntry] = [],
                        sessions: [WorkoutSession] = [],
                        exercises: [ExerciseEntry] = [],
+                       sleep: [SleepEntry] = [],
+                       detected: [DetectedWorkout] = [],
+                       vitals: [VitalsEntry] = [],
                        memory: CoachMemory? = nil,
                        plan: CoachPlan? = nil) -> String {
-        // Assembled in a few named parts (not one long `+` chain) so the Swift type-checker
-        // doesn't strain — the concatenation order/output is unchanged. `bioLine`/`memoryBlock`
-        // carry their own leading "\n\n" (or "" when empty), so they're appended directly.
-        let header = persona(profile: profile) + bioLine(profile: profile)
+        let parts = systemParts(profile: profile, foods: foods, weights: weights,
+                                workouts: workouts, water: water, steps: steps,
+                                sessions: sessions, exercises: exercises,
+                                sleep: sleep, detected: detected, vitals: vitals,
+                                memory: memory, plan: plan)
+        return parts.stable + parts.volatile
+    }
+
+    /// The system prompt split at its CACHE BOUNDARY, for Anthropic prompt caching.
+    ///
+    /// `stable` holds everything that is byte-identical across every turn of a session —
+    /// persona, her bio, tool rules, formatting rules. It goes FIRST in the prompt and gets a
+    /// `cache_control` breakpoint, so together with the (deterministic) tool schemas it's read
+    /// from cache at ~10% price on every turn after the first. `volatile` holds the live data
+    /// snapshot (today's foods, trend, memory, plan, today's date) — it changes constantly and
+    /// therefore comes AFTER the breakpoint, paying full price only for itself.
+    ///
+    /// One invariant to protect: nothing time- or data-dependent may leak into `stable`
+    /// (a date, a count, a weight) — a single changed byte there invalidates the whole cache.
+    static func systemParts(profile: UserProfile,
+                            foods: [FoodEntry],
+                            weights: [WeightEntry],
+                            workouts: [WorkoutEntry] = [],
+                            water: [WaterEntry] = [],
+                            steps: [StepsEntry] = [],
+                            sessions: [WorkoutSession] = [],
+                            exercises: [ExerciseEntry] = [],
+                            sleep: [SleepEntry] = [],
+                            detected: [DetectedWorkout] = [],
+                            vitals: [VitalsEntry] = [],
+                            memory: CoachMemory? = nil,
+                            plan: CoachPlan? = nil) -> (stable: String, volatile: String) {
+        // STABLE — persona + bio + behavioral rules. Changes only when the profile itself
+        // changes (name, pace, bio edit), which correctly re-writes the cache once.
+        let stable = persona(profile: profile) + bioLine(profile: profile)
+            + "\n\n" + toolGuidance(profile: profile)
+            + "\n\n" + formattingGuidance
+
+        // VOLATILE — the live snapshot + usage guidance (carries today's date) + memory + plan.
         let data = "\n\nHere is her current data:\n"
             + summary(profile: profile, foods: foods, weights: weights, workouts: workouts,
-                      water: water, steps: steps, sessions: sessions, exercises: exercises)
+                      water: water, steps: steps, sessions: sessions, exercises: exercises,
+                      sleep: sleep, detected: detected, vitals: vitals)
         let usage = "\n\nUse this data — including the exact foods she logged today and this week, "
             + "their per-item breakdown/notes, her water, and her recent workouts — to make "
             + "your replies specific and personal, but speak naturally — "
@@ -63,11 +102,8 @@ enum CoachContext {
             + "food she wants logged, estimate its calories + macros from the image and call the "
             + "log_food tool (one call per distinct item) — you don't need to ask her for the numbers. "
             + "Today's date is \(Self.longDate.string(from: .now))."
-        let tail = memoryBlock(memory)
-            + planBlock(plan)
-            + "\n\n" + toolGuidance(profile: profile)
-            + "\n\n" + formattingGuidance
-        return header + data + usage + tail
+        let volatile = data + usage + memoryBlock(memory) + planBlock(plan)
+        return (stable, volatile)
     }
 
     /// Injects the user's adaptive Plan (see docs/adaptive-plan.md) so Vita is "the plan talking
@@ -233,7 +269,10 @@ enum CoachContext {
                         water: [WaterEntry] = [],
                         steps: [StepsEntry] = [],
                         sessions: [WorkoutSession] = [],
-                        exercises: [ExerciseEntry] = []) -> String {
+                        exercises: [ExerciseEntry] = [],
+                        sleep: [SleepEntry] = [],
+                        detected: [DetectedWorkout] = [],
+                        vitals: [VitalsEntry] = []) -> String {
         var lines: [String] = []
 
         let unit = profile.unitSystem.weightUnit
@@ -252,6 +291,11 @@ enum CoachContext {
         } else {
             lines.append("Goal: \(profile.pace.label.lowercased()) "
                          + "(~\(rate(profile.pace.weeklyRateLbs)) \(unit)/week)")
+        }
+        if profile.startWeightLbs > 0 {
+            lines.append("Starting weight (when she began): \(lbs(profile.startWeightLbs)) \(unit) "
+                         + "— the progress chart measures from here; she can correct it in Settings "
+                         + "or ask you to (set_start_weight)")
         }
 
         // Daily calorie + macro targets — the SAME numbers the rings show. Read the OVERRIDE-AWARE
@@ -347,6 +391,19 @@ enum CoachContext {
             lines.append(contentsOf: recentSessions)
         }
 
+        // Tracker data mirrored from Apple Health (Fitbit etc.) — passive, so it's context
+        // ("she moved / slept X") and never a logging achievement to praise as showing up.
+        let sleepLine = lastNightSleepLine(sleep)
+        if let sleepLine { lines.append(sleepLine) }
+        if let vitalsLine = recoveryVitalsLine(vitals) { lines.append(vitalsLine) }
+        if let signal = RecoverySignal.fromDailyVitals(vitals) { lines.append(signal.coachLine) }
+        let detectedLines = detectedWorkoutLines(detected)
+        if !detectedLines.isEmpty {
+            lines.append("Workouts her fitness tracker auto-detected (most recent first — these were "
+                + "picked up automatically, she didn't log them by hand):")
+            lines.append(contentsOf: detectedLines)
+        }
+
         // Weight trend + weekly rate + assessment wording.
         if let trend = TrendCalculator.currentTrend(weights) {
             let weeklyRate = TrendCalculator.ratePerWeek(weights)
@@ -371,6 +428,20 @@ enum CoachContext {
             lines.append("Logging streak: 1 day (logged today)")
         default:
             lines.append("Logging streak: \(streak) days in a row — celebrate this consistency")
+        }
+
+        // Coming back after a break — WITHOUT this, a returning user looks like a brand-new
+        // one (streak 1, sparse week, light intake) and the coach draws exactly the wrong
+        // conclusions ("you're under-eating", "your numbers dropped"). The gap means she
+        // wasn't LOGGING — life happened — not that she wasn't eating.
+        if let away = StreakCalculator.daysSinceLastLog(foods: foods, waters: water,
+                                                        weights: weights), away >= 4 {
+            lines.append("IMPORTANT: she's just coming back after \(away) days away from the app "
+                + "(no logs in that window). The empty days mean she wasn't logging — NOT that she "
+                + "wasn't eating, and NOT a decline in her progress. Never treat the gap as "
+                + "under-eating, a relapse, or a broken streak to feel bad about. Welcome her back "
+                + "warmly, treat today as a clean fresh start, and if today's intake looks light "
+                + "remember she may still be catching up on logging — ask, don't assume.")
         }
 
         return lines.map { "- " + $0 }.joined(separator: "\n")
@@ -553,6 +624,97 @@ enum CoachContext {
             out.append("…and \(extra) more item\(extra == 1 ? "" : "s")")
         }
         return out
+    }
+
+    /// "Last night's sleep: 7h 24m asleep (1h 20m deep, 1h 45m REM) …" — the stage breakdown
+    /// when the tracker reports one, plus a 7-night average when there's enough history.
+    /// Nil when there's no sleep data for last night (older nights alone would read stale
+    /// as "last night").
+    static func lastNightSleepLine(_ sleep: [SleepEntry],
+                                   now: Date = .now,
+                                   calendar: Calendar = .current) -> String? {
+        let today = calendar.startOfDay(for: now)
+        guard let lastNight = sleep.first(where: { calendar.isDate($0.date, inSameDayAs: today) }),
+              lastNight.asleepMinutes > 0 else { return nil }
+        var line = "Last night's sleep: \(hm(lastNight.asleepMinutes)) asleep"
+        if lastNight.hasStages {
+            var stages: [String] = []
+            if lastNight.deepMinutes > 0 { stages.append("\(hm(lastNight.deepMinutes)) deep") }
+            if lastNight.remMinutes > 0 { stages.append("\(hm(lastNight.remMinutes)) REM") }
+            if lastNight.coreMinutes > 0 { stages.append("\(hm(lastNight.coreMinutes)) core") }
+            if lastNight.awakeMinutes > 0 { stages.append("\(hm(lastNight.awakeMinutes)) awake") }
+            if !stages.isEmpty { line += " (\(stages.joined(separator: ", ")))" }
+        }
+        line += " — from her tracker via Apple Health"
+        let week = sleep.filter {
+            $0.asleepMinutes > 0 && $0.date > calendar.date(byAdding: .day, value: -7, to: today)! && $0.date <= today
+        }
+        if week.count >= 3 {
+            let avg = week.reduce(0) { $0 + $1.asleepMinutes } / week.count
+            line += "; ~\(hm(avg)) average over the last \(week.count) nights"
+        }
+        return line
+    }
+
+    /// "Recovery vitals today: resting HR 58 bpm, HRV 46 ms (7-day avg: 60 bpm / 42 ms)".
+    /// Uses the most recent day within 3 days (vitals can lag the bridge sync); nil when
+    /// there's nothing recent. Values of 0 mean "not reported" and are omitted.
+    static func recoveryVitalsLine(_ vitals: [VitalsEntry],
+                                   now: Date = .now,
+                                   calendar: Calendar = .current) -> String? {
+        let today = calendar.startOfDay(for: now)
+        guard let cutoff = calendar.date(byAdding: .day, value: -3, to: today) else { return nil }
+        let recent = vitals.filter { $0.date >= cutoff && ($0.restingHeartRate > 0 || $0.hrvMs > 0) }
+        guard let latest = recent.max(by: { $0.date < $1.date }) else { return nil }
+        var parts: [String] = []
+        if latest.restingHeartRate > 0 { parts.append("resting HR \(Int(latest.restingHeartRate.rounded())) bpm") }
+        if latest.hrvMs > 0 { parts.append("HRV \(Int(latest.hrvMs.rounded())) ms") }
+        guard !parts.isEmpty else { return nil }
+        let dayLabel = calendar.isDate(latest.date, inSameDayAs: today) ? "today" : "recently"
+        var line = "Recovery vitals (\(dayLabel), from her tracker): " + parts.joined(separator: ", ")
+        let week = vitals.filter { $0.date > calendar.date(byAdding: .day, value: -7, to: today)! }
+        let rhrs = week.map(\.restingHeartRate).filter { $0 > 0 }
+        let hrvs = week.map(\.hrvMs).filter { $0 > 0 }
+        if rhrs.count >= 3 {
+            var avg = "7-day avg: \(Int((rhrs.reduce(0, +) / Double(rhrs.count)).rounded())) bpm"
+            if hrvs.count >= 3 { avg += " / \(Int((hrvs.reduce(0, +) / Double(hrvs.count)).rounded())) ms" }
+            line += " (\(avg))"
+        }
+        return line
+    }
+
+    /// One compact line per auto-detected workout, newest first, capped:
+    /// "Today — Running, 32 min, 280 kcal (Fitbit)". Empty when there are none.
+    static func detectedWorkoutLines(_ detected: [DetectedWorkout],
+                                     limit: Int = 5,
+                                     now: Date = .now,
+                                     calendar: Calendar = .current) -> [String] {
+        let sorted = detected.sorted { $0.date > $1.date }
+        let startToday = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: startToday)
+        var out = sorted.prefix(limit).map { w -> String in
+            let day = calendar.startOfDay(for: w.date)
+            let when: String
+            if calendar.isDate(day, inSameDayAs: startToday) { when = "Today" }
+            else if let y = yesterday, calendar.isDate(day, inSameDayAs: y) { when = "Yesterday" }
+            else { when = Self.weekdayDate.string(from: day) }
+            var line = "\(when) — \(w.activity), \(w.durationMinutes) min"
+            if w.caloriesBurned > 0 { line += ", \(Int(w.caloriesBurned.rounded())) kcal" }
+            if !w.sourceName.isEmpty { line += " (\(w.sourceName))" }
+            return line
+        }
+        if sorted.count > limit {
+            let extra = sorted.count - limit
+            out.append("…and \(extra) more detected workout\(extra == 1 ? "" : "s")")
+        }
+        return out
+    }
+
+    /// Minutes → "7h 24m" (or "45m" under an hour).
+    private static func hm(_ minutes: Int) -> String {
+        let h = minutes / 60, m = minutes % 60
+        if h == 0 { return "\(m)m" }
+        return m == 0 ? "\(h)h" : "\(h)h \(m)m"
     }
 
     /// `FoodEntry.notes` carries the AI's component breakdown + per-item assumptions, which we

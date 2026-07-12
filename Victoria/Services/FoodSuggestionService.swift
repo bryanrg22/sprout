@@ -145,10 +145,8 @@ struct FoodSuggestionService {
     /// `KeychainStore.hasAPIKey` first, but we surface it cleanly anyway), and
     /// `AIConfig.AIError.badResponse` / `.decoding` on transport / parse failures.
     ///
-    /// Note: forced tool use is Anthropic-only in this app (same as `FoodPhotoAnalyzer`),
-    /// so we construct `AnthropicClient` directly rather than via the cross-provider factory.
     static func suggestions(for context: FoodSuggestionEngine.Context) async throws -> [Suggestion] {
-        let client = try AnthropicClient()
+        let client = try AIClient.makeFull()
         let prompt = "Here is her current data:\n\n"
             + FoodSuggestionEngine.renderPrompt(context)
             + "\n\nReturn 2–3 suggestions via the tool."

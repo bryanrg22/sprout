@@ -30,6 +30,14 @@ import SwiftData
 /// tried, there's no lever here to do harm.
 enum CoachTools {
 
+    /// Save that never SILENTLY loses a write. A failed SwiftData save here is data loss
+    /// with a false confirmation (the tool already told the model "done"), so instead of
+    /// `try?` we log the exact error to the field Diagnostics for triage.
+    static func saveOrLog(_ context: ModelContext, _ op: String = "tool write") {
+        do { try context.save() }
+        catch { Diagnostics.shared.log("coach tool save FAILED (\(op)): \(error.localizedDescription)", .error) }
+    }
+
     // MARK: - Tool names (single source of truth; used in schema + dispatch)
 
     enum Name: String, CaseIterable {
@@ -44,6 +52,9 @@ enum CoachTools {
         case logWater              = "log_water"
         case logWeight             = "log_weight"
         case setWeightGoal         = "set_weight_goal"
+        // Correct the STARTING weight (chart baseline / total-change math) — previously
+        // permanent after onboarding; now editable in Settings and here.
+        case setStartWeight        = "set_start_weight"
         // Durable memory: save a lasting fact about the user (creatine, nutritionist, allergy…)
         // to her long-term notes so it persists across every future conversation.
         case rememberFact          = "remember_about_user"
@@ -115,7 +126,8 @@ enum CoachTools {
         [stepGoalSchema, waterGoalSchema, paceSchema(for: profile),
          logFoodSchema, editFoodSchema, deleteFoodSchema,
          logWaterSchema(for: profile), logWeightSchema(for: profile),
-         weightGoalSchema(for: profile), rememberSchema, updatePlanSchema, logWorkoutSchema,
+         weightGoalSchema(for: profile), startWeightSchema(for: profile),
+         rememberSchema, updatePlanSchema, logWorkoutSchema,
          editPlanSchema, forgetSchema,
          // Settings / preferences tools — every setting the user can change in Settings.
          setUnitsSchema, setThemeSchema, setHomeGymSchema, setGoalDirectionSchema(for: profile),
@@ -556,6 +568,33 @@ enum CoachTools {
         ]
     }
 
+    private static func startWeightSchema(for profile: UserProfile) -> [String: Any] {
+        let unit = profile.unitSystem.weightUnit
+        return [
+            "name": Name.setStartWeight.rawValue,
+            "description": """
+            Correct the user's STARTING weight — the baseline the progress chart's "Start" line \
+            and her total-change number measure from. Use when she says her starting weight was \
+            recorded wrong (e.g. "I actually started at 165, not 158"). This does NOT log a \
+            weigh-in and does NOT change her calorie targets — it only fixes the baseline. \
+            Must be between \(Int(weightRangeLbs.lowerBound)) and \(Int(weightRangeLbs.upperBound)) \(unit). \
+            The app shows a one-tap confirm before it's saved.
+            """,
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "weight": [
+                        "type": "number",
+                        "description": "The corrected starting weight in \(unit).",
+                        "minimum": weightRangeLbs.lowerBound,
+                        "maximum": weightRangeLbs.upperBound,
+                    ],
+                ],
+                "required": ["weight"],
+            ],
+        ]
+    }
+
     // MARK: - Schemas: settings / preferences tools
     //
     // One per Settings control, so Vita can change anything the user can in the Settings sheet.
@@ -889,6 +928,7 @@ enum CoachTools {
             case logWaterOz(Double, date: Date?)
             case logWeight(lbs: Double)
             case weightGoal(lbs: Double)
+            case startWeight(lbs: Double)
             case rememberFact(String)
             case updatePlan(note: String)
             // Writes the rich Workouts-tab model: one WorkoutSession + (gym) one ExerciseEntry per move.
@@ -933,7 +973,7 @@ enum CoachTools {
                 }
                 return false
             case .deleteFood,                                   // destructive
-                 .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal,
+                 .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal, .setStartWeight,
                  // Biometric / unit / goal-direction / target-changing settings — anything that
                  // moves her numbers (BMR inputs, units, goal, computed budget) → confirm first.
                  .setUnits, .setGoalDirection, .setHeight, .setBirthDate, .setSex, .setActivityLevel,
@@ -1093,6 +1133,9 @@ enum CoachTools {
 
         case .setWeightGoal:
             return parseWeightGoal(input: input, profile: profile)
+
+        case .setStartWeight:
+            return parseStartWeight(input: input, profile: profile)
 
         case .rememberFact:
             return parseRemember(input: input)
@@ -1836,6 +1879,21 @@ enum CoachTools {
             action: .weightGoal(lbs: goal)))
     }
 
+    private static func parseStartWeight(input: [String: Any], profile: UserProfile) -> ParseResult {
+        let unit = profile.unitSystem.weightUnit
+        guard let start = doubleValue(input["weight"]) else {
+            return .invalid("I need a number for your starting weight. Nothing was changed.")
+        }
+        guard weightRangeLbs.contains(start) else {
+            return .invalid("A starting weight of \(trimmed(start)) \(unit) is outside the sensible range "
+                          + "(\(Int(weightRangeLbs.lowerBound))–\(Int(weightRangeLbs.upperBound)) \(unit)). Nothing was changed.")
+        }
+        return .ok(ParsedRequest(
+            name: .setStartWeight,
+            confirmSummary: "correct your starting weight to \(trimmed(start)) \(unit)",
+            action: .startWeight(lbs: start)))
+    }
+
     /// Result of resolving a name to a single logged entry.
     private enum EntryResolution { case found(FoodEntry), invalid(String) }
 
@@ -1852,7 +1910,13 @@ enum CoachTools {
         let exact = foods.filter { $0.name.lowercased() == needle }
         if exact.count == 1 { return .found(exact[0]) }
         if exact.count > 1 {
-            return .invalid("You have \(exact.count) items called \"\(query)\" today — which one did you mean?")
+            // Name the candidates by meal + time so the model (and the user) can actually
+            // disambiguate — "2 items called banana" alone forces a blind guess.
+            let options = exact
+                .sorted { $0.date < $1.date }
+                .map { "\($0.mealType.label) at \($0.date.formatted(date: .omitted, time: .shortened))" }
+                .joined(separator: ", ")
+            return .invalid("You have \(exact.count) items called \"\(query)\" today (\(options)) — ask her which one she means, by meal or time.")
         }
 
         let contains = foods.filter { $0.name.lowercased().contains(needle) }
@@ -1922,9 +1986,9 @@ enum CoachTools {
         case .stepGoal(let steps):
             let old = profile.dailyStepGoal
             profile.dailyStepGoal = steps
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Daily step goal is now \(grouped(steps)) steps.",
-                           undo: { profile.dailyStepGoal = old; try? context.save() })
+                           undo: { profile.dailyStepGoal = old; Self.saveOrLog(context) })
 
         case .waterContainers(let count):
             // The by-the-bottle UI stores the goal in oz as `count × container size`,
@@ -1933,17 +1997,17 @@ enum CoachTools {
             let oldOverride = profile.waterGoalOzOverride
             let size = profile.waterContainerOz > 0 ? profile.waterContainerOz : 16.9
             profile.waterGoalOzOverride = Double(count) * size
-            try? context.save()
+            Self.saveOrLog(context)
             let label = containerLabel(profile, count: count)
             return Applied(message: "Daily water goal is now \(count) \(label).",
-                           undo: { profile.waterGoalOzOverride = oldOverride; try? context.save() })
+                           undo: { profile.waterGoalOzOverride = oldOverride; Self.saveOrLog(context) })
 
         case .pace(let pace):
             let old = profile.pace
             profile.pace = pace   // enum setter writes paceRaw
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Goal pace is now \(pace.label) (\(pace.subtitle.lowercased())).",
-                           undo: { profile.pace = old; try? context.save() })
+                           undo: { profile.pace = old; Self.saveOrLog(context) })
 
         case .logFood(let draft):
             // Run a plausibility check; we still log either way (it's her data), but a
@@ -1968,7 +2032,7 @@ enum CoachTools {
                 source: draft.source,
                 notes: note)
             context.insert(entry)
-            try? context.save()
+            Self.saveOrLog(context)
             var msg = "Logged \(entry.name) to \(entry.mealType.label.lowercased()): "
                 + "\(Int(entry.totalCalories.rounded())) kcal, \(Int(entry.totalProteinG.rounded()))g protein."
             if let note { msg += " Note: \(note)." }
@@ -1979,7 +2043,7 @@ enum CoachTools {
             // matches what the user sees on the Nutrients card.
             if let status = calorieStatusLine(profile: profile, context: context) { msg += " " + status }
             return Applied(message: msg,
-                           undo: { context.delete(entry); try? context.save() })
+                           undo: { context.delete(entry); Self.saveOrLog(context) })
 
         case .logWorkout(let draft):
             // Write the rich Workouts-tab model: ONE WorkoutSession + (gym) one ExerciseEntry per move.
@@ -2005,7 +2069,7 @@ enum CoachTools {
                 context.insert(entry)
                 entries.append(entry)
             }
-            try? context.save()
+            Self.saveOrLog(context)
 
             var wmsg = "Logged a \(draft.kind.label.lowercased()) workout"
             if !draft.focuses.isEmpty {
@@ -2020,7 +2084,7 @@ enum CoachTools {
             return Applied(message: wmsg, undo: {
                 context.delete(session)
                 for e in entries { context.delete(e) }
-                try? context.save()
+                Self.saveOrLog(context)
             })
 
         case .editPlan(let edit):
@@ -2039,12 +2103,12 @@ enum CoachTools {
             if let p = edit.proteinTarget { plan.proteinTarget = p }
             plan.changelog = plan.changelog + [PlanChange(date: .now, summary: edit.changeNote)]
             plan.updatedAt = .now
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Updated your plan — \(edit.changeNote)", undo: {
                 plan.headline = b.0; plan.assessment = b.1; plan.strategy = b.2
                 plan.calorieMin = b.3; plan.calorieMax = b.4; plan.proteinTarget = b.5
                 plan.changelog = b.6; plan.updatedAt = b.7
-                try? context.save()
+                Self.saveOrLog(context)
             })
 
         case .forgetFact(let fact):
@@ -2056,9 +2120,9 @@ enum CoachTools {
             }
             memory.profileNotes = kept
             memory.updatedAt = .now
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Done — I've forgotten that.", undo: {
-                memory.profileNotes = before; memory.updatedAt = .now; try? context.save()
+                memory.profileNotes = before; memory.updatedAt = .now; Self.saveOrLog(context)
             })
 
         case .editFood(let id, let changes):
@@ -2079,7 +2143,7 @@ enum CoachTools {
             if let c = changes.carbsG { entry.carbsG = c }
             if let f = changes.fatG { entry.fatG = f }
             if let q = changes.quantity { entry.quantity = q }
-            try? context.save()
+            Self.saveOrLog(context)
             let msg = "Updated \(entry.name): \(Int(entry.totalCalories.rounded())) kcal, "
                 + "\(Int(entry.totalProteinG.rounded()))g protein, in \(entry.mealType.label.lowercased())."
             return Applied(message: msg, undo: {
@@ -2091,7 +2155,7 @@ enum CoachTools {
                 e.carbsG = before.carbsG ?? e.carbsG
                 e.fatG = before.fatG ?? e.fatG
                 e.quantity = before.quantity ?? e.quantity
-                try? context.save()
+                Self.saveOrLog(context)
             })
 
         case .deleteFood(let id):
@@ -2100,7 +2164,7 @@ enum CoachTools {
             }
             let name = entry.name
             context.delete(entry)
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Removed \"\(name)\" from today's log.", undo: nil)
 
         case .logWaterOz(let oz, let date):
@@ -2108,26 +2172,34 @@ enum CoachTools {
             // is set only when the coach back-dates a forgotten day; otherwise it's today (`.now`).
             let water = WaterEntry(date: date ?? .now, amountOz: oz)
             context.insert(water)
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Logged \(Int(oz.rounded())) oz of water.",
-                           undo: { context.delete(water); try? context.save() })
+                           undo: { context.delete(water); Self.saveOrLog(context) })
 
         case .logWeight(let lbs):
             // Stored as the entered number, like the weigh-in sheet (no kg conversion here).
             let weight = WeightEntry(weightLbs: lbs)
             context.insert(weight)
-            try? context.save()
+            Self.saveOrLog(context)
             let unit = profile.unitSystem.weightUnit
             return Applied(message: "Logged today's weigh-in: \(trimmed(lbs)) \(unit). Remember, the trend is what matters.",
-                           undo: { context.delete(weight); try? context.save() })
+                           undo: { context.delete(weight); Self.saveOrLog(context) })
 
         case .weightGoal(let lbs):
             let old = profile.goalWeightLbs
             profile.goalWeightLbs = lbs
-            try? context.save()
+            Self.saveOrLog(context)
             let unit = profile.unitSystem.weightUnit
             return Applied(message: "Goal weight is now \(trimmed(lbs)) \(unit).",
-                           undo: { profile.goalWeightLbs = old; try? context.save() })
+                           undo: { profile.goalWeightLbs = old; Self.saveOrLog(context) })
+
+        case .startWeight(let lbs):
+            let old = profile.startWeightLbs
+            profile.startWeightLbs = lbs
+            Self.saveOrLog(context)
+            let unit = profile.unitSystem.weightUnit
+            return Applied(message: "Starting weight corrected to \(trimmed(lbs)) \(unit) — the chart baseline and total-change now measure from there.",
+                           undo: { profile.startWeightLbs = old; Self.saveOrLog(context) })
 
         case .rememberFact(let note):
             // Append the fact to her durable long-term notes (which `CoachContext` re-injects
@@ -2142,11 +2214,11 @@ enum CoachTools {
                 memory.profileNotes = String(memory.profileNotes.suffix(2000))
             }
             memory.updatedAt = .now
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Noted — I'll remember that.", undo: {
                 let m = CoachMemory.fetchOrCreate(in: context, profile: profile)
                 m.profileNotes = old
-                try? context.save()
+                Self.saveOrLog(context)
             })
 
         case .updatePlan(let note):
@@ -2159,10 +2231,10 @@ enum CoachTools {
             let old = plan.changelog
             plan.changelog.append(PlanChange(date: .now, summary: note))
             plan.updatedAt = .now
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Noted on your plan.", undo: {
                 plan.changelog = old
-                try? context.save()
+                Self.saveOrLog(context)
             })
 
         // MARK: Settings / preferences applies (each captures the old value for Undo)
@@ -2170,24 +2242,24 @@ enum CoachTools {
         case .setUnits(let system):
             let old = profile.unitSystem
             profile.unitSystem = system   // enum setter writes unitSystemRaw
-            try? context.save()
+            Self.saveOrLog(context)
             let name = system == .imperial ? "imperial (lb)" : "metric (kg)"
             return Applied(message: "Units are now \(name).",
-                           undo: { profile.unitSystem = old; try? context.save() })
+                           undo: { profile.unitSystem = old; Self.saveOrLog(context) })
 
         case .setTheme(let theme):
             let old = profile.themeStyle
             profile.themeStyle = theme   // enum setter writes themeStyleRaw
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Appearance is now \(theme.label) — \(theme.blurb.lowercased()).",
-                           undo: { profile.themeStyle = old; try? context.save() })
+                           undo: { profile.themeStyle = old; Self.saveOrLog(context) })
 
         case .setHomeGym(let gym):
             let old = profile.homeGym
             profile.homeGym = gym   // optional setter writes homeGymRaw
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Home gym is now \(gym.label).",
-                           undo: { profile.homeGym = old; try? context.save() })
+                           undo: { profile.homeGym = old; Self.saveOrLog(context) })
 
         case .setGoalDirection(let direction):
             // Mirror Settings' goalDirectionBinding: changing direction snaps the pace to the
@@ -2196,7 +2268,7 @@ enum CoachTools {
             let oldPace = profile.pace
             let newPace = GoalPace.paces(for: direction).first { $0.direction == direction } ?? .maintain
             profile.pace = newPace
-            try? context.save()
+            Self.saveOrLog(context)
             let label: String
             switch direction {
             case .lose:     label = "losing weight"
@@ -2204,36 +2276,50 @@ enum CoachTools {
             case .maintain: label = "maintaining"
             }
             let paceNote = direction == .maintain ? "" : " (\(newPace.label) pace)"
-            return Applied(message: "Your goal is now \(label)\(paceNote).",
-                           undo: { profile.pace = oldPace; try? context.save() })
+            // A direction flip can strand two things: an adaptive Plan authored for the OLD
+            // direction (its calorie range keeps driving the targets via the overrides), and a
+            // goal weight now on the wrong side of her current weight. Tell the model so it
+            // follows up naturally instead of leaving stale numbers in charge.
+            var staleNotes: [String] = []
+            if CoachPlan.current(in: context)?.hasRange == true {
+                staleNotes.append("her adaptive Plan was written for the previous goal and still drives her calorie/protein targets — suggest rebuilding or adjusting the plan (edit_plan / the Plan card)")
+            }
+            let current = currentWeightLbs(profile)
+            if (direction == .lose && profile.goalWeightLbs >= current && profile.goalWeightLbs > 0)
+                || (direction == .gain && profile.goalWeightLbs <= current && profile.goalWeightLbs > 0) {
+                staleNotes.append("her goal weight (\(trimmed(profile.goalWeightLbs))) is now on the wrong side of her current weight — offer to set a new one (set_weight_goal)")
+            }
+            let followUp = staleNotes.isEmpty ? "" : " NOTE: " + staleNotes.joined(separator: "; ") + "."
+            return Applied(message: "Your goal is now \(label)\(paceNote).\(followUp)",
+                           undo: { profile.pace = oldPace; Self.saveOrLog(context) })
 
         case .setHeight(let cm):
             let old = profile.heightCm
             profile.heightCm = cm
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Height is now \(Int(cm.rounded())) cm.",
-                           undo: { profile.heightCm = old; try? context.save() })
+                           undo: { profile.heightCm = old; Self.saveOrLog(context) })
 
         case .setBirthDate(let date):
             let old = profile.birthDate
             profile.birthDate = date
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Got it — your age is now set to \(profile.ageYears).",
-                           undo: { profile.birthDate = old; try? context.save() })
+                           undo: { profile.birthDate = old; Self.saveOrLog(context) })
 
         case .setSex(let sex):
             let old = profile.sex
             profile.sex = sex   // enum setter writes sexRaw
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Biological sex is now \(sex.label.lowercased()) (used only for the calorie math).",
-                           undo: { profile.sex = old; try? context.save() })
+                           undo: { profile.sex = old; Self.saveOrLog(context) })
 
         case .setActivityLevel(let level):
             let old = profile.activityLevel
             profile.activityLevel = level   // enum setter writes activityLevelRaw
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "Activity level is now \(level.label.lowercased()).",
-                           undo: { profile.activityLevel = old; try? context.save() })
+                           undo: { profile.activityLevel = old; Self.saveOrLog(context) })
 
         case .setCompanion(let name, let avatar):
             // Capture both fields; restore exactly what changed on undo.
@@ -2241,7 +2327,7 @@ enum CoachTools {
             let oldAvatar = profile.companionAvatar
             if let name { profile.companionName = name }
             if let avatar { profile.companionAvatar = avatar }
-            try? context.save()
+            Self.saveOrLog(context)
             var msg = "Your companion is now"
             if let name { msg += " \"\(name)\"" }
             if let avatar { msg += (name != nil ? " (\(avatar.rawValue.capitalized) avatar)" : " the \(avatar.rawValue.capitalized) avatar") }
@@ -2249,15 +2335,15 @@ enum CoachTools {
             return Applied(message: msg, undo: {
                 profile.companionName = oldName
                 profile.companionAvatar = oldAvatar
-                try? context.save()
+                Self.saveOrLog(context)
             })
 
         case .setCoachName(let name):
             let old = profile.coachName
             profile.coachName = name
-            try? context.save()
+            Self.saveOrLog(context)
             return Applied(message: "You can call me \(name) from now on.",
-                           undo: { profile.coachName = old; try? context.save() })
+                           undo: { profile.coachName = old; Self.saveOrLog(context) })
 
         case .setWaterContainer(let oz, let label):
             // Capture both size + label so undo restores the pair. Only overwrite the label when she
@@ -2266,13 +2352,13 @@ enum CoachTools {
             let oldLabel = profile.waterContainerLabel
             profile.waterContainerOz = oz
             if let label { profile.waterContainerLabel = label }
-            try? context.save()
+            Self.saveOrLog(context)
             let shownLabel = profile.waterContainerLabel.isEmpty ? "drink" : profile.waterContainerLabel
             return Applied(message: "One \(shownLabel) is now \(Int(oz.rounded())) oz.",
                            undo: {
                                profile.waterContainerOz = oldOz
                                profile.waterContainerLabel = oldLabel
-                               try? context.save()
+                               Self.saveOrLog(context)
                            })
 
         case .setProteinGoal(let grams):
@@ -2290,33 +2376,33 @@ enum CoachTools {
                     summary: grams == 0 ? "Cleared the protein target" : "Set protein target to \(Int(grams.rounded()))g")]
                 plan.updatedAt = .now
                 profile.proteinTargetOverride = grams
-                try? context.save()
+                Self.saveOrLog(context)
                 let msg = grams == 0
                     ? "Cleared your protein target — back to the calculated one."
                     : "Daily protein target is now \(Int(grams.rounded()))g (saved to your plan, so it sticks)."
                 return Applied(message: msg, undo: {
                     plan.proteinTarget = before.0; plan.changelog = before.1; plan.updatedAt = before.2
                     profile.proteinTargetOverride = before.3
-                    try? context.save()
+                    Self.saveOrLog(context)
                 })
             }
             profile.proteinTargetOverride = grams
-            try? context.save()
+            Self.saveOrLog(context)
             let msg = grams == 0
                 ? "Cleared your custom protein target — back to the calculated one."
                 : "Daily protein target is now \(Int(grams.rounded()))g."
             return Applied(message: msg,
-                           undo: { profile.proteinTargetOverride = old; try? context.save() })
+                           undo: { profile.proteinTargetOverride = old; Self.saveOrLog(context) })
 
         case .toggleStepsInBudget(let enabled):
             let old = profile.stepsAdjustCalories
             profile.stepsAdjustCalories = enabled
-            try? context.save()
+            Self.saveOrLog(context)
             let msg = enabled
                 ? "Your steps above baseline will now add a little to your daily budget."
                 : "Steps will no longer add to your daily budget."
             return Applied(message: msg,
-                           undo: { profile.stepsAdjustCalories = old; try? context.save() })
+                           undo: { profile.stepsAdjustCalories = old; Self.saveOrLog(context) })
         }
     }
 
