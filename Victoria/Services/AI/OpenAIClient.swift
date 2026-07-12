@@ -20,11 +20,11 @@ struct OpenAIClient: LLMClient {
     /// Chat Completions.
     private static let responsesEndpoint = URL(string: "https://api.openai.com/v1/responses")!
 
-    /// Model for the web-search research pass. Per OpenAI's docs the `web_search` tool
-    /// runs on the gpt-5.x Responses models (NOT gpt-4.1) — and research is best-effort
-    /// everywhere it's called, so an account without access degrades to an un-grounded
-    /// plan instead of failing.
-    static let researchModel = "gpt-5.5"
+    /// Model for the web-search research pass — same heavy tier as the plan build
+    /// (gpt-5.6-sol; the `web_search` tool runs on gpt-5.x Responses models, not
+    /// gpt-4.1). Research is best-effort everywhere it's called, so an account
+    /// without access degrades to an un-grounded plan instead of failing.
+    static let researchModel = "gpt-5.6-sol"
 
     private let key: String
 
@@ -102,15 +102,22 @@ struct OpenAIClient: LLMClient {
     }
 
     /// Reasoning effort for gpt-5-family models on Chat Completions, nil for
-    /// non-reasoning models. Pinned to LOW everywhere by design: on reasoning models
-    /// the hidden thinking tokens bill as output AND count against
-    /// `max_completion_tokens`, so unbounded effort inside our tight per-feature
-    /// budgets (80–2,200 tokens) could spend the whole budget before writing a word.
-    /// A consumer chat turn ("log my water") doesn't need deep deliberation — and the
-    /// one task that does (the plan) earns its quality from curated context + web
-    /// grounding, not from thinking harder about a small prompt.
-    static func reasoningEffort(for model: String) -> String? {
-        model.lowercased().hasPrefix("gpt-5") ? "low" : nil
+    /// non-reasoning models. Pinned LOW by design: hidden thinking tokens bill as
+    /// output AND count against `max_completion_tokens`, so unbounded effort inside
+    /// our tight per-feature budgets (80–2,200 tokens) could spend the whole budget
+    /// before writing a word.
+    ///
+    /// `withTools`: the gpt-5.6 family REJECTS function tools combined with a
+    /// reasoning effort on Chat Completions (live 400: "use /v1/responses or set
+    /// reasoning_effort to 'none'") — so tool-carrying requests pin `none` there.
+    /// That matches the doctrine anyway: a chat tool turn ("log my water") shouldn't
+    /// deliberate, and the pass that deserves reasoning (plan research) runs on the
+    /// Responses API where reasoning + tools coexist.
+    static func reasoningEffort(for model: String, withTools: Bool = false) -> String? {
+        let m = model.lowercased()
+        guard m.hasPrefix("gpt-5") else { return nil }
+        if withTools && m.hasPrefix("gpt-5.6") { return "none" }
+        return "low"
     }
 
     // MARK: - Web-search-grounded research (the heavy plan build only)
@@ -236,7 +243,9 @@ extension OpenAIClient: ToolCapableClient {
 
         var body: [String: Any] = ["model": model, "messages": wire]
         body[Self.tokenParam(for: model)] = maxTokens
-        if let effort = Self.reasoningEffort(for: model) { body["reasoning_effort"] = effort }
+        if let effort = Self.reasoningEffort(for: model, withTools: !tools.isEmpty) {
+            body["reasoning_effort"] = effort
+        }
         if !tools.isEmpty { body["tools"] = Self.openAITools(tools) }
         if forbidToolUse { body["tool_choice"] = "none" }   // depth cap — finalize in prose
         // Cache routing: OpenAI load-balances requests across backends, and each backend
@@ -274,7 +283,10 @@ extension OpenAIClient: ToolCapableClient {
             "prompt_cache_key": "structured-\(toolName)",
         ]
         body[Self.tokenParam(for: model)] = maxTokens
-        if let effort = Self.reasoningEffort(for: model) { body["reasoning_effort"] = effort }
+        // structured() always carries a (forced) function tool → tools-aware effort.
+        if let effort = Self.reasoningEffort(for: model, withTools: true) {
+            body["reasoning_effort"] = effort
+        }
 
         let json = try await send(body)
         guard let input = try Self.parseToolTurn(json).toolUse?.input else {
