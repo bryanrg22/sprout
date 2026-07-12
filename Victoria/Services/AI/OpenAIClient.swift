@@ -225,9 +225,21 @@ struct OpenAIClient: LLMClient {
 //   assistant tool_use block       assistant message tool_calls[] (arguments = JSON string)
 //   user tool_result block         {"role": "tool", "tool_call_id": ..., "content": ...}
 //   image source base64 block      {"type": "image_url", "image_url": {"url": "data:...;base64,..."}}
-//   cachedSystemPrefix             prefix folded into the system message (OpenAI caches
-//                                  long stable prefixes automatically — no marker needed)
+//   cachedSystemPrefix             gpt-5.6 → an input_text block carrying an EXPLICIT
+//                                  prompt_cache_breakpoint on the Responses API;
+//                                  older models → folded into the system message
+//                                  (implicit caching, best-effort)
 extension OpenAIClient: ToolCapableClient {
+
+    /// Which API surface a model runs on. The gpt-5.6 family goes to `/v1/responses`:
+    /// (1) explicit prompt-cache breakpoints exist ONLY there — Chat Completions
+    /// implicit caching measured `cached 0` in our live logs even with a routing key;
+    /// (2) reasoning effort and function tools coexist there (Chat Completions 400s
+    /// on that combo for 5.6 — caught live). Older models stay on Chat Completions,
+    /// which is well-proven for them.
+    static func usesResponsesAPI(_ model: String) -> Bool {
+        model.lowercased().hasPrefix("gpt-5.6")
+    }
 
     func chatWithTools(system: String,
                        messages: [AnthropicClient.Msg],
@@ -236,6 +248,18 @@ extension OpenAIClient: ToolCapableClient {
                        maxTokens: Int,
                        cachedSystemPrefix: String?,
                        forbidToolUse: Bool) async throws -> AnthropicClient.ChatTurn {
+        if Self.usesResponsesAPI(model) {
+            var body = Self.responsesBody(model: model, maxTokens: maxTokens,
+                                          cacheKey: "vita-coach",
+                                          input: Self.responsesInputItems(system: system,
+                                                                          cachedPrefix: cachedSystemPrefix,
+                                                                          messages: messages))
+            if !tools.isEmpty { body["tools"] = Self.responsesTools(tools) }
+            if forbidToolUse { body["tool_choice"] = "none" }   // depth cap — finalize in prose
+            let json = try await send(body, to: Self.responsesEndpoint)
+            return try Self.parseResponsesToolTurn(json)
+        }
+
         var wire: [[String: Any]] = []
         let sys = [cachedSystemPrefix ?? "", system].filter { !$0.isEmpty }.joined(separator: "\n\n")
         if !sys.isEmpty { wire.append(["role": "system", "content": sys]) }
@@ -266,6 +290,26 @@ extension OpenAIClient: ToolCapableClient {
                     schema: [String: Any],
                     model: String,
                     maxTokens: Int) async throws -> [String: Any] {
+        if Self.usesResponsesAPI(model) {
+            // System + schema are byte-stable per feature → breakpoint the system so
+            // repeat calls (meal photos, checklist mornings) read it from cache.
+            let userMsg = AnthropicClient.Msg(role: "user", content: userContent)
+            var body = Self.responsesBody(model: model, maxTokens: maxTokens,
+                                          cacheKey: "structured-\(toolName)",
+                                          input: Self.responsesInputItems(system: "",
+                                                                          cachedPrefix: system,
+                                                                          messages: [userMsg]))
+            body["tools"] = Self.responsesTools([["name": toolName,
+                                                  "description": toolDescription,
+                                                  "input_schema": schema]])
+            body["tool_choice"] = ["type": "function", "name": toolName]   // forced call
+            let json = try await send(body, to: Self.responsesEndpoint)
+            guard let input = try Self.parseResponsesToolTurn(json).toolUse?.input else {
+                throw AIConfig.AIError.decoding("no tool call in response")
+            }
+            return input
+        }
+
         var wire: [[String: Any]] = []
         if !system.isEmpty { wire.append(["role": "system", "content": system]) }
         wire.append(["role": "user", "content": Self.openAIUserContent(userContent)])
@@ -416,6 +460,155 @@ extension OpenAIClient: ToolCapableClient {
         // Same guard as the Anthropic path: a turn truncated mid-call can carry mangled
         // arguments — surface the prose instead of acting on a half-formed request.
         if (first["finish_reason"] as? String) == "length", toolUse != nil {
+            toolUse = nil
+        }
+
+        var assistantContent: [[String: Any]] = []
+        if !text.isEmpty { assistantContent.append(["type": "text", "text": text]) }
+        if let toolUse {
+            assistantContent.append(["type": "tool_use", "id": toolUse.id,
+                                     "name": toolUse.name, "input": toolUse.input])
+        }
+        return AnthropicClient.ChatTurn(text: text, toolUse: toolUse,
+                                        assistantContent: assistantContent)
+    }
+
+    // MARK: - Responses API translation (gpt-5.6 path; pure + unit-tested)
+    //
+    //   Anthropic (internal)         Responses API wire
+    //   ───────────────────────────  ─────────────────────────────────────────────
+    //   stable system prefix         input_text block + prompt_cache_breakpoint
+    //   user/assistant text          message items (input_text / output_text)
+    //   image source base64 block    {"type": "input_image", "image_url": "data:…"}
+    //   assistant tool_use block     {"type": "function_call", call_id, name, arguments}
+    //   user tool_result block       {"type": "function_call_output", call_id, output}
+    //   tools {name, input_schema}   {"type": "function", name, parameters} (flat)
+
+    /// Shared request scaffold for the Responses path: explicit cache mode (only OUR
+    /// breakpoints define the reusable prefix), a 30-minute cache TTL, the shard-routing
+    /// key, and LOW reasoning effort — on Responses, effort and tools legally coexist
+    /// (unlike 5.6 on Chat Completions), and low keeps thinking from eating the tight
+    /// output budgets while still helping tool-argument correctness.
+    static func responsesBody(model: String, maxTokens: Int, cacheKey: String,
+                              input: [[String: Any]]) -> [String: Any] {
+        [
+            "model": model,
+            "input": input,
+            "max_output_tokens": maxTokens,
+            "prompt_cache_key": cacheKey,
+            "prompt_cache_options": ["mode": "explicit", "ttl": "30m"],
+            "reasoning": ["effort": "low"],
+        ]
+    }
+
+    /// Build the `input` items array: a system message whose STABLE prefix block
+    /// carries the explicit cache breakpoint (everything through that block becomes
+    /// the cached prefix — tool schemas and the persona bill once per 30 minutes,
+    /// not once per message), followed by the translated history.
+    static func responsesInputItems(system: String,
+                                    cachedPrefix: String?,
+                                    messages: [AnthropicClient.Msg]) -> [[String: Any]] {
+        var input: [[String: Any]] = []
+        var sysBlocks: [[String: Any]] = []
+        if let prefix = cachedPrefix, !prefix.isEmpty {
+            sysBlocks.append(["type": "input_text", "text": prefix,
+                              "prompt_cache_breakpoint": ["mode": "explicit"]])
+        }
+        if !system.isEmpty { sysBlocks.append(["type": "input_text", "text": system]) }
+        if !sysBlocks.isEmpty {
+            input.append(["type": "message", "role": "system", "content": sysBlocks])
+        }
+        for msg in messages { input.append(contentsOf: responsesItems(from: msg)) }
+        return input
+    }
+
+    /// One Anthropic-shaped `Msg` → one or more Responses input items. Tool calls and
+    /// results are TOP-LEVEL items (not message content) in this API.
+    static func responsesItems(from msg: AnthropicClient.Msg) -> [[String: Any]] {
+        let textType = msg.role == "assistant" ? "output_text" : "input_text"
+        if let plain = msg.content as? String {
+            return [["type": "message", "role": msg.role,
+                     "content": [["type": textType, "text": plain]]]]
+        }
+        guard let blocks = msg.content as? [[String: Any]] else { return [] }
+
+        var out: [[String: Any]] = []
+        var parts: [[String: Any]] = []
+        var calls: [[String: Any]] = []
+        for block in blocks {
+            switch block["type"] as? String {
+            case "text":
+                if let t = block["text"] as? String { parts.append(["type": textType, "text": t]) }
+            case "image":
+                if let source = block["source"] as? [String: Any],
+                   let data = source["data"] as? String {
+                    let media = (source["media_type"] as? String) ?? "image/jpeg"
+                    parts.append(["type": "input_image",
+                                  "image_url": "data:\(media);base64,\(data)"])
+                }
+            case "tool_use":
+                if let id = block["id"] as? String, let name = block["name"] as? String {
+                    let args = (try? JSONSerialization.data(
+                        withJSONObject: (block["input"] as? [String: Any]) ?? [:]))
+                        .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+                    calls.append(["type": "function_call", "call_id": id,
+                                  "name": name, "arguments": args])
+                }
+            case "tool_result":
+                out.append(["type": "function_call_output",
+                            "call_id": (block["tool_use_id"] as? String) ?? "",
+                            "output": (block["content"] as? String) ?? ""])
+            default:
+                break
+            }
+        }
+        if !parts.isEmpty {
+            // Message before function_call items: prose narrates, then the call follows.
+            out.insert(["type": "message", "role": msg.role, "content": parts], at: 0)
+        }
+        out.append(contentsOf: calls)
+        return out
+    }
+
+    /// Anthropic tool schemas → Responses function tools (FLAT — no nested
+    /// "function" object like Chat Completions).
+    static func responsesTools(_ tools: [[String: Any]]) -> [[String: Any]] {
+        tools.compactMap { tool in
+            guard let name = tool["name"] as? String else { return nil }
+            var out: [String: Any] = ["type": "function", "name": name]
+            if let description = tool["description"] as? String { out["description"] = description }
+            if let schema = tool["input_schema"] { out["parameters"] = schema }
+            return out
+        }
+    }
+
+    /// Responses output → the app's `ChatTurn`, same contract as `parseToolTurn`:
+    /// first function_call only, Anthropic-shaped echo, truncation guard (an
+    /// "incomplete" response may carry mangled arguments — surface prose instead).
+    static func parseResponsesToolTurn(_ json: [String: Any]) throws -> AnthropicClient.ChatTurn {
+        guard let output = json["output"] as? [[String: Any]] else {
+            throw AIConfig.AIError.decoding("missing output")
+        }
+        let text = output
+            .filter { ($0["type"] as? String) == "message" }
+            .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
+            .compactMap { ($0["type"] as? String) == "output_text" ? $0["text"] as? String : nil }
+            .joined()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var toolUse: AnthropicClient.ToolUse?
+        if let call = output.first(where: { ($0["type"] as? String) == "function_call" }),
+           let name = call["name"] as? String {
+            let id = (call["call_id"] as? String) ?? (call["id"] as? String) ?? ""
+            let argsString = call["arguments"] as? String ?? "{}"
+            let input = ((try? JSONSerialization.jsonObject(with: Data(argsString.utf8)))
+                as? [String: Any]) ?? [:]
+            toolUse = AnthropicClient.ToolUse(id: id, name: name, input: input)
+        }
+
+        if (json["status"] as? String) == "incomplete",
+           ((json["incomplete_details"] as? [String: Any])?["reason"] as? String) == "max_output_tokens",
+           toolUse != nil {
             toolUse = nil
         }
 

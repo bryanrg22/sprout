@@ -141,6 +141,112 @@ final class OpenAIProviderTests: XCTestCase {
         XCTAssertEqual(json(try XCTUnwrap(fn["arguments"] as? String))["bottles"] as? Int, 3)
     }
 
+    // MARK: - Responses API port (gpt-5.6 coach/structured path)
+
+    func testResponsesRoutingIsGPT56Only() {
+        XCTAssertTrue(OpenAIClient.usesResponsesAPI("gpt-5.6-terra"))
+        XCTAssertTrue(OpenAIClient.usesResponsesAPI("gpt-5.6-sol"))
+        XCTAssertFalse(OpenAIClient.usesResponsesAPI("gpt-5.5"))
+        XCTAssertFalse(OpenAIClient.usesResponsesAPI("gpt-4.1"))
+    }
+
+    /// The stable prefix must carry the explicit cache breakpoint, volatile data after
+    /// it — that boundary IS the cost optimization (prefix bills once per 30 min).
+    func testResponsesInputPutsBreakpointOnStablePrefix() throws {
+        let input = OpenAIClient.responsesInputItems(
+            system: "TODAY: ate 1355 kcal",
+            cachedPrefix: "PERSONA AND RULES (stable)",
+            messages: [.init(role: "user", content: "hi")])
+        let sys = try XCTUnwrap(input.first)
+        XCTAssertEqual(sys["role"] as? String, "system")
+        let blocks = try XCTUnwrap(sys["content"] as? [[String: Any]])
+        XCTAssertEqual(blocks.count, 2)
+        XCTAssertEqual(blocks[0]["text"] as? String, "PERSONA AND RULES (stable)")
+        XCTAssertNotNil(blocks[0]["prompt_cache_breakpoint"], "stable block must be the breakpoint")
+        XCTAssertNil(blocks[1]["prompt_cache_breakpoint"], "volatile block must NOT be cached")
+        XCTAssertEqual(input.count, 2)   // system + the user message
+    }
+
+    func testResponsesItemsTranslateToolFlow() throws {
+        // Assistant turn: prose + tool_use → message item then TOP-LEVEL function_call.
+        let assistant = OpenAIClient.responsesItems(from: .init(role: "assistant", content: [
+            ["type": "text", "text": "Logging that."],
+            ["type": "tool_use", "id": "call_7", "name": "log_water", "input": ["bottles": 2]],
+        ] as [[String: Any]]))
+        XCTAssertEqual(assistant.count, 2)
+        XCTAssertEqual(assistant[0]["type"] as? String, "message")
+        XCTAssertEqual(assistant[1]["type"] as? String, "function_call")
+        XCTAssertEqual(assistant[1]["call_id"] as? String, "call_7")
+        let args = try XCTUnwrap(assistant[1]["arguments"] as? String)
+        XCTAssertEqual((json(args))["bottles"] as? Int, 2)
+
+        // User turn carrying the tool_result → top-level function_call_output.
+        let result = OpenAIClient.responsesItems(from: .init(role: "user", content: [
+            ["type": "tool_result", "tool_use_id": "call_7", "content": "Applied."],
+        ] as [[String: Any]]))
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0]["type"] as? String, "function_call_output")
+        XCTAssertEqual(result[0]["call_id"] as? String, "call_7")
+        XCTAssertEqual(result[0]["output"] as? String, "Applied.")
+
+        // Image + text user turn → one message with input_image data URL.
+        let photo = OpenAIClient.responsesItems(from: .init(role: "user", content: [
+            AnthropicClient.imageBlock(Data([0xFF, 0xD8])),
+            AnthropicClient.textBlock("What is this?"),
+        ] as [[String: Any]]))
+        XCTAssertEqual(photo.count, 1)
+        let parts = try XCTUnwrap(photo[0]["content"] as? [[String: Any]])
+        XCTAssertTrue((parts.first?["image_url"] as? String)?.hasPrefix("data:image/jpeg;base64,") == true)
+    }
+
+    func testResponsesToolsAreFlat() throws {
+        let out = OpenAIClient.responsesTools([["name": "log_water", "description": "d",
+                                                "input_schema": ["type": "object"]]])
+        XCTAssertEqual(out[0]["type"] as? String, "function")
+        XCTAssertEqual(out[0]["name"] as? String, "log_water")   // flat — not nested
+        XCTAssertNil(out[0]["function"], "Responses tools must not use the Chat Completions nesting")
+        XCTAssertNotNil(out[0]["parameters"])
+    }
+
+    func testParsesResponsesToolTurnAndTruncationGuard() throws {
+        let response = json("""
+        {"status": "completed",
+         "output": [
+            {"type": "reasoning", "id": "rs_1", "summary": []},
+            {"type": "message", "role": "assistant",
+             "content": [{"type": "output_text", "text": "On it!"}]},
+            {"type": "function_call", "call_id": "call_9", "name": "log_water",
+             "arguments": "{\\"bottles\\": 3}"}
+         ]}
+        """)
+        let turn = try OpenAIClient.parseResponsesToolTurn(response)
+        XCTAssertEqual(turn.text, "On it!")
+        XCTAssertEqual(turn.toolUse?.id, "call_9")
+        XCTAssertEqual(turn.toolUse?.input["bottles"] as? Int, 3)
+        XCTAssertEqual(turn.assistantContent.last?["type"] as? String, "tool_use")
+
+        var truncated = response
+        truncated["status"] = "incomplete"
+        truncated["incomplete_details"] = ["reason": "max_output_tokens"]
+        XCTAssertNil(try OpenAIClient.parseResponsesToolTurn(truncated).toolUse,
+                     "an incomplete turn must not act on possibly-mangled arguments")
+    }
+
+    /// Full loop on the Responses path: parse → echo through responsesItems → the
+    /// identical function_call goes back on the wire.
+    func testResponsesEchoRoundTrips() throws {
+        let turn = try OpenAIClient.parseResponsesToolTurn(json("""
+        {"status": "completed",
+         "output": [{"type": "function_call", "call_id": "call_9", "name": "log_water",
+                     "arguments": "{\\"bottles\\": 3}"}]}
+        """))
+        let echoed = OpenAIClient.responsesItems(
+            from: AnthropicClient.assistantMessage(content: turn.assistantContent))
+        XCTAssertEqual(echoed.count, 1)
+        XCTAssertEqual(echoed[0]["type"] as? String, "function_call")
+        XCTAssertEqual(echoed[0]["call_id"] as? String, "call_9")
+    }
+
     // MARK: - Responses API (web-search research)
 
     func testParsesResponsesOutputWithSearch() {
