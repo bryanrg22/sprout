@@ -356,9 +356,13 @@ struct SettingsView: View {
 
     // MARK: - Steps & activity
 
-    /// An editable, free-text bio Vita actually reads (woven into the coach's context via
-    /// `CoachContext.bioLine`). This is the "the app understands you, it's not just a database"
-    /// touch — she tells it about herself once and every reply can reflect it.
+    /// The LIVING profile — two layers, both visible and both editable:
+    /// 1. Her own words (`onboardingNote`): typed at onboarding, enriched by every plan
+    ///    build (the model folds its structured summary back in here).
+    /// 2. What Vita has LEARNED (`CoachMemory.profileNotes`): grown automatically from
+    ///    chats (the remember_about_user tool + background memory folding). Surfacing it
+    ///    here answers "did the AI actually process what I told it?" with a visible yes —
+    ///    and editing it is a direct line into Vita's long-term memory.
     private var bioSection: some View {
         let coach = profile.coachName.isEmpty ? "Vita" : profile.coachName
         return Section {
@@ -368,12 +372,37 @@ struct SettingsView: View {
                 // multi-sentence summary here), instead of clipping it into a tiny internal scroll.
                 .lineLimit(3...)
                 .foregroundStyle(Theme.textPrimary)
+
+            row(icon: "brain.head.profile") {
+                VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                    Text("What \(coach) has learned")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.textSecondary)
+                    TextField("Nothing yet — it fills in as you chat.",
+                              text: vitaNotesBinding, axis: .vertical)
+                        .lineLimit(2...)
+                        .foregroundStyle(Theme.textPrimary)
+                }
+            }
         } header: {
             sectionHeader("About you")
         } footer: {
-            footer("Tell \(coach) about yourself — your routine, what you like, what's hard. \(coach) keeps this in mind so advice feels personal, not generic.")
+            footer("Top box: your words — tell \(coach) about your routine, what you like, what's hard. Bottom box: what \(coach) has picked up from your chats and plan — it updates itself, and you can correct or trim it anytime.")
         }
         .listRowBackground(Theme.card)
+    }
+
+    /// Read/write binding into Vita's long-term memory notes (fetch-or-create row).
+    private var vitaNotesBinding: Binding<String> {
+        Binding(
+            get: { CoachMemory.fetchOrCreate(in: context, profile: profile).profileNotes },
+            set: { newValue in
+                let memory = CoachMemory.fetchOrCreate(in: context, profile: profile)
+                memory.profileNotes = newValue
+                memory.updatedAt = .now
+                try? context.save()
+            }
+        )
     }
 
     private var stepsSection: some View {
