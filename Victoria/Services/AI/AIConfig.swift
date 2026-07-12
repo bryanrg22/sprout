@@ -47,11 +47,11 @@ enum AIProvider: String, CaseIterable, Identifiable, Sendable {
         // Sonnet 5: same list price as Sonnet 4.6 ($3/$15, intro $2/$10 through
         // 2026-08-31) but a generation newer — upgraded the day it hit price parity.
         case .anthropic: return "claude-sonnet-5"
-        // gpt-5.4: OpenAI's $2.50/$15 workhorse tier (same price class as Sonnet).
-        // Runs with LOW reasoning effort in our chat loop (see OpenAIClient). The
-        // gpt-5.6 Sol/Terra/Luna family is preview-gated as of 2026-07, so it can't
-        // be a BYOK default yet; Terra is the planned successor at GA.
-        case .openai:    return "gpt-5.4"
+        // gpt-5.6-terra: the $2.50/$15 workhorse of the newest family — same price
+        // as gpt-5.4, a generation newer (adopted the day GA was confirmed on a real
+        // personal key). Runs with LOW reasoning effort in our chat loop (see
+        // OpenAIClient).
+        case .openai:    return "gpt-5.6-terra"
         }
     }
 
@@ -148,14 +148,14 @@ enum AIConfig {
     static var foodModel: String { coachModel }
     static var chatModel: String { coachModel }
     /// Heavy model for the one-time adaptive-Plan build/review pass (rare, high-value,
-    /// worth the tokens): Opus 4.8 on Anthropic, gpt-5.5 on OpenAI. The frontier-plus
-    /// tiers (Fable 5 at 2× the price, preview-gated gpt-5.6 Sol) were evaluated and
-    /// rejected — their benchmark edge doesn't transfer to authoring a structured plan
-    /// from a small, well-curated context. See docs/MODEL_CHOICES.md.
+    /// worth the tokens): Opus 4.8 on Anthropic, gpt-5.6-sol on OpenAI (same $5/$30 as
+    /// gpt-5.5, a generation newer). Fable 5 was evaluated and rejected — 2× the price
+    /// for a benchmark edge that doesn't transfer to authoring a structured plan from a
+    /// small, well-curated context. See docs/MODEL_CHOICES.md.
     static var planModel: String {
         switch provider {
         case .anthropic: return "claude-opus-4-8"
-        case .openai:    return "gpt-5.5"
+        case .openai:    return "gpt-5.6-sol"
         }
     }
 

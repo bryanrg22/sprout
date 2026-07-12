@@ -15,35 +15,42 @@ Three questions decide every tier, in order:
 | Tier | Anthropic | OpenAI | Runs |
 |---|---|---|---|
 | Cheap | `claude-haiku-4-5` ($1/$5) | `gpt-4.1-mini` | daily brief polish, insights, reflections, onboarding note, memory folding — many×/day |
-| Strong | `claude-sonnet-5` ($3/$15; intro $2/$10 → Aug 31) | `gpt-5.4` ($2.50/$15) | Vita chat + tools, meal-photo vision, checklist, quick prompts — a few×/day |
-| Heavy | `claude-opus-4-8` ($5/$25) | `gpt-5.5` ($5/$30) | plan build/review + web research — a few×/**ever** |
+| Strong | `claude-sonnet-5` ($3/$15; intro $2/$10 → Aug 31) | `gpt-5.6-terra` ($2.50/$15) | Vita chat + tools, meal-photo vision, checklist, quick prompts — a few×/day |
+| Heavy | `claude-opus-4-8` ($5/$25) | `gpt-5.6-sol` ($5/$30) | plan build/review + web research — a few×/**ever** |
 
 ## The defenses (per decision)
 
 ### Cheap tier: `gpt-4.1-mini` — deliberately NOT a reasoning mini
 `gpt-5.4-mini` ($0.75/$4.50) exists and is newer. We keep a **non-reasoning** mini anyway: this tier rewords facts the app already computed, inside tight 80–420-token output budgets. On reasoning models, hidden thinking tokens (a) bill as output and (b) count against `max_completion_tokens` — a reasoning mini can spend the entire 80-token budget thinking about a rewording task, returning nothing, at higher latency. Zero quality upside for a task with no reasoning content. *Revisit if the 4.1 family is deprecated → `gpt-5.4-mini` with `reasoning_effort: "low"` (or `none` if offered), or `gpt-5.6-luna` at GA.*
 
-### Strong tier: `claude-sonnet-5` (from Sonnet 4.6) and `gpt-5.4` (from gpt-4.1)
+### Strong tier: `claude-sonnet-5` (from Sonnet 4.6) and `gpt-5.6-terra` (from gpt-4.1, via gpt-5.4 for one day)
 Rule: **upgrade the workhorse the moment a newer generation hits price parity.** Sonnet 5 landed at Sonnet 4.6's list price ($3/$15) with intro pricing *below* it — the upgrade was free. gpt-4.1 → gpt-5.4 costs +$0.50/1M input but moves a full frontier generation (better tool-call reliability, 1M context), keeping both providers in the same $2.50–3 price class.
 
-On gpt-5.4 we pin `reasoning_effort: "low"`: a consumer chat loop ("log 2 waters") needs snappy, reliable tool calls, not deliberation — and uncapped effort would silently eat our output budgets. Depth is a *feature budget*, not a model property.
+On gpt-5.x we pin `reasoning_effort: "low"` (and `"none"` on 5.6 tool turns — see the 07-12 note): a consumer chat loop ("log 2 waters") needs snappy, reliable tool calls, not deliberation — and uncapped effort would silently eat our output budgets. Depth is a *feature budget*, not a model property.
 
-### Heavy tier: `claude-opus-4-8` and `gpt-5.5` — and why NOT the frontier-plus models
+### Heavy tier: `claude-opus-4-8` and `gpt-5.6-sol` — and why NOT the frontier-plus models
 The plan build runs a handful of times per user, ever — the one place expensive tokens are rational. But we still rejected the tier above:
 
 - **Claude Fable 5** ($10/$50): 2× Opus pricing, always-on thinking, and refusal-fallback operational complexity — for a benchmark edge (frontier agentic evals) that doesn't transfer to "author a structured coaching plan from a small, curated context."
-- **GPT-5.6 Sol** ($5/$30): [preview-gated as of July 2026](https://www.eesel.ai/blog/gpt-5-6-pricing) — access requires an OpenAI account representative. A BYOK default must be callable by any user's key. Its Agents-Last-Exam record ([53.6, per Simon Willison's write-up](https://simonwillison.net/2026/Jul/9/gpt-5-6/)) is impressive and irrelevant to this workload.
+- **Claude Fable 5's OpenAI analog would be Sol Ultra-style spend**: same logic applies — the marginal capability doesn't transfer to this workload's shape.
+
+### 2026-07-12 correction & adoption: GPT-5.6 went GA — verified on a real key, adopted same day
+The June announcement described a rep-gated preview; the July 9 release opened it to everyone. **The written availability claim was wrong for ~a day and was corrected by empirical test, not by another article**: key verification and a full chat + tool-call loop ran against `gpt-5.6-terra` on a personal BYOK key in the simulator. Terra (same $2.50/$15 as gpt-5.4, a generation newer) became the strong tier; Sol (same $5/$30 as gpt-5.5) became the heavy tier, per this doc's own pre-registered revisit trigger.
+
+**Constraint discovered live, not in any docs we'd read:** on Chat Completions, the 5.6 family rejects function tools combined with a reasoning effort (400: *"use /v1/responses or set reasoning_effort to 'none'"*). Tool-carrying requests now pin `reasoning_effort: "none"` on 5.6 — which matches the doctrine anyway (chat tool turns shouldn't deliberate). Regression-tested.
+
+**Known open item — the Responses API port:** 5.6's explicit cache breakpoints (and reasoning+tools coexistence) live on the [Responses API only](https://learn.microsoft.com/en-in/answers/questions/5942997/gpt-5-6-implicit-prompt-caching-and-explicit-promp); Chat Completions implicit caching is measuring `cached 0` in our logs even with `prompt_cache_key`. Migrating the coach loop to `/v1/responses` unlocks Anthropic-style explicit breakpoints (90% cached-read discount, 30-min cache life) on OpenAI. Until then a coach turn costs ~1.7¢ uncached — acceptable, tracked, and visible in the on-device logs.
 
 The plan's quality lever isn't model IQ — it's **context engineering** (a curated data summary + live web-search grounding) feeding an already-strong model.
 
-### Research model: `gpt-5.5` on Responses / Anthropic `web_search` server tool
+### Research model: `gpt-5.6-sol` on Responses / Anthropic `web_search` server tool
 Web search requires specific surfaces: OpenAI's `web_search` tool runs on gpt-5.x Responses models, Anthropic's on the Messages API. Research is best-effort by contract — if the model or tool is unavailable to a user's key, the plan builds un-grounded rather than failing.
 
 ## Standing revisit triggers
 
 | Trigger | Action |
 |---|---|
-| GPT-5.6 family GA | Terra → strong tier (same $2.50/$15, newer), Luna → evaluate for cheap tier, Sol → evaluate for heavy. Also adopt its explicit cache breakpoints + 30-min cache life. |
+| ~~GPT-5.6 family GA~~ ✅ done 2026-07-12 | Terra → strong ✅, Sol → heavy ✅ (both live-verified). Remaining: Luna evaluation, and the Responses-API port for explicit cache breakpoints. |
 | Sonnet 5 intro pricing ends (2026-08-31) | No action — $3/$15 list was already the accepted price. |
 | gpt-4.1 family deprecation notice | Move cheap tier per the note above. |
 | Any provider price cut ≥25% on a higher tier | Re-run this table. |

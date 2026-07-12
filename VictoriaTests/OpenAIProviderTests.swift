@@ -176,7 +176,7 @@ final class OpenAIProviderTests: XCTestCase {
         XCTAssertEqual(AIConfig.planModel, "claude-opus-4-8")
         // The heavy tier is deliberately a step ABOVE the coach tier on OpenAI.
         AIConfig.provider = .openai
-        XCTAssertEqual(AIConfig.planModel, "gpt-5.5")
+        XCTAssertEqual(AIConfig.planModel, "gpt-5.6-sol")
         XCTAssertNotEqual(AIConfig.planModel, AIProvider.openai.defaultCoachModel)
     }
 
@@ -185,9 +185,20 @@ final class OpenAIProviderTests: XCTestCase {
     /// non-reasoning models (the param would be rejected).
     func testReasoningEffortOnlyForGPT5Family() {
         XCTAssertEqual(OpenAIClient.reasoningEffort(for: "gpt-5.4"), "low")
-        XCTAssertEqual(OpenAIClient.reasoningEffort(for: "gpt-5.5"), "low")
+        XCTAssertEqual(OpenAIClient.reasoningEffort(for: "gpt-5.6-terra"), "low")
         XCTAssertNil(OpenAIClient.reasoningEffort(for: "gpt-4.1"))
         XCTAssertNil(OpenAIClient.reasoningEffort(for: "gpt-4.1-mini"))
+    }
+
+    /// Pinned by a live 400 from OpenAI: the gpt-5.6 family rejects function tools
+    /// combined with a reasoning effort on Chat Completions — tool-carrying requests
+    /// must pin effort "none" there (and only there).
+    func testGPT56ToolRequestsPinEffortNone() {
+        XCTAssertEqual(OpenAIClient.reasoningEffort(for: "gpt-5.6-terra", withTools: true), "none")
+        XCTAssertEqual(OpenAIClient.reasoningEffort(for: "gpt-5.6-sol", withTools: true), "none")
+        // Pre-5.6 reasoning models keep low effort even with tools.
+        XCTAssertEqual(OpenAIClient.reasoningEffort(for: "gpt-5.4", withTools: true), "low")
+        XCTAssertNil(OpenAIClient.reasoningEffort(for: "gpt-4.1", withTools: true))
     }
 
     func testReasoningModelsUseMaxCompletionTokens() {
