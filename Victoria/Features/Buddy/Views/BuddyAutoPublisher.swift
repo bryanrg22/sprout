@@ -188,8 +188,21 @@ struct BuddyAutoPublisher: View {
             // my buddy in seconds (their snapshot subscription wakes them), not "next time I open
             // the Buddy tab."
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background, model.isLinked {
-                    Task { await publish() }
+                switch phase {
+                case .background:
+                    if model.isLinked { Task { await publish() } }
+                case .active:
+                    // Self-heal: a publish that failed (bad network at the moment of logging,
+                    // CloudKit hiccup, …) used to be LOST FOREVER — the buddy just saw an
+                    // ever-staler snapshot. Retry on every return to the app while the last
+                    // attempt failed, and refresh anyway when the last success is old enough
+                    // that the buddy would be looking at yesterday's me.
+                    let stale = (model.lastPublishAt ?? .distantPast) < Date.now.addingTimeInterval(-6 * 3600)
+                    if model.isLinked, model.lastPublishFailed || stale {
+                        Task { await publish() }
+                    }
+                default:
+                    break
                 }
             }
     }

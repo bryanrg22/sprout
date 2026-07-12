@@ -84,6 +84,33 @@ final class DailyInsightEngineTests: XCTestCase {
         XCTAssertNotEqual(second?.id, first?.id)
     }
 
+    // MARK: Comeback day (returning after a break)
+
+    /// Day one back after two silent weeks, eating light in the evening: the engine must
+    /// greet the return — NOT fire the "you're under your fuel" nudge, which reads as a
+    /// scolding when the user just worked up the nerve to come back.
+    func testComebackDayWelcomesInsteadOfFuelNudge() {
+        var i = goodDay()
+        i.caloriesEaten = 600
+        i.hourOfDay = 19
+        i.daysAwayBeforeToday = 14
+        let ids = DailyInsightEngine.allCandidates(i).map(\.id)
+        XCTAssertFalse(ids.contains("fuel_up"))
+        XCTAssertEqual(DailyInsightEngine.bestInsight(i)?.id, "welcome_back")
+    }
+
+    /// Regression: with no gap (logged yesterday), behavior is exactly as before — the
+    /// fuel nudge still fires and no welcome appears.
+    func testNormalDayUnchangedByComebackLogic() {
+        var i = goodDay()
+        i.caloriesEaten = 600
+        i.protein = 30
+        i.hourOfDay = 19               // daysAwayBeforeToday defaults to 1
+        let ids = DailyInsightEngine.allCandidates(i).map(\.id)
+        XCTAssertTrue(ids.contains("fuel_up"))
+        XCTAssertFalse(ids.contains("welcome_back"))
+    }
+
     // MARK: The hard guarantee — no restriction framing anywhere in the catalog
 
     func testNoCandidateEverRewardsRestriction() {

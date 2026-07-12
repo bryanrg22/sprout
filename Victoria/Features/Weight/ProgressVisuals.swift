@@ -14,6 +14,8 @@ struct ProgressMetricsSection: View {
     @Query(sort: \StepsEntry.date) private var steps: [StepsEntry]
     @Query private var water: [WaterEntry]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
+    // Tracker sleep (Fitbit etc. via Apple Health) — shown as a fifth card when present.
+    @Query(sort: \SleepEntry.date) private var sleep: [SleepEntry]
 
     private let days = 14
 
@@ -28,7 +30,7 @@ struct ProgressMetricsSection: View {
         let wtr = waterSeries
 
         // Only show once there's at least a little to plot across these metrics.
-        if (cal + pro + stp + wtr).allSatisfy({ $0 == 0 }) {
+        if (cal + pro + stp + wtr).compactMap({ $0 }).isEmpty {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: Theme.spacingM) {
@@ -52,50 +54,81 @@ struct ProgressMetricsSection: View {
                                         color: Theme.water, series: wtr,
                                         avg: nonzeroAvg(wtr), unit: "oz avg",
                                         target: profile.waterTargetOz)
+                    // Sleep appears only once a tracker is feeding Apple Health — no
+                    // empty card nagging people without a wearable. Hours, vs an 8h guide.
+                    if sleepSeries.contains(where: { $0 != nil }) {
+                        MetricSparklineCard(title: "Sleep", systemImage: "moon.zzz.fill",
+                                            color: Theme.info, series: sleepSeries,
+                                            avg: nonzeroAvg(sleepSeries), unit: "h avg",
+                                            target: 8)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    // MARK: Series (oldest → newest), zero-filled for missing days
+    // MARK: Series (oldest → newest), `nil` for unlogged days
+    //
+    // A day with no entries is a day she didn't LOG — not a day she ate 0 kcal or drank
+    // 0 oz. Zero-filling used to render a two-week break as a cliff to zero (reads as
+    // "she stopped eating"), so unlogged days carry `nil` and the sparkline simply
+    // bridges across them.
 
-    private func series(_ value: (Date) -> Double) -> [Double] {
+    private func series(_ value: (Date) -> Double?) -> [Double?] {
         let calz = Calendar.current
         let today = calz.startOfDay(for: .now)
-        return (0..<days).reversed().compactMap { off in
-            calz.date(byAdding: .day, value: -off, to: today).map(value)
+        return (0..<days).reversed().map { off in
+            calz.date(byAdding: .day, value: -off, to: today).flatMap(value)
         }
     }
     private func sameDay(_ a: Date, _ b: Date) -> Bool { Calendar.current.isDate(a, inSameDayAs: b) }
 
-    private var caloriesSeries: [Double] {
-        series { d in foods.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.totalCalories } }
+    private var caloriesSeries: [Double?] {
+        series { d in
+            let items = foods.filter { sameDay($0.date, d) }
+            return items.isEmpty ? nil : items.reduce(0) { $0 + $1.totalCalories }
+        }
     }
-    private var proteinSeries: [Double] {
-        series { d in foods.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.totalProteinG } }
+    private var proteinSeries: [Double?] {
+        series { d in
+            let items = foods.filter { sameDay($0.date, d) }
+            return items.isEmpty ? nil : items.reduce(0) { $0 + $1.totalProteinG }
+        }
     }
-    private var stepsSeries: [Double] {
-        series { d in Double(steps.first { sameDay($0.date, d) }?.count ?? 0) }
+    private var stepsSeries: [Double?] {
+        // A 0-count StepsEntry is "no data that day" (phone off / not imported), not a real 0.
+        series { d in (steps.first { sameDay($0.date, d) }?.count).flatMap { $0 > 0 ? Double($0) : nil } }
     }
-    private var waterSeries: [Double] {
-        series { d in water.filter { sameDay($0.date, d) }.reduce(0) { $0 + $1.amountOz } }
+    private var waterSeries: [Double?] {
+        series { d in
+            let drops = water.filter { sameDay($0.date, d) }
+            return drops.isEmpty ? nil : drops.reduce(0) { $0 + $1.amountOz }
+        }
+    }
+    /// Nightly asleep HOURS (nil = tracker reported nothing for that night).
+    private var sleepSeries: [Double?] {
+        series { d in
+            (sleep.first { sameDay($0.date, d) && $0.asleepMinutes > 0 })
+                .map { Double($0.asleepMinutes) / 60 }
+        }
     }
 
     /// Average over the days that actually have a value (so unlogged days don't drag it down).
-    private func nonzeroAvg(_ s: [Double]) -> Double {
-        let hits = s.filter { $0 > 0 }
+    private func nonzeroAvg(_ s: [Double?]) -> Double {
+        let hits = s.compactMap { $0 }.filter { $0 > 0 }
         guard !hits.isEmpty else { return 0 }
         return hits.reduce(0, +) / Double(hits.count)
     }
 }
 
 /// One small metric card: label, recent average, and a tiny sparkline vs the goal line.
+/// `series` carries `nil` for unlogged days — the line bridges those instead of diving to 0.
 private struct MetricSparklineCard: View {
     let title: String
     let systemImage: String
     let color: Color
-    let series: [Double]
+    let series: [Double?]
     let avg: Double
     let unit: String
     var target: Double? = nil
@@ -133,24 +166,36 @@ private struct MetricSparklineCard: View {
                     .foregroundStyle(Theme.textSecondary.opacity(0.35))
             }
             ForEach(Array(series.enumerated()), id: \.offset) { i, v in
-                AreaMark(x: .value("d", i), y: .value("v", v))
-                    .interpolationMethod(.catmullRom)
-                    .foregroundStyle(LinearGradient(colors: [color.opacity(0.25), color.opacity(0.0)],
-                                                    startPoint: .top, endPoint: .bottom))
-                LineMark(x: .value("d", i), y: .value("v", v))
-                    .interpolationMethod(.catmullRom)
-                    .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
-                    .foregroundStyle(color)
+                if let v {
+                    AreaMark(x: .value("d", i), y: .value("v", v))
+                        .interpolationMethod(.catmullRom)
+                        .foregroundStyle(LinearGradient(colors: [color.opacity(0.25), color.opacity(0.0)],
+                                                        startPoint: .top, endPoint: .bottom))
+                    LineMark(x: .value("d", i), y: .value("v", v))
+                        .interpolationMethod(.catmullRom)
+                        .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+                        .foregroundStyle(color)
+                    // With ≤2 logged days a line barely draws (a comeback after a long
+                    // break is exactly one point) — dots keep the day visible.
+                    if loggedCount <= 2 {
+                        PointMark(x: .value("d", i), y: .value("v", v))
+                            .symbolSize(20)
+                            .foregroundStyle(color)
+                    }
+                }
             }
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
+        .chartXScale(domain: 0...max(series.count - 1, 1))
         .chartYScale(domain: yDomain)
     }
 
+    private var loggedCount: Int { series.compactMap { $0 }.count }
+
     /// Pad the domain so a flat-ish line isn't glued to the edge; include the goal line.
     private var yDomain: ClosedRange<Double> {
-        var vals = series
+        var vals = series.compactMap { $0 }
         if let target, target > 0 { vals.append(target) }
         let hi = max(vals.max() ?? 1, 1)
         return 0...(hi * 1.15)

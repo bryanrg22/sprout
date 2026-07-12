@@ -32,6 +32,11 @@ enum DailyInsightEngine {
         var hydrationHitStreakDays: Int   // consecutive days water goal met
         var workoutToday: Bool
         var hourOfDay: Int                 // 0...23, so we don't say "fuel up" at 9am
+        /// Days since the last active log BEFORE today (1 = logged yesterday; 14 = two
+        /// silent weeks; 0/default = unknown or brand-new). Lets the engine greet a
+        /// comeback instead of scolding a light first day back. Defaults to 1 so existing
+        /// callers/tests behave exactly as before (no gap).
+        var daysAwayBeforeToday: Int = 1
     }
 
     // MARK: Output
@@ -72,10 +77,24 @@ enum DailyInsightEngine {
         let calFrac = i.calorieTarget > 0 ? i.caloriesEaten / i.calorieTarget : 0
         let proFrac = i.proteinTarget > 0 ? i.protein / i.proteinTarget : 0
 
+        // --- Coming back after a break: the day's ONE message is "glad you're here" ---
+        // Outscores everything, and the under-fueled nudge below is skipped today — a
+        // light first day back usually means logging is still catching up, and the worst
+        // possible greeting after two weeks away is "you're not eating enough".
+        let isComebackDay = i.loggedAnythingToday && i.daysAwayBeforeToday >= 4
+        if isComebackDay {
+            out.append(.init(
+                id: "welcome_back",
+                template: "Welcome back 💛 Coming back after a break is the part most people never do — and you just did it. Today's a fresh start.",
+                factualHint: "She logged again today after \(i.daysAwayBeforeToday) days away — celebrate the return itself; no numbers talk.",
+                systemImage: "sun.max.fill", tintToken: .brand, score: 120))
+        }
+
         // --- The gentle, MOST IMPORTANT nudge: under-fueled late in the day ---
         // Only after ~6pm, only if she's logged something (so it's not just an empty
         // morning), and only when genuinely low. Never shaming — an invitation to eat.
-        if i.loggedAnythingToday, i.hourOfDay >= 18, calFrac < 0.5, i.calorieTarget > 0 {
+        // Skipped on a comeback day (see above).
+        if i.loggedAnythingToday, !isComebackDay, i.hourOfDay >= 18, calFrac < 0.5, i.calorieTarget > 0 {
             out.append(.init(
                 id: "fuel_up",
                 template: "You're a bit under your fuel for today — a real dinner or a solid snack would help you feel your best. 🥣",

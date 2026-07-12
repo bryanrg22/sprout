@@ -62,7 +62,7 @@ struct ProgressSummaryService {
 
     /// Generate a recap from a pre-rendered factual snapshot string.
     static func summary(snapshot: String) async throws -> ProgressSummary {
-        let client = try AnthropicClient()
+        let client = try AIClient.makeFull()
         let content: [[String: Any]] = [
             AnthropicClient.textBlock("Here is the user's progress data:\n\n" + snapshot
                 + "\n\nWrite the recap via the tool."),

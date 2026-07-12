@@ -13,6 +13,17 @@ struct OpenAIClient: LLMClient {
     /// `ai_base_url` proxy override, which targets the Anthropic Messages API).
     private static let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
 
+    /// Responses API endpoint — OpenAI's server-side-tools surface. Only the
+    /// web-search-grounded `research` call uses it; everything else stays on
+    /// Chat Completions.
+    private static let responsesEndpoint = URL(string: "https://api.openai.com/v1/responses")!
+
+    /// Model for the web-search research pass. Per OpenAI's docs the `web_search` tool
+    /// runs on the gpt-5.x Responses models (NOT gpt-4.1) — and research is best-effort
+    /// everywhere it's called, so an account without access degrades to an un-grounded
+    /// plan instead of failing.
+    static let researchModel = "gpt-5.5"
+
     private let key: String
 
     init() throws {
@@ -79,26 +90,287 @@ struct OpenAIClient: LLMClient {
         return isReasoning ? "max_completion_tokens" : "max_tokens"
     }
 
-    // MARK: - Networking
-    private func send(_ body: [String: Any]) async throws -> [String: Any] {
-        var req = URLRequest(url: Self.endpoint)
-        req.httpMethod = "POST"
-        req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONSerialization.data(withJSONObject: body)
-        req.timeoutInterval = 60
+    // MARK: - Web-search-grounded research (the heavy plan build only)
+    /// OpenAI counterpart of `AnthropicClient.research`: a Responses API call with the
+    /// server-side `web_search` tool, returning a concise cited synthesis. Same contract —
+    /// callers `try?` this and fall back to an un-grounded build on any failure.
+    func research(system: String,
+                  userContent: String,
+                  model: String = OpenAIClient.researchModel,
+                  maxTokens: Int = 1800) async throws -> (text: String, usedSearch: Bool) {
+        let body: [String: Any] = [
+            "model": model,
+            "instructions": system,
+            "input": userContent,
+            "tools": [["type": "web_search"]],
+            "max_output_tokens": maxTokens,
+        ]
+        let json = try await send(body, to: Self.responsesEndpoint)
+        let parsed = Self.parseResponsesOutput(json)
+        guard !parsed.text.isEmpty else { throw AIConfig.AIError.decoding("empty research text") }
+        return parsed
+    }
 
-        let (data, response) = try await URLSession.shared.data(for: req)
-        guard let http = response as? HTTPURLResponse else {
-            throw AIConfig.AIError.badResponse("no response")
-        }
-        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-        guard (200..<300).contains(http.statusCode) else {
+    /// Responses API output → (assistant text, did a web search actually run). Pure and
+    /// unit-tested: text lives in `output[].content[]` blocks of type `output_text`;
+    /// a completed `web_search_call` item is the searched signal.
+    static func parseResponsesOutput(_ json: [String: Any]) -> (text: String, usedSearch: Bool) {
+        let output = (json["output"] as? [[String: Any]]) ?? []
+        let usedSearch = output.contains { ($0["type"] as? String) == "web_search_call" }
+        var text = output
+            .filter { ($0["type"] as? String) == "message" }
+            .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
+            .compactMap { ($0["type"] as? String) == "output_text" ? $0["text"] as? String : nil }
+            .joined(separator: "\n")
+        if text.isEmpty { text = (json["output_text"] as? String) ?? "" }
+        return (text.trimmingCharacters(in: .whitespacesAndNewlines), usedSearch)
+    }
+
+    // MARK: - Networking
+    private func send(_ body: [String: Any], to url: URL = OpenAIClient.endpoint) async throws -> [String: Any] {
+        let httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        // Mirror AnthropicClient: retry ONCE on a transient overload (429/503) with a short
+        // backoff, and log token usage to the field diagnostics so cost stays answerable.
+        for attempt in 0..<2 {
+            var req = URLRequest(url: url)
+            req.httpMethod = "POST"
+            req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.httpBody = httpBody
+            req.timeoutInterval = 60
+
+            let (data, response) = try await URLSession.shared.data(for: req)
+            guard let http = response as? HTTPURLResponse else {
+                throw AIConfig.AIError.badResponse("no response")
+            }
+            let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+            if (200..<300).contains(http.statusCode) {
+                if let usage = json["usage"] as? [String: Any] {
+                    // Chat Completions says prompt/completion_tokens; Responses says
+                    // input/output_tokens — read whichever is present.
+                    let input = (usage["prompt_tokens"] as? Int) ?? (usage["input_tokens"] as? Int) ?? 0
+                    let output = (usage["completion_tokens"] as? Int) ?? (usage["output_tokens"] as? Int) ?? 0
+                    let cached = ((usage["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int)
+                        ?? ((usage["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int) ?? 0
+                    Diagnostics.shared.log("openai usage: in \(input) out \(output) cached \(cached)", .ai)
+                }
+                return json
+            }
+
             // OpenAI errors come back as { "error": { "message": ... } }, same shape we
             // surface for Anthropic.
             let msg = ((json["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"
+            Diagnostics.shared.log("openai HTTP \(http.statusCode): \(msg)", .ai)
+
+            if [429, 503].contains(http.statusCode), attempt == 0 {
+                try? await Task.sleep(for: .milliseconds(700))
+                continue
+            }
             throw AIConfig.AIError.badResponse(msg)
         }
-        return json
+        throw AIConfig.AIError.badResponse("request failed after a retry")
+    }
+}
+
+// MARK: - Tool-capable surface (OpenAI function calling + vision)
+//
+// The app speaks Anthropic's wire vocabulary internally — `AnthropicClient.Msg` content
+// blocks (`text` / `image` / `tool_use` / `tool_result`), `{name, description,
+// input_schema}` tool schemas, and `ChatTurn` results. This extension translates that
+// vocabulary to OpenAI's Chat Completions format on the way out and back on the way in,
+// so CoachView's tool loop (and every `structured` caller) runs on either vendor
+// without branching:
+//
+//   Anthropic                      OpenAI
+//   ─────────────────────────────  ─────────────────────────────────────────────
+//   tools: {name, input_schema}    tools: {type: "function", function: {parameters}}
+//   assistant tool_use block       assistant message tool_calls[] (arguments = JSON string)
+//   user tool_result block         {"role": "tool", "tool_call_id": ..., "content": ...}
+//   image source base64 block      {"type": "image_url", "image_url": {"url": "data:...;base64,..."}}
+//   cachedSystemPrefix             prefix folded into the system message (OpenAI caches
+//                                  long stable prefixes automatically — no marker needed)
+extension OpenAIClient: ToolCapableClient {
+
+    func chatWithTools(system: String,
+                       messages: [AnthropicClient.Msg],
+                       tools: [[String: Any]],
+                       model: String,
+                       maxTokens: Int,
+                       cachedSystemPrefix: String?) async throws -> AnthropicClient.ChatTurn {
+        var wire: [[String: Any]] = []
+        let sys = [cachedSystemPrefix ?? "", system].filter { !$0.isEmpty }.joined(separator: "\n\n")
+        if !sys.isEmpty { wire.append(["role": "system", "content": sys]) }
+        for msg in messages { wire.append(contentsOf: Self.openAIMessages(from: msg)) }
+
+        var body: [String: Any] = ["model": model, "messages": wire]
+        body[Self.tokenParam(for: model)] = maxTokens
+        if !tools.isEmpty { body["tools"] = Self.openAITools(tools) }
+
+        let json = try await send(body)
+        return try Self.parseToolTurn(json)
+    }
+
+    func structured(system: String,
+                    userContent: Any,
+                    toolName: String,
+                    toolDescription: String,
+                    schema: [String: Any],
+                    model: String,
+                    maxTokens: Int) async throws -> [String: Any] {
+        var wire: [[String: Any]] = []
+        if !system.isEmpty { wire.append(["role": "system", "content": system]) }
+        wire.append(["role": "user", "content": Self.openAIUserContent(userContent)])
+
+        var body: [String: Any] = [
+            "model": model,
+            "messages": wire,
+            "tools": Self.openAITools([["name": toolName,
+                                        "description": toolDescription,
+                                        "input_schema": schema]]),
+            // Forced call — OpenAI's equivalent of Anthropic's tool_choice {type: "tool"}.
+            "tool_choice": ["type": "function", "function": ["name": toolName]],
+        ]
+        body[Self.tokenParam(for: model)] = maxTokens
+
+        let json = try await send(body)
+        guard let input = try Self.parseToolTurn(json).toolUse?.input else {
+            throw AIConfig.AIError.decoding("no tool call in response")
+        }
+        return input
+    }
+
+    // MARK: - Translation (pure + unit-tested)
+
+    /// One Anthropic-shaped `Msg` → one or more OpenAI messages. A user turn carrying a
+    /// `tool_result` becomes a `role:"tool"` message (OpenAI's required follow-up to a
+    /// tool call); text/image blocks fold into a single content-parts message.
+    static func openAIMessages(from msg: AnthropicClient.Msg) -> [[String: Any]] {
+        if let plain = msg.content as? String {
+            return [["role": msg.role, "content": plain]]
+        }
+        guard let blocks = msg.content as? [[String: Any]] else { return [] }
+
+        if msg.role == "assistant" {
+            let text = blocks
+                .compactMap { ($0["type"] as? String) == "text" ? $0["text"] as? String : nil }
+                .joined()
+            let toolCalls: [[String: Any]] = blocks.compactMap { block in
+                guard (block["type"] as? String) == "tool_use",
+                      let id = block["id"] as? String,
+                      let name = block["name"] as? String else { return nil }
+                let input = (block["input"] as? [String: Any]) ?? [:]
+                let args = (try? JSONSerialization.data(withJSONObject: input))
+                    .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+                return ["id": id, "type": "function",
+                        "function": ["name": name, "arguments": args]]
+            }
+            var message: [String: Any] = ["role": "assistant",
+                                          "content": text.isEmpty ? NSNull() : text]
+            if !toolCalls.isEmpty { message["tool_calls"] = toolCalls }
+            return [message]
+        }
+
+        // User turn: tool_result blocks each become a role:"tool" message; anything
+        // visual/textual folds into one user message with content parts.
+        var out: [[String: Any]] = []
+        var parts: [[String: Any]] = []
+        for block in blocks {
+            switch block["type"] as? String {
+            case "tool_result":
+                // OpenAI has no is_error flag — the result text itself carries the signal.
+                out.append(["role": "tool",
+                            "tool_call_id": (block["tool_use_id"] as? String) ?? "",
+                            "content": (block["content"] as? String) ?? ""])
+            case "text":
+                if let t = block["text"] as? String { parts.append(["type": "text", "text": t]) }
+            case "image":
+                if let source = block["source"] as? [String: Any],
+                   let data = source["data"] as? String {
+                    let media = (source["media_type"] as? String) ?? "image/jpeg"
+                    parts.append(["type": "image_url",
+                                  "image_url": ["url": "data:\(media);base64,\(data)"]])
+                }
+            default:
+                break
+            }
+        }
+        if !parts.isEmpty { out.append(["role": "user", "content": parts]) }
+        return out
+    }
+
+    /// `structured`'s user content: a plain string passes through; Anthropic-shaped
+    /// text/image blocks become OpenAI content parts (this is the meal-photo path).
+    static func openAIUserContent(_ content: Any) -> Any {
+        guard let blocks = content as? [[String: Any]] else { return content }
+        var parts: [[String: Any]] = []
+        for block in blocks {
+            switch block["type"] as? String {
+            case "text":
+                if let t = block["text"] as? String { parts.append(["type": "text", "text": t]) }
+            case "image":
+                if let source = block["source"] as? [String: Any],
+                   let data = source["data"] as? String {
+                    let media = (source["media_type"] as? String) ?? "image/jpeg"
+                    parts.append(["type": "image_url",
+                                  "image_url": ["url": "data:\(media);base64,\(data)"]])
+                }
+            default:
+                break
+            }
+        }
+        return parts
+    }
+
+    /// Anthropic tool schemas → OpenAI function declarations.
+    static func openAITools(_ tools: [[String: Any]]) -> [[String: Any]] {
+        tools.compactMap { tool in
+            guard let name = tool["name"] as? String else { return nil }
+            var function: [String: Any] = ["name": name]
+            if let description = tool["description"] as? String { function["description"] = description }
+            if let schema = tool["input_schema"] { function["parameters"] = schema }
+            return ["type": "function", "function": function]
+        }
+    }
+
+    /// OpenAI response → the app's `ChatTurn`. The `assistantContent` echo is rebuilt in
+    /// Anthropic block form so CoachView's continue-turn history round-trips through
+    /// `openAIMessages` unchanged. Only the FIRST tool call is exposed (the coach
+    /// proposes one change per turn), matching the Anthropic path's behavior.
+    static func parseToolTurn(_ json: [String: Any]) throws -> AnthropicClient.ChatTurn {
+        guard let choices = json["choices"] as? [[String: Any]],
+              let first = choices.first,
+              let message = first["message"] as? [String: Any] else {
+            throw AIConfig.AIError.decoding("missing choices[0].message")
+        }
+        let text = ((message["content"] as? String) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var toolUse: AnthropicClient.ToolUse?
+        if let calls = message["tool_calls"] as? [[String: Any]],
+           let call = calls.first,
+           let id = call["id"] as? String,
+           let function = call["function"] as? [String: Any],
+           let name = function["name"] as? String {
+            let argsString = function["arguments"] as? String ?? "{}"
+            let input = ((try? JSONSerialization.jsonObject(with: Data(argsString.utf8)))
+                as? [String: Any]) ?? [:]
+            toolUse = AnthropicClient.ToolUse(id: id, name: name, input: input)
+        }
+
+        // Same guard as the Anthropic path: a turn truncated mid-call can carry mangled
+        // arguments — surface the prose instead of acting on a half-formed request.
+        if (first["finish_reason"] as? String) == "length", toolUse != nil {
+            toolUse = nil
+        }
+
+        var assistantContent: [[String: Any]] = []
+        if !text.isEmpty { assistantContent.append(["type": "text", "text": text]) }
+        if let toolUse {
+            assistantContent.append(["type": "tool_use", "id": toolUse.id,
+                                     "name": toolUse.name, "input": toolUse.input])
+        }
+        return AnthropicClient.ChatTurn(text: text, toolUse: toolUse,
+                                        assistantContent: assistantContent)
     }
 }

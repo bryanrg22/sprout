@@ -45,7 +45,7 @@ struct SmartSuggestionsView: View {
     var body: some View {
         // No key configured → a single small, muted note (suggestions need the AI key).
         // We don't duplicate a key-entry field; that lives in Settings → AI.
-        if !KeychainStore.hasAPIKey {
+        if !AIConfig.hasActiveKey {
             noKeyNote
         } else {
             VStack(alignment: .leading, spacing: Theme.Space.sm) {

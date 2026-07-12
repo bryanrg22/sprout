@@ -25,6 +25,10 @@ struct CoachView: View {
     // what she trained — not just the legacy `WorkoutEntry` checklist log.
     @Query private var sessions: [WorkoutSession]
     @Query private var exerciseEntries: [ExerciseEntry]
+    // Passive tracker data (Fitbit etc. via Apple Health) — sleep, detected workouts, vitals.
+    @Query private var sleepEntries: [SleepEntry]
+    @Query private var detectedWorkouts: [DetectedWorkout]
+    @Query private var vitalsEntries: [VitalsEntry]
 
     @State private var draft: String = ""
     @State private var isSending = false
@@ -490,18 +494,22 @@ struct CoachView: View {
         // Snapshot the system prompt + tool schemas now (on the main actor, off SwiftData).
         // `coachMemory()` reads/creates the single memory row; `CoachContext.system` folds its
         // strings into the prompt synchronously here, so the @Model never crosses to the Task.
-        let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
-                                         workouts: workouts, water: water, steps: steps,
-                                         sessions: sessions, exercises: exerciseEntries,
-                                         memory: coachMemory(), plan: CoachPlan.current(in: context))
+        let systemParts = CoachContext.systemParts(profile: profile, foods: foods, weights: weights,
+                                                   workouts: workouts, water: water, steps: steps,
+                                                   sessions: sessions, exercises: exerciseEntries,
+                                                   sleep: sleepEntries, detected: detectedWorkouts,
+                                                   vitals: vitalsEntries,
+                                                   memory: coachMemory(), plan: CoachPlan.current(in: context))
         let tools = CoachTools.schemas(for: profile)
 
         Diagnostics.shared.log("coach send: \(text.count) chars, \(history.count) history msgs", .coach)
         isSending = true
         Task {
             do {
-                let client = try AnthropicClient()
-                let turn = try await client.chatWithTools(system: system, messages: history, tools: tools)
+                let client = try AIClient.makeFull()
+                let turn = try await client.chatWithTools(system: systemParts.volatile,
+                                                          messages: history, tools: tools,
+                                                          cachedSystemPrefix: systemParts.stable)
                 Diagnostics.shared.log("coach reply ok: \(turn.text.count) chars, tool=\(turn.toolUse?.name ?? "none")", .coach)
                 await MainActor.run { handle(turn: turn, history: history) }
             } catch AIConfig.AIError.missingKey {
@@ -684,20 +692,24 @@ struct CoachView: View {
                                                   resultText: resultText,
                                                   isError: isError)]
 
-        let system = CoachContext.system(profile: profile, foods: foods, weights: weights,
-                                         workouts: workouts, water: water, steps: steps,
-                                         sessions: sessions, exercises: exerciseEntries,
-                                         memory: coachMemory(), plan: CoachPlan.current(in: context))
+        let systemParts = CoachContext.systemParts(profile: profile, foods: foods, weights: weights,
+                                                   workouts: workouts, water: water, steps: steps,
+                                                   sessions: sessions, exercises: exerciseEntries,
+                                                   sleep: sleepEntries, detected: detectedWorkouts,
+                                                   vitals: vitalsEntries,
+                                                   memory: coachMemory(), plan: CoachPlan.current(in: context))
         // Once we've chained enough tools, stop offering them so the model must finalize.
         let tools = depth >= Self.maxToolDepth ? [] : CoachTools.schemas(for: profile)
 
         isSending = true
         Task {
             do {
-                let client = try AnthropicClient()
+                let client = try AIClient.makeFull()
                 // Keep tools available so a follow-up tool call is still possible, but the
                 // common case is a plain warm reply.
-                let turn = try await client.chatWithTools(system: system, messages: continued, tools: tools)
+                let turn = try await client.chatWithTools(system: systemParts.volatile,
+                                                          messages: continued, tools: tools,
+                                                          cachedSystemPrefix: systemParts.stable)
                 await MainActor.run { handle(turn: turn, history: continued, depth: depth) }
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {
@@ -776,7 +788,16 @@ struct CoachView: View {
             let target = (try? context.fetch(
                 FetchDescriptor<CoachMemory>(predicate: #Predicate { $0.id == memoryID })
             ).first) ?? coachMemory()
-            target.profileNotes = result.profileNotes
+            // Lost-update guard: the consolidation reasoned over a SNAPSHOT of the notes. If
+            // something else wrote notes while it ran (a remember_about_user tool call, a
+            // Settings edit), overwriting would silently discard that newer fact — keep the
+            // newer notes and only fold the summary + high-water mark this round; the notes
+            // fold will simply pick up the fresh state on the next consolidation.
+            if target.profileNotes == currentNotes {
+                target.profileNotes = result.profileNotes
+            } else {
+                Diagnostics.shared.log("memory consolidation: notes changed mid-flight — keeping newer notes", .coach)
+            }
             target.conversationSummary = result.conversationSummary
             // Only advance the high-water mark forward, never backward (a concurrent earlier
             // pass could in principle have folded further already).
@@ -820,15 +841,15 @@ struct CoachView: View {
                      systemImage: "key.fill")
     }
 
-    /// Vita runs on Claude (chatWithTools is Anthropic-only). If the user is on OpenAI or only
-    /// has an OpenAI key saved, they HAVE added a key — so say specifically that Vita needs an
-    /// Anthropic one, instead of the confusing generic "add your AI key".
+    /// Vita follows the provider picked in Settings (both vendors support her tools now).
+    /// If the OTHER vendor has a key saved, the fix is one tap away — say so.
     private var missingKeyMessage: String {
-        if !KeychainStore.hasAPIKey(for: .anthropic)
-            && (AIConfig.provider == .openai || KeychainStore.hasAPIKey(for: .openai)) {
-            return "\(coachName) runs on Claude — add an Anthropic key in More → AI 💚"
+        let active = AIConfig.provider
+        let other: AIProvider = active == .anthropic ? .openai : .anthropic
+        if KeychainStore.hasAPIKey(for: other) {
+            return "You're set to \(active.label) but only have a \(other.label) key — switch provider or add a \(active.label) key in More → AI 💚"
         }
-        return "I'm ready to chat once you add your AI key in More → AI 💚"
+        return "I'm ready to chat once you add your \(active.label) key in More → AI 💚"
     }
 
     private func inlineBanner(text: String, tint: Color, systemImage: String) -> some View {

@@ -54,4 +54,36 @@ final class StreakCalculatorTests: XCTestCase {
         let foods = [FoodEntry(date: day(-1), name: "a", calories: 100)]
         XCTAssertEqual(StreakCalculator.loggingStreak(foods: foods, weights: [], calendar: cal, now: now), 0)
     }
+
+    // MARK: - daysSinceLastLog (the comeback signal)
+
+    /// A two-week break, then logging again today: the gap must still read 14 — today's own
+    /// logs are excluded on purpose, so the welcome-back framing survives the very moment
+    /// the user returns (which is exactly when it's needed).
+    func testDaysSinceLastLogSurvivesLoggingToday() {
+        let foods = [FoodEntry(date: day(0), name: "back", calories: 400),
+                     FoodEntry(date: day(-14), name: "old", calories: 500)]
+        XCTAssertEqual(StreakCalculator.daysSinceLastLog(foods: foods, weights: [], calendar: cal, now: now), 14)
+    }
+
+    func testDaysSinceLastLogYesterdayIsOne() {
+        let foods = [FoodEntry(date: day(-1), name: "a", calories: 100)]
+        XCTAssertEqual(StreakCalculator.daysSinceLastLog(foods: foods, weights: [], calendar: cal, now: now), 1)
+    }
+
+    /// Brand-new user (first-ever log is today, or nothing at all): no gap — a first log is
+    /// a beginning, not a comeback.
+    func testDaysSinceLastLogNilForNewUser() {
+        XCTAssertNil(StreakCalculator.daysSinceLastLog(foods: [], weights: [], calendar: cal, now: now))
+        let onlyToday = [FoodEntry(date: day(0), name: "first", calories: 100)]
+        XCTAssertNil(StreakCalculator.daysSinceLastLog(foods: onlyToday, weights: [], calendar: cal, now: now))
+    }
+
+    /// Scale-synced weights during the break must not shrink the gap — they're passive data,
+    /// same rule as the streak.
+    func testDaysSinceLastLogIgnoresImportedWeights() {
+        let foods = [FoodEntry(date: day(-10), name: "old", calories: 500)]
+        let imported = (1..<10).map { WeightEntry(date: day(-$0), weightLbs: 150, healthKitUUID: "hk-\($0)") }
+        XCTAssertEqual(StreakCalculator.daysSinceLastLog(foods: foods, weights: imported, calendar: cal, now: now), 10)
+    }
 }

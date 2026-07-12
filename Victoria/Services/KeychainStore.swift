@@ -56,6 +56,38 @@ enum KeychainStore {
         apiKey(for: provider)?.isEmpty == false
     }
 
+    // MARK: - Generic secret storage (Data blobs, e.g. OAuth tokens)
+
+    /// Store an arbitrary secret blob under `account` (nil deletes). Same service +
+    /// accessibility as the API keys, so all secrets live under one Keychain umbrella.
+    static func setSecret(_ data: Data?, account: String) {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+        SecItemDelete(query as CFDictionary)
+        guard let data, !data.isEmpty else { return }
+        var add = query
+        add[kSecValueData as String] = data
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        SecItemAdd(add as CFDictionary, nil)
+    }
+
+    static func secret(account: String) -> Data? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var item: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &item) == errSecSuccess,
+              let data = item as? Data else { return nil }
+        return data
+    }
+
     // MARK: - Back-compat accessors (Anthropic)
     //
     // These keep the original signatures so existing call sites (SettingsView,

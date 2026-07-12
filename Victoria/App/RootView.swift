@@ -6,6 +6,10 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Query private var profiles: [UserProfile]
     @Query(sort: \StepsEntry.date) private var stepEntries: [StepsEntry]
+    // Passive tracker mirrors (Fitbit etc. via Apple Health) — refreshed the same way steps are.
+    @Query(sort: \SleepEntry.date) private var sleepEntries: [SleepEntry]
+    @Query(sort: \DetectedWorkout.date) private var detectedWorkouts: [DetectedWorkout]
+    @Query(sort: \VitalsEntry.date) private var vitalsEntries: [VitalsEntry]
 
     private var profile: UserProfile? { profiles.first }
 
@@ -66,6 +70,18 @@ struct RootView: View {
             // `importTodaySteps` alone left behind (it only ever captured "today so far").
             if HealthKitService.isAvailable {
                 await HealthKitService.shared.importRecentSteps(days: 30, into: context, existing: stepEntries)
+                // Tracker data (Fitbit etc. bridged into Apple Health): last 2 weeks of
+                // sleep (+stages), auto-detected workouts, and daily recovery vitals.
+                await HealthKitService.shared.importRecentSleep(days: 14, into: context, existing: sleepEntries)
+                await HealthKitService.shared.importRecentDetectedWorkouts(days: 14, into: context, existing: detectedWorkouts)
+                await HealthKitService.shared.importRecentVitals(days: 14, into: context, existing: vitalsEntries)
+            }
+            // Direct Fitbit pipe (Google Health API) — runs AFTER HealthKit so its richer
+            // stage/vitals numbers win the per-day upsert on any overlapping day.
+            // (refresh() re-reads existing rows itself — the imports above may have
+            // just inserted rows that our captured @Query arrays don't include.)
+            if GoogleHealthSync.isConnected {
+                await GoogleHealthSync.refresh(days: 14, into: context)
             }
             WidgetDataWriter.refresh(context: context, profile: profile)
             // Ask for notification permission + (re)build gentle reminders once on launch.
@@ -84,6 +100,14 @@ struct RootView: View {
                         // its FULL total when she reopens the app the next day — the exact case
                         // where a day was frozen at a partial count.
                         await HealthKitService.shared.importRecentSteps(days: 7, into: context, existing: stepEntries)
+                        // Tracker sleep/workouts/vitals land in Health whenever the bridge runs —
+                        // re-pull a week on every foreground so last night shows up by morning.
+                        await HealthKitService.shared.importRecentSleep(days: 7, into: context, existing: sleepEntries)
+                        await HealthKitService.shared.importRecentDetectedWorkouts(days: 7, into: context, existing: detectedWorkouts)
+                        await HealthKitService.shared.importRecentVitals(days: 7, into: context, existing: vitalsEntries)
+                    }
+                    if GoogleHealthSync.isConnected {
+                        await GoogleHealthSync.refresh(days: 7, into: context)
                     }
                     WidgetDataWriter.refresh(context: context, profile: profile)
                 }

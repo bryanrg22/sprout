@@ -671,6 +671,45 @@ final class CoachToolsWriteTests: XCTestCase {
         XCTAssertTrue(why.lowercased().contains("above"))
     }
 
+    // MARK: set_start_weight (the once-permanent baseline, now correctable)
+
+    func testSetStartWeightCorrectsBaselineWithConfirmAndUndo() throws {
+        let ctx = try makeContext()
+        let p = lossProfile()   // onboarded start 158, actually started at 165
+        let req = try XCTUnwrap(expectOK(.setStartWeight, ["weight": 165], profile: p))
+        XCTAssertTrue(req.requiresConfirm, "correcting the baseline must confirm")
+        let applied = CoachTools.applyReturningUndo(req, to: p, context: ctx)
+        XCTAssertEqual(p.startWeightLbs, 165, accuracy: 0.001)
+        // Undo restores the original baseline exactly.
+        applied.undo?()
+        XCTAssertEqual(p.startWeightLbs, 158, accuracy: 0.001)
+    }
+
+    func testSetStartWeightOutOfBoundsIsInvalid() {
+        _ = expectInvalid(.setStartWeight, ["weight": 20], profile: lossProfile())
+        _ = expectInvalid(.setStartWeight, ["weight": 900], profile: lossProfile())
+        _ = expectInvalid(.setStartWeight, [:], profile: lossProfile())
+    }
+
+    /// Direction flip with an active plan: the tool result must WARN that the plan still
+    /// drives targets for the old goal (otherwise stale numbers silently stay in charge).
+    func testGoalDirectionFlipWarnsAboutStalePlan() throws {
+        let ctx = try makeContext()
+        let p = lossProfile()
+        let plan = CoachPlan()
+        plan.calorieMin = 1600
+        plan.calorieMax = 1750
+        ctx.insert(plan)
+        try ctx.save()
+
+        let req = try XCTUnwrap(expectOK(.setGoalDirection, ["direction": "gain"], profile: p))
+        let message = CoachTools.apply(req, to: p, context: ctx)
+        XCTAssertTrue(message.contains("Plan"),
+                      "flip with an active plan must flag the stale plan, got: \(message)")
+        XCTAssertTrue(message.lowercased().contains("goal weight"),
+                      "goal weight (140) is now below current for a gain goal — must be flagged")
+    }
+
     func testSetWeightGoalOutOfBoundsIsInvalid() {
         expectInvalid(.setWeightGoal, ["weight": 20], profile: lossProfile(), "absurd goal rejected")
     }

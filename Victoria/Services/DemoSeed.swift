@@ -65,6 +65,35 @@ enum DemoSeed {
             context.insert(StepsEntry(date: day, count: s))
         }
 
+        // Tracker data (Fitbit-style, as if bridged through Apple Health): 14 nights of
+        // sleep with stages, a few auto-detected workouts, and a week of recovery vitals.
+        for i in 0..<14 {
+            let day = calendar.date(byAdding: .day, value: -i, to: today) ?? today
+            let asleep = Int.random(in: 380...470)                  // ~6.3–7.8h
+            let deep = Int(Double(asleep) * Double.random(in: 0.15...0.22))
+            let rem = Int(Double(asleep) * Double.random(in: 0.20...0.26))
+            context.insert(SleepEntry(date: day,
+                                      asleepMinutes: asleep,
+                                      inBedMinutes: asleep + Int.random(in: 15...45),
+                                      deepMinutes: deep,
+                                      remMinutes: rem,
+                                      coreMinutes: asleep - deep - rem,
+                                      awakeMinutes: Int.random(in: 5...25)))
+        }
+        for (i, w) in [("Running", 32, 285.0), ("Walking", 24, 96.0), ("Strength training", 45, 210.0)].enumerated() {
+            let day = calendar.date(byAdding: .day, value: -(i * 2), to: today) ?? today
+            let start = calendar.date(bySettingHour: 17, minute: 30, second: 0, of: day) ?? day
+            context.insert(DetectedWorkout(healthKitUUID: "demo-\(i)", date: start, activity: w.0,
+                                           durationMinutes: w.1, caloriesBurned: w.2,
+                                           sourceName: "Fitbit"))
+        }
+        for i in 0..<7 {
+            let day = calendar.date(byAdding: .day, value: -i, to: today) ?? today
+            context.insert(VitalsEntry(date: day,
+                                       restingHeartRate: Double(Int.random(in: 56...63)),
+                                       hrvMs: Double(Int.random(in: 38...52))))
+        }
+
         // 28 days of weigh-ins: gentle downward trend + realistic daily noise.
         for i in 0..<28 {
             let day = calendar.date(byAdding: .day, value: -i, to: today) ?? today

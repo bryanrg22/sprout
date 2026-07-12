@@ -48,6 +48,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 profileHeaderSection
+                goalsSection
                 youSection
                 bioSection
                 stepsSection
@@ -174,6 +175,84 @@ struct SettingsView: View {
         )
     }
 
+    // MARK: - Your goals
+
+    /// ONE place that answers "what exactly am I working toward, and what did I tell it?" —
+    /// direction, pace, goal weight, and (finally editable) starting weight, with a plain
+    /// summary of the journey. Everything here recomputes targets on the next read.
+    private var goalsSection: some View {
+        Section {
+            row(icon: "target") {
+                Picker("Goal", selection: goalDirectionBinding) {
+                    Text("Lose").tag(GoalPace.Direction.lose)
+                    Text("Maintain").tag(GoalPace.Direction.maintain)
+                    Text("Gain").tag(GoalPace.Direction.gain)
+                }
+            }
+
+            // Pace options are scoped to the chosen goal direction, so flipping to
+            // "Gain" surfaces the lean-gain paces (and hides the loss ones).
+            row(icon: "speedometer") {
+                Picker("Pace", selection: $profile.pace) {
+                    ForEach(GoalPace.paces(for: profile.pace.direction)) { pace in
+                        Text(pace.label).tag(pace)
+                    }
+                }
+            }
+
+            row(icon: "flag.checkered") {
+                Stepper(value: $profile.goalWeightLbs, in: 70...500, step: 1) {
+                    LabeledContent("Goal weight") {
+                        Text("\(Int(profile.goalWeightLbs)) lb")
+                            .foregroundStyle(Theme.textSecondary)
+                            .monospacedDigit()
+                    }
+                }
+            }
+
+            // Starting weight — editable at last. The chart's "Start" line and the
+            // total-change math read this; a wrong onboarding value was previously
+            // permanent.
+            row(icon: "figure.wave") {
+                Stepper(value: $profile.startWeightLbs, in: 50...500, step: 1) {
+                    LabeledContent("Starting weight") {
+                        Text("\(Int(profile.startWeightLbs)) lb")
+                            .foregroundStyle(Theme.textSecondary)
+                            .monospacedDigit()
+                    }
+                }
+            }
+        } header: {
+            sectionHeader("Your goals")
+        } footer: {
+            footer(goalsFooterText)
+        }
+        .listRowBackground(Theme.card)
+    }
+
+    /// "Started at 158 lb → aiming for 140 lb at a relaxed pace (~0.5 lb/week)." — the
+    /// journey in one sentence, plus a heads-up when direction and goal weight disagree.
+    private var goalsFooterText: String {
+        var text = "Started at \(Int(profile.startWeightLbs)) lb → aiming for \(Int(profile.goalWeightLbs)) lb at a \(profile.pace.label.lowercased()) pace."
+        let current = currentWeightLbs
+        switch profile.pace.direction {
+        case .lose where profile.goalWeightLbs >= current:
+            text += " Heads-up: your goal weight is at or above where you are now — for a lose goal, set it below your current weight."
+        case .gain where profile.goalWeightLbs <= current:
+            text += " Heads-up: your goal weight is at or below where you are now — for a gain goal, set it above your current weight."
+        default:
+            text += " Changing any of these updates your daily targets right away."
+        }
+        return text
+    }
+
+    private var heightText: String {
+        let cm = profile.heightCm
+        let totalInches = cm / 2.54
+        let ft = Int(totalInches) / 12, inch = Int(totalInches.rounded()) % 12
+        return "\(ft)′\(inch)″ (\(Int(cm.rounded())) cm)"
+    }
+
     // MARK: - You
 
     private var youSection: some View {
@@ -203,31 +282,20 @@ struct SettingsView: View {
                 }
             }
 
-            row(icon: "target") {
-                Picker("Goal", selection: goalDirectionBinding) {
-                    Text("Lose").tag(GoalPace.Direction.lose)
-                    Text("Maintain").tag(GoalPace.Direction.maintain)
-                    Text("Gain").tag(GoalPace.Direction.gain)
+            // Height + age: read here, edited through Vita (she validates + explains what
+            // changes). Shown so the calorie math's inputs are never a mystery.
+            row(icon: "ruler") {
+                LabeledContent("Height") {
+                    Text(heightText)
+                        .foregroundStyle(Theme.textSecondary)
+                        .monospacedDigit()
                 }
             }
-
-            // Pace options are scoped to the chosen goal direction, so flipping to
-            // "Gain" surfaces the lean-gain paces (and hides the loss ones).
-            row(icon: "speedometer") {
-                Picker("Pace", selection: $profile.pace) {
-                    ForEach(GoalPace.paces(for: profile.pace.direction)) { pace in
-                        Text(pace.label).tag(pace)
-                    }
-                }
-            }
-
-            row(icon: "flag.checkered") {
-                Stepper(value: $profile.goalWeightLbs, in: 70...500, step: 1) {
-                    LabeledContent("Goal weight") {
-                        Text("\(Int(profile.goalWeightLbs)) lb")
-                            .foregroundStyle(Theme.textSecondary)
-                            .monospacedDigit()
-                    }
+            row(icon: "birthday.cake") {
+                LabeledContent("Age") {
+                    Text("\(profile.ageYears)")
+                        .foregroundStyle(Theme.textSecondary)
+                        .monospacedDigit()
                 }
             }
 
@@ -421,7 +489,7 @@ struct SettingsView: View {
             sectionHeader("Your daily targets")
         } footer: {
             if planDrivesTargets {
-                footer("Set by your adaptive plan — these adapt as the plan does. (Calories are kept at or above a safe minimum.)")
+                footer("Set by your adaptive plan — floor \(Int(profile.calorieTargetOverride)) kcal\(profile.proteinTargetOverride > 0 ? ", protein \(Int(profile.proteinTargetOverride)) g" : ""). Ask Vita to adjust the plan to change these. (Calories are kept at or above a safe minimum.)")
             } else if calorieGoal.wasClampedToFloor {
                 footer("Adjusted up to a safe minimum — we never recommend going lower. Targets update with your weight and plan.")
             } else {
@@ -470,6 +538,12 @@ struct SettingsView: View {
                 HealthSettingsView(profile: profile)
             } label: {
                 navRow(icon: "heart.fill", title: "Apple Health")
+            }
+
+            NavigationLink {
+                GoogleHealthSettingsView()
+            } label: {
+                navRow(icon: "figure.run.circle.fill", title: "Fitbit (Google Health)")
             }
         } header: {
             sectionHeader("Reminders & Health")
@@ -522,7 +596,7 @@ struct SettingsView: View {
 
             Button {
                 diagStatus = "Running CloudKit diagnostic…"
-                Task { diagStatus = await BuddyViewModel().diagnoseCloudKitForDev() }
+                Task { diagStatus = await BuddyViewModel().diagnoseCloudKit() }
             } label: {
                 row(icon: "stethoscope") {
                     Text("Diagnose CloudKit")

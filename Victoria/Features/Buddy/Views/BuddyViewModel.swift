@@ -72,10 +72,29 @@ final class BuddyViewModel {
     /// True while a link attempt is in flight (disables the button, shows progress).
     private(set) var isLinking = false
 
+    /// Consecutive failed link attempts — after 2, the pairing screen surfaces a "check the
+    /// connection" diagnostic path instead of letting the user blame their typing forever.
+    private(set) var linkFailureCount = 0
+
     /// Bumped to fire a celebratory `ConfettiBurst` when a nudge is sent.
     private(set) var sendConfetti = 0
     /// The kind most recently sent — lets the UI pop a tiny confirmation chip.
     private(set) var lastSentKind: NudgeKind?
+
+    // MARK: Sync health (what makes silent failures visible)
+
+    /// When MY snapshot last reached CloudKit successfully. Persisted so the hub can show
+    /// "shared 2h ago" across relaunches — and, crucially, an honest "hasn't gone through
+    /// since Tuesday" when publishes are quietly failing.
+    private(set) var lastPublishAt: Date?
+    /// True when the most recent publish attempt failed (cleared by the next success). The
+    /// auto-publisher uses it to retry on foreground; the hub uses it to show a soft warning.
+    private(set) var lastPublishFailed = false
+    /// When the buddy's snapshot was last fetched successfully (even if unchanged) — lets the
+    /// UI distinguish "their data is old" from "I can't reach CloudKit at all".
+    private(set) var lastBuddyFetchAt: Date?
+
+    private static func lastPublishKey(_ id: String) -> String { "buddy.lastPublishOK.\(id)" }
 
     // MARK: Init
 
@@ -89,7 +108,14 @@ final class BuddyViewModel {
         // Restore the paired state at launch from the service's persisted link, so we don't
         // flash the pairing screen (and lose the pairing) every time the app reopens.
         self.isLinked = (service.linkedBuddyID != nil)
+        self.lastPublishAt = defaults.object(forKey: Self.lastPublishKey(myUserID)) as? Date
         if observePushes { observeRemotePushes() }
+        // Publish the pairing code EAGERLY, not lazily on the first refresh: the #1 real-world
+        // pairing failure was "B typed A's code seconds after seeing it, but A's phone hadn't
+        // uploaded it yet" → a confusing 'code didn't match'. Publishing at init closes that gap.
+        if !isLinked {
+            Task { await self.announceMyCode() }
+        }
     }
 
     /// Test / preview seam: inject a specific service + id.
@@ -169,7 +195,12 @@ final class BuddyViewModel {
         // someone accepted our code, or it was restored from persistence — we're linked, even
         // before their snapshot arrives. Without this the code-OWNER could stay stuck on the
         // pairing screen after a buddy accepted.
-        if !isLinked, service.linkedBuddyID != nil { isLinked = true }
+        if !isLinked, service.linkedBuddyID != nil {
+            isLinked = true
+            // The code-OWNER's "it worked!" moment — the claimant gets an instant banner, and
+            // without this the owner's screen just silently dismissed a few seconds later.
+            banner = .init(text: "They got your code — you're connected! 💚", tone: .success)
+        }
     }
 
     /// Announce my pairing code so a buddy who types it can find + claim me (the
@@ -177,7 +208,7 @@ final class BuddyViewModel {
     func announceMyCode() async {
         guard !myPairingCode.isEmpty else { return }
         do { try await service.publishMyPairingCode(myPairingCode) }
-        catch { handleSilently(error) }
+        catch { handleSilently(error, "announce code") }
     }
 
     /// Probe the buddy snapshot; a non-nil result means we're linked.
@@ -185,11 +216,12 @@ final class BuddyViewModel {
         do {
             let snap = try await service.fetchBuddySnapshot()
             buddySnapshot = snap
+            lastBuddyFetchAt = .now
             if snap != nil { isLinked = true }
         } catch {
             // A snapshot failure is a soft state — keep whatever we had, stay quiet here
             // (the home screen's empty state already covers "not connected").
-            handleSilently(error)
+            handleSilently(error, "snapshot fetch")
         }
     }
 
@@ -205,13 +237,16 @@ final class BuddyViewModel {
         do {
             try await service.link(usingCode: trimmed)
             isLinked = true
+            linkFailureCount = 0
             banner = .init(text: "You're connected! 💚", tone: .success)
             // Publish a first snapshot so the loop is warmed up, then pull state.
             await publishMine(loggedToday: true, dayStreak: 0)
             await refresh()
         } catch let err as BuddySyncError {
+            linkFailureCount += 1
             banner = .init(text: kindMessage(for: err), tone: .info)
         } catch {
+            linkFailureCount += 1
             banner = .init(text: "That didn't go through — let's try again in a moment.", tone: .info)
         }
     }
@@ -227,22 +262,22 @@ final class BuddyViewModel {
         }
         do {
             try await ck.debugSeedSchema()
-            return "✅ Seeded CloudKit Development.\nNext, in CloudKit Dashboard: add an index on Nudge.toUserID (Queryable) and Nudge.createdAt (Sortable), then Deploy Schema Changes to Production."
+            return "✅ Seeded CloudKit Development.\nNext, in CloudKit Dashboard: add indexes on Nudge.toUserID (Queryable), Nudge.createdAt (Sortable), and BuddySnapshot.ownerUserID (Queryable — the snapshot push needs it), then Deploy Schema Changes to Production."
         } catch {
             return "⚠️ Couldn't reach CloudKit. Check you're signed into iCloud on this device, then tap again."
         }
     }
+    #endif
 
-    /// DEV-ONLY CloudKit diagnostic (see `CloudKitSyncService.debugDiagnose`). Returns a
-    /// multi-line report of account status + a real public-DB write/read with the EXACT error,
-    /// so we can see what the live buddy flow hides behind "cloudKitUnavailable."
-    func diagnoseCloudKitForDev() async -> String {
+    /// CloudKit diagnostic (see `CloudKitSyncService.diagnose`). Available in RELEASE — the
+    /// hidden Diagnostics screen exposes it so a TestFlight device can report the EXACT error
+    /// the live buddy flow hides behind "cloudKitUnavailable."
+    func diagnoseCloudKit() async -> String {
         guard let ck = service as? CloudKitSyncService else {
             return "Simulator uses a local mock — run this on a real iPhone to test CloudKit."
         }
-        return await ck.debugDiagnose()
+        return await ck.diagnose()
     }
-    #endif
 
     /// Send a one-tap nudge (uses the kind's friendly default copy). Fires confetti.
     func send(_ kind: NudgeKind) async {
@@ -418,10 +453,38 @@ final class BuddyViewModel {
             fatTarget: Self.fin(fatTarget),
             todayFoods: todayFoods
         )
+        await publishSerialized(payload)
+    }
+
+    /// True while a publish is in flight; a newer payload arriving meanwhile is parked in
+    /// `queuedPayload` instead of racing the CloudKit fetch-modify-save (two interleaved
+    /// publishes can clobber each other's server change tag — the save then fails and, before
+    /// this guard, was silently dropped).
+    private var isPublishing = false
+    private var queuedPayload: BuddySnapshotPayload?
+
+    private func publishSerialized(_ payload: BuddySnapshotPayload) async {
+        guard !isPublishing else {
+            queuedPayload = payload   // latest wins — snapshots are whole-state, not deltas
+            return
+        }
+        isPublishing = true
+        defer {
+            isPublishing = false
+            if let next = queuedPayload {
+                queuedPayload = nil
+                Task { await self.publishSerialized(next) }
+            }
+        }
         do {
             try await service.publish(mySnapshot: payload)
+            lastPublishAt = .now
+            lastPublishFailed = false
+            UserDefaults.standard.set(Date.now, forKey: Self.lastPublishKey(myUserID))
+            Diagnostics.shared.log("buddy: snapshot published OK", .sync)
         } catch {
-            handleSilently(error)
+            lastPublishFailed = true
+            handleSilently(error, "snapshot publish")
         }
     }
 
@@ -440,7 +503,7 @@ final class BuddyViewModel {
         case .notLinked:
             return "Pair with a buddy first, then you two can cheer each other on 💛"
         case .invalidPairingCode:
-            return "Hmm, that code didn't match. Double-check it and try again 💛"
+            return "Hmm, that code didn't match. Double-check the letters — and if they JUST showed it to you, give it ~10 seconds (their phone may still be uploading it) and try again 💛"
         case .cloudKitUnavailable:
             return "Buddy sync will catch up once you're back online — nothing lost 💛"
         case .backendFailure:
@@ -449,7 +512,12 @@ final class BuddyViewModel {
     }
 
     /// For failures the user shouldn't be bothered by (read-receipts, background probes).
-    private func handleSilently(_ error: Error) { _ = error }
+    /// "Silent" means no banner — NOT no trace: every swallowed error is written to the
+    /// field Diagnostics log, because invisible sync failures are exactly how a buddy's
+    /// snapshot froze for a month with nobody able to say why.
+    private func handleSilently(_ error: Error, _ op: String = "op") {
+        Diagnostics.shared.log("buddy: \(op) failed quietly — \(error.localizedDescription)", .sync)
+    }
 }
 
 /// A small, transient banner. Always kind — `tone` only changes the accent, never the

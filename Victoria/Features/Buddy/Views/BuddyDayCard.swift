@@ -56,7 +56,9 @@ struct BuddyDayCard: View {
                 Image(systemName: "clock").font(.caption2)
                 Text(relativeLastActive).font(.caption)
             }
-            .foregroundStyle(Theme.textSecondary)
+            // Amber once the snapshot no longer reflects today — a month-old "2:41 PM"
+            // shouldn't dress up as current data.
+            .foregroundStyle(snapshot.reflectsToday ? Theme.textSecondary : Theme.warning)
         }
     }
 

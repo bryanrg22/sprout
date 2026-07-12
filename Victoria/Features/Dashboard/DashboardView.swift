@@ -81,7 +81,9 @@ struct DashboardView: View {
             proteinHitStreakDays: hitStreak { dayProtein($0) >= macros.proteinG && macros.proteinG > 0 },
             hydrationHitStreakDays: hitStreak { dayWater($0) >= profile.waterTargetOz && profile.waterTargetOz > 0 },
             workoutToday: workoutToday,
-            hourOfDay: Calendar.current.component(.hour, from: .now)
+            hourOfDay: Calendar.current.component(.hour, from: .now),
+            daysAwayBeforeToday: StreakCalculator.daysSinceLastLog(foods: allFood, waters: water,
+                                                                   weights: weights) ?? 1
         )
     }
 
@@ -111,6 +113,12 @@ struct DashboardView: View {
             ScrollView {
                 VStack(spacing: Theme.Space.md) {
                     header.appearLift(didAppear, index: 0)
+                    // Coming back after 7+ silent days: greet the return before anything
+                    // else on the page can read as a report card. Self-hides otherwise.
+                    WelcomeBackCard().appearLift(didAppear, index: 1)
+                    // The once-a-day note from Vita (Google-Health-Coach style) — one warm
+                    // observation, cached for the day. Steps aside for the welcome card.
+                    DailyBriefCard(profile: profile).appearLift(didAppear, index: 1)
                     // Recoverable "add your key" nudge — only when she skipped it in setup.
                     FinishSetupCard(coachName: profile.coachName.isEmpty ? "Vita" : profile.coachName)
                         .appearLift(didAppear, index: 1)
@@ -142,6 +150,9 @@ struct DashboardView: View {
                         }
                         .appearLift(didAppear, index: 5)
                     buddyCard.appearLift(didAppear, index: 6)
+                    // Tracker (Fitbit etc.) sleep + recovery at a glance; self-hides
+                    // until Apple Health actually carries tracker data.
+                    TrackerCard().appearLift(didAppear, index: 6)
                     activityRow
                         .askVita {
                             AskVitaTopic(

@@ -30,13 +30,13 @@ enum OnboardingCoachMessage {
     /// template on no-key / network / sanitizer failure. Safe to call from a `Task`.
     static func make(_ inputs: Inputs) async -> String {
         let fallback = template(for: inputs)
-        guard KeychainStore.hasAPIKey else { return fallback }
+        guard KeychainStore.hasAPIKey(for: AIConfig.provider) else { return fallback }
         do {
-            let client = try AnthropicClient()
+            let client = try AIClient.make()
             let reply = try await client.chat(
                 system: system,
-                messages: [AnthropicClient.Msg(role: "user", content: userPrompt(inputs))],
-                model: AIConfig.insightModel,   // cheap Haiku — short, warm phrasing
+                messages: [ChatTurnMsg(role: "user", text: userPrompt(inputs))],
+                model: AIConfig.insightModel,   // cheap tier — short, warm phrasing
                 maxTokens: 320
             )
             let cleaned = sanitize(reply)

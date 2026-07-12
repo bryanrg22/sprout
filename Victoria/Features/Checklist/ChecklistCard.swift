@@ -439,7 +439,7 @@ struct ChecklistCard: View {
         let key = dayKey
 
         // No profile or no key → the static-preset fallback, and we never touch the network.
-        guard let profile, KeychainStore.hasAPIKey else {
+        guard let profile, AIConfig.hasActiveKey else {
             plan = ChecklistPlanService.fallback()
             loadingPlan = false
             return

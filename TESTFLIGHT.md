@@ -48,9 +48,20 @@ At <https://icloud.developer.apple.com> → your container:
 2. Add indexes (Schema → Indexes):
    - `Nudge`: `toUserID` **Queryable**, `createdAt` **Sortable** (+ `Queryable` on the
      record's system fields as prompted).
+   - `BuddySnapshot`: `ownerUserID` **Queryable** — REQUIRED for the silent "your buddy just
+     logged" push (the snapshot subscription predicates on it). Without it the hub only
+     updates via its 20-second poll while the page is open; live updates never arrive.
    - `BuddyPairing`: `recordName`/pairing code **Queryable**.
 3. **Deploy Schema to Production** (Dashboard → Deploy). Without this, buddy sync works in
    dev but not for TestFlight users.
+   ⚠️ **Re-deploy EVERY time an app update adds a new CloudKit field** (e.g. the v2
+   full-share fields: carbs/fat/workoutSummary). Production schema is frozen; if an updated
+   app writes a field Production doesn't know, the ENTIRE snapshot save fails on TestFlight —
+   silently — and the buddy sees a frozen, weeks-old snapshot. Fix: run the DEBUG build's
+   Settings → "Seed CloudKit Schema" once (registers all current fields in Development),
+   then Dashboard → **Deploy Schema Changes to Production**.
+   If buddy data ever looks frozen: on the STALE person's phone, Settings → tap the version
+   line 7× → **Run buddy sync check** — it prints the exact CloudKit error.
 4. Both you and Victoria must be **signed into iCloud** on your devices.
 
 ## 4. Archive + upload

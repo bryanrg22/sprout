@@ -176,7 +176,11 @@ enum CoachMemoryService {
             )
             return parse(reply, fallbackNotes: currentNotes, fallbackSummary: currentSummary)
         } catch {
-            return nil   // never let memory upkeep surface an error or block anything
+            // Never surface an error or block anything — but DO leave a trace: if this keeps
+            // failing, the high-water mark never advances and unfolded messages quietly pile
+            // into every future prompt (a slow token leak, invisible without this line).
+            Diagnostics.shared.log("memory consolidation failed (\(olderMessages.count) msgs pending): \(error.localizedDescription)", .coach)
+            return nil
         }
     }
 

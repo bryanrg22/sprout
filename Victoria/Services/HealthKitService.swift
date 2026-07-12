@@ -85,6 +85,15 @@ final class HealthKitService {
         if let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) {
             readSet.insert(stepType)
         }
+        // Sleep + detected workouts + recovery vitals — how a Fitbit/tracker (bridged
+        // into Apple Health) reaches the coach. Read-only; see HealthKitSleepWorkouts.swift.
+        if let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) {
+            readSet.insert(sleepType)
+        }
+        readSet.insert(.workoutType())
+        for id in [HKQuantityTypeIdentifier.restingHeartRate, .heartRateVariabilitySDNN] {
+            if let t = HKQuantityType.quantityType(forIdentifier: id) { readSet.insert(t) }
+        }
         let readTypes: Set<HKObjectType> = readSet
         // requestAuthorization(toShare:read:) is async-throwing on iOS 15+.
         try await store.requestAuthorization(toShare: shareTypes, read: readTypes)

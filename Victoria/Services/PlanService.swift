@@ -29,12 +29,13 @@ enum PlanService {
         let points = loggedDayCount(foods: foods, weights: weights)
 
         let coaching = coachingNote(profile: profile, foods: foods, weights: weights)
-        let client = try AnthropicClient()
+        let client = try AIClient.makeFull()
 
-        // PHASE 1 — ground the heavy BUILD in current, cited evidence via a live web search. Best-effort:
-        // if the key's plan doesn't allow web search (or it errors), we build from her data + the model's
-        // knowledge alone. The REVIEW pass stays web-free by design (it reasons over her latest data).
-        let research = await researchGrounding(client: client, profile: profile, intake: intake)
+        // PHASE 1 — ground the heavy BUILD in current, cited evidence via a live web search,
+        // on whichever provider is active. Best-effort: if the key's plan doesn't allow web
+        // search (or it errors), we build from her data + the model's knowledge alone. The
+        // REVIEW pass stays web-free by design (it reasons over her latest data).
+        let research = await researchGrounding(profile: profile, intake: intake)
 
         // PHASE 2 — author the structured plan, now grounded in the research.
         let result = try await client.structured(
@@ -229,12 +230,20 @@ enum PlanService {
     /// Run the live-web research phase and format it for the write_plan turn. Best-effort: returns
     /// "" (an un-grounded build) on any failure, and never throws — plan creation must not depend on
     /// web search being available. Logged so the diagnostics panel shows whether it actually searched.
+    /// Provider-aware: Anthropic's `web_search` server tool or OpenAI's Responses `web_search`,
+    /// following the Settings pick like every other AI call.
     @MainActor
-    static func researchGrounding(client: AnthropicClient, profile: UserProfile, intake: String) async -> (grounding: String, notes: String) {
-        guard let research = try? await client.research(
-                system: researchSystemPrompt(profile: profile),
-                userContent: researchUserContent(profile: profile, intake: intake)),
-              !research.text.isEmpty else {
+    static func researchGrounding(profile: UserProfile, intake: String) async -> (grounding: String, notes: String) {
+        let system = researchSystemPrompt(profile: profile)
+        let user = researchUserContent(profile: profile, intake: intake)
+        let research: (text: String, usedSearch: Bool)?
+        switch AIConfig.provider {
+        case .anthropic:
+            research = try? await AnthropicClient().research(system: system, userContent: user)
+        case .openai:
+            research = try? await OpenAIClient().research(system: system, userContent: user)
+        }
+        guard let research, !research.text.isEmpty else {
             Diagnostics.shared.log("plan research: none (web search unavailable or empty)", .ai)
             return ("", "")
         }

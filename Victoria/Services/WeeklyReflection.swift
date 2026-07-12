@@ -54,12 +54,12 @@ enum WeeklyReflection {
     /// the gate and the data the note is built from stay in lockstep.)
     static func make(_ inputs: Inputs) async -> String {
         let fallback = template(for: inputs)
-        guard KeychainStore.hasAPIKey else { return fallback }
+        guard KeychainStore.hasAPIKey(for: AIConfig.provider) else { return fallback }
         do {
-            let client = try AnthropicClient()
+            let client = try AIClient.make()
             let reply = try await client.chat(
                 system: system,
-                messages: [AnthropicClient.Msg(role: "user", content: userPrompt(inputs))],
+                messages: [ChatTurnMsg(role: "user", text: userPrompt(inputs))],
                 model: AIConfig.insightModel,   // cheap model — short, warm phrasing
                 maxTokens: 420
             )
