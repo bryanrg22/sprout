@@ -182,5 +182,20 @@ final class OpenAIProviderTests: XCTestCase {
         XCTAssertEqual(OpenAIClient.tokenParam(for: "gpt-4.1"), "max_tokens")
         XCTAssertEqual(OpenAIClient.tokenParam(for: "gpt-4o"), "max_tokens")
         XCTAssertEqual(OpenAIClient.tokenParam(for: "o3-mini"), "max_completion_tokens")
+        // The gpt-5 family are reasoning models too — a user-typed override must not 400.
+        XCTAssertEqual(OpenAIClient.tokenParam(for: "gpt-5.5"), "max_completion_tokens")
+    }
+
+    /// A FAILED web_search_call must not report grounding that never happened.
+    func testFailedSearchCallDoesNotCountAsUsedSearch() {
+        let out = OpenAIClient.parseResponsesOutput(json("""
+        {"output": [
+            {"type": "web_search_call", "id": "ws_1", "status": "failed"},
+            {"type": "message", "role": "assistant", "status": "completed",
+             "content": [{"type": "output_text", "text": "From general knowledge."}]}
+        ]}
+        """))
+        XCTAssertEqual(out.text, "From general knowledge.")
+        XCTAssertFalse(out.usedSearch)
     }
 }

@@ -102,6 +102,11 @@ enum GoogleHealthClient {
             pageToken = json["nextPageToken"] as? String
             if pageToken == nil { break }
         }
+        // Unreachable at our window sizes (14d × pageSize 1000), but if a future backfill
+        // ever exceeds the page cap, say so instead of silently truncating.
+        if pageToken != nil {
+            Diagnostics.shared.log("google health \(type): page cap hit — results truncated", .error)
+        }
         return all
     }
 
@@ -196,16 +201,20 @@ enum GoogleHealthClient {
                 }
             }
             // CLASSIC sessions may lack a summary — fall back to summing the stage
-            // segments so the night still counts.
+            // segments (awake time included, so inBed comes out right) so the night
+            // still counts.
             if night.asleep == 0 {
                 for stage in (sleep["stages"] as? [[String: Any]]) ?? [] {
-                    guard let type = stage["type"] as? String, type != "AWAKE" else { continue }
-                    if let start = rfc3339(stage["startTime"] as? String),
-                       let end = rfc3339(stage["endTime"] as? String) {
-                        night.asleep += Int(end.timeIntervalSince(start) / 60)
-                    }
+                    guard let type = stage["type"] as? String,
+                          let start = rfc3339(stage["startTime"] as? String),
+                          let end = rfc3339(stage["endTime"] as? String) else { continue }
+                    let mins = Int(end.timeIntervalSince(start) / 60)
+                    if type == "AWAKE" { night.awake += mins } else { night.asleep += mins }
                 }
             }
+            // Totals-only sources can report a sleep period with no asleep breakdown —
+            // mirror the HealthKit path's in-bed fallback so the night still counts.
+            if night.asleep == 0 { night.asleep = night.inBed }
             guard night.asleep > 0 else { continue }
             if night.inBed == 0 { night.inBed = night.asleep + night.awake }
 

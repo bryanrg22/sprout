@@ -3,8 +3,8 @@ import SwiftData
 
 /// "More" — the app's Settings hub. A native insetGrouped Form rendered over the
 /// dark canvas: a small profile header, editable profile fields, a steps goal
-/// control, live (read-only) calorie/macro targets, the Anthropic key, and links
-/// out to Reminders / Health.
+/// control, live (read-only) calorie/macro targets, the AI provider + key, and
+/// links out to Reminders / Health / Fitbit.
 struct SettingsView: View {
     @Bindable var profile: UserProfile
 

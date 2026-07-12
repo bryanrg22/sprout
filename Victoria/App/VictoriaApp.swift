@@ -20,9 +20,9 @@ struct VictoriaApp: App {
             // The adaptive Plan — the AI-authored, evolving "understanding of you" (see docs/adaptive-plan.md).
             CoachPlan.self,
             StepsEntry.self,
-            // Passive tracker data mirrored from Apple Health (Fitbit etc. via a bridge):
-            // nightly sleep (+stages), auto-detected workouts, daily recovery vitals.
-            // Never counts toward the streak.
+            // Passive tracker data (Fitbit via the direct Google Health pipe, or
+            // anything Apple Health carries): nightly sleep (+stages), auto-detected
+            // workouts, daily recovery vitals. Never counts toward the streak.
             SleepEntry.self,
             DetectedWorkout.self,
             VitalsEntry.self,

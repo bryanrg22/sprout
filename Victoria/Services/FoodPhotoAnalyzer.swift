@@ -1,8 +1,9 @@
 import Foundation
 
-/// Estimates calories + macros from a meal photo using Claude vision with forced
-/// structured output. Portion size is the biggest error source, so we ask for a
-/// range + confidence and surface "estimate, edit me" in the UI.
+/// Estimates calories + macros from a meal photo using the active provider's vision
+/// model with forced structured output (Claude or GPT — the wire translation lives in
+/// the clients). Portion size is the biggest error source, so we ask for a range +
+/// confidence and surface "estimate, edit me" in the UI.
 struct FoodPhotoAnalyzer {
 
     struct Estimate: Codable {

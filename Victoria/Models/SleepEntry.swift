@@ -1,8 +1,8 @@
 import Foundation
 import SwiftData
 
-/// One night's sleep, mirrored from Apple Health (which a Fitbit/tracker feeds via the
-/// Fitbit→Health bridge, or Google Health's native sync once that ships).
+/// One night's sleep, mirrored from the tracker — via the direct Google Health API
+/// pipe (`GoogleHealth/`), or from Apple Health when something writes sleep there.
 ///
 /// `date` is the start-of-day of the morning she WOKE UP — "last night" for that day —
 /// so today's row answers "how did she sleep?" the way a person means it.

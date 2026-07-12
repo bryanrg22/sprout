@@ -126,6 +126,9 @@ struct GoogleHealthSettingsView: View {
                 Label("Disconnect", systemImage: "xmark.circle")
                     .foregroundStyle(Theme.warning)
             }
+            // Disconnecting mid-sync would race the in-flight token refresh —
+            // finish (or fail) the sync first.
+            .disabled(isWorking)
         } footer: {
             Text("Syncs the last two weeks automatically every time the app opens. Data appears on the Today tracker card and in your sleep and recovery views.")
         }
@@ -143,7 +146,8 @@ struct GoogleHealthSettingsView: View {
                 try await GoogleHealthAuth.shared.signIn()
                 isConnected = true
                 // First pull right away so the connect feels alive.
-                statusMessage = await GoogleHealthSync.refresh(days: 14, into: modelContext)
+                let result = await GoogleHealthSync.refresh(days: 14, into: modelContext)
+                if result.ok { statusMessage = result.message } else { errorMessage = result.message }
             } catch let error as GoogleHealthAuth.AuthError {
                 if case .cancelled = error { return }   // user closed the sheet — not an error
                 errorMessage = error.errorDescription
@@ -159,7 +163,8 @@ struct GoogleHealthSettingsView: View {
         isWorking = true
         Task {
             defer { isWorking = false }
-            statusMessage = await GoogleHealthSync.refresh(days: 14, into: modelContext)
+            let result = await GoogleHealthSync.refresh(days: 14, into: modelContext)
+            if result.ok { statusMessage = result.message } else { errorMessage = result.message }
             isConnected = GoogleHealthAuth.shared.isConnected
         }
     }

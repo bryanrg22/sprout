@@ -34,12 +34,13 @@ enum GoogleHealthSync {
     /// ModelContext (never a caller's possibly-stale snapshot — the HealthKit imports
     /// may have inserted rows moments earlier in the same task). Each of the three
     /// streams fails soft and independently — one bad endpoint never blocks the
-    /// others. Returns a short summary for the Settings "Sync now" status line.
+    /// others. Returns a short summary for the Settings "Sync now" status line,
+    /// plus `ok` so the UI can style a failure as a failure.
     @MainActor
     @discardableResult
-    static func refresh(days: Int, into context: ModelContext) async -> String {
-        guard isConnected else { return "Not connected" }
-        guard !isRefreshing else { return "Sync already running" }
+    static func refresh(days: Int, into context: ModelContext) async -> (message: String, ok: Bool) {
+        guard isConnected else { return ("Not connected", false) }
+        guard !isRefreshing else { return ("Sync already running", true) }
         isRefreshing = true
         defer { isRefreshing = false }
 
@@ -82,7 +83,8 @@ enum GoogleHealthSync {
         Diagnostics.shared.log("google health sync (\(days)d): \(summary)",
                                failures.isEmpty ? .sync : .error)
         if !parts.isEmpty { lastSyncAt = .now }
-        return failures.isEmpty ? "Synced: \(summary)" : "Partly synced — \(summary)"
+        return failures.isEmpty ? ("Synced: \(summary)", true)
+                                : ("Partly synced — \(summary)", false)
     }
 
     /// "Google wins, but 0 never beats a real reading": mergeDailyVitals overwrites
@@ -104,19 +106,23 @@ enum GoogleHealthSync {
         return out
     }
 
-    /// Cross-source workout dedup: if a bridge app is ALSO feeding the same Fitbit
-    /// workout through Apple Health, the two copies have different IDs but describe one
-    /// physical session. A Google workout is dropped when a non-Google row already
-    /// starts within ±20 minutes with a duration within 40% — that's the same session
-    /// seen through two pipes, not a second workout. Pure and unit-tested.
+    /// Cross-source workout dedup, SYMMETRIC: with both pipes live (Google direct +
+    /// Apple Health via a bridge/Watch), the same physical session arrives twice with
+    /// different IDs. A candidate is dropped when a row from the OTHER pipe (ghealth:
+    /// prefix vs HealthKit UUID) already starts within ±20 minutes with a duration
+    /// within 40% — whichever pipe delivered first wins, and the direction doesn't
+    /// matter. Same-pipe rows are left to exact-ID dedup in `mergeDetectedWorkouts`.
+    /// Pure and unit-tested.
     nonisolated static func dedupAgainstExisting(_ found: [HealthKitService.ImportableWorkout],
                                                  existing: [DetectedWorkout])
         -> [HealthKitService.ImportableWorkout] {
-        let foreign = existing.filter { !$0.healthKitUUID.hasPrefix("ghealth:") }
-        guard !foreign.isEmpty else { return found }
+        guard !existing.isEmpty else { return found }
         return found.filter { candidate in
-            !foreign.contains { row in
-                abs(row.date.timeIntervalSince(candidate.date)) <= 20 * 60
+            let candidateIsGoogle = candidate.healthKitUUID.hasPrefix("ghealth:")
+            return !existing.contains { row in
+                let rowIsGoogle = row.healthKitUUID.hasPrefix("ghealth:")
+                guard rowIsGoogle != candidateIsGoogle else { return false }
+                return abs(row.date.timeIntervalSince(candidate.date)) <= 20 * 60
                     && abs(row.durationMinutes - candidate.durationMinutes)
                         <= max(5, Int(Double(max(row.durationMinutes, candidate.durationMinutes)) * 0.4))
             }

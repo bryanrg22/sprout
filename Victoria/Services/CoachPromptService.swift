@@ -159,8 +159,7 @@ enum CoachPromptService {
     /// network. On no-key / any failure / rejected output it returns `fixedPrompts()` — it NEVER
     /// throws and NEVER blocks the chat (same contract as `WeeklyReflection.make`).
     ///
-    /// Forced tool use is Anthropic-only in this app (same as `FoodSuggestionService` /
-    /// `ChecklistPlanService`), so we construct `AnthropicClient` directly.
+    /// Provider-aware: forced tool use runs on either vendor via `AIClient.makeFull()`.
     @MainActor
     static func prompts(profile: UserProfile,
                         foods: [FoodEntry],

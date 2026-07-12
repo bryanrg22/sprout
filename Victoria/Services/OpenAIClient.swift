@@ -5,8 +5,10 @@ import Foundation
 /// private `send`, `JSONSerialization` bodies, and graceful (never-crashing) error
 /// handling that throws `AIConfig.AIError`.
 ///
-/// Scope: plain-text chat only (the coach + the insight/onboarding phrasers). Meal-photo
-/// vision and tool-use remain Anthropic-specific and live on `AnthropicClient`.
+/// Scope: the FULL cross-provider surface. Plain-text chat lives here; the
+/// `ToolCapableClient` extension below adds function calling (the coach's tools),
+/// vision + forced structured output (meal photos), and web-search research
+/// (the plan) — all translated from the app's Anthropic-shaped wire vocabulary.
 struct OpenAIClient: LLMClient {
 
     /// Chat Completions endpoint. Fixed host (OpenAI doesn't share Anthropic's
@@ -81,12 +83,13 @@ struct OpenAIClient: LLMClient {
         ])
     }
 
-    /// OpenAI's reasoning models (o1/o3/o4…) reject `max_tokens` and require
-    /// `max_completion_tokens`; everything else (gpt-4o, gpt-4.1, …) takes `max_tokens`.
-    /// Matched on the leading "o<digit>" so "gpt-4o" (which DOES take max_tokens) is excluded.
+    /// OpenAI's reasoning models (o-series and the gpt-5 family) reject `max_tokens`
+    /// and require `max_completion_tokens`; everything else (gpt-4o, gpt-4.1, …) takes
+    /// `max_tokens`. Matched on prefixes so "gpt-4o" (which DOES take max_tokens) is
+    /// excluded, while a user-typed override like "gpt-5.5" is handled correctly.
     static func tokenParam(for model: String) -> String {
         let m = model.lowercased()
-        let isReasoning = ["o1", "o3", "o4", "o5"].contains { m.hasPrefix($0) }
+        let isReasoning = ["o1", "o3", "o4", "o5", "gpt-5"].contains { m.hasPrefix($0) }
         return isReasoning ? "max_completion_tokens" : "max_tokens"
     }
 
@@ -104,6 +107,9 @@ struct OpenAIClient: LLMClient {
             "input": userContent,
             "tools": [["type": "web_search"]],
             "max_output_tokens": maxTokens,
+            // gpt-5.x reasoning draws from the output budget — keep the thinking light so
+            // a search-and-synthesize task can't burn the whole budget before writing.
+            "reasoning": ["effort": "low"],
         ]
         let json = try await send(body, to: Self.responsesEndpoint)
         let parsed = Self.parseResponsesOutput(json)
@@ -116,7 +122,11 @@ struct OpenAIClient: LLMClient {
     /// a completed `web_search_call` item is the searched signal.
     static func parseResponsesOutput(_ json: [String: Any]) -> (text: String, usedSearch: Bool) {
         let output = (json["output"] as? [[String: Any]]) ?? []
-        let usedSearch = output.contains { ($0["type"] as? String) == "web_search_call" }
+        // Only a COMPLETED call counts as "actually searched" — a failed search item
+        // would otherwise report grounding that never happened.
+        let usedSearch = output.contains {
+            ($0["type"] as? String) == "web_search_call" && ($0["status"] as? String) == "completed"
+        }
         var text = output
             .filter { ($0["type"] as? String) == "message" }
             .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
@@ -197,7 +207,8 @@ extension OpenAIClient: ToolCapableClient {
                        tools: [[String: Any]],
                        model: String,
                        maxTokens: Int,
-                       cachedSystemPrefix: String?) async throws -> AnthropicClient.ChatTurn {
+                       cachedSystemPrefix: String?,
+                       forbidToolUse: Bool) async throws -> AnthropicClient.ChatTurn {
         var wire: [[String: Any]] = []
         let sys = [cachedSystemPrefix ?? "", system].filter { !$0.isEmpty }.joined(separator: "\n\n")
         if !sys.isEmpty { wire.append(["role": "system", "content": sys]) }
@@ -206,6 +217,13 @@ extension OpenAIClient: ToolCapableClient {
         var body: [String: Any] = ["model": model, "messages": wire]
         body[Self.tokenParam(for: model)] = maxTokens
         if !tools.isEmpty { body["tools"] = Self.openAITools(tools) }
+        if forbidToolUse { body["tool_choice"] = "none" }   // depth cap — finalize in prose
+        // Cache routing: OpenAI load-balances requests across backends, and each backend
+        // has its own prompt cache — without a routing key, back-to-back coach turns land
+        // on different shards and the ~6k-token stable prefix re-bills at full price every
+        // time (we measured cached=0 live). A constant per-feature key makes requests with
+        // the same prefix stick to the same shard. BYOK, so no cross-user collision risk.
+        body["prompt_cache_key"] = "vita-coach"
 
         let json = try await send(body)
         return try Self.parseToolTurn(json)
@@ -230,6 +248,9 @@ extension OpenAIClient: ToolCapableClient {
                                         "input_schema": schema]]),
             // Forced call — OpenAI's equivalent of Anthropic's tool_choice {type: "tool"}.
             "tool_choice": ["type": "function", "function": ["name": toolName]],
+            // Same cache-shard routing as the coach: each structured feature has a stable
+            // system+schema prefix that should stick to one backend's prompt cache.
+            "prompt_cache_key": "structured-\(toolName)",
         ]
         body[Self.tokenParam(for: model)] = maxTokens
 

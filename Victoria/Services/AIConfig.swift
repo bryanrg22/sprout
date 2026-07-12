@@ -131,9 +131,9 @@ enum AIConfig {
     /// Cheap insight model for the ACTIVE provider (override-aware).
     static var insightModel: String { model(for: provider, tier: .insight) }
 
-    // Back-compat aliases used as default arguments inside `AnthropicClient` and by a
-    // couple of Anthropic-only call sites. Kept so those callers compile unchanged;
-    // they now follow the active provider's strong/cheap model via the resolvers above.
+    // Back-compat aliases used as default arguments inside the clients. Kept so those
+    // callers compile unchanged; they follow the active provider's strong/cheap model
+    // via the resolvers above.
     static var foodModel: String { coachModel }
     static var chatModel: String { coachModel }
     /// Heavy reasoning model for the one-time adaptive-Plan build/review pass (rare,
@@ -167,12 +167,17 @@ enum AIConfig {
 /// `OpenAIClient` translates to/from OpenAI's function-calling format at its boundary,
 /// so call sites never branch on the vendor.
 protocol ToolCapableClient: LLMClient {
+    /// `forbidToolUse` sends the provider's tool_choice "none" while STILL passing the
+    /// tool schemas — required because a turn whose history contains tool blocks must
+    /// carry the tools parameter (Anthropic rejects it otherwise), yet the coach's
+    /// depth cap needs the model to stop chaining and finalize in prose.
     func chatWithTools(system: String,
                        messages: [AnthropicClient.Msg],
                        tools: [[String: Any]],
                        model: String,
                        maxTokens: Int,
-                       cachedSystemPrefix: String?) async throws -> AnthropicClient.ChatTurn
+                       cachedSystemPrefix: String?,
+                       forbidToolUse: Bool) async throws -> AnthropicClient.ChatTurn
 
     func structured(system: String,
                     userContent: Any,
@@ -190,10 +195,12 @@ extension ToolCapableClient {
                        messages: [AnthropicClient.Msg],
                        tools: [[String: Any]],
                        maxTokens: Int = 1500,
-                       cachedSystemPrefix: String? = nil) async throws -> AnthropicClient.ChatTurn {
+                       cachedSystemPrefix: String? = nil,
+                       forbidToolUse: Bool = false) async throws -> AnthropicClient.ChatTurn {
         try await chatWithTools(system: system, messages: messages, tools: tools,
                                 model: AIConfig.chatModel, maxTokens: maxTokens,
-                                cachedSystemPrefix: cachedSystemPrefix)
+                                cachedSystemPrefix: cachedSystemPrefix,
+                                forbidToolUse: forbidToolUse)
     }
 
     func structured(system: String,

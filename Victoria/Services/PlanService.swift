@@ -12,7 +12,8 @@ enum PlanService {
     // MARK: - Generate (the one-time heavy build)
 
     /// Author a fresh plan from everything we know, persist it (replacing any prior plan), return it.
-    /// Anthropic-only (runs on Opus, like Vita's tool use). Throws `.missingKey` if no key is set.
+    /// Runs on the active provider's heavy tier (`AIConfig.planModel`: Opus on Anthropic, the
+    /// strong GPT tier on OpenAI). Throws `.missingKey` if the active provider has no key.
     @MainActor
     static func generate(profile: UserProfile,
                          foods: [FoodEntry],
@@ -93,7 +94,7 @@ enum PlanService {
     /// reality to the plan that's already there. Preserves history: the resulting plan carries the
     /// old changelog with the new entry appended and keeps the original `createdAt`. If there's no
     /// plan yet there's nothing to review, so we fall through to a fresh `generate`.
-    /// Anthropic-only (runs on `planModel`). Throws `.missingKey` if no key is set.
+    /// Provider-aware (runs on `planModel`). Throws `.missingKey` if the active provider has no key.
     @MainActor
     static func review(profile: UserProfile,
                        foods: [FoodEntry],
@@ -119,7 +120,7 @@ enum PlanService {
         // so the review turns them into encouraging, results-focused insights — never warnings.
         let coaching = coachingNote(profile: profile, foods: foods, weights: weights)
 
-        let client = try AnthropicClient()
+        let client = try AIClient.makeFull()
         let result = try await client.structured(
             system: reviewSystemPrompt(profile: profile),
             userContent: reviewUserContent(plan: existing, dataSummary: dataSummary, daysSince: elapsed, about: profile.onboardingNote) + coaching,

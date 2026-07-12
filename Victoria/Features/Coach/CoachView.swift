@@ -452,9 +452,9 @@ struct CoachView: View {
         sendTrigger += 1
 
         // Clear any stale error/banner and the draft. Resetting the missing-key banner
-        // here is essential: a fresh send re-creates AnthropicClient(), which re-reads the
-        // Keychain — so if the user has since saved a key in Settings, this attempt should
-        // try again rather than stay stuck on the old "add your key" state.
+        // here is essential: a fresh send re-creates the provider client, which re-reads
+        // the Keychain — so if the user has since saved a key in Settings, this attempt
+        // should try again rather than stay stuck on the old "add your key" state.
         errorBanner = nil
         showMissingKeyBanner = false
         // A brand-new message supersedes any unanswered tool proposal.
@@ -698,8 +698,12 @@ struct CoachView: View {
                                                    sleep: sleepEntries, detected: detectedWorkouts,
                                                    vitals: vitalsEntries,
                                                    memory: coachMemory(), plan: CoachPlan.current(in: context))
-        // Once we've chained enough tools, stop offering them so the model must finalize.
-        let tools = depth >= Self.maxToolDepth ? [] : CoachTools.schemas(for: profile)
+        // Once we've chained enough tools, forbid further calls so the model must finalize.
+        // The schemas STAY in the request — history contains tool blocks, and the API
+        // requires the tools parameter whenever they appear — but tool_choice "none"
+        // stops another call.
+        let tools = CoachTools.schemas(for: profile)
+        let forbidToolUse = depth >= Self.maxToolDepth
 
         isSending = true
         Task {
@@ -709,7 +713,8 @@ struct CoachView: View {
                 // common case is a plain warm reply.
                 let turn = try await client.chatWithTools(system: systemParts.volatile,
                                                           messages: continued, tools: tools,
-                                                          cachedSystemPrefix: systemParts.stable)
+                                                          cachedSystemPrefix: systemParts.stable,
+                                                          forbidToolUse: forbidToolUse)
                 await MainActor.run { handle(turn: turn, history: continued, depth: depth) }
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {

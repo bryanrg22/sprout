@@ -224,8 +224,7 @@ enum ChecklistPlanService {
     /// cleanly anyway), and `.badResponse` / `.decoding` on transport / parse failures. The
     /// CARD never lets this throw past it — it catches everything and keeps `fallback()`.
     ///
-    /// Forced tool use is Anthropic-only in this app (same as `FoodSuggestionService`), so we
-    /// construct `AnthropicClient` directly rather than via the cross-provider factory.
+    /// Provider-aware: forced tool use runs on either vendor via `AIClient.makeFull()`.
     @MainActor
     static func make(profile: UserProfile,
                      foods: [FoodEntry],
