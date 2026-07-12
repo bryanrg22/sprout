@@ -43,11 +43,11 @@ The trick that keeps this cheap to maintain: the app speaks **one internal wire 
 
 | Tier | Anthropic | OpenAI | What runs on it | Why |
 |---|---|---|---|---|
-| **Cheap/fast** | Haiku 4.5 | gpt-4.1-mini | Daily brief polish, insight phrasing, weekly reflection, onboarding note, memory folding | Short warm rewrites of facts the app already computed — no reasoning needed |
-| **Strong** | Sonnet 4.6 | gpt-4.1 | Vita chat + tools, meal-photo vision, checklist, quick prompts | Conversation quality and tool-call reliability matter here |
-| **Heavy (rare)** | Opus 4.8 | gpt-5.5 | The one-time adaptive plan build/review + live web-search research | Runs a handful of times *ever* per user — worth the tokens |
+| **Cheap/fast** | Haiku 4.5 | gpt-4.1-mini *(deliberately non-reasoning)* | Daily brief polish, insight phrasing, weekly reflection, onboarding note, memory folding | Rewording precomputed facts needs zero reasoning — a reasoning mini would burn hidden thinking tokens inside 80–420-token budgets |
+| **Strong** | Sonnet 5 | gpt-5.4 *(pinned to low reasoning effort)* | Vita chat + tools, meal-photo vision, checklist, quick prompts | The $2.50–3 workhorse class; upgraded the moment newer generations hit price parity |
+| **Heavy (rare)** | Opus 4.8 | gpt-5.5 | The one-time adaptive plan build/review + live web-search research | Runs a handful of times *ever* per user — worth the tokens. The frontier-plus tiers (Fable 5, preview-gated GPT-5.6 Sol) were evaluated and rejected |
 
-The expensive model is reserved for the feature invoked a few times per month; the model invoked many times per day is the cheap one. Users can override any model string in Settings without a rebuild.
+The expensive model is reserved for the feature invoked a few times per month; the model invoked many times per day is the cheap one. Users can override any model string in Settings without a rebuild. **Every choice here has a written defense with rejected alternatives and standing revisit triggers: [docs/MODEL_CHOICES.md](docs/MODEL_CHOICES.md).**
 
 ### Cost engineering (the part that makes it shippable)
 

@@ -56,6 +56,7 @@ struct OpenAIClient: LLMClient {
         ]
         // o-series/reasoning models reject `max_tokens` and require `max_completion_tokens`.
         body[Self.tokenParam(for: model)] = maxTokens
+        if let effort = Self.reasoningEffort(for: model) { body["reasoning_effort"] = effort }
 
         let json = try await send(body)
         guard let choices = json["choices"] as? [[String: Any]],
@@ -76,11 +77,18 @@ struct OpenAIClient: LLMClient {
     /// OpenAI's own message (e.g. "Incorrect API key provided") on a bad key.
     func validate() async throws {
         let model = AIProvider.openai.defaultCoachModel
-        _ = try await send([
+        var body: [String: Any] = [
             "model": model,
-            Self.tokenParam(for: model): 1,
             "messages": [["role": "user", "content": "ping"]],
-        ])
+        ]
+        // Reasoning models (gpt-5.x) think BEFORE they speak, and thinking counts
+        // against max_completion_tokens — a 1-token cap fails with a max_tokens error
+        // even when auth and model access are fine (caught live in the sim). Give a
+        // small real budget there; any 2xx proves the key, which is all this checks.
+        let budget = Self.reasoningEffort(for: model) == nil ? 1 : 128
+        body[Self.tokenParam(for: model)] = budget
+        if let effort = Self.reasoningEffort(for: model) { body["reasoning_effort"] = effort }
+        _ = try await send(body)
     }
 
     /// OpenAI's reasoning models (o-series and the gpt-5 family) reject `max_tokens`
@@ -91,6 +99,18 @@ struct OpenAIClient: LLMClient {
         let m = model.lowercased()
         let isReasoning = ["o1", "o3", "o4", "o5", "gpt-5"].contains { m.hasPrefix($0) }
         return isReasoning ? "max_completion_tokens" : "max_tokens"
+    }
+
+    /// Reasoning effort for gpt-5-family models on Chat Completions, nil for
+    /// non-reasoning models. Pinned to LOW everywhere by design: on reasoning models
+    /// the hidden thinking tokens bill as output AND count against
+    /// `max_completion_tokens`, so unbounded effort inside our tight per-feature
+    /// budgets (80–2,200 tokens) could spend the whole budget before writing a word.
+    /// A consumer chat turn ("log my water") doesn't need deep deliberation — and the
+    /// one task that does (the plan) earns its quality from curated context + web
+    /// grounding, not from thinking harder about a small prompt.
+    static func reasoningEffort(for model: String) -> String? {
+        model.lowercased().hasPrefix("gpt-5") ? "low" : nil
     }
 
     // MARK: - Web-search-grounded research (the heavy plan build only)
@@ -216,6 +236,7 @@ extension OpenAIClient: ToolCapableClient {
 
         var body: [String: Any] = ["model": model, "messages": wire]
         body[Self.tokenParam(for: model)] = maxTokens
+        if let effort = Self.reasoningEffort(for: model) { body["reasoning_effort"] = effort }
         if !tools.isEmpty { body["tools"] = Self.openAITools(tools) }
         if forbidToolUse { body["tool_choice"] = "none" }   // depth cap — finalize in prose
         // Cache routing: OpenAI load-balances requests across backends, and each backend
@@ -253,6 +274,7 @@ extension OpenAIClient: ToolCapableClient {
             "prompt_cache_key": "structured-\(toolName)",
         ]
         body[Self.tokenParam(for: model)] = maxTokens
+        if let effort = Self.reasoningEffort(for: model) { body["reasoning_effort"] = effort }
 
         let json = try await send(body)
         guard let input = try Self.parseToolTurn(json).toolUse?.input else {
