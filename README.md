@@ -1,18 +1,61 @@
-# 🌱 Sprout
+# 🌱 Sprout – *An AI Health Coach That Actually Knows You*
 
-**A warm, AI-coached health companion for iOS — and a working case study in doing consumer AI *right*: the correct model for each job, aggressive cost engineering, real tool use with safety rails, and graceful degradation everywhere.**
+<div align="center">
 
-Built native in SwiftUI + SwiftData for a real person (my friend Victoria — and now me), running daily on real Fitbit data. Not a demo: every AI surface below is live, unit-tested, and was verified end-to-end against both the Anthropic and OpenAI production APIs.
+[![Swift](https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
+[![SwiftUI](https://img.shields.io/badge/SwiftUI-0071e3?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
+[![SwiftData](https://img.shields.io/badge/SwiftData-8e44ad?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/swiftdata)
+[![Claude](https://img.shields.io/badge/Claude-d97757?style=flat-square&logo=anthropic&logoColor=white)](https://www.anthropic.com)
+[![OpenAI](https://img.shields.io/badge/GPT--5.6-412991?style=flat-square&logo=openai&logoColor=white)](https://openai.com)
+[![Tests](https://img.shields.io/badge/tests-443%20passing-2f7d4f?style=flat-square)]()
+[![BYOK](https://img.shields.io/badge/keys-bring%20your%20own-555?style=flat-square)]()
+
+</div>
+
+---
+
+> **A warm, AI-coached health companion for iOS — and a working case study in doing consumer AI *right*: the correct model for each job, aggressive cost engineering, real tool use with safety rails, and graceful degradation everywhere.**
+
+Built native in SwiftUI + SwiftData for a real person (my friend Victoria — and now me), running daily on real Fitbit data. Not a demo: every AI surface below is live, unit-tested, and verified end-to-end against both the Anthropic and OpenAI production APIs.
+
+---
+
+## System Architecture
+
+<img src="docs/architecture.svg" alt="System architecture diagram" width="900"/>
+
+---
+
+## Table of Contents
+
+* [What is Sprout?](#what-is-sprout)
+* [The AI System](#the-ai-system)
+  * [One abstraction, two providers](#one-abstraction-two-providers)
+  * [Right-sized models (the tiering)](#right-sized-models-the-tiering)
+  * [Cost engineering](#cost-engineering-the-part-that-makes-it-shippable)
+  * [Tool use with safety rails](#tool-use-with-safety-rails)
+  * [Data → context → coaching](#reading-the-body-data--context--coaching)
+* [The Data Platform](#the-data-platform)
+* [Verification Culture](#verification-culture)
+* [How This Compares to the Industry](#how-this-compares-to-the-industry)
+* [Project Structure](#project-structure)
+* [Getting Started (Dev)](#getting-started-dev)
+
+---
+
+## What is Sprout?
 
 | Today | AI Coach with tool use | Trend + AI plan | AI-personalized checklist |
 |---|---|---|---|
 | ![Today dashboard](docs/screenshots/today-dashboard.png) | ![Vita executing a tool call](docs/screenshots/vita-tool-call.png) | ![Progress trend](docs/screenshots/progress-trend.png) | ![AI checklist](docs/screenshots/ai-checklist.png) |
 
-> The middle screenshot is the interesting one: *"Please log 2 bottles of water for me"* → the model emits a **function call**, the app validates + applies it to the local store (with undo), returns a tool result, and the model confirms — a full agentic round-trip inside a consumer chat UI. Works identically on Claude and GPT.
+> The second screenshot is the interesting one: *"Please log 2 bottles of water for me"* → the model emits a **function call**, the app validates + applies it to the local store (with undo), returns a tool result, and the model confirms — a full agentic round-trip inside a consumer chat UI. Works identically on Claude and GPT.
+
+**Sprout** is a weight-loss / healthy-habits companion built around **Vita**, an AI coach that reads the user's real data (food, water, weight trend, Fitbit sleep + recovery, workouts, even timezone changes) and acts on it through validated tools. It celebrates comebacks instead of shaming streaks, writes one warm proactive note per day, and degrades gracefully at every layer — no API key, no tracker, no iCloud? Still a complete app.
 
 ---
 
-## The AI system
+## The AI System
 
 **Design stance:** an LLM is a component, not a product. Every feature below was designed backwards from *"what's the cheapest thing that does this job honestly?"* — templates first, small models second, big models only where they earn it, and a working fallback when there's no key or no network.
 
@@ -99,7 +142,7 @@ The AI is only as good as what it can see. Vita's context window gets a compact,
 
 ---
 
-## The data platform
+## The Data Platform
 
 ```mermaid
 flowchart TD
@@ -128,14 +171,14 @@ flowchart TD
 
 ---
 
-## Verification culture
+## Verification Culture
 
 - **423 unit tests** — wire-format fixtures for both providers, the RFC 7636 PKCE test vector, timezone-crossing sleep bucketing, idempotent-merge integration tests against real SwiftData stores, and copy-contract tests (the recovery signal's own test once caught the word "medical" in coach copy and failed the build).
 - **Live end-to-end, both vendors** — chat, tool calls, and data persistence verified against production APIs; results cross-checked three ways: UI screenshots, direct SQLite inspection of the store (zero duplicate rows after concurrent syncs), and the on-device diagnostics log.
 - **Field diagnostics** — tap the version number 7× for a shareable log of every AI call (with token counts), sync outcome, and lifecycle event. Several real bugs in this repo were found by reading it.
 - **Adversarial review loop** — independent review passes over every major feature; findings get fixed *with* regression tests (see the git history: the launch-race, cache-shard, and provider-parity fixes all landed with tests pinning them).
 
-## How this compares to the industry
+## How This Compares to the Industry
 
 | Pattern | Who else does it | Here |
 |---|---|---|
@@ -145,7 +188,7 @@ flowchart TD
 | Model routing by task complexity | [Standard cost-optimization practice](https://www.truefoundry.com/blog/llm-cost-optimization) (cache → route → compress) | Three explicit tiers per provider; heavy tier gated to a rare feature |
 | Prompt caching | Anthropic/OpenAI native | Both: explicit breakpoints on Anthropic, shard-routing keys on OpenAI — with on-device logs proving hit rates |
 
-## Project map
+## Project Structure
 
 ```
 Victoria/
@@ -166,7 +209,7 @@ Victoria/
 └── docs/                 # screenshots, deep-dives, GOOGLE_HEALTH_SETUP.md
 ```
 
-## Running it yourself
+## Getting Started (Dev)
 
 Anyone can clone and run this — there's no server to stand up and no secrets in the repo (AI is bring-your-own-key).
 
