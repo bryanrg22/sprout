@@ -16,7 +16,7 @@
 
 > **A warm, AI-coached health companion for iOS — and a working case study in doing consumer AI *right*: the correct model for each job, aggressive cost engineering, real tool use with safety rails, and graceful degradation everywhere.**
 
-Built native in SwiftUI + SwiftData for a real person (my friend Victoria — and now me), running daily on real Fitbit data. Not a demo: every AI surface below is live, unit-tested, and verified end-to-end against both the Anthropic and OpenAI production APIs.
+Built native in SwiftUI + SwiftData as my own daily-driver health app, running every day on my real Fitbit data. Not a demo: every AI surface below is live, unit-tested, and verified end-to-end against both the Anthropic and OpenAI production APIs.
 
 ---
 
@@ -159,6 +159,10 @@ flowchart TD
     SD --> CK2[CloudKit public DB<br/>buddy sync]
 ```
 
+| Fitbit, connected direct | Real sleep + recovery, same night |
+|---|---|
+| ![Fitbit via Google Health, connected](docs/screenshots/fitbit-connect.png) | ![Sleep & recovery with real Fitbit data](docs/screenshots/sleep-recovery.png) |
+
 **Direct Google Health integration** — OAuth 2.0 with PKCE in `ASWebAuthenticationSession`, tokens Keychain-only, single-flight refresh, `invalid_grant` auto-disconnect, and a zombie-token guard (a disconnect during an in-flight refresh can't resurrect the connection). The wire layer was built from Google's own discovery document, and its quirks — int64s as JSON strings, `"1234s"` durations, civil-time filter grammar — are pinned by tests so a parser regression is caught in CI, not on a phone.
 
 **Idempotency as a contract** — every ingest path funnels through pure, unit-tested merge functions: re-running any sync N times produces identical rows (proven by a two-pass integration test against a real store). Workouts arriving through *both* pipes are deduped symmetrically by time-window, whichever pipe delivered first.
@@ -205,7 +209,7 @@ Victoria/
 │   ├── GoogleHealth/     # OAuth PKCE + REST client + sync orchestration
 │   ├── DailyBriefService / DailyInsightEngine / RecoverySignal / CoachMemoryService
 │   └── HealthKit* / StreakCalculator / Diagnostics …
-├── VictoriaTests/        # 423 tests
+├── VictoriaTests/        # 443 tests
 └── docs/                 # screenshots, deep-dives, GOOGLE_HEALTH_SETUP.md
 ```
 
@@ -225,4 +229,4 @@ Anyone can clone and run this — there's no server to stand up and no secrets i
 
 ---
 
-*Built by Bryan Ramirez-Gonzalez as a daily-use app for a real person first, and a demonstration of production AI engineering second. AI pair-engineering was used heavily in development — with every change gated behind the test suite and live verification, which is rather the point.*
+*Built by Bryan Ramirez-Gonzalez as a daily-use app for myself first, and a demonstration of production AI engineering second. AI pair-engineering was used heavily in development — with every change gated behind the test suite and live verification, which is rather the point.*

@@ -163,10 +163,11 @@ enum DemoSeed {
         // weights so the detail's volume hero and the weekly stats card have something to show.
         seedWorkouts(context, today: today, gaining: gaining)
 
-        // Coach conversation
+        // Coach conversation — variant-aware (name AND the trend direction must match
+        // the seeded profile: Bryan's demo is a lean gain, Victoria's is a loss).
         context.insert(ChatMessage(
             role: "assistant",
-            content: "Hi Victoria! I'm Vita, your coach 💚 I'm here whenever you want to check in, ask a question, or just need a little encouragement.",
+            content: "Hi \(p.name)! I'm Vita, your coach 💚 I'm here whenever you want to check in, ask a question, or just need a little encouragement.",
             createdAt: calendar.date(byAdding: .minute, value: -6, to: .now) ?? .now,
             isSystemSeed: true))
         context.insert(ChatMessage(
@@ -175,7 +176,9 @@ enum DemoSeed {
             createdAt: calendar.date(byAdding: .minute, value: -4, to: .now) ?? .now))
         context.insert(ChatMessage(
             role: "assistant",
-            content: "Really well! Your trend is down about a pound this week, and you've logged several days in a row. That consistency is exactly what makes it stick — keep being kind to yourself 💚",
+            content: gaining
+                ? "Really well! Your trend is up about a pound this week — right on pace for a lean gain — and you've logged several days in a row. That consistency is exactly what makes it stick 💪"
+                : "Really well! Your trend is down about a pound this week, and you've logged several days in a row. That consistency is exactly what makes it stick — keep being kind to yourself 💚",
             createdAt: calendar.date(byAdding: .minute, value: -3, to: .now) ?? .now))
 
         try? context.save()
