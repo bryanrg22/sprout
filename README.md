@@ -84,6 +84,8 @@ The trick that keeps this cheap to maintain: the app speaks **one internal wire 
 
 ### Right-sized models (the tiering)
 
+<img src="docs/technique_tiering.svg" alt="Model tiering diagram" width="900"/>
+
 | Tier | Anthropic | OpenAI | What runs on it | Why |
 |---|---|---|---|---|
 | **Cheap/fast** | Haiku 4.5 | gpt-4.1-mini *(deliberately non-reasoning)* | Daily brief polish, insight phrasing, weekly reflection, onboarding note, memory folding | Rewording precomputed facts needs zero reasoning — a reasoning mini would burn hidden thinking tokens inside 80–420-token budgets |
@@ -93,6 +95,8 @@ The trick that keeps this cheap to maintain: the app speaks **one internal wire 
 The expensive model is reserved for the feature invoked a few times per month; the model invoked many times per day is the cheap one. Users can override any model string in Settings without a rebuild. **Every choice here has a written defense with rejected alternatives and standing revisit triggers: [docs/MODEL_CHOICES.md](docs/MODEL_CHOICES.md).**
 
 ### Cost engineering (the part that makes it shippable)
+
+<img src="docs/technique_cost.svg" alt="Cost engineering diagram" width="900"/>
 
 | Technique | Where | Effect |
 |---|---|---|
@@ -106,6 +110,8 @@ The expensive model is reserved for the feature invoked a few times per month; t
 | **Token observability** | Every call | `in / out / cacheRead / cacheWrite` logged per request to on-device diagnostics — "what does a day of AI cost" is answerable from the phone. This observability is literally how the cache-shard bug above was found. |
 
 ### Tool use with safety rails
+
+<img src="docs/agent_loop.svg" alt="Tool loop with safety rails diagram" width="900"/>
 
 Vita has a real toolbelt (log food/water/weight/workouts, edit entries, change goals, remember facts, adjust the plan). The loop is engineered around trust:
 
