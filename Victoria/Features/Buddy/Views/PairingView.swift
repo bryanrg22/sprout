@@ -5,6 +5,9 @@ import SwiftUI
 /// (never a scary alert — just a gentle inline banner from the view model).
 struct PairingView: View {
     @Bindable var model: BuddyViewModel
+    /// Whether "Share my full stats with your buddy" is on, so this screen says what a
+    /// buddy will actually see.
+    var sharesFullStats: Bool = false
     /// So a successful link can pop this sheet/screen back to the hub.
     var onLinked: () -> Void = {}
 
@@ -19,6 +22,7 @@ struct PairingView: View {
         ScrollView {
             VStack(spacing: Theme.Space.lg) {
                 intro
+                if let problem = model.accountProblem { accountNotice(problem) }
                 myCodeCard
                 connector
                 enterCodeCard
@@ -58,6 +62,36 @@ struct PairingView: View {
                 try? await Task.sleep(for: .seconds(4))
             }
         }
+        // A failure stays on screen until the code is changed: it has to be read.
+        .onChange(of: enteredCode) { _, _ in model.clearLinkError() }
+        #if DEBUG
+        .task {
+            // DEBUG: `--demo-buddy-ui pairing-<wrong|own|claimed|shape>` types that code and
+            // taps Connect, so each failure can be looked at without tapping.
+            guard case .pairing(let attempt)? = BuddyDemoUI.requested, enteredCode.isEmpty else { return }
+            enteredCode = attempt.code(mine: model.myPairingCode)
+            // Let the edit settle first: changing the text clears the last failure.
+            try? await Task.sleep(for: .milliseconds(400))
+            await model.link(usingCode: enteredCode)
+        }
+        #endif
+    }
+
+    /// Signed out of iCloud: said at the top for as long as it is true, since neither
+    /// showing a code nor typing one can work until the user signs in.
+    private func accountNotice(_ text: String) -> some View {
+        Label {
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(Theme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: "person.icloud")
+                .foregroundStyle(Theme.warning)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.Space.md)
+        .background(Theme.warning.opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
     }
 
     // MARK: Intro
@@ -175,8 +209,23 @@ struct PairingView: View {
                 .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous)
-                        .strokeBorder(Theme.divider, lineWidth: 1)
+                        .strokeBorder(model.linkError == nil ? Theme.divider : Theme.warning, lineWidth: 1)
                 )
+
+            // Why the last attempt failed, and what to do. Each failure has its own sentence
+            // (`BuddyViewModel.message(for:)`); none of them says "connected".
+            if let error = model.linkError {
+                Label {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .foregroundStyle(Theme.warning)
+                }
+                .accessibilityElement(children: .combine)
+            }
 
             Button { connect() } label: {
                 HStack(spacing: 8) {
@@ -188,9 +237,12 @@ struct PairingView: View {
             .disabled(model.isLinking || enteredCode.trimmingCharacters(in: .whitespaces).isEmpty)
             .opacity(enteredCode.trimmingCharacters(in: .whitespaces).isEmpty ? 0.6 : 1)
 
-            Text("No pressure — you can connect anytime. Your buddy only ever sees encouraging signals, never your weight or calories.")
+            Text(sharesFullStats
+                 ? "Your buddy will see your streak, steps, water and workouts. \"Share my full stats\" is on, so they will also see your weight trend, calories, macros and what you ate today. You can turn that off in Settings."
+                 : "Your buddy will see your streak, steps, water and workouts. They won't see your weight, calories or food unless you turn on \"Share my full stats\" in Settings.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             // Escape hatch: two failed attempts usually means connection trouble (iCloud,
             // network, backend), not typing. Offer the real diagnosis instead of an endless
@@ -281,6 +333,45 @@ struct BuddyBannerView: View {
         .accessibilityAddTraits(.isStaticText)
     }
 }
+
+#if DEBUG
+/// DEBUG: `--demo-buddy-ui <unpair|unpair-confirmed|pairing-wrong|pairing-own|pairing-claimed|pairing-shape>`
+/// puts a Buddy screen straight into a state that otherwise takes taps to reach.
+enum BuddyDemoUI: Equatable {
+    /// A pairing attempt that fails, and why.
+    enum Attempt: String {
+        case wrong, own, claimed, shape
+
+        func code(mine: String) -> String {
+            switch self {
+            case .wrong:   return "VITA-9999"
+            case .own:     return mine
+            case .claimed: return LocalMockSyncService.claimedCode
+            case .shape:   return "VITA-10OL"
+            }
+        }
+    }
+
+    /// The unpair confirmation, open.
+    case unpair
+    /// The confirmation's Unpair button, pressed.
+    case unpairConfirmed
+    /// The pairing screen after a failed attempt.
+    case pairing(Attempt)
+
+    static var requested: BuddyDemoUI? {
+        let arguments = CommandLine.arguments
+        guard let i = arguments.firstIndex(of: "--demo-buddy-ui"), i + 1 < arguments.count else { return nil }
+        let value = arguments[i + 1]
+        if value == "unpair" { return .unpair }
+        if value == "unpair-confirmed" { return .unpairConfirmed }
+        if value.hasPrefix("pairing-"), let attempt = Attempt(rawValue: String(value.dropFirst("pairing-".count))) {
+            return .pairing(attempt)
+        }
+        return nil
+    }
+}
+#endif
 
 #Preview("Pairing") {
     NavigationStack {
