@@ -19,13 +19,13 @@ Last updated: 2026-11-22.
 |---|---|---|
 | G1 | Every model default is chosen by measurement | in progress |
 | G2 | CI is green and stays the gate | met on the pull request (4 of 4 jobs, first run); to be re-checked on `main` |
-| G3 | A widget never shows anyone else's data, or yesterday's as today's | in progress |
+| G3 | A widget never shows anyone else's data, or yesterday's as today's | blocked: the owner restarts his phone on a build and looks at the widget before unlocking |
 | G4 | The store returns what was put in | in progress |
 | G5 | Changing a setting changes everything that depends on it | open |
 | G6 | No step breaks when done out of order, repeated, or skipped | open |
 | G7 | Prompts and copy fit whoever is using the app | open |
 | G8 | A new person gets their own pixel character from a photo | open |
-| G9 | Home and Gym as two modes, switched at the top | open |
+| G9 | Home and Gym as two modes, switched at the top | blocked: the owner reviews the two screenshots and taps the switch on a build |
 | G10 | Nutrition is as specific as it can honestly be | open |
 | G11 | The open defects are closed | open |
 | G12 | Competitions | todo (spec needed) |
@@ -84,8 +84,8 @@ in `~/dev/GitHub/sprout`, switch to auto mode so the turns run unattended, and p
   "Open Sprout to refresh" state with no name and no numbers; day totals reset at
   midnight). **And on the owner's phone:** restart it, look at the widget before unlocking
   and after: it never shows the sample.
-- **Status:** in progress. Code and tests written; the phone check needs a build on the
-  owner's device.
+- **Status:** fixed and tested (EVAL_REPORT 11, 13 tests). Blocked on the owner for the
+  phone check, which needs a build on his device.
 
 ## G4. The store returns what was put in ("SQL verification")
 
@@ -170,7 +170,10 @@ Prerequisite for G8 and for inviting a third person.
   workout screens; the choice survives relaunch; every screen reachable before is still
   reachable; screenshots of both modes in both themes reviewed by the owner; the UI smoke
   flows of G6 pass through the new navigation.
-- **Status:** open.
+- **Status:** built (EVAL_REPORT 12); rules tested; rendering seen in the simulator in the
+  dark theme. Blocked on the owner: look at `docs/screenshots/review/mode-home.png` and
+  `mode-gym.png`, and tap the switch on a build. Still to do after that: the light theme,
+  and the UI smoke flows (G6).
 
 ## G10. Nutrition is as specific as it can honestly be
 

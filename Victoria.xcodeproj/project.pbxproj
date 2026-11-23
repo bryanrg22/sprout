@@ -56,6 +56,7 @@
 		37897EE96533112AB82B6ED6 /* PhotoFoodFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FF06FE06BE875214AE7357 /* PhotoFoodFlow.swift */; };
 		3817AA5643EB1E437C7E91A9 /* BuddyDayCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AF2CA6E00BE01F9EEE964F7 /* BuddyDayCard.swift */; };
 		3918B28C2A74EF74C177C39D /* SmartSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F22E288437245309114CFE5 /* SmartSuggestionsView.swift */; };
+		396164DC3252BBEC42478466 /* AppMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D18F4A2ACC99BFFE80A156A /* AppMode.swift */; };
 		39F898387131FB8BB3653D98 /* BuddySync.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5EB85BEF89BB41ACB11DBC6 /* BuddySync.swift */; };
 		3B2F5DA21A85078C1181B8A7 /* FoodDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA48B3FF4FB6A9A5B8F2ECE5 /* FoodDetailView.swift */; };
 		3B483CDE98120964F0F2075A /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE29D613778CDEAD930E5730 /* NotificationService.swift */; };
@@ -124,6 +125,7 @@
 		8A847421AC571A63B55C8036 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805A92CB799597934FD6D76A /* Components.swift */; };
 		8CC77AD74701F3568FB45A0E /* StreakCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BD40CF3E700F6319DB13260 /* StreakCalculatorTests.swift */; };
 		8CDE36BBE85EE02189AE63E8 /* CoachContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A144C6BA1EBCBEB134C5DA95 /* CoachContext.swift */; };
+		8D4DE46BBB96FA4705B145B4 /* AppModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B499D8A334F7A5353E87A068 /* AppModeTests.swift */; };
 		90E55D047EC06D7D265CB733 /* Nudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47BFD3BF8F59A358261B9D67 /* Nudge.swift */; };
 		91A53CCD74A960A406720A4C /* TravelSignal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01237BF5090CC34748AC55DF /* TravelSignal.swift */; };
 		92264D535D59D42D672F0370 /* CompanionPhrases.swift in Sources */ = {isa = PBXBuildFile; fileRef = D291CE0399A8EAA34FA9E4BB /* CompanionPhrases.swift */; };
@@ -352,6 +354,7 @@
 		7A2A0E45CA2A4CFE08936DB2 /* DataExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportTests.swift; sourceTree = "<group>"; };
 		7AF007C115120AD8D1EE5AC7 /* RunningAppCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningAppCard.swift; sourceTree = "<group>"; };
 		7B8714D342ACA208A6995DAE /* FoodLogDay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogDay.swift; sourceTree = "<group>"; };
+		7D18F4A2ACC99BFFE80A156A /* AppMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMode.swift; sourceTree = "<group>"; };
 		805A92CB799597934FD6D76A /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		80CDA172BA3E5A8CDAD10BC1 /* MachineCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachineCatalog.swift; sourceTree = "<group>"; };
 		81B3DCFF9580D0B3EE5FC9CD /* HealthKitSteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitSteps.swift; sourceTree = "<group>"; };
@@ -396,6 +399,7 @@
 		B24ACD5E09D2A5871CA4EC80 /* TravelSignalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelSignalTests.swift; sourceTree = "<group>"; };
 		B2DEF84CBE203E37927DE00D /* NutritionSanity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionSanity.swift; sourceTree = "<group>"; };
 		B3FE3497819D52D2DDCEBC74 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		B499D8A334F7A5353E87A068 /* AppModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModeTests.swift; sourceTree = "<group>"; };
 		B4DA8544AACE173A4B22525C /* StepsBackfillTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepsBackfillTests.swift; sourceTree = "<group>"; };
 		B5EB85BEF89BB41ACB11DBC6 /* BuddySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddySync.swift; sourceTree = "<group>"; };
 		B6920F4EA9E53FD782B32FA4 /* WorkoutEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutEntry.swift; sourceTree = "<group>"; };
@@ -463,6 +467,7 @@
 			isa = PBXGroup;
 			children = (
 				800A93C9B4C89E2836D0F3C4 /* Achievements */,
+				D9951375584A7763358683CC /* AppMode */,
 				B1DED5187A8E55EF172DE4AA /* Buddy */,
 				3B1BAB2FE65A7787B993A1EA /* Checklist */,
 				2361D15970D51A9D981C520C /* Coach */,
@@ -698,6 +703,7 @@
 				FFE2EF8BF2793EC41213A3F7 /* AdaptivePlanTests.swift */,
 				2CB20C4AE3EA68A9F2DCD524 /* AIRuntimeTests.swift */,
 				407820F82E16B7C15CC60B70 /* AITaskModelTests.swift */,
+				B499D8A334F7A5353E87A068 /* AppModeTests.swift */,
 				C72071358EB27D8117AE6B80 /* BuddyLinkPersistenceTests.swift */,
 				E3F29DF225A50435F7C8D70B /* BuddyMilestonesTests.swift */,
 				C0E4CDE039B26F00BB51C618 /* ChecklistPlanTests.swift */,
@@ -905,6 +911,14 @@
 				45155ED87597591E56256E1F /* OnboardingView.swift */,
 			);
 			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		D9951375584A7763358683CC /* AppMode */ = {
+			isa = PBXGroup;
+			children = (
+				7D18F4A2ACC99BFFE80A156A /* AppMode.swift */,
+			);
+			path = AppMode;
 			sourceTree = "<group>";
 		};
 		DF04AD6F67B349AD6640BDDA /* Support */ = {
@@ -1130,6 +1144,7 @@
 				0556DE2F936E8140B4D4F9F9 /* AnthropicClient.swift in Sources */,
 				F0A856B463156AE57288E1CF /* AppDelegate.swift in Sources */,
 				BEA1711039178AFB45F2207A /* AppIconPickerView.swift in Sources */,
+				396164DC3252BBEC42478466 /* AppMode.swift in Sources */,
 				D78C7A75B68145701B14A1DB /* AskVita.swift in Sources */,
 				9386D2360A86BF815E2F1CD5 /* BuddyAutoPublisher.swift in Sources */,
 				14648DDF43EE25841D5124A6 /* BuddyChallengeCard.swift in Sources */,
@@ -1277,6 +1292,7 @@
 				484488610F7BD47A460E22AF /* AIRuntimeTests.swift in Sources */,
 				17C6B5C73F026B7FF2F850FF /* AITaskModelTests.swift in Sources */,
 				70D2A089E581BF037263EE91 /* AdaptivePlanTests.swift in Sources */,
+				8D4DE46BBB96FA4705B145B4 /* AppModeTests.swift in Sources */,
 				2233353CB23CFC345CCE8D34 /* BuddyLinkPersistenceTests.swift in Sources */,
 				C0F519E7842E641DA4FB108D /* BuddyMilestonesTests.swift in Sources */,
 				CDEC6AD7C5A3045065BBFC7B /* ChecklistPlanTests.swift in Sources */,
