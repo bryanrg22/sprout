@@ -86,7 +86,17 @@ struct CoachView: View {
 
     private var coachName: String { profile.coachName.isEmpty ? "Vita" : profile.coachName }
 
+    init(profile: UserProfile) {
+        self.profile = profile
+        #if DEBUG
+        ChatLoadProbe.markViewInit()
+        #endif
+    }
+
     var body: some View {
+        #if DEBUG
+        let _ = ChatLoadProbe.markFirstBody()
+        #endif
         NavigationStack {
             ZStack {
                 Theme.background.ignoresSafeArea()
@@ -214,6 +224,14 @@ struct CoachView: View {
                                        scrollToBottom(proxy)
                                    })
                             .id(message.id)
+                            #if DEBUG
+                            .onAppear {
+                                if message.id == messages.last?.id {
+                                    ChatLoadProbe.markNewestRowAppeared(rowsInStore: messages.count,
+                                                                        rowsLoaded: messages.count)
+                                }
+                            }
+                            #endif
                     }
                     if isSending {
                         TypingIndicator(coachName: coachName)
