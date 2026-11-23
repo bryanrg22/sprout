@@ -1476,3 +1476,40 @@ cannot be driven from a test because Core Data's event has no public initialiser
   own name and make their own character.
 
 **Spend:** $0.21. **Spend to date across every run: $21.85 over 10,926 attempts.**
+
+## 28. The week on Workouts: active days, every day tappable (2026-11-23)
+
+The owner: "it shows how many times you've had activities for a week, and then from there
+you can explore what you did the different days."
+
+**What was there:** a "This week" card that counted workouts logged in the app over the
+last 7 days, drew their minutes as bars, could not be tapped, could not go to another
+week, and disappeared in a week with nothing logged. Workouts that Apple Health or the
+tracker detected were not counted and were not shown anywhere on the page.
+
+**What it is now** (`ActivityWeek.swift`): the calendar week of the day being viewed
+(Sunday or Monday first, as the phone's calendar is set), always shown, with:
+- "N of 7 days active", where a day is active if it had any workout, logged or detected,
+  counted once however many it had;
+- seven days, each a button: tapping one opens that day below, and the day stepper and the
+  week stay in step; days after today are dimmed and cannot be tapped;
+- arrows to the previous and next week, stopping at the earliest workout or the day the
+  profile was made, whichever is older (it was the profile's day only, which hid imported
+  and back-dated workouts), and at this week;
+- one line for the week's logged workouts: count, minutes, weight lifted;
+- each day's page now lists the detected workouts too, read-only, with their source.
+
+**Verified:** 8 unit tests (the week's first day for both calendar settings, a day counted
+once with either source, workouts just after midnight and in the neighbouring weeks, today
+and future days, a week across the clock change, negative minutes, what VoiceOver says,
+the day identifier). A UI flow on the seeded profile, written to pass on any weekday:
+the card counts at least one active day, a tap on yesterday opens its logged workout and
+marks the day, four days ago shows "1 tracked" and opens the tracked workout with nothing
+logged, and the arrows come back to this week and no further. Seen in the simulator: 2 of 7
+this week, 3 of 7 the week before (a tracker-only day, a run and a gym day), and a
+Saturday holding a tracked walk and a logged gym session. Two things fixed from looking:
+the tracked-workout row was padded twice, and the back arrow was off because browsing
+stopped at the profile's creation day.
+
+**Not verified:** the light theme; the card with a large Dynamic Type size; months of
+history on a phone.
