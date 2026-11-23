@@ -27,7 +27,8 @@ enum DemoSeed {
         // Profile
         let gaining = isGainRequested
         let p = UserProfile()
-        p.name = gaining ? "Bryan" : "Victoria"
+        // Fictional names: the demo is in a public repository and in screenshots.
+        p.name = gaining ? "Alex" : "Jamie"
         p.sex = gaining ? .male : .female
         p.birthDate = calendar.date(byAdding: .year, value: -24, to: today) ?? today
         p.heightCm = gaining ? 178 : 165

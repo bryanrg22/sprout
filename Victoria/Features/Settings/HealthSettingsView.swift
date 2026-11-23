@@ -81,7 +81,7 @@ struct HealthSettingsView: View {
                 }
                 .disabled(isImporting || !HealthKitService.isAvailable)
             } footer: {
-                Text("Brings in weight entries from the last year that aren't already in Victoria.")
+                Text("Brings in weight entries from the last year that aren't already in Sprout.")
             }
 
             // MARK: Status / errors

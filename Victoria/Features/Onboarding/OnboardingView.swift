@@ -38,6 +38,9 @@ struct OnboardingView: View {
     @State private var personalNoteSeen = false
     /// "Choose one" under the sex picker, after Next was tapped without a choice.
     @State private var sexRequiredShown = false
+    /// Set by the first "Start my journey": a second tap before the screen changes (a double
+    /// tap) would otherwise insert a second starting weigh-in.
+    @State private var didFinish = false
 
     /// DEBUG: `--onboard-step N` jumps straight to a step for screenshots; 0 in normal use.
     static var initialStep: Int {
@@ -1641,6 +1644,7 @@ struct OnboardingView: View {
 
     private func finish() {
         // The pages can be swiped past, so the one required choice is checked here too.
+        guard !didFinish else { return }
         guard let sex else {
             sexRequiredShown = true
             if let about = index(of: .about) {
@@ -1648,6 +1652,7 @@ struct OnboardingView: View {
             }
             return
         }
+        didFinish = true
         startTrigger.toggle()
 
         let p = existing ?? UserProfile()
