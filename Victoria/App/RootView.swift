@@ -129,6 +129,9 @@ struct RootView: View {
     /// the per-day upsert on any overlapping day. Single-flight (see
     /// `trackerRefreshInFlight`); a caller that finds a pass in flight simply skips.
     private func refreshTrackerData(stepsDays: Int, days: Int) async {
+        // A `--ui-testing` launch runs on an in-memory store that must look the same every
+        // run: nothing is imported from the simulator's Apple Health or a connected tracker.
+        guard !UITestHooks.isActive else { return }
         guard !trackerRefreshInFlight else { return }
         trackerRefreshInFlight = true
         defer { trackerRefreshInFlight = false }
@@ -169,16 +172,16 @@ struct MainTabView: View {
         ZStack {
             TabView(selection: $selection) {
                 DashboardView(profile: profile)
-                    .tabItem { Label("Today", systemImage: "house.fill") }.tag(HomeTab.today.rawValue)
+                    .tabItem { Label("Today", systemImage: "house.fill").accessibilityIdentifier(AccessibilityID.Tab.today) }.tag(HomeTab.today.rawValue)
 
                 FoodLogView(profile: profile)
-                    .tabItem { Label("Nutrients", systemImage: "fork.knife") }.tag(HomeTab.nutrients.rawValue)
+                    .tabItem { Label("Nutrients", systemImage: "fork.knife").accessibilityIdentifier(AccessibilityID.Tab.nutrients) }.tag(HomeTab.nutrients.rawValue)
 
                 WeightView(profile: profile)
-                    .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(HomeTab.progress.rawValue)
+                    .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis").accessibilityIdentifier(AccessibilityID.Tab.progress) }.tag(HomeTab.progress.rawValue)
 
                 CoachView(profile: profile)
-                    .tabItem { Label(profile.coachName, systemImage: "sparkles") }.tag(HomeTab.coach.rawValue)
+                    .tabItem { Label(profile.coachName, systemImage: "sparkles").accessibilityIdentifier(AccessibilityID.Tab.coach) }.tag(HomeTab.coach.rawValue)
             }
             .opacity(mode == .home ? 1 : 0)
             .allowsHitTesting(mode == .home)

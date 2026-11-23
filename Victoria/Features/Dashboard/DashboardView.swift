@@ -176,6 +176,7 @@ struct DashboardView: View {
                 .padding(.bottom, 40)
             }
             .scrollIndicators(.hidden)
+            .accessibilityIdentifier(AccessibilityID.Today.root)
             .background(backdrop)
             .toolbar(.hidden, for: .navigationBar)
             .sensoryFeedback(.success, trigger: waterPulse)
@@ -412,6 +413,7 @@ struct DashboardView: View {
             .buttonStyle(.plain)
             .bouncyPress()
             .accessibilityLabel("Settings")
+            .accessibilityIdentifier(AccessibilityID.Today.settings)
     }
 
     private var avatarThumb: some View {
@@ -493,6 +495,7 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 11) {
                 heroRow("Goal", profile.calorieGoalText(weightLbs: basisWeight), Theme.brand, monospaced: true)
                 heroRow("Eaten", Int(consumed.rounded()), Theme.textSecondary)
+                    .accessibilityIdentifier(AccessibilityID.Today.caloriesEaten)
                 Divider().overlay(Theme.divider)
                 // Once fueled, a remaining number ("26 to go") contradicts "Reached",
                 // so we celebrate with a checkmark instead — and it gracefully avoids
@@ -614,6 +617,7 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Add one \(profile.waterContainerLabel) of water")
+                .accessibilityIdentifier(AccessibilityID.Today.waterAdd)
             }
             HStack(spacing: 12) {
                 ZStack {
@@ -628,9 +632,11 @@ struct DashboardView: View {
                         .font(.title3.weight(.bold)).monospacedDigit()
                         .contentTransition(.numericText())
                         .minimumScaleFactor(0.7).lineLimit(1)
+                        .accessibilityIdentifier(AccessibilityID.Today.waterCount)
                     Text(profile.waterText(waterToday, goalOz: waterGoal))
                         .font(.caption2).foregroundStyle(Theme.textSecondary)
                         .monospacedDigit().lineLimit(1)
+                        .accessibilityIdentifier(AccessibilityID.Today.waterAmount)
                 }
                 Spacer(minLength: 0)
             }

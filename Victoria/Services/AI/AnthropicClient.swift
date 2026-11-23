@@ -12,7 +12,7 @@ struct AnthropicClient {
 
     init() throws {
         // A scoped override (tests / evals) supplies its own key; the app reads the Keychain.
-        let k = AIRuntime.current?.apiKey ?? KeychainStore.apiKey()
+        let k = AIRuntime.effective?.apiKey ?? KeychainStore.apiKey()
         guard let k, !k.isEmpty else { throw AIConfig.AIError.missingKey }
         key = k
     }
