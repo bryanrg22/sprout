@@ -7,6 +7,16 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **Changing your goal changes your targets.** With a plan, switching between losing and
+  gaining left the old plan's calories in force. The plan's numbers now apply only to the
+  direction they were written for, and Settings says what a change does (EVAL_REPORT 16).
+- **Asking Vita to switch to kilograms can no longer corrupt your weights.** Kilograms
+  are not supported yet, and Vita now says so instead of relabelling pounds.
+- A key pasted after a reinstall is saved for the right provider.
+- Prompts no longer assume who you are: no "her", no weight-loss framing for someone gaining.
+- The daily brief is no longer thrown away when the model forgets a line break.
+- The food lookup no longer sends a personal email address with each request.
+
 - **The widget no longer shows someone else's numbers.** When it could not read your
   data (after a phone restart, before the first unlock) it drew a built-in sample profile
   as if it were yours. It now shows "Open Sprout to refresh" and retries in five minutes
@@ -30,6 +40,11 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **Your own character.** A new step in onboarding, and "Make my character" in More → You,
+  turns a photo into a pixel character. It needs an OpenAI key, asks before the photo is
+  sent, never keeps the photo, and falls back to a built-in character if anything goes
+  wrong (EVAL_REPORT 15). No real image has been generated yet.
+
 - **Home and Gym.** A switch at the top of Today and of Workouts moves between everyday
   tracking (Today, Nutrients, Progress, the coach) and the workout screens. The app
   reopens on whichever you left it on (EVAL_REPORT 12).
@@ -51,7 +66,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 560 unit tests (2 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- Tests: 443 → 756 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).
 - First live model comparison: ten models, three tasks, 3,636 graded attempts, $6.23

@@ -23,6 +23,9 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 11 | The widget that showed someone else's data | 2026-11-22 |
 | 12 | Home and Gym: two surfaces and the switch between them | 2026-11-22 |
 | 13 | The store returns what was put in: verification through the real store, and by SQL | 2026-11-22 |
+| 14 | Prompts for whoever is using the app, re-measured; a discarded rewrite explained | 2026-11-22 |
+| 15 | A character from a photo | 2026-11-22 |
+| 16 | Settings that change what depends on them: the plan, kilograms, and where a key goes | 2026-11-22 |
 
 ---
 
@@ -582,3 +585,115 @@ returns first, whatever its state (the case that can follow an iCloud restore, L
 HealthKit weight and today's-steps import, which need HealthKit; the screens' own filters,
 which are re-stated in the tests rather than called; whether the SQL totals match what
 the screens show (the script prints them; nobody compared them to the UI).
+
+## 14. Prompts for whoever is using the app, re-measured; a discarded rewrite explained (2026-11-22)
+
+Objective G7, finding A-1 of section 3. Every prompt, template and fallback that
+addressed one specific person ("her", "she tends to under-eat", "weight-loss buddy") now
+addresses the user in the second person or by the name passed in, and takes the goal
+direction from the profile through one `GoalFraming` rule: for a user who is losing,
+never push eating less; for a user who is gaining, never frame eating as excess. The
+no-guilt, no-moralising rules are kept. `PromptNeutralityTests` (21 tests) call the real
+prompt builders for both fixture users and fail on a gendered pronoun about the user, on
+loss-only framing, and on either name the app was first built around.
+
+**Still person-specific, found and not yet changed** (files other work was editing): the
+coach's tool descriptions and result strings in `CoachTools.swift`; three lines of
+onboarding copy in `OnboardingView.swift` that greet one person by name and sign off as
+another; a few Settings, Buddy-preview and widget strings; `DemoSeed` still seeds both
+names. G7 is therefore not met.
+
+**Re-measured, because two measured prompts changed** (`Evals/runs/20261123-071932-DailyBrief`,
+`20261123-072221-CoachToolChoice`; ten models, three repeats):
+
+- Coach tool choice: no model lost ground. Six score 100% (96–100): `claude-haiku-5-5`,
+  `claude-sonnet-5`, `claude-sonnet-5-5`, `gpt-6-luna`, `gpt-5.6-luna`, `gpt-5.6-terra`.
+- Daily brief: `gpt-6-luna` 39 of 39 again; the default stands. `claude-haiku-5-5` passed
+  36 of 39, failing one case ("your trend eased down") three times in three.
+
+**Why that case failed, and the fix.** The harness could not say: a rewrite the app's
+guardrail discards came back as nothing. `DailyBriefService.rejection(of:)` now names the
+reason, the device log records it, and the evaluation keeps the raw reply. The reason was
+not wording: the model wrote the headline and the body on one line, and the parser
+required a line break and threw the whole reply away. The same slip explained most of
+`gpt-4.1-mini`'s failures. `parse` now splits a one-line reply of two or more sentences
+at its first sentence (a single sentence is still not a brief; banned phrases are still
+rejected). Re-run on the four cases that had failed
+(`20261123-072939-DailyBrief`): 12 of 12 on each of `claude-haiku-5-5`, `gpt-6-luna` and
+`gpt-4.1-mini`. Twelve attempts per model is a confirmation of the mechanism, not a new
+pass rate; the full 13-case run has not been repeated since the parser change.
+
+The harness can now be limited to named cases (`SPROUT_EVAL_CASES`), which is how the one
+failure was chased for a few cents. **Measured spend to date: $8.96** over 5,199 attempts.
+
+## 15. A character from a photo (2026-11-22)
+
+Objective G8. A new person can have a pixel character drawn from a photo.
+
+**Researched** (`docs/avatar-generation.md`, sources there): OpenAI's image edit endpoint
+and its current models. Confirmed from the documentation: the endpoint, the `background`,
+`output_format`, `size` and `quality` values, where the image and the `usage` block are in
+the response, the `moderation_blocked` error code, and the token rates. **Not confirmed
+by the documentation:** a transparent background on the 2.6 models (it is stated for 2.5),
+the multipart field layout together with those options, the HTTP status of a refusal, and
+any per-image price. Each unconfirmed field is a named constant.
+
+**Built:** `AvatarGenerator` (the request goes through the same test seam as the text
+clients; the input photo is downscaled; the result must decode, be square and have real
+transparency), one character per person stored on the profile, a custom case of the
+avatar choice handled everywhere a companion is drawn, a small copy in the app group for
+the widget that is drawn only if its digest matches the snapshot, an onboarding step
+after the key step, and the same flow in Settings. Decisions: one image, not a set of mood
+frames; the photo is sent only after an explicit consent and is never stored; without an
+OpenAI key, on a refusal or on any failure the flow continues with a built-in character
+and the step can always be skipped; a buddy is shown a built-in character, never
+someone's custom one; the coach's tool can choose built-ins only.
+
+**Verified:** 78 tests for request building, every failure mapping, the downscale, that
+only the result is written, the widget file, and the stored values. In the simulator, in
+the dark and the light theme, the step was seen in four states: choose and consent, no
+OpenAI key, a preview, and a failure with its fallback
+(`docs/screenshots/review/avatar-*.png`). Two things were fixed from looking: the preview
+spilled past its ring, and the copy named a Settings screen that does not exist.
+
+**Not verified:** no image has been generated. The preview in the screenshot is a
+stand-in drawn in code. The request has never been sent to OpenAI, so the unconfirmed
+fields above are untested; the camera path, the real widget process, and CloudKit sync of
+the image have not been exercised. The default model `gpt-image-2.6-flare` was not chosen
+by measurement; `Evals/run.sh Avatar` exists to do that and needs photos (synthetic or
+consented) and approval for the spend. **The owner must deploy the CloudKit Production
+schema** for the new `customAvatarPNG` field before a build with this reaches TestFlight.
+
+## 16. Settings that change what depends on them: the plan, kilograms, and where a key goes (2026-11-22)
+
+Objective G5, defects L-B2, L-B7 and L-B9 of section 3.
+
+- **L-B2, fixed.** Each plan number now records the goal direction it was written for
+  (beside the existing per-plan flag; no schema change). The plan's calories and protein
+  drive the targets only while the direction still matches, so switching from losing to
+  gaining falls back to the computed targets at once and raises the rebuild notice, and
+  switching back restores them. A change of pace, activity level, goal or start weight,
+  sex, height or birth date raises the notice and keeps the plan's numbers, from Settings
+  and from every coach tool. The Settings footers now say what happens.
+- **L-B7, made safe, not solved.** Full metric support touches about forty places.
+  Until it is done properly, asking the coach to switch to kilograms is declined in plain
+  words and writes nothing, so weights can no longer be corrupted. Kilograms are still
+  not supported.
+- **L-B9, fixed.** A pasted key is routed by the key itself (`sk-ant-` is Anthropic, any
+  other `sk-` is OpenAI) and the active provider follows it; at launch, if the active
+  provider has no key and the other has one, the active provider switches.
+- Also fixed: the height shown for values not in whole inches, the water "reset to
+  recommended" that showed one number and applied another, and two places that used the
+  start weight as the current weight.
+
+**Verified:** 95 new tests (a matrix of inputs against derived values, the plan rules, the
+three fixes); suite 756 tests, 753 passed, 3 known defects pinned. One existing
+expectation changed with a stated reason: after an undo the profile's protein target now
+matches the plan (the state the running app is in) where the test had recorded a
+unit-test artifact.
+
+**Not done:** the written dependency table (`docs/settings-dependencies.md`) and the count
+of matrix cells by status; simulator screenshots of the reworded Settings copy; checks
+that each new test fails on the old code. **Found and open:** the step bonus is applied
+on the Today ring and the widget but not on Nutrients, the coach, the buddy snapshot or
+achievements; Settings' recommended water is not clamped the way onboarding's is.
