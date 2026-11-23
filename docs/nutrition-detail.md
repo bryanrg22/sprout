@@ -133,7 +133,7 @@ the database, not read from a response, and the new fetch code has not run again
 live API. The demo key answered HTTP 429 with
 `x-ratelimit-limit: 10`, `x-ratelimit-remaining: 0` and `retry-after: 58739` (about 16
 hours) on the first request, so no food detail could be fetched. The guide states the demo
-key's allowance as 30 requests an hour and 50 a day per IP address. Section 7 says what
+key's allowance as 30 requests an hour and 50 a day per IP address. Section 8 says what
 that left undone.
 
 ## 5. What is honest to estimate
@@ -226,7 +226,23 @@ kcal or more are treated as a placeholder block. Plain cooked rice could honestl
 four zeros and would be shown as "not known". That errs toward the rule: unknown is
 acceptable, a false zero is not.
 
-## 7. Not done, and not verified
+## 7. Verified by running
+
+- **An existing store opens.** A store written by the app before this change (ten food rows,
+  no label columns) was opened by the new build on the simulator: the ten rows were kept,
+  the eleven columns were added, every one of them NULL, and the Nutrients tab showed the
+  day with "None of this day's foods list these yet"
+  (`docs/screenshots/review/nutrition-day-none-known.png`).
+- **Not known is NULL on disk and a stated zero is 0.** Read with `sqlite3` from the
+  simulator's store after seeding the demo day: the food with no detail has NULL in all
+  eleven columns, and the food with a stated vitamin D of zero has `0.0`.
+- **The screens.** Six states were opened in the simulator with DEBUG launch arguments and
+  looked at (`docs/screenshots/review/nutrition-*.png`): a day with partial coverage, the
+  same day with every row, a food with the whole label, one with part of it, one with none,
+  and the edit sheet's label rows.
+- **The tests.** 111 unit tests and 7 evaluation self-tests were added; both suites pass.
+
+## 8. Not done, and not verified
 
 - **`Evals/datasets/meal_describe/v3.jsonl` is not built.** It needs the label nutrients of
   nine USDA records, and the demo key was rate-limited for the rest of the day (section 4).
