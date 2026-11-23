@@ -29,6 +29,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 17 | UI smoke flows: the app driven end to end, and what the accessibility audit found | 2026-11-23 |
 | 18 | The rest of the label: eleven more nutrients, and "unknown" is never zero | 2026-11-23 |
 | 19 | Buddy pairing and sync: nine defect groups closed | 2026-11-23 |
+| 20 | The chat: a testable turn engine, paged history, selection, and named failures | 2026-11-23 |
 
 ---
 
@@ -828,3 +829,76 @@ imported steps; a durable identity that survives a reinstall is a design
 `BuddySnapshot` field and the three indexes, and that signed-in users can write
 `BuddyPairing` and `Nudge` records, since claiming a code, unpairing and marking a nudge
 read each write to a record another user created.
+
+## 20. The chat: a testable turn engine, paged history, selection, and named failures (2026-11-23)
+
+Objective G14, asked for by the owner: long chats that will not load, text that cannot
+be selected, no copy, no "ask about this", and the failures every AI chat runs into.
+
+**Researched** (`docs/chat-standards.md`, sources there): how established chat apps and
+Apple's guidance handle long transcripts, selection, message actions, sending and each
+kind of failure, ending in a 37-row table of the standard against what Sprout did.
+
+**Measured before changing anything** (simulator, time from the tab being created to
+usable, median of three; a debug argument seeds the conversation):
+
+| Messages | Before | After | Memory before → after |
+|---|---|---|---|
+| 200 | 337 ms | 332 ms | 45.6 → 42.4 MB |
+| 1,000 | 358 ms | 352 ms | 55.9 → 42.3 MB |
+| 5,000 | 677 ms | 337 ms | 113.0 → 42.7 MB |
+
+The view used to load every message in the store; it now fetches the latest 40 and pages
+earlier ones in. A three-message chat opens slightly slower than before (276 → 331 ms).
+**"It just won't load" was not reproduced** on the simulator at 5,000 messages: load time
+doubled and memory tripled, but it loaded. A phone with a real, photo-heavy history may
+behave worse than this seeded text; that has not been measured.
+
+**Changed:**
+
+- The turn logic is out of the view, in an engine a test can drive with a scripted model
+  and an in-memory store: sending, a tool proposal, confirm or auto-apply, the follow-up
+  call, the depth cap, undo, the memory fold, and every failure branch.
+- Failures are typed and each has its own words and action: offline, timeout, a rejected
+  or missing key (opens AI settings), a rate limit with the provider's wait shown as a
+  countdown, an overloaded provider, a reply cut off by its cap, a refusal. The user's
+  message is saved before the call, a failed turn has a Retry that re-sends that message
+  without a duplicate, a second send while a turn is in flight is ignored, and a message
+  left unanswered by a relaunch is shown as such with a retry.
+- Earlier messages load on scrolling up, with a visible state, and "jump to latest"
+  appears when scrolled up; a new reply no longer pulls a reader who has scrolled up back
+  to the bottom.
+- A range of text inside a settled reply can be selected, across paragraphs and lists,
+  with Ask about this and Copy in the menu. A message can be copied, shared, deleted or
+  quoted to the coach; the quote goes into the composer and to the model as context.
+
+**Defects found in the old code and fixed with tests:** a tool call cut off by the output
+cap showed a placeholder reply instead of an error; a tool could be applied past the
+depth cap; there was no retry after a tool had been applied; the memory fold was
+unbounded; an "ask Vita" topic set while a turn was sending was dropped; an empty message
+was sent as an empty text block; a provider's refusal text was dropped by the OpenAI
+client; both clients retried without honouring `retry-after` and retried on an account
+with no credit.
+
+**Verified:** 114 new tests, including the engine on Anthropic Messages, OpenAI Chat
+Completions and OpenAI Responses shapes (two tool calls in one turn, a turn cut off mid
+call, a rejected tool and the recovery, 401, 429, 500, 529, a timeout, offline, an empty
+reply, the depth cap). Suite **1,098 tests, 1,095 passed, 3 known defects pinned**. The
+fifteen UI flows pass after the merge; they caught two things the merge had broken (a
+message was no longer exposed as static text once replies were drawn by a text view, and
+the failure row's identifier), both fixed. Twelve states were seen in the simulator
+(`docs/screenshots/review/chat-*.png`), driven by real swipes, long presses and typing
+through a throwaway UI test.
+
+**Not verified, and open:**
+
+- When a page of earlier messages is added, the row at the top stays on screen but moved
+  by 0 to 31 pt in six loads and by 156 to 173 pt in three. Five corrections were tried
+  and each was worse. **The view still jumps on some loads.**
+- No real provider was called: every reply and failure came from a scripted transport.
+  Not seen: a phone, VoiceOver on, Dynamic Type, the light theme, real backgrounding.
+- Selection does not work in the user's own messages (copy is in the menu instead),
+  during a reply's 1.1 s reveal, or across messages.
+- Not built: regenerate, edit and resend, read aloud, feedback, token-by-token streaming.
+  The history sent to the model is not trimmed by size and photos are re-sent each turn.
+  The reveal animation can freeze if its row scrolls away (read, not fixed).

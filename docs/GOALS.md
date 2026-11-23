@@ -30,7 +30,7 @@ Last updated: 2026-11-22.
 | G11 | The open defects are closed | in progress: the high-severity lifecycle defects and nine buddy groups are fixed (EVAL_REPORT 16, 19); open: kilograms, widgets' gain framing, travel day keys, HealthKit sync, U-1 to U-3, S-1, S-2 and the accessibility findings |
 | G12 | Competitions | todo (spec needed) |
 | G13 | The app is back on the phones and does not expire again | open, last |
-| G14 | The chat holds up: long histories, selection and copy, "ask about this", real error handling | in progress |
+| G14 | The chat holds up: long histories, selection and copy, "ask about this", real error handling | in progress: built, tested and seen running (EVAL_REPORT 20); open: the view still jumps on some "load earlier" loads, nothing was run against a real provider or on a phone, and regenerate, edit-and-resend and streaming are not built |
 
 ## Running it
 
@@ -231,4 +231,6 @@ Prerequisite for G8 and for inviting a third person.
   the user's message is never lost and a failed turn can be retried without a duplicate;
   the turn logic lives outside the view with a test for every branch on both providers'
   wire formats; screenshots reviewed by the owner.
-- **Status:** in progress.
+- **Status:** in progress (EVAL_REPORT 20). Remaining: a stable scroll position on every
+  load of earlier messages; a real provider and a phone; regenerate, edit and resend,
+  streaming; the owner's review of `docs/screenshots/review/chat-*.png`.
