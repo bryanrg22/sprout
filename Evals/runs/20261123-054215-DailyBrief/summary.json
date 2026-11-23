@@ -1,0 +1,360 @@
+{
+ "run": "20261123-054215-DailyBrief",
+ "tasks": [
+  {
+   "task": "dailyBrief",
+   "dataset": "daily_brief/v1",
+   "cases": 13,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-4-5-20251001",
+     "attempts": 39,
+     "usable": 39,
+     "passed": 39,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9103301463997611,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.038,
+     "latency_p95_s": 1.313,
+     "mean_uncached_input_tokens": 243.07692307692307,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 53.97435897435897,
+     "mean_cost_usd": 0.000512948717948718,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.3076923076923077,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 0.9487179487179487,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 39,
+     "usable": 36,
+     "passed": 36,
+     "pass_rate": 0.9230769230769231,
+     "ci95": [
+      0.7967862687194474,
+      0.9734930859265043
+     ],
+     "per_repeat_pass": [
+      0.9230769230769231,
+      0.9230769230769231,
+      0.9230769230769231
+     ],
+     "latency_p50_s": 0.724,
+     "latency_p95_s": 0.992,
+     "mean_uncached_input_tokens": 341.0769230769231,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 75.38461538461539,
+     "mean_cost_usd": 7.180000000000001e-05,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.5277777777777778,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 0.6666666666666666,
+      "no_number_invented": 1,
+      "used": 0.9230769230769231,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "rephrase returned nil (call failed or guardrail rejected it)"
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 39,
+     "usable": 39,
+     "passed": 37,
+     "pass_rate": 0.9487179487179487,
+     "ci95": [
+      0.8311406095436208,
+      0.9858223423536004
+     ],
+     "per_repeat_pass": [
+      0.9230769230769231,
+      0.9230769230769231,
+      1.0
+     ],
+     "latency_p50_s": 1.181,
+     "latency_p95_s": 1.438,
+     "mean_uncached_input_tokens": 339.0769230769231,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 67.82051282051282,
+     "mean_cost_usd": 0.0013563589743589744,
+     "scores": {
+      "all_numbers_kept": 0.9743589743589743,
+      "body_at_most_two_sentences": 1,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 0.9230769230769231,
+      "headline_one_sentence": 0.8974358974358975,
+      "no_number_invented": 0.9487179487179487,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5-5",
+     "attempts": 39,
+     "usable": 38,
+     "passed": 38,
+     "pass_rate": 0.9743589743589743,
+     "ci95": [
+      0.8681871352137286,
+      0.9954594139347627
+     ],
+     "per_repeat_pass": [
+      1.0,
+      0.9230769230769231,
+      1.0
+     ],
+     "latency_p50_s": 1.573,
+     "latency_p95_s": 1.844,
+     "mean_uncached_input_tokens": 341.0769230769231,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 73.15384615384616,
+     "mean_cost_usd": 0.0014136923076923076,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.9210526315789473,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 0.7105263157894737,
+      "no_number_invented": 1,
+      "used": 0.9743589743589743,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "rephrase returned nil (call failed or guardrail rejected it)"
+     ]
+    },
+    {
+     "candidate": "openai:gpt-4.1-mini",
+     "attempts": 39,
+     "usable": 37,
+     "passed": 36,
+     "pass_rate": 0.9230769230769231,
+     "ci95": [
+      0.7967862687194474,
+      0.9734930859265043
+     ],
+     "per_repeat_pass": [
+      0.8461538461538461,
+      1.0,
+      0.9230769230769231
+     ],
+     "latency_p50_s": 1.149,
+     "latency_p95_s": 1.377,
+     "mean_uncached_input_tokens": 225.07692307692307,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 42.87179487179487,
+     "mean_cost_usd": 0.00015862564102564104,
+     "scores": {
+      "all_numbers_kept": 0.972972972972973,
+      "body_at_most_two_sentences": 0.5675675675675675,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 0.8108108108108109,
+      "headline_one_sentence": 1,
+      "no_number_invented": 0.972972972972973,
+      "used": 0.9487179487179487,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "rephrase returned nil (call failed or guardrail rejected it)"
+     ]
+    },
+    {
+     "candidate": "openai:gpt-5.6-luna",
+     "attempts": 39,
+     "usable": 39,
+     "passed": 39,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9103301463997611,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.41,
+     "latency_p95_s": 1.732,
+     "mean_uncached_input_tokens": 224.07692307692307,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 42.794871794871796,
+     "mean_cost_usd": 9.616923076923077e-05,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.9230769230769231,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 0.9743589743589743,
+      "headline_one_sentence": 1,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-5.6-terra",
+     "attempts": 39,
+     "usable": 39,
+     "passed": 39,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9103301463997611,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.391,
+     "latency_p95_s": 1.652,
+     "mean_uncached_input_tokens": 224.07692307692307,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 42.23076923076923,
+     "mean_cost_usd": 0.000954923076923077,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 1,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 0.9487179487179487,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6-luna",
+     "attempts": 39,
+     "usable": 39,
+     "passed": 39,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9103301463997611,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.218,
+     "latency_p95_s": 1.709,
+     "mean_uncached_input_tokens": 224.07692307692307,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 43.48717948717949,
+     "mean_cost_usd": 4.4151282051282054e-05,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.9230769230769231,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 0.9743589743589743,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.1-terra",
+     "attempts": 39,
+     "usable": 39,
+     "passed": 39,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9103301463997611,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.684,
+     "latency_p95_s": 2.12,
+     "mean_uncached_input_tokens": 224.07692307692307,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 42.30769230769231,
+     "mean_cost_usd": 0.0004356153846153846,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 1,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 1,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 39,
+     "usable": 36,
+     "passed": 36,
+     "pass_rate": 0.9230769230769231,
+     "ci95": [
+      0.7967862687194474,
+      0.9734930859265043
+     ],
+     "per_repeat_pass": [
+      0.9230769230769231,
+      0.9230769230769231,
+      0.9230769230769231
+     ],
+     "latency_p50_s": 1.797,
+     "latency_p95_s": 2.007,
+     "mean_uncached_input_tokens": 224.07692307692307,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 44.76923076923077,
+     "mean_cost_usd": 0.0008958461538461539,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 1,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 1,
+      "no_number_invented": 1,
+      "used": 0.9230769230769231,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "rephrase returned nil (call failed or guardrail rejected it)"
+     ]
+    }
+   ]
+  }
+ ]
+}

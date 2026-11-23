@@ -146,7 +146,7 @@ enum CoachMemoryService {
         // Nothing to fold → nothing to do.
         guard !olderMessages.isEmpty else { return nil }
         // No key for the active provider → skip silently (matches InsightPhraser's gate).
-        guard KeychainStore.hasAPIKey(for: AIConfig.provider) else { return nil }
+        guard AIConfig.hasActiveKey else { return nil }
 
         let transcript = olderMessages.map { snap in
             let who = snap.role == "user" ? (profileName.isEmpty ? "Friend" : profileName) : "Vita"
@@ -171,7 +171,7 @@ enum CoachMemoryService {
             let reply = try await client.chat(
                 system: system,
                 messages: [ChatTurnMsg(role: "user", text: user)],
-                model: AIConfig.insightModel,   // cheap tier — this is background summarization
+                model: AIConfig.model(for: .memoryFold),   // cheap tier — this is background summarization
                 maxTokens: 1200
             )
             return parse(reply, fallbackNotes: currentNotes, fallbackSummary: currentSummary)

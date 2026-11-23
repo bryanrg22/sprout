@@ -1,0 +1,86 @@
+{
+ "label": "v2.1.0-b16",
+ "captured_utc": "2026-11-23T04:57:55+00:00",
+ "commit": "bee78579db418628c8e6759dc6fc42a20c077c94",
+ "describe": "bee7857-dirty",
+ "branch": "bryan/verification-reset",
+ "uncommitted_files": [
+  "M .github/workflows/ci.yml",
+  " M AGENTS.md",
+  " M Victoria/Services/AI/AITask.swift",
+  " M VictoriaTests/AITaskModelTests.swift",
+  " M VictoriaTests/VerificationFixesTests.swift",
+  " M docs/DEVELOPING.md",
+  "?? VictoriaTests/LEDGER.md",
+  "?? docs/test-evidence/"
+ ],
+ "host": {
+  "macos": "26.6",
+  "arch": "arm64"
+ },
+ "xcode": "Xcode 26.4 Build version 17E192",
+ "xcodegen": "Version: 2.45.4",
+ "simulator": {
+  "name": "Victoria-Dev",
+  "model": "iPhone 17 Pro",
+  "os": "26.4",
+  "os_build": "23E244"
+ },
+ "app_version": "2.1",
+ "app_build": "16",
+ "swift_files": 193,
+ "gate_exit_codes": {
+  "xcodegen": 0,
+  "unit_tests": 0,
+  "unit_counts": 0,
+  "eval_self_tests": 0,
+  "eval_counts": 0,
+  "release_build": 0,
+  "secret_scan": 0
+ },
+ "unit": {
+  "result": "Passed",
+  "totalTestCount": 491,
+  "passedTests": 491,
+  "failedTests": 0,
+  "skippedTests": 0
+ },
+ "eval_self_tests": {
+  "result": "Passed",
+  "totalTestCount": 19,
+  "passedTests": 16,
+  "failedTests": 0,
+  "skippedTests": 3
+ },
+ "coverage": {
+  "Victoria.app": {
+   "lineCoverage": 0.1912,
+   "coveredLines": 9143,
+   "executableLines": 47820
+  },
+  "VictoriaTests.xctest": {
+   "lineCoverage": 0.9714,
+   "coveredLines": 7441,
+   "executableLines": 7660
+  },
+  "VictoriaWidgets.appex": {
+   "lineCoverage": 0.0411,
+   "coveredLines": 43,
+   "executableLines": 1046
+  }
+ },
+ "eval_datasets": {
+  "Evals/datasets/daily_brief/v1.jsonl": {
+   "sha256": "e1a5238033d797b4dae6fbdc10064548a2d3d3c86811ecedbf82aeb2d734c198",
+   "cases": 13
+  },
+  "Evals/datasets/meal_describe/v1.jsonl": {
+   "sha256": "40e5590a2a5e21af53baf5e051d7c68cdc1a5dae49a47a2f4bd522745daf7c27",
+   "cases": 14
+  },
+  "Evals/datasets/coach_tool_choice/v1.jsonl": {
+   "sha256": "7e7ae9895e3ed48a0e7612af614501509340415d4bb15f86274749ac1bd0bbb9",
+   "cases": 34
+  }
+ }
+}

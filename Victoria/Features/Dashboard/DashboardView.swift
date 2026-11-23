@@ -112,6 +112,7 @@ struct DashboardView: View {
             NavigationStack {
             ScrollView {
                 VStack(spacing: Theme.Space.md) {
+                    ModeSwitch().appearLift(didAppear, index: 0)
                     header.appearLift(didAppear, index: 0)
                     // Coming back after 7+ silent days: greet the return before anything
                     // else on the page can read as a report card. Self-hides otherwise.

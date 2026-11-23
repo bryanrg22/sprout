@@ -25,7 +25,10 @@ private struct CompanionEntryView: View {
     var body: some View {
         // Adopt the user's skin before any Theme color resolves (see CalorieBudgetWidget).
         Theme.current = entry.snap.skin
-        return CompanionView(snap: entry.snap, family: family)
+        return Group {
+                if entry.isUnavailable { WidgetUnavailableView(family: family) }
+                else { CompanionView(snap: entry.snap, family: family) }
+            }
             .containerBackground(Theme.widgetBackground, for: .widget)
             .environment(\.colorScheme, entry.snap.skin.colorScheme)
     }

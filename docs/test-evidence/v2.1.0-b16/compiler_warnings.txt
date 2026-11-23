@@ -1,0 +1,11 @@
+Victoria/App/AppDelegate.swift:44:10: warning: non-Sendable parameter type '[AnyHashable : Any]' cannot be sent from caller of protocol requirement 'application(_:didReceiveRemoteNotification:)' into main actor-isolated implementation; this is an error in the Swift 6 language mode
+Victoria/Features/Buddy/Services/CloudKitSyncService.swift:289:9: warning: result of 'try?' is unused
+Victoria/Features/Buddy/Services/CloudKitSyncService.swift:430:13: warning: result of 'try?' is unused
+Victoria/Features/Buddy/Services/CloudKitSyncService.swift:436:10: warning: non-Sendable parameter type 'Nudge' cannot be sent from caller of protocol requirement 'sendNudge' into main actor-isolated implementation; this is an error in the Swift 6 language mode
+Victoria/Features/Buddy/Services/CloudKitSyncService.swift:463:10: warning: non-Sendable type '[Nudge]' cannot be returned from main actor-isolated implementation to caller of protocol requirement 'fetchInbox()'; this is an error in the Swift 6 language mode
+Victoria/Features/Buddy/Services/LocalMockSyncService.swift:119:10: warning: non-Sendable parameter type 'Nudge' cannot be sent from caller of protocol requirement 'sendNudge' into main actor-isolated implementation; this is an error in the Swift 6 language mode
+Victoria/Features/Buddy/Services/LocalMockSyncService.swift:132:10: warning: non-Sendable type '[Nudge]' cannot be returned from main actor-isolated implementation to caller of protocol requirement 'fetchInbox()'; this is an error in the Swift 6 language mode
+Victoria/Features/Buddy/Services/LocalMockSyncService.swift:212:10: warning: main actor-isolated property 'defaults' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode
+Victoria/Features/Buddy/Views/BuddyViewModel.swift:132:5: warning: 'nonisolated(unsafe)' has no effect on property 'pushObserver', consider using 'nonisolated'
+Victoria/Features/Coach/CoachContext.swift:304:13: warning: initialization of immutable value 'calTarget' was never used; consider replacing with assignment to '_' or removing it
+Victoria/Services/GoogleHealth/GoogleHealthAuth.swift:127:48: warning: main actor-isolated static property 'scopes' can not be referenced from a nonisolated context; this is an error in the Swift 6 language mode

@@ -1,0 +1,111 @@
+{
+ "run": "20261123-052445-MealDescribe",
+ "tasks": [
+  {
+   "task": "mealDescribe",
+   "dataset": "meal_describe/v1",
+   "cases": 2,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 2,
+     "usable": 2,
+     "passed": 2,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.34237195288961925,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 1.766,
+     "latency_p95_s": 1.843,
+     "mean_uncached_input_tokens": 1145.5,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 365.5,
+     "mean_cost_usd": 0.0002973,
+     "scores": {
+      "carbs_abs_error_g": 0.2500000000000008,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.5499999999999998,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.03870967741935484,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 1
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-4.1-mini",
+     "attempts": 2,
+     "usable": 2,
+     "passed": 2,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.34237195288961925,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 1.963,
+     "latency_p95_s": 3.024,
+     "mean_uncached_input_tokens": 332,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 111.5,
+     "mean_cost_usd": 0.0003112000000000001,
+     "scores": {
+      "carbs_abs_error_g": 0.05000000000000071,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.34999999999999987,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.016129032258064516,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0.20000000000000018,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 1
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6-luna",
+     "attempts": 2,
+     "usable": 2,
+     "passed": 2,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.34237195288961925,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 3.01,
+     "latency_p95_s": 3.111,
+     "mean_uncached_input_tokens": 326,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 131,
+     "mean_cost_usd": 9.81e-05,
+     "scores": {
+      "carbs_abs_error_g": 0.05000000000000071,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 1
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

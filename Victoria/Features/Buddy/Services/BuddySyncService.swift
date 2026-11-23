@@ -175,6 +175,29 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
         self.fatEaten = fatEaten
         self.fatTarget = fatTarget
         self.todayFoods = todayFoods
+        // The opt-in is enforced HERE, in the one initializer every publish passes through,
+        // not left to callers: a snapshot that does not share full data carries none of it.
+        if !sharesFullData { self = withoutFullData }
+    }
+
+    /// This snapshot with every opt-in field (weight, calories, macros, food names) blanked.
+    /// What leaves the device when the owner has not opted in to sharing full stats.
+    var withoutFullData: BuddySnapshotPayload {
+        var copy = self
+        copy.sharesFullData = false
+        copy.trendWeightLbs = 0
+        copy.goalWeightLbs = 0
+        copy.weeklyRateLbs = 0
+        copy.caloriesEaten = 0
+        copy.calorieTarget = 0
+        copy.proteinEaten = 0
+        copy.proteinTarget = 0
+        copy.carbsEaten = 0
+        copy.carbTarget = 0
+        copy.fatEaten = 0
+        copy.fatTarget = 0
+        copy.todayFoods = ""
+        return copy
     }
 
     /// Decoded enum (falls back to `.happy` if an unknown value ever arrives).
