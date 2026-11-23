@@ -71,6 +71,15 @@ extension AIConfig {
             .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 10"),
             .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 10"),
         ],
+        // The other four short-writing tasks, OpenAI only: each replaces the deprecated
+        // gpt-4.1-mini with the cheapest candidate within noise of the best on its dataset.
+        // Anthropic stays on the tier default: claude-haiku-5-5 thinks before it writes and
+        // runs out of these tasks' output caps (EVAL_REPORT 22), which is not yet solved.
+        .insightLine: [.openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22")],
+        .weeklyReflection: [.openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22")],
+        .onboardingNote: [.openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22")],
+        // gpt-6-luna kept every planted fact in the durable notes in only 78% of runs here.
+        .memoryFold: [.openai: AITaskDefault(model: "gpt-5.6-luna", evidence: "EVAL_REPORT 22")],
     ]
 
     /// Rows of a defaults table that do not say which EVAL_REPORT section measured them.

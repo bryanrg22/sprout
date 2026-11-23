@@ -7,6 +7,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **Today's checklist was silently falling back to the generic one about three times in
+  ten on Claude.** The model's answer came back in a shape the app could not read; the
+  app now reads it (EVAL_REPORT 22).
 - **Buddy pairing tells the truth.** A wrong code no longer says "You're connected!", you
   can unpair, and a buddy who has stopped sharing is shown as such instead of looking
   current. Nudges for a milestone are sent once (EVAL_REPORT 19).
@@ -65,6 +68,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Changed
 
+- On OpenAI, the insight line, weekly reflection, onboarding note and memory now run on
+  current models chosen by measurement; nothing defaults to the deprecated
+  `gpt-4.1-mini` any more (EVAL_REPORT 22).
 - The daily brief is written by `claude-haiku-5-5` (Anthropic) or `gpt-6-luna` (OpenAI),
   chosen by measurement: equal or better on every case at a seventh and a quarter of the
   cost of the models they replace (EVAL_REPORT 10).
@@ -80,7 +86,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,098 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- Tests: 443 → 1,112 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
 - UI smoke flows: 15 end-to-end flows against a scripted model (EVAL_REPORT 17).
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

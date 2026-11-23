@@ -31,6 +31,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 19 | Buddy pairing and sync: nine defect groups closed | 2026-11-23 |
 | 20 | The chat: a testable turn engine, paged history, selection, and named failures | 2026-11-23 |
 | 21 | iCloud was backing up two of twenty models: the CloudKit schema, measured and fixed in Development | 2026-11-23 |
+| 22 | Eight more tasks measured: four defaults changed, and two ways a reply was being lost | 2026-11-23 |
 
 ---
 
@@ -955,3 +956,84 @@ that it matches what Core Data sends is a Debug build on a signed-in phone synci
 without a CloudKit error, and that has not been done. **The owner must:** run a Debug
 build once on a signed-in phone and confirm it syncs; then deploy Development to
 Production in the CloudKit Console; then run the checker against Production.
+
+## 22. Eight more tasks measured: four defaults changed, and two ways a reply was being lost (2026-11-23)
+
+Approved by the owner in the session. The eight tasks that had no evaluation, ten models,
+three repeats, run from a worktree fixed at one commit so nothing else could change the
+code under measurement (`Evals/runs/20261123-0925…` to `…0948…`, 3,810 attempts, $6.38
+measured). **Spend to date across every run: $16.67 over 9,243 attempts.**
+
+These graders check that a reply is used, keeps the given facts and numbers, invents
+none, respects the limits its own prompt states, and addresses the right person. **None
+of them measures whether the advice is good or the tone is right.** Twelve to nineteen
+cases each: only large gaps are real.
+
+Pass rate (95% interval) and measured cost per 1,000 calls. **Bold** is the default
+before this section.
+
+| Task | Anthropic | OpenAI |
+|---|---|---|
+| `insightLine` (19) | **haiku-4-5 100% (94–100), $0.42**; haiku-5-5 95%, $0.06 | **4.1-mini 96% (88–99), $0.14**; 6-luna 100% (94–100), $0.04; 5.6-luna 100%, $0.08 |
+| `weeklyReflection` (16) | **haiku-4-5 92% (80–97), $1.49**; haiku-5-5 85%, $0.23 | **4.1-mini 96% (86–99), $0.47**; 6-luna 98% (89–100), $0.13; 5.6-luna 94%, $0.27 |
+| `onboardingNote` (15) | **haiku-4-5 96% (85–99), $0.90**; haiku-5-5 89%, $0.13 | **4.1-mini 100% (92–100), $0.29**; 6-luna 100% (92–100), $0.07; 5.6-luna 98%, $0.16 |
+| `memoryFold` (12) | **haiku-4-5 100% (90–100), $2.06**; haiku-5-5 92%, $0.52 | **4.1-mini 86% (71–94), $0.71**; 5.6-luna 100% (90–100), $0.43; 6-luna 78%, $0.17; 6.2-sol 28% |
+| `progressSummary` (15) | **sonnet-5 64% (50–77), $6.12**; haiku-5-5 73%, $0.31; haiku-4-5 33% | **5.6-terra 89% (77–95), $3.80**; 5.6-luna 96%, $0.34; 6-luna 93%, $0.14 |
+| `foodSuggestions` (18) | **sonnet-5 100% (93–100), $7.10**; haiku-5-5 100%, $0.37 | **5.6-terra 100% (93–100), $4.77**; 6-luna 100%, $0.17 |
+| `coachPrompts` (16) | **sonnet-5 100% (93–100), $4.85**; haiku-5-5 100%, $0.23 | **5.6-terra 100% (93–100), $3.45**; 6-luna 100%, $0.12 |
+| `checklistPlan` (16) | **sonnet-5 71% (57–82), $8.14**; haiku-5-5 100%, $0.40 | **5.6-terra 100% (93–100), $4.56**; 6-luna 100%, $0.18 |
+
+`claude-sonnet-5-5` scored 0% on the last four: it rejects a forced tool call (section
+10, defect 2), which is still open.
+
+### Read before trusting: what the failures actually were
+
+The pass rates above mix three different things, found by reading the failing records:
+
+1. **A reply cut off by its output cap, on the newest Claude models.** Every unexplained
+   failure of `claude-haiku-5-5` and `claude-sonnet-5-5` on the three short-writing tasks
+   has exactly the task's cap as its output token count (80, 320 or 420). Those models
+   think before they write, the thinking comes out of the same cap, and what is left is
+   too short or empty. The app then shows its template and says nothing. This is a
+   budget problem, not a quality one, and it is why `claude-haiku-5-5` trails
+   `claude-haiku-4-5` here. **Open:** give thinking models a cap that allows for it, or
+   lower the effort, and measure again.
+2. **The current Claude default returned a checklist the app could not read in 14 of 48
+   calls**, so 29% of checklist generations were silently replaced by the fallback. Each
+   field held a string containing an object that wrapped that same field
+   (`"chips": "{\"chips\": [...]}"`). **Fixed and re-measured:**
+   `StructuredOutputRepair`, driven by the schema, unwraps that shape for every
+   structured call on both providers. `claude-sonnet-5` on the checklist went from 71% to
+   **100% (93–100), 48 of 48** (`Evals/runs/…-ChecklistPlan`, the last one).
+   A first version of the repair was written from one truncated sample, handled a shape
+   that does not occur, and changed nothing when measured; it was rewritten from the full
+   records. A second failure shape is not repaired and stays a model failure: on the
+   progress summary `claude-haiku-4-5` leaked tool-call markup into a field in about 1 call
+   in 10.
+3. **A disagreement with a label, not a defect.** On `memoryFold` the 6.x OpenAI models
+   put a temporary injury ("strained lower back, deadlifts on hold while it recovers")
+   in the rolling summary instead of the durable notes. The dataset counts an injury as
+   durable; a reasonable reader could side with the model. The 28% for `gpt-6.2-sol` is
+   that one choice, repeated. **The owner should decide** which is wanted before this
+   dataset is used to rank those models again.
+
+Also: the `progressSummary` pass rule includes "no number that is not in the snapshot",
+and most failures there are derived figures (a difference, a projected date). Whether a
+correct derived number is a fault is a product question; the low rates for `sonnet-5` and
+`haiku-4-5` should be read with that in mind.
+
+### Decisions
+
+| Task | Change | Why |
+|---|---|---|
+| `insightLine`, `weeklyReflection`, `onboardingNote` (OpenAI) | `gpt-4.1-mini` → **`gpt-6-luna`** | As good or better on every one (100%, 98%, 100%), a quarter of the cost, and the old default is deprecated. |
+| `memoryFold` (OpenAI) | `gpt-4.1-mini` → **`gpt-5.6-luna`** | 36 of 36 against 86% for the old default; `gpt-6-luna` is cheaper but, by this dataset's rule, kept every durable fact in only 78%. |
+| The same four (Anthropic) | unchanged, `claude-haiku-4-5` | `claude-haiku-5-5` costs a seventh but loses replies to its output cap (finding 1). Revisit once that is solved. |
+| The four structured tasks (both providers) | unchanged | The cheapest models match the defaults on these checks at about 1/20 to 1/28 of the cost, but the checks say nothing about how good the suggestions, chips, tasks or recap are. As with the coach and meal description (section 10), a change waits on a measure of that. The one reliability problem (the checklist) is fixed in the app instead. |
+
+With these, **no task defaults to a deprecated model**, and a test now fails if one does.
+Seven of fifteen tasks have a default chosen by measurement on at least one provider.
+
+**Not verified:** none of the new defaults has been seen in the app's UI. The full
+ten-model runs were not repeated after the repair, only the affected model on the
+affected task. The image comparison for the character feature has not been run.

@@ -1,0 +1,354 @@
+{
+ "run": "20261123-094614-CoachPrompts",
+ "tasks": [
+  {
+   "task": "coachPrompts",
+   "dataset": "coach_prompts/v1",
+   "cases": 16,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-4-5-20251001",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.533,
+     "latency_p95_s": 10.73,
+     "mean_uncached_input_tokens": 1752.25,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 60.5,
+     "mean_cost_usd": 0.00205475,
+     "scores": {
+      "chips_at_most_six_words": 0.6666666666666666,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 0.8888888888888888,
+      "none_cut_short": 0.9791666666666666,
+      "none_dropped_by_the_app": 1,
+      "returned_the_count_asked": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 0.964,
+     "latency_p95_s": 1.127,
+     "mean_uncached_input_tokens": 1976.0625,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 74.5,
+     "mean_cost_usd": 0.00023485625,
+     "scores": {
+      "chips_at_most_six_words": 0.4375,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 0.9166666666666666,
+      "none_cut_short": 1,
+      "none_dropped_by_the_app": 0.9583333333333334,
+      "returned_the_count_asked": 0.9583333333333334,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.713,
+     "latency_p95_s": 7.409,
+     "mean_uncached_input_tokens": 2042.0625,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 76.5625,
+     "mean_cost_usd": 0.00484975,
+     "scores": {
+      "chips_at_most_six_words": 0.8541666666666666,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 0.9444444444444444,
+      "none_cut_short": 1,
+      "none_dropped_by_the_app": 0.9791666666666666,
+      "returned_the_count_asked": 0.9791666666666666,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5-5",
+     "attempts": 48,
+     "usable": 0,
+     "passed": 0,
+     "pass_rate": 0.0,
+     "ci95": [
+      0.0,
+      0.0741026511527422
+     ],
+     "per_repeat_pass": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "latency_p50_s": 0,
+     "latency_p95_s": 0,
+     "mean_uncached_input_tokens": 0,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 0,
+     "mean_cost_usd": 0.0,
+     "scores": {},
+     "errors": [
+      "badResponse(\"tool_choice: type \\\"tool\\\" and \\\"any\\\" are not supported for this model.\")"
+     ]
+    },
+    {
+     "candidate": "openai:gpt-4.1-mini",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.525,
+     "latency_p95_s": 2.127,
+     "mean_uncached_input_tokens": 878.5625,
+     "mean_cache_read_tokens": 128,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 32.145833333333336,
+     "mean_cost_usd": 0.00041565833333333333,
+     "scores": {
+      "chips_at_most_six_words": 0.20833333333333334,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 0.8333333333333334,
+      "none_cut_short": 0.9166666666666666,
+      "none_dropped_by_the_app": 0.8541666666666666,
+      "returned_the_count_asked": 0.8541666666666666,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-5.6-luna",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.382,
+     "latency_p95_s": 2.716,
+     "mean_uncached_input_tokens": 998.5625,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 42.333333333333336,
+     "mean_cost_usd": 0.0002505125,
+     "scores": {
+      "chips_at_most_six_words": 0.8958333333333334,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 1,
+      "none_cut_short": 1,
+      "none_dropped_by_the_app": 0.8958333333333334,
+      "returned_the_count_asked": 0.8958333333333334,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-5.6-terra",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.272,
+     "latency_p95_s": 3.116,
+     "mean_uncached_input_tokens": 998.5625,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 121.29166666666667,
+     "mean_cost_usd": 0.003452625,
+     "scores": {
+      "chips_at_most_six_words": 0.9375,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 1,
+      "none_cut_short": 1,
+      "none_dropped_by_the_app": 0.875,
+      "returned_the_count_asked": 0.875,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6-luna",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.266,
+     "latency_p95_s": 1.812,
+     "mean_uncached_input_tokens": 998.5625,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 46.104166666666664,
+     "mean_cost_usd": 0.00012290833333333334,
+     "scores": {
+      "chips_at_most_six_words": 0.4791666666666667,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 1,
+      "none_cut_short": 0.9791666666666666,
+      "none_dropped_by_the_app": 0.9375,
+      "returned_the_count_asked": 0.9375,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.1-terra",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.286,
+     "latency_p95_s": 2.849,
+     "mean_uncached_input_tokens": 998.5625,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 44.5,
+     "mean_cost_usd": 0.0012210625,
+     "scores": {
+      "chips_at_most_six_words": 0.8541666666666666,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 1,
+      "none_cut_short": 1,
+      "none_dropped_by_the_app": 1,
+      "returned_the_count_asked": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.033,
+     "latency_p95_s": 2.527,
+     "mean_uncached_input_tokens": 1008.5625,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 43.791666666666664,
+     "mean_cost_usd": 0.0024550416666666666,
+     "scores": {
+      "chips_at_most_six_words": 0.9583333333333334,
+      "count_within_bounds": 1,
+      "model_count_within_schema": 1,
+      "no_number_invented": 1,
+      "nods_to_the_routine": 0.9722222222222222,
+      "none_cut_short": 1,
+      "none_dropped_by_the_app": 1,
+      "returned_the_count_asked": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}
