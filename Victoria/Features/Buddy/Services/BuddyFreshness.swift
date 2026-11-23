@@ -17,7 +17,23 @@ enum BuddyFreshness: Equatable {
         return false
     }
 
+    /// From this many days without a publish, the snapshot is shown as old. Two quiet days
+    /// are a weekend away; a buddy who reinstalled never publishes under the old id again.
+    static let staleAfterDays = 3
+
+    /// - Parameters:
+    ///   - lastPublished: the snapshot's `lastActive` (stamped by the buddy's phone at
+    ///     publish), or nil when there is no snapshot.
+    ///   - now, calendar: mine. Days are whole calendar days in my zone, so a snapshot from
+    ///     23:59 yesterday is a day old two minutes later, and a snapshot stamped ahead of
+    ///     my clock is simply current.
     static func evaluate(lastPublished: Date?, now: Date, calendar: Calendar) -> BuddyFreshness {
-        .current
+        guard let lastPublished else { return .neverPublished }
+        let days = calendar.dateComponents([.day],
+                                           from: calendar.startOfDay(for: lastPublished),
+                                           to: calendar.startOfDay(for: now)).day ?? 0
+        if days <= 0 { return .current }
+        if days < staleAfterDays { return .quiet(since: lastPublished, days: days) }
+        return .stale(since: lastPublished, days: days)
     }
 }

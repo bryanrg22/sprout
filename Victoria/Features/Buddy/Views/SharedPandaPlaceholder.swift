@@ -291,11 +291,11 @@ private struct PandaLiveness: ViewModifier {
                 SharedPandaPlaceholder(
                     state: .thriving,
                     me: .init(avatar: .victoria, name: "You", logged: true),
-                    buddy: .init(avatar: .bryan, name: "Bryan", logged: true))
+                    buddy: .init(avatar: .bryan, name: "Sam", logged: true))
                 SharedPandaPlaceholder(
                     state: .okay,
                     me: .init(avatar: .victoria, name: "You", logged: true),
-                    buddy: .init(avatar: .bryan, name: "Bryan", logged: false))
+                    buddy: .init(avatar: .bryan, name: "Sam", logged: false))
                 SharedPandaPlaceholder(state: .sleepy)
             }
             .padding()
