@@ -105,7 +105,7 @@ xcodebuild test -project Victoria.xcodeproj -scheme Victoria \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' \
   -resultBundlePath /tmp/t.xcresult
 # NEVER trust the pipe's exit code — read the counts out of the bundle:
-python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 560
+python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 984
 # The evaluation harness's offline self-tests (its own scheme; 3 live evals skip without a key):
 xcodebuild test -project Victoria.xcodeproj -scheme VictoriaEvals \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' -resultBundlePath /tmp/e.xcresult
@@ -152,6 +152,8 @@ xcrun simctl launch <UDID> com.bryanram.victoria --seed-demo               # lig
 xcrun simctl launch <UDID> com.bryanram.victoria --seed-demo --demo-gain   # dark theme, lean-gain
 # also: --demo-fueled, --demo-tab <food|progress|coach|workouts>, --demo-screen <workout|achievements|buddy>
 # (--demo-tab workouts opens Gym mode; the others open that tab in Home mode)
+# on the Nutrients tab (with --demo-tab food): --demo-scroll-nutrients, --demo-food-detail <name>,
+#   --demo-food-edit <name> [--demo-scroll-label]; --demo-no-notification-prompt for a screenshot run
 ```
 
 - Seeding only happens when no profile exists. To reseed: terminate app, then delete the

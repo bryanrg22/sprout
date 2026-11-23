@@ -79,12 +79,16 @@ enum PlanService {
             existing.researchNotes = research.notes   // the cited brief that grounded this build
             try? context.save()
             existing.clearGoalsChanged()              // built against the goals as they are now
+            existing.anchorTargets(to: profile.pace.direction)   // its numbers are for this direction
+            PlanTargetSync.apply(plan: existing, to: profile)    // and drive the targets from here
             return existing
         }
         fresh.researchNotes = research.notes
         context.insert(fresh)
         try? context.save()
         fresh.clearGoalsChanged()
+        fresh.anchorTargets(to: profile.pace.direction)
+        PlanTargetSync.apply(plan: fresh, to: profile)
         return fresh
     }
 
@@ -199,7 +203,7 @@ enum PlanService {
         - assessment and strategy are short markdown for a phone — a few warm, plain sentences or bullets, \
         not an essay.
         - If CURRENT RESEARCH is provided below, ground your numbers in it and briefly name the source \
-        (e.g. "current guidance puts protein around…") — it's there so she can trust the plan, not just \
+        (e.g. "current guidance puts protein around…") — it's there so they can trust the plan, not just \
         take your word. Don't cite for its own sake; weave it in where it sharpens a target.
         - changelog_note is one line summarizing what this build set up.
         - about_you is a clean, organized profile summary (third-person notes) of who they are — \
@@ -270,7 +274,7 @@ enum PlanService {
     /// The prompt block that folds a research brief (fresh or cached) into the build.
     private static func groundingText(from brief: String) -> String {
         "\n\nCURRENT RESEARCH (from a live web search) to ground your plan — use it, and briefly "
-            + "name the source where you lean on it so she can trust the numbers:\n\(brief)"
+            + "name the source where you lean on it so they can trust the numbers:\n\(brief)"
     }
 
     /// The research-phase system prompt: a meticulous coach searching the live web for the few current,
@@ -470,9 +474,12 @@ enum PlanService {
         if daily.count >= 3 {
             let avg = daily.reduce(0, +) / Double(daily.count)
             if avg > 0 && avg < floor {
-                flags.append("Her logged intake is averaging only ~\(Int(avg.rounded())) kcal/day. If that's real "
-                    + "(not just unlogged meals), eating a bit MORE would likely help her results — more energy to "
-                    + "train, it protects muscle in a deficit, and it's more sustainable. Teach that benefit warmly.")
+                let why = profile.pace.direction == .gain
+                    ? "a gain is built from fuel, so there is nothing to build with at this intake"
+                    : "more energy to train, it protects muscle in a deficit, and it's more sustainable"
+                flags.append("Their logged intake is averaging only ~\(Int(avg.rounded())) kcal/day. If that's real "
+                    + "(not just unlogged meals), eating a bit MORE would likely help their results — \(why). "
+                    + "Teach that benefit warmly.")
             }
         }
 
@@ -483,8 +490,8 @@ enum PlanService {
         if profile.pace.direction == .lose, realWeights.count >= 3 {
             let rate = TrendCalculator.ratePerWeek(realWeights)   // negative = losing
             if rate < -2.0 {
-                flags.append("She's losing fast — about \(String(format: "%.1f", abs(rate))) lb/week. Easing the "
-                    + "deficit a little would protect her muscle and make the loss actually stick — frame it as "
+                flags.append("They're losing fast — about \(String(format: "%.1f", abs(rate))) lb/week. Easing the "
+                    + "deficit a little would protect their muscle and make the loss actually stick — frame it as "
                     + "getting BETTER results, not a problem.")
             }
         }

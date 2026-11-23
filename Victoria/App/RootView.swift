@@ -22,6 +22,10 @@ struct RootView: View {
 
     private var profile: UserProfile? { profiles.first }
 
+    /// Runs before any view reads the provider or asks whether a key is stored: after a
+    /// reinstall the provider choice is gone but the keys are not (`AIKeyRouting`).
+    init() { AIKeyRouting.reconcileProviderAtLaunch() }
+
     /// DEBUG: `--demo-screen <workout|achievements>` deep-links straight to a
     /// quick-link screen (normally reached from the Dashboard) so it can be
     /// screenshotted in isolation. Never used in the normal flow.
@@ -37,19 +41,29 @@ struct RootView: View {
         case "workout":      WorkoutLogView()                                   // brings its own NavigationStack
         case "achievements": NavigationStack { AchievementsView(profile: profile) }
         case "buddy":        NavigationStack { BuddyHomeView() }
+        case "settings":     SettingsView(profile: profile)
+        case "avatar":       AvatarCreationSheet(profile: profile)
         default:             MainTabView(profile: profile)
         }
     }
 
     /// The active visual skin, from the profile — defaults to `.cute` for onboarding /
     /// first run (Victoria is the primary user; Bryan switches to Cool in Settings).
-    private var themeStyle: ThemeStyle { profile?.themeStyle ?? .cute }
+    private var themeStyle: ThemeStyle {
+        #if DEBUG
+        if profile == nil, let look = OnboardingView.debugLook { return look }   // screenshots only
+        #endif
+        return profile?.themeStyle ?? .cute
+    }
 
     var body: some View {
         // Set the global skin BEFORE the subtree reads any Theme color; `.id` rebuilds
         // the subtree when the user flips themes so every token + the scheme re-resolve.
         Theme.current = themeStyle.skin
         return content
+            // The custom character, once, for every view that draws the companion from a
+            // `CompanionAvatar` alone (see `CustomCompanionImage`).
+            .environment(\.customCompanionPNG, profile?.customAvatarPNG)
             .tint(Theme.brand)
             .preferredColorScheme(themeStyle.skin.colorScheme)
             .id(themeStyle)
@@ -82,10 +96,10 @@ struct RootView: View {
             // `importTodaySteps` alone left behind (it only ever captured "today so far").
             await refreshTrackerData(stepsDays: 30, days: 14)
             WidgetDataWriter.refresh(context: context, profile: profile)
-            // Ask for notification permission + (re)build gentle reminders once on launch.
-            if let profile, profile.onboardingComplete {
-                await NotificationService.refreshOnLaunch(for: profile)
-            }
+        }
+        // Notification permission and the reminder schedule follow the profile, not the launch.
+        .task(id: profile?.onboardingComplete == true) {
+            await ReminderBootstrap.shared.profileChanged(profile)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -115,6 +129,9 @@ struct RootView: View {
     /// the per-day upsert on any overlapping day. Single-flight (see
     /// `trackerRefreshInFlight`); a caller that finds a pass in flight simply skips.
     private func refreshTrackerData(stepsDays: Int, days: Int) async {
+        // A `--ui-testing` launch runs on an in-memory store that must look the same every
+        // run: nothing is imported from the simulator's Apple Health or a connected tracker.
+        guard !UITestHooks.isActive else { return }
         guard !trackerRefreshInFlight else { return }
         trackerRefreshInFlight = true
         defer { trackerRefreshInFlight = false }
@@ -155,16 +172,16 @@ struct MainTabView: View {
         ZStack {
             TabView(selection: $selection) {
                 DashboardView(profile: profile)
-                    .tabItem { Label("Today", systemImage: "house.fill") }.tag(HomeTab.today.rawValue)
+                    .tabItem { Label("Today", systemImage: "house.fill").accessibilityIdentifier(AccessibilityID.Tab.today) }.tag(HomeTab.today.rawValue)
 
                 FoodLogView(profile: profile)
-                    .tabItem { Label("Nutrients", systemImage: "fork.knife") }.tag(HomeTab.nutrients.rawValue)
+                    .tabItem { Label("Nutrients", systemImage: "fork.knife").accessibilityIdentifier(AccessibilityID.Tab.nutrients) }.tag(HomeTab.nutrients.rawValue)
 
                 WeightView(profile: profile)
-                    .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(HomeTab.progress.rawValue)
+                    .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis").accessibilityIdentifier(AccessibilityID.Tab.progress) }.tag(HomeTab.progress.rawValue)
 
                 CoachView(profile: profile)
-                    .tabItem { Label(profile.coachName, systemImage: "sparkles") }.tag(HomeTab.coach.rawValue)
+                    .tabItem { Label(profile.coachName, systemImage: "sparkles").accessibilityIdentifier(AccessibilityID.Tab.coach) }.tag(HomeTab.coach.rawValue)
             }
             .opacity(mode == .home ? 1 : 0)
             .allowsHitTesting(mode == .home)
@@ -209,20 +226,17 @@ struct MainTabView: View {
         // Keep the app's targets mirroring the plan whenever it's built / reviewed / edited (any of
         // those bumps updatedAt), so a change Vita makes to the plan reflects everywhere instantly.
         .onChange(of: coachPlans.first?.updatedAt) { _, _ in syncPlanTargets() }
+        // A change of goal direction (Settings or Vita) takes the plan's numbers out of the
+        // targets, or puts them back, at once: they were written for one direction only.
+        .onChange(of: profile.paceRaw) { _, _ in syncPlanTargets() }
         // Settings now lives behind the pixel-avatar button in the Dashboard header.
     }
 
     /// Mirror the active plan's targets into the profile overrides — the single source of truth the
     /// rings / achievements / Vita context all read through `dailyCalorieTarget` / `macroTargets`.
-    /// No plan (or no targets set) → 0, which falls back to the computed defaults.
+    /// No plan (or no targets set, or numbers written for another goal direction) → 0, which
+    /// falls back to the computed defaults. See `PlanTargetSync`.
     private func syncPlanTargets() {
-        let plan = coachPlans.first
-        let next = PlanTargetSync.overrides(
-            plan: plan.map { .init(hasRange: $0.hasRange, calorieMin: $0.calorieMin,
-                                   calorieMax: $0.calorieMax, proteinTarget: $0.proteinTarget) },
-            currentProtein: profile.proteinTargetOverride)
-        if profile.calorieTargetOverride != next.calorie { profile.calorieTargetOverride = next.calorie }
-        if profile.calorieMaxOverride != next.calorieMax { profile.calorieMaxOverride = next.calorieMax }
-        if profile.proteinTargetOverride != next.protein { profile.proteinTargetOverride = next.protein }
+        PlanTargetSync.apply(plan: coachPlans.first, to: profile)
     }
 }

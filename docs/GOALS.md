@@ -18,18 +18,19 @@ Last updated: 2026-11-22.
 | | Objective | Status |
 |---|---|---|
 | G1 | Every model default is chosen by measurement | in progress |
-| G2 | CI is green and stays the gate | met on the pull request (4 of 4 jobs, first run); to be re-checked on `main` |
+| G2 | CI is green and stays the gate | met: 4 of 4 jobs on the pull request and on `main` after the merge |
 | G3 | A widget never shows anyone else's data, or yesterday's as today's | blocked: the owner restarts his phone on a build and looks at the widget before unlocking |
 | G4 | The store returns what was put in | in progress: schema, round trips, merges, queries and the SQL script are done; entry points, on-disk and UI comparison remain |
-| G5 | Changing a setting changes everything that depends on it | open |
-| G6 | No step breaks when done out of order, repeated, or skipped | open |
-| G7 | Prompts and copy fit whoever is using the app | open |
-| G8 | A new person gets their own pixel character from a photo | open |
-| G9 | Home and Gym as two modes, switched at the top | blocked: the owner reviews the two screenshots and taps the switch on a build |
-| G10 | Nutrition is as specific as it can honestly be | open |
-| G11 | The open defects are closed | open |
+| G5 | Changing a setting changes everything that depends on it | in progress: three defects fixed and 95 matrix tests (EVAL_REPORT 16); the dependency table and kilograms remain |
+| G6 | No step breaks when done out of order, repeated, or skipped | in progress: 15 UI flows pass (EVAL_REPORT 17); the onboarding flow and its skip combinations remain |
+| G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); tool descriptions, onboarding copy and the demo seed remain |
+| G8 | A new person gets their own pixel character from a photo | blocked: built and seen in the simulator (EVAL_REPORT 15); the owner supplies photos and approves the image runs, and deploys the CloudKit schema |
+| G9 | Home and Gym as two modes, switched at the top | in progress: built, tapped by a UI test both ways with state kept (EVAL_REPORT 12, 17); open: VoiceOver reaches the hidden surface (U-1), the light theme, and the owner's look at the screenshots |
+| G10 | Nutrition is as specific as it can honestly be | in progress: built and tested from every source (EVAL_REPORT 18); the estimator's accuracy on the new fields is unmeasured, and the owner deploys the CloudKit schema |
+| G11 | The open defects are closed | in progress: the high-severity lifecycle defects and nine buddy groups are fixed (EVAL_REPORT 16, 19); open: kilograms, widgets' gain framing, travel day keys, HealthKit sync, U-1 to U-3, S-1, S-2 and the accessibility findings |
 | G12 | Competitions | todo (spec needed) |
 | G13 | The app is back on the phones and does not expire again | open, last |
+| G14 | The chat holds up: long histories, selection and copy, "ask about this", real error handling | in progress |
 
 ## Running it
 
@@ -216,3 +217,18 @@ Prerequisite for G8 and for inviting a third person.
   intact (the "data survives an update over an expired build" claim is unconfirmed until
   seen); a scheduled re-upload or an unlisted App Store release in place (EVAL_REPORT 7).
 - **Status:** open, deliberately last. A signed archive of 2.1 (16) exists.
+
+## G14. The chat holds up
+
+*"If the chat is too long, it just won't load… if I scroll up maybe it lets me… the text isn't selectable, or there are no standard features like copy, or ask the AI about this specific text."*
+
+- **Check:** `docs/chat-standards.md` compares each feature and failure with how
+  established chat apps handle it; the chat opens in measured, recorded time at 200, 1,000
+  and 5,000 messages and loads earlier messages on scrolling up without the view jumping;
+  text in a reply can be selected and copied, a message can be copied and shared, and a
+  passage or a message can be quoted to the coach; every failure (offline, timeout, bad
+  key, rate limit, overload, a cut-off reply, a refusal) has its own message and action,
+  the user's message is never lost and a failed turn can be retried without a duplicate;
+  the turn logic lives outside the view with a test for every branch on both providers'
+  wire formats; screenshots reviewed by the owner.
+- **Status:** in progress.

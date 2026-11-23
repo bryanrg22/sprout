@@ -38,17 +38,20 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         [.banner, .sound, .badge]
     }
 
-    /// CloudKit pushes land here: a nudge alert OR a SILENT snapshot-changed wake-up
-    /// (`ensureSnapshotSubscription`). Either way it means "buddy data moved" — tell the hub to pull
-    /// the latest. Posting a notification keeps this decoupled from the (MainActor) view model.
+    /// CloudKit pushes land here: a nudge alert, a SILENT "my buddy's snapshot changed"
+    /// wake-up (`ensureSnapshotSubscription`), or one of the SwiftData private-mirror's own.
+    ///
+    /// For a buddy push, whoever is showing buddy data refreshes, and iOS gets its answer
+    /// only once that has finished or the time allowed ran out (`BuddyRemoteChangeCenter`):
+    /// returning ends the background window, so returning first meant the refresh might
+    /// never run. A push that is not about the buddy starts no buddy refresh.
     func application(_ application: UIApplication,
                      didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
-        NotificationCenter.default.post(name: .buddyRemoteChange, object: nil)
-        return .newData
+        guard BuddyPush.kind(userInfo: userInfo).concernsBuddy else { return .newData }
+        switch await BuddyRemoteChangeCenter.shared.deliver() {
+        case .refreshed:   return .newData
+        case .noObservers: return .noData
+        case .timedOut:    return .failed
+        }
     }
-}
-
-extension Notification.Name {
-    /// A CloudKit push arrived signalling the buddy's data may have changed; the Buddy hub refreshes.
-    static let buddyRemoteChange = Notification.Name("buddyRemoteChange")
 }

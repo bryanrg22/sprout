@@ -79,7 +79,7 @@ struct OpenAIClient: LLMClient {
 
     init() throws {
         // A scoped override (tests / evals) supplies its own key; the app reads the Keychain.
-        let k = AIRuntime.current?.apiKey ?? KeychainStore.apiKey(for: .openai)
+        let k = AIRuntime.effective?.apiKey ?? KeychainStore.apiKey(for: .openai)
         guard let k, !k.isEmpty else { throw AIConfig.AIError.missingKey }
         key = k
     }
@@ -181,7 +181,7 @@ struct OpenAIClient: LLMClient {
         // Only the gpt reasoning families take the parameter here; the o-series is left alone.
         guard profile.isReasoning, model.lowercased().hasPrefix("gpt-") else { return nil }
         // A scoped override (evals measuring effort levels) wins over the built-in choice.
-        if let forced = AIRuntime.current?.reasoningEffort { return forced }
+        if let forced = AIRuntime.effective?.reasoningEffort { return forced }
         if withTools && profile.usesResponsesAPI { return "none" }
         return "low"
     }
@@ -324,7 +324,7 @@ extension OpenAIClient: ToolCapableClient {
     /// with output caps of 80–420 tokens, and reasoning tokens count against the cap, so
     /// the default is no reasoning wherever the model allows that.
     static func plainChatEffort(for model: String) -> String {
-        if let forced = AIRuntime.current?.reasoningEffort { return forced }
+        if let forced = AIRuntime.effective?.reasoningEffort { return forced }
         return OpenAIModelProfile.resolve(model).acceptsEffortNone ? "none" : "low"
     }
 
@@ -586,7 +586,7 @@ extension OpenAIClient: ToolCapableClient {
             "max_output_tokens": maxTokens,
             "prompt_cache_key": cacheKey,
             "prompt_cache_options": ["mode": "explicit", "ttl": "30m"],
-            "reasoning": ["effort": AIRuntime.current?.reasoningEffort ?? "low"],
+            "reasoning": ["effort": AIRuntime.effective?.reasoningEffort ?? "low"],
         ]
     }
 

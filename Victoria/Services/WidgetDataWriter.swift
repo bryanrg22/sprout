@@ -10,13 +10,28 @@ enum WidgetDataWriter {
     @MainActor
     static func refresh(context: ModelContext, profile: UserProfile?) {
         guard let profile else { return }
-        let cal = Calendar.current
-
+        // A `--ui-testing` launch holds seeded demo data in memory; it must not replace the
+        // real snapshot the widget on this device is showing.
+        guard !UITestHooks.isActive else { return }
         let foods   = (try? context.fetch(FetchDescriptor<FoodEntry>())) ?? []
         let weights = (try? context.fetch(FetchDescriptor<WeightEntry>(sortBy: [SortDescriptor(\.date)]))) ?? []
         let waters  = (try? context.fetch(FetchDescriptor<WaterEntry>())) ?? []
         let steps   = (try? context.fetch(FetchDescriptor<StepsEntry>())) ?? []
+        // The custom character reaches the widget as a small file beside the snapshot; the
+        // snapshot names its digest. A built-in character removes any file left from before.
+        let avatarDigest = WidgetAvatarFile.sync(
+            sourcePNG: profile.companionAvatar == .custom ? profile.customAvatarPNG : nil,
+            in: WidgetAvatarFile.defaultDirectory)
+        WidgetSharedStore.save(snapshot(profile: profile, foods: foods, weights: weights,
+                                        waters: waters, steps: steps, avatarDigest: avatarDigest))
+        WidgetCenter.shared.reloadAllTimelines()
+    }
 
+    /// The snapshot for these rows: everything `refresh` writes, with no store and no WidgetKit.
+    static func snapshot(profile: UserProfile, foods: [FoodEntry], weights: [WeightEntry],
+                         waters: [WaterEntry], steps: [StepsEntry],
+                         avatarDigest: String? = nil,
+                         calendar cal: Calendar = .current) -> WidgetSnapshot {
         let todayFood = foods.filter { cal.isDateInToday($0.date) }
         let eaten   = todayFood.reduce(0) { $0 + $1.totalCalories }
         let protein = todayFood.reduce(0) { $0 + $1.totalProteinG }
@@ -34,13 +49,15 @@ enum WidgetDataWriter {
         let waterToday = waters.filter { cal.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz }
         let spark = Array(TrendCalculator.trend(weights).suffix(14).map(\.value))
 
-        let snap = WidgetSnapshot(
+        let avatar = profile.companionAvatar
+        return WidgetSnapshot(
             updated: .now,
             // First name only — the widget is narrow and a full name truncates ("Bryan Ramir…").
             name: profile.name.isEmpty ? "Your"
                 : (profile.name.split(separator: " ").first.map(String.init) ?? profile.name).capitalized,
             themeStyleRaw: profile.themeStyle.rawValue,            // so the widget paints in her/his skin
-            companionAvatarRaw: profile.companionAvatar.rawValue,  // so the widget shows the right buddy
+            companionAvatarRaw: avatar.rawValue,                   // so the widget shows the right buddy
+            companionAvatarDigest: avatarDigest,
             calorieTarget: target,
             calorieMax: calMax,
             caloriesEaten: eaten,
@@ -57,7 +74,5 @@ enum WidgetDataWriter {
             // scale-synced weights, which would otherwise inflate the streak. See StreakCalculator.
             streak: StreakCalculator.loggingStreak(foods: foods, waters: waters, weights: weights, calendar: cal)
         )
-        WidgetSharedStore.save(snap)
-        WidgetCenter.shared.reloadAllTimelines()
     }
 }

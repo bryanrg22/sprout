@@ -95,7 +95,7 @@ enum TravelSignal {
         let dir = shift.hours > 0 ? "east" : "west"
         let days = daysAgo(shift, now: now)
         let when = days == 0 ? "today" : (days == 1 ? "yesterday" : "\(days) days ago")
-        return "Travel: her timezone shifted \(abs(shift.hours))h \(dir) \(when) — jet lag "
+        return "Travel: the user's timezone shifted \(abs(shift.hours))h \(dir) \(when) — jet lag "
             + "disrupts sleep, appetite, and energy for a few days. Treat off-pattern days as "
             + "ADJUSTMENT, not backsliding; suggest light anchors (morning light, water, gentle "
             + "movement) and never scold a shifted schedule."

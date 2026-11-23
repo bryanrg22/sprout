@@ -48,15 +48,15 @@ enum CoachPromptService {
     static let system = """
     You are Vita, a warm, upbeat wellness companion. Above the chat input you show a few \
     tappable "quick prompt" chips — short starter messages your friend can tap to begin a \
-    conversation with you. Given a factual snapshot of her recent data, propose a few \
+    conversation with you. Given a factual snapshot of your friend's recent data, propose a few \
     PERSONALIZED chips by calling the `suggest_prompts` tool. Return ONLY the tool call — no \
     other text.
 
-    Write each chip in HER voice — it's a message SHE would tap to send to you (e.g. "How did \
-    my week go?", "Why am I so tired lately?", "Help me hit my protein", "I crushed leg day"). \
-    Make them feel specific to her real life and data: nod to her actual sports / training, her \
-    streak, her trend, her protein, her water — whatever's most relevant right now — so the chips \
-    feel like they KNOW her, not generic buttons.
+    Write each chip in YOUR FRIEND'S voice, first person — it's a message your friend would tap \
+    to send to you (e.g. "How did my week go?", "Why am I so tired lately?", "Help me hit my \
+    protein", "I crushed leg day"). Make them feel specific to your friend's real life and data: \
+    nod to the actual sports / training, the streak, the trend, the protein, the water — \
+    whatever's most relevant right now — so the chips feel personal, not generic buttons.
 
     RULES:
     - Keep every chip SHORT — at most about six words. They render as small pills.
@@ -65,7 +65,8 @@ enum CoachPromptService {
     - This is about showing up, progress, training, fuel, and feelings — NEVER about restricting \
       food, eating less, calorie-counting, fasting, skipping meals, or hitting a number on the \
       scale. No "diet", no "cheat day", no weigh-in framing. Don't make a chip that pushes \
-      under-eating; a chip ABOUT eating enough / protein / energy is great.
+      under-eating or that treats eating as excess; a chip ABOUT eating enough / protein / \
+      energy is great. The goal rule you are given with the data applies to every chip.
     - Warm and natural, never clinical. A tasteful emoji at most occasionally; usually none.
 
     Return \(personalizedCount) chips via the tool.
@@ -115,30 +116,31 @@ enum CoachPromptService {
 
         let goal: String
         switch direction {
-        case .lose:     goal = "She's working toward gentle, sustainable weight loss — keep the chips about progress, training, fuel, and feelings, never about eating less."
-        case .maintain: goal = "She's maintaining and locking in habits that keep her feeling good."
-        case .gain:     goal = "She's building strength with a steady lean gain — training and recovery matter."
+        case .lose:     goal = "Working toward gentle, sustainable weight loss — keep the chips about progress, training, fuel, and feelings, never about eating less."
+        case .maintain: goal = "Maintaining, and locking in the habits that feel good."
+        case .gain:     goal = "Building strength with a steady lean gain — training and recovery matter."
         }
 
         let trimmedBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
         let bioPart = trimmedBio.isEmpty
-            ? "She hasn't written an about-me note."
-            : "A bit about her, in her own words: \"\(trimmedBio)\""
+            ? "\(who) hasn't written an about-me note."
+            : "A bit about \(who), in \(who)'s own words: \"\(trimmedBio)\""
 
         let trimmedNotes = memoryNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         let notesPart = trimmedNotes.isEmpty
-            ? "You don't have durable notes about her yet."
-            : "What you remember about her (durable notes — use these to make the chips feel like HER):\n\(trimmedNotes)"
+            ? "You don't have durable notes about \(who) yet."
+            : "What you remember about \(who) (durable notes — use these to make the chips feel personal):\n\(trimmedNotes)"
 
         return """
-        Her name: \(who)
-        Her goal/feeling: \(goal)
+        Name: \(who)
+        Goal/feeling: \(goal)
+        Goal rule: \(GoalFraming.protectiveRule(direction))
 
         These starter chips are ALREADY shown, so don't repeat them — make yours different and \
         complementary: \(constants.map { "\"\($0)\"" }.joined(separator: ", ")).
 
-        Her current data (use her recent workouts, trend, streak, protein, and water to make the \
-        chips specific to HER):
+        Current data for \(who) (use the recent workouts, trend, streak, protein, and water to \
+        make the chips specific):
         \(dataSummary)
 
         \(bioPart)
@@ -146,8 +148,8 @@ enum CoachPromptService {
         \(notesPart)
 
         Now propose \(personalizedCount) short, personalized quick-prompt chips via the tool — \
-        in her voice, a mix of a check-in, a question, and an encouragement/vent starter. \
-        Nothing about restricting food or hitting a number on the scale.
+        in \(who)'s first-person voice, a mix of a check-in, a question, and an encouragement/vent \
+        starter. Nothing about restricting food or hitting a number on the scale.
         """
     }
 
@@ -220,7 +222,7 @@ enum CoachPromptService {
             system: system,
             userContent: content,
             toolName: "suggest_prompts",
-            toolDescription: "Return a few short, personalized quick-prompt chips (in her voice) for the chat input.",
+            toolDescription: "Return a few short, personalized quick-prompt chips (in the user's first-person voice) for the chat input.",
             schema: schema,
             model: AIConfig.model(for: .coachPrompts),
             maxTokens: 300          // bounded: a handful of short strings is well under this

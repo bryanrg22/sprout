@@ -67,10 +67,10 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
-        INFOPLIST_KEY_NSCameraUsageDescription: "Sprout uses the camera so you can snap a photo of your meal and get an instant calorie and macro estimate."
+        INFOPLIST_KEY_NSCameraUsageDescription: "Sprout uses the camera so you can snap a photo of your meal for a calorie and macro estimate, or a photo of yourself to make your pixel character."
         INFOPLIST_KEY_NSHealthShareUsageDescription: "Sprout reads your weight and step count from Apple Health so your trend and daily activity stay in sync."
         INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Sprout saves the weigh-ins you log to Apple Health so your data lives in one place."
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Sprout lets you pick a meal photo from your library to estimate its calories and macros."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Sprout lets you pick a meal photo from your library to estimate its calories and macros, or a photo of yourself to make your pixel character."
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Sprout uses your location to suggest healthy food options near you when you're out."
 
   VictoriaWidgets:
@@ -134,7 +134,34 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  # UI smoke flows (XCUITest): the main paths end to end against an in-memory store and a
+  # scripted model (`--ui-testing`, see VictoriaUITests/README.md). Its own scheme, so
+  # `-scheme Victoria` never runs it. `AccessibilityID.swift` is compiled into both the app
+  # and this bundle so the identifiers cannot drift apart.
+  VictoriaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: VictoriaUITests
+      - path: Victoria/App/AccessibilityID.swift
+    dependencies:
+      - target: Victoria
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Victoria
+
 schemes:
+  VictoriaUITests:
+    build:
+      targets:
+        Victoria: all
+        VictoriaUITests: [test]
+    test:
+      targets:
+        - VictoriaUITests
   VictoriaEvals:
     build:
       targets:

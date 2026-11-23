@@ -25,6 +25,9 @@ final class StoreVerificationRoundTripTests: XCTestCase {
         let birth = fx.at(1999, 7, 4)
         let created = fx.at(2026, 1, 15, 8, 30, 12).addingTimeInterval(0.25)
         let gag = fx.at(2026, 2, 19, 21, 45, 3)
+        // The custom character: a PNG signature and a few bytes are enough to prove the
+        // externally stored blob comes back byte for byte.
+        let avatarPNG: Data? = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x01, 0x02, 0x03])
         try assertRoundTrip(
             full: { UserProfile() },
             blank: { UserProfile() },
@@ -55,6 +58,7 @@ final class StoreVerificationRoundTripTests: XCTestCase {
                 assigned("shareFullStatsWithBuddy", \.shareFullStatsWithBuddy, false),
                 assigned("companionName", \.companionName, "Pip"),
                 assigned("companionAvatarRaw", \.companionAvatarRaw, "bryan"),
+                assigned("customAvatarPNG", \.customAvatarPNG, avatarPNG),
                 assigned("lastAlejandroGagDate", \.lastAlejandroGagDate, gag),
                 assigned("themeStyleRaw", \.themeStyleRaw, "cool"),
                 assigned("weighInReminderEnabled", \.weighInReminderEnabled, false),
@@ -70,6 +74,9 @@ final class StoreVerificationRoundTripTests: XCTestCase {
                 assigned("aiModelChat", \.aiModelChat, "model-chat-y"),
                 assigned("homeGymRaw", \.homeGymRaw, "twentyFourHour"),
             ],
+            // A profile that never made a character: the optional blob reads back nil.
+            sparse: { UserProfile() },
+            sparseFields: [wrote("customAvatarPNG", \.customAvatarPNG, nil)],
             typed: { profile in
                 XCTAssertEqual(profile.sex, .male)
                 XCTAssertEqual(profile.activityLevel, .veryActive)
@@ -113,7 +120,11 @@ final class StoreVerificationRoundTripTests: XCTestCase {
                               caloriesLow: 430, caloriesHigh: 540,
                               source: .photo, confidence: .medium,
                               notes: "assumed cooked in oil", barcode: "0123456789012",
-                              photoData: cover, additionalPhotoData: extras, isFavorite: true) },
+                              photoData: cover, additionalPhotoData: extras, isFavorite: true,
+                              detail: NutrientDetail([.saturatedFat: 3.5, .transFat: 0.25, .cholesterol: 95,
+                                                      .sodium: 880.5, .fiber: 6.25, .sugars: 7.5,
+                                                      .addedSugars: 2.5, .vitaminD: 1.75, .calcium: 120,
+                                                      .iron: 2.4, .potassium: 610])) },
             blank: { FoodEntry(name: "") },
             fields: [
                 assigned("id", \.id, fixedUUID(3)),
@@ -136,9 +147,34 @@ final class StoreVerificationRoundTripTests: XCTestCase {
                 wrote("additionalPhotoData", \.additionalPhotoData, extras),
                 wrote("isFavorite", \.isFavorite, true),
                 assigned("createdAt", \.createdAt, created),
+                // The label nutrients: eleven distinct literals, so two columns swapped or
+                // aliased cannot pass.
+                wrote("saturatedFatG", \.saturatedFatG, 3.5),
+                wrote("transFatG", \.transFatG, 0.25),
+                wrote("cholesterolMg", \.cholesterolMg, 95),
+                wrote("sodiumMg", \.sodiumMg, 880.5),
+                wrote("fiberG", \.fiberG, 6.25),
+                wrote("sugarsG", \.sugarsG, 7.5),
+                wrote("addedSugarsG", \.addedSugarsG, 2.5),
+                wrote("vitaminDMcg", \.vitaminDMcg, 1.75),
+                wrote("calciumMg", \.calciumMg, 120),
+                wrote("ironMg", \.ironMg, 2.4),
+                wrote("potassiumMg", \.potassiumMg, 610),
             ],
+            // A food logged without any of them: every one reads back nil (not known), not 0.
             sparse: { FoodEntry(date: date, name: "Black coffee") },
             sparseFields: [
+                wrote("saturatedFatG", \.saturatedFatG, nil),
+                wrote("transFatG", \.transFatG, nil),
+                wrote("cholesterolMg", \.cholesterolMg, nil),
+                wrote("sodiumMg", \.sodiumMg, nil),
+                wrote("fiberG", \.fiberG, nil),
+                wrote("sugarsG", \.sugarsG, nil),
+                wrote("addedSugarsG", \.addedSugarsG, nil),
+                wrote("vitaminDMcg", \.vitaminDMcg, nil),
+                wrote("calciumMg", \.calciumMg, nil),
+                wrote("ironMg", \.ironMg, nil),
+                wrote("potassiumMg", \.potassiumMg, nil),
                 wrote("caloriesLow", \.caloriesLow, nil),
                 wrote("caloriesHigh", \.caloriesHigh, nil),
                 wrote("confidenceRaw", \.confidenceRaw, nil),
@@ -156,12 +192,44 @@ final class StoreVerificationRoundTripTests: XCTestCase {
                 XCTAssertEqual(food.totalProteinG, 60.75)    // 40.5 x 1.5
                 XCTAssertEqual(food.totalCarbsG, 75.375)     // 50.25 x 1.5
                 XCTAssertEqual(food.totalFatG, 19.125)       // 12.75 x 1.5
+                // The label nutrients as one value, and what the day view sums from them.
+                XCTAssertEqual(food.detail.known, Nutrient.allCases)
+                XCTAssertEqual(food.detail.sodiumMg, 880.5)
+                let totals = NutrientTotals([food])
+                XCTAssertEqual(totals[.sodium].total, 1_320.75)   // 880.5 x 1.5
+                XCTAssertEqual(totals[.fiber].total, 9.375)       // 6.25 x 1.5
+                XCTAssertTrue(totals[.fiber].isComplete)
             },
             typedSparse: { food in
                 XCTAssertNil(food.confidence)
                 XCTAssertEqual(food.mealType, .snack)
                 XCTAssertEqual(food.source, .manual)
+                XCTAssertTrue(food.detail.isEmpty)
+                XCTAssertNil(NutrientTotals([food])[.sodium].total, "not known reads back as not known")
             })
+    }
+
+    /// The other half of "not known is never zero": a zero that WAS stated has to come back
+    /// as zero, not as nil. One row with every label nutrient 0, one with none.
+    func test_b_roundTrip_FoodEntry_statedZeroAndNotKnownStayDistinct() throws {
+        let container = try TestStore.makeContainer()
+        let writer = ModelContext(container)
+        var zeros = NutrientDetail()
+        for nutrient in Nutrient.allCases { zeros[nutrient] = 0 }
+        writer.insert(FoodEntry(date: fx.at(2026, 2, 20, 9), name: "Sparkling water", calories: 0, detail: zeros))
+        writer.insert(FoodEntry(date: fx.at(2026, 2, 20, 13), name: "Soup", calories: 180))
+        try writer.save()
+
+        let read = try TestStore.fetchAll(FoodEntry.self, in: container, sortBy: [SortDescriptor(\.date)])
+        XCTAssertEqual(read.map(\.name), ["Sparkling water", "Soup"])
+        for nutrient in Nutrient.allCases {
+            XCTAssertEqual(read[0].detail[nutrient], 0, "\(nutrient): a stated zero is stored as 0")
+            XCTAssertNil(read[1].detail[nutrient], "\(nutrient): never stated, so stored as nil")
+        }
+        let totals = NutrientTotals(read)
+        XCTAssertEqual(totals[.sodium].total, 0)
+        XCTAssertEqual(totals[.sodium].known, 1)
+        XCTAssertEqual(totals[.sodium].coverageNote, "from 1 of 2 foods")
     }
 
     func test_b_roundTrip_WorkoutEntry() throws {

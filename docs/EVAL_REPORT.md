@@ -23,6 +23,12 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 11 | The widget that showed someone else's data | 2026-11-22 |
 | 12 | Home and Gym: two surfaces and the switch between them | 2026-11-22 |
 | 13 | The store returns what was put in: verification through the real store, and by SQL | 2026-11-22 |
+| 14 | Prompts for whoever is using the app, re-measured; a discarded rewrite explained | 2026-11-22 |
+| 15 | A character from a photo | 2026-11-22 |
+| 16 | Settings that change what depends on them: the plan, kilograms, and where a key goes | 2026-11-22 |
+| 17 | UI smoke flows: the app driven end to end, and what the accessibility audit found | 2026-11-23 |
+| 18 | The rest of the label: eleven more nutrients, and "unknown" is never zero | 2026-11-23 |
+| 19 | Buddy pairing and sync: nine defect groups closed | 2026-11-23 |
 
 ---
 
@@ -582,3 +588,243 @@ returns first, whatever its state (the case that can follow an iCloud restore, L
 HealthKit weight and today's-steps import, which need HealthKit; the screens' own filters,
 which are re-stated in the tests rather than called; whether the SQL totals match what
 the screens show (the script prints them; nobody compared them to the UI).
+
+## 14. Prompts for whoever is using the app, re-measured; a discarded rewrite explained (2026-11-22)
+
+Objective G7, finding A-1 of section 3. Every prompt, template and fallback that
+addressed one specific person ("her", "she tends to under-eat", "weight-loss buddy") now
+addresses the user in the second person or by the name passed in, and takes the goal
+direction from the profile through one `GoalFraming` rule: for a user who is losing,
+never push eating less; for a user who is gaining, never frame eating as excess. The
+no-guilt, no-moralising rules are kept. `PromptNeutralityTests` (21 tests) call the real
+prompt builders for both fixture users and fail on a gendered pronoun about the user, on
+loss-only framing, and on either name the app was first built around.
+
+**Still person-specific, found and not yet changed** (files other work was editing): the
+coach's tool descriptions and result strings in `CoachTools.swift`; three lines of
+onboarding copy in `OnboardingView.swift` that greet one person by name and sign off as
+another; a few Settings, Buddy-preview and widget strings; `DemoSeed` still seeds both
+names. G7 is therefore not met.
+
+**Re-measured, because two measured prompts changed** (`Evals/runs/20261123-071932-DailyBrief`,
+`20261123-072221-CoachToolChoice`; ten models, three repeats):
+
+- Coach tool choice: no model lost ground. Six score 100% (96–100): `claude-haiku-5-5`,
+  `claude-sonnet-5`, `claude-sonnet-5-5`, `gpt-6-luna`, `gpt-5.6-luna`, `gpt-5.6-terra`.
+- Daily brief: `gpt-6-luna` 39 of 39 again; the default stands. `claude-haiku-5-5` passed
+  36 of 39, failing one case ("your trend eased down") three times in three.
+
+**Why that case failed, and the fix.** The harness could not say: a rewrite the app's
+guardrail discards came back as nothing. `DailyBriefService.rejection(of:)` now names the
+reason, the device log records it, and the evaluation keeps the raw reply. The reason was
+not wording: the model wrote the headline and the body on one line, and the parser
+required a line break and threw the whole reply away. The same slip explained most of
+`gpt-4.1-mini`'s failures. `parse` now splits a one-line reply of two or more sentences
+at its first sentence (a single sentence is still not a brief; banned phrases are still
+rejected). Re-run on the four cases that had failed
+(`20261123-072939-DailyBrief`): 12 of 12 on each of `claude-haiku-5-5`, `gpt-6-luna` and
+`gpt-4.1-mini`. Twelve attempts per model is a confirmation of the mechanism, not a new
+pass rate; the full 13-case run has not been repeated since the parser change.
+
+The harness can now be limited to named cases (`SPROUT_EVAL_CASES`), which is how the one
+failure was chased for a few cents. **Measured spend to date: $8.96** over 5,199 attempts.
+
+## 15. A character from a photo (2026-11-22)
+
+Objective G8. A new person can have a pixel character drawn from a photo.
+
+**Researched** (`docs/avatar-generation.md`, sources there): OpenAI's image edit endpoint
+and its current models. Confirmed from the documentation: the endpoint, the `background`,
+`output_format`, `size` and `quality` values, where the image and the `usage` block are in
+the response, the `moderation_blocked` error code, and the token rates. **Not confirmed
+by the documentation:** a transparent background on the 2.6 models (it is stated for 2.5),
+the multipart field layout together with those options, the HTTP status of a refusal, and
+any per-image price. Each unconfirmed field is a named constant.
+
+**Built:** `AvatarGenerator` (the request goes through the same test seam as the text
+clients; the input photo is downscaled; the result must decode, be square and have real
+transparency), one character per person stored on the profile, a custom case of the
+avatar choice handled everywhere a companion is drawn, a small copy in the app group for
+the widget that is drawn only if its digest matches the snapshot, an onboarding step
+after the key step, and the same flow in Settings. Decisions: one image, not a set of mood
+frames; the photo is sent only after an explicit consent and is never stored; without an
+OpenAI key, on a refusal or on any failure the flow continues with a built-in character
+and the step can always be skipped; a buddy is shown a built-in character, never
+someone's custom one; the coach's tool can choose built-ins only.
+
+**Verified:** 78 tests for request building, every failure mapping, the downscale, that
+only the result is written, the widget file, and the stored values. In the simulator, in
+the dark and the light theme, the step was seen in four states: choose and consent, no
+OpenAI key, a preview, and a failure with its fallback
+(`docs/screenshots/review/avatar-*.png`). Two things were fixed from looking: the preview
+spilled past its ring, and the copy named a Settings screen that does not exist.
+
+**Not verified:** no image has been generated. The preview in the screenshot is a
+stand-in drawn in code. The request has never been sent to OpenAI, so the unconfirmed
+fields above are untested; the camera path, the real widget process, and CloudKit sync of
+the image have not been exercised. The default model `gpt-image-2.6-flare` was not chosen
+by measurement; `Evals/run.sh Avatar` exists to do that and needs photos (synthetic or
+consented) and approval for the spend. **The owner must deploy the CloudKit Production
+schema** for the new `customAvatarPNG` field before a build with this reaches TestFlight.
+
+## 16. Settings that change what depends on them: the plan, kilograms, and where a key goes (2026-11-22)
+
+Objective G5, defects L-B2, L-B7 and L-B9 of section 3.
+
+- **L-B2, fixed.** Each plan number now records the goal direction it was written for
+  (beside the existing per-plan flag; no schema change). The plan's calories and protein
+  drive the targets only while the direction still matches, so switching from losing to
+  gaining falls back to the computed targets at once and raises the rebuild notice, and
+  switching back restores them. A change of pace, activity level, goal or start weight,
+  sex, height or birth date raises the notice and keeps the plan's numbers, from Settings
+  and from every coach tool. The Settings footers now say what happens.
+- **L-B7, made safe, not solved.** Full metric support touches about forty places.
+  Until it is done properly, asking the coach to switch to kilograms is declined in plain
+  words and writes nothing, so weights can no longer be corrupted. Kilograms are still
+  not supported.
+- **L-B9, fixed.** A pasted key is routed by the key itself (`sk-ant-` is Anthropic, any
+  other `sk-` is OpenAI) and the active provider follows it; at launch, if the active
+  provider has no key and the other has one, the active provider switches.
+- Also fixed: the height shown for values not in whole inches, the water "reset to
+  recommended" that showed one number and applied another, and two places that used the
+  start weight as the current weight.
+
+**Verified:** 95 new tests (a matrix of inputs against derived values, the plan rules, the
+three fixes); suite 756 tests, 753 passed, 3 known defects pinned. One existing
+expectation changed with a stated reason: after an undo the profile's protein target now
+matches the plan (the state the running app is in) where the test had recorded a
+unit-test artifact.
+
+**Not done:** the written dependency table (`docs/settings-dependencies.md`) and the count
+of matrix cells by status; simulator screenshots of the reworded Settings copy; checks
+that each new test fails on the old code. **Found and open:** the step bonus is applied
+on the Today ring and the widget but not on Nutrients, the coach, the buddy snapshot or
+achievements; Settings' recommended water is not clamped the way onboarding's is.
+
+## 17. UI smoke flows: the app driven end to end, and what the accessibility audit found (2026-11-23)
+
+Objective G6. Until now nothing drove the app's UI; section 9 measured 19.1% of the
+app's lines executed by tests.
+
+**Added:** a `VictoriaUITests` target with its own scheme, and test hooks compiled into
+Debug builds only (the Release binary was checked to contain none of them):
+`--ui-testing` runs on an in-memory store with CloudKit off and suppresses permission
+prompts, and `--ui-test-scripted-ai=<name>` answers every model call from a built-in
+script. Fifteen flows, each a fresh launch, located by accessibility identifiers rather
+than by copy: a fresh install shows onboarding; a seeded launch shows Today and every
+Home tab opens; the Home and Gym switch is tapped both ways, the tab bar goes and comes
+back, and the choice survives a relaunch; Home's state survives a round trip through
+Gym; a food is logged by hand, appears, and moves Today's calories; logging twice and
+deleting one leaves the right totals; water is logged; a workout is logged; a coach turn
+on a scripted model proposes a tool, applies it, shows the reply, moves Today's water,
+and undoes; a failing provider shows the error and the app stays usable; the app is
+backgrounded in the middle of the food sheet and of a coach turn and comes back valid;
+the coach, Gym and Settings are each opened first on a fresh launch.
+
+**Verified by running:** three consecutive runs by the author of the flows, each 15 tests
+with 10 passed and 5 expected failures, about 5 minutes; and once more on the integrated
+branch (with the character step and the settings changes merged): the same result. Unit
+suite on that branch: **780 tests, 777 passed, 3 known defects pinned.** The flows are a
+CI job; it has not run on GitHub yet.
+
+**This closes two "not verified" items of section 12:** the switch has now been tapped,
+and state surviving a switch is asserted.
+
+**Defects found:**
+
+| ID | Defect | Where |
+|---|---|---|
+| U-1 | The surface hidden by the Home and Gym switch stays in the accessibility tree, so VoiceOver can reach controls that are not on screen. `.accessibilityHidden` on the hidden surface does not take effect on the tab view. Pinned as an expected failure. | `RootView.swift`, the two surfaces under the switch |
+| U-2 | The demo seed's profile is created "now", so both day steppers are disabled and its seeded past days cannot be reached. | `DemoSeed.swift:29` |
+| U-3 | A string in the Nutrients tab still names one person. | `FoodLogView.swift:427` |
+
+**Accessibility audit** (`performAccessibilityAudit`, pinned as expected failures in five
+flows, 19 to 32 issues per screen, about 70% of them from U-1). On screen: 9 pt day
+letters on Workouts with no Dynamic Type and low contrast; contrast on the setup card,
+the widget promo card, the plan card and a weight row; a clipped title on Workouts and,
+in some runs, a clipped greeting on Today; a fixed-height mode switch; an unlabelled
+image and a fixed 56 pt control on Progress; partial Dynamic Type in the coach. None is
+fixed.
+
+**Not covered:** onboarding beyond its first screen (the character step was being added);
+the light theme; locales other than en-US; a run that crosses midnight; a simulator
+signed in to iCloud.
+
+## 18. The rest of the label: eleven more nutrients, and "unknown" is never zero (2026-11-23)
+
+Objective G10. A food entry carried calories, protein, carbohydrate and fat.
+
+**Researched** (`docs/nutrition-detail.md`, sources there): what the US Nutrition Facts
+label requires, what Open Food Facts and USDA FoodData Central provide, and what can
+honestly be estimated from a photo or a description. Two of its claims about what other
+trackers show come from search excerpts, not from the products.
+
+**Decided:** eleven optional fields, in label order: saturated fat, trans fat,
+cholesterol, sodium, fiber, total sugars, added sugars, vitamin D, calcium, iron,
+potassium. The photo and description estimator is asked for four of them (fiber, total
+sugars, saturated fat, sodium) and not for the other seven, which are shown only when
+they come from a label, a barcode or the user.
+
+**The rule the feature rests on:** a value that is not known is stored as absent, shown
+as unknown, and never counted as zero. A day's total for a nutrient says how many of the
+day's foods it covers ("from 3 of 4 foods"). How "unknown" arrives from each source is
+defined and tested: an absent or implausible key from Open Food Facts; an absent or
+unreadable row, or a bare percent daily value, from a label scan; `null`, a missing key,
+a negative or impossible amount, or four exact zeros on a food of 50 kcal or more from
+the estimator (the filler a strict schema produces, section 10); an absent argument from
+the coach's tools; an empty field in manual entry.
+
+**Verified:** 111 new tests; suite **891 tests, 888 passed, 3 known defects pinned**;
+evaluation self-tests 37 passed, 4 live evaluations skipped. A store written before the
+change opens with the new build: its 10 rows are kept and the 11 new columns are empty.
+The day card and the entry detail were seen in the simulator
+(`docs/screenshots/review/nutrition-*.png`).
+
+**Not verified:** no model has been sent the new schema, so how often each candidate
+fills the four estimated fields, and how accurately, is unmeasured. The label parser ran
+on typed text, not on a camera scan. `meal_describe/v3` (the existing cases with these
+nutrients from the same USDA records) is **not built**: USDA's demo key refused every
+request for about sixteen hours, the fetch code for nutrient details has never run
+against the service, and the nutrient ids in it were written from memory, so they must
+be checked on the first successful fetch. The live meal evaluation stays on v1 until then.
+**The owner must deploy the CloudKit Production schema** for the eleven new `FoodEntry`
+fields before a build with this reaches TestFlight.
+
+## 19. Buddy pairing and sync: nine defect groups closed (2026-11-23)
+
+Objective G11, the data-and-sync table of section 3. Every claim was checked against the
+current code before it was fixed; none of the audit's claims turned out to be wrong.
+
+| ID | Was | Now |
+|---|---|---|
+| D-V2 | A mistyped or not-yet-uploaded code said "You're connected!" | Pairing succeeds only when the code resolves to another user's record. A code that is not a code, your own code, a code nobody has shared, and a code already claimed each say so, and nothing is stored on failure. |
+| D-V3 | The link was stored before the claim was saved. | Stored after the remote write succeeds; a failed claim leaves the user unpaired and able to retry. |
+| D-V4, L-B11 | No way out of a pairing; a reinstall stranded the partner on a frozen snapshot. | An Unpair action with a confirmation, which tells the other side through the pairing record and deletes the published snapshot. A buddy who has published nothing for three days is shown as "hasn't shared an update since" that date, with Unpair, and their old day is not shown as current. |
+| D-V9 | The publisher read the link once at launch. | It notices a new link without a relaunch. |
+| D-V10/11 | Streak nudges re-fired daily; a milestone was used up before a failed send. | Each milestone is sent once and marked sent only when the send succeeded. |
+| D-V14 | The silent-push handler returned before its work ran. | It waits for the refresh, bounded at 20 seconds. |
+| L-B6 | The 7- and 14-day achievements counted imported steps as logged days. | They use the streak's definition of an active day. An achievement already unlocked stays unlocked. |
+| L-B12 | No reminders and no permission prompt until the second launch. | Scheduled when an onboarded profile first appears. |
+| V16–V18, V22 | A diagnostics flood during pairing, concurrent publishes, a nudge gated on the snapshot, a badge never cleared. | Fixed in the app; see below for what remains. |
+
+Also changed: the pairing screen promised "never your weight or calories" while sharing
+full stats is on by default, so it now says what is shared. Linking no longer publishes
+an invented "logged today" snapshot.
+
+**Verified:** 93 new tests; 47 of them were run against the old behaviour first and
+failed there, and five written later were checked by breaking the code on purpose. Suite
+**984 tests, 981 passed, 3 known defects pinned**. Ten states were seen in the simulator
+(`docs/screenshots/review/buddy-*.png`), reached by debug launch arguments rather than
+by tapping; on a fresh install the reminder prompt appeared on the first launch.
+
+**Not verified:** nothing was sent to CloudKit. The pairing store, the snapshot delete,
+the account-status mapping and the handling of a real push payload are tested against a
+double of the sync service only. **Still open:** the diagnostics log rewrites its whole
+file for each line; CloudKit's server-side badge count keeps growing until the
+subscription is re-created on a device; the "first steps" achievement still unlocks from
+imported steps; a durable identity that survives a reinstall is a design
+(`docs/buddy-identity.md`), not built. **The owner must check in the CloudKit Dashboard**
+(`docs/buddy-sync.md` section 10): that Production has every `BuddyPairing`, `Nudge` and
+`BuddySnapshot` field and the three indexes, and that signed-in users can write
+`BuddyPairing` and `Nudge` records, since claiming a code, unpairing and marking a nudge
+read each write to a record another user created.

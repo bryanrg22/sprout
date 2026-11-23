@@ -1,32 +1,22 @@
 import Foundation
 
-/// A fully local, backend-free implementation of `BuddySyncService` that **simulates a
-/// warm, present buddy** so the entire accountability-buddy UX is exercisable TODAY —
-/// no paid account, no iCloud, no network.
+/// A fully local implementation of `BuddySyncService` with a simulated buddy, "Sam", so
+/// the buddy screens can be used in the Simulator, which cannot sign in to iCloud.
 ///
-/// What it fakes, and how:
-/// - **Pairing:** `link(usingCode:)` always "succeeds" against a friendly simulated
-///   buddy (default name "Bryan") and remembers that we're linked. `generatePairingCode`
-///   mints a real-looking code. `unlink` clears everything.
-/// - **A believable buddy snapshot:** `fetchBuddySnapshot()` returns a buddy who's doing
-///   well — a healthy streak, "thriving/happy", usually logged today, recently active.
-///   The values drift a little over time/calls so it doesn't look frozen.
-/// - **Nudges that feel two-way:** when you `sendNudge`, the buddy "writes back" — a
-///   warm reply nudge is queued into your own inbox after a short, human-feeling delay,
-///   so the loop (send → ding → reply) is demoable end-to-end.
+/// What is real and what is simulated:
+/// - **Pairing is the real handshake** (`BuddyPairingEngine`) over an in-memory store that
+///   holds two records: Sam's code `VITA-SAM2`, waiting to be typed, and `VITA-TAKN`,
+///   already paired with someone else. Typing Sam's code connects; anything else fails
+///   the way it would on a device, with the same message.
+/// - **Sam's snapshot is made up**: a streak, activity around the goals, opted-in full
+///   stats. The values drift a little between calls so it does not look frozen.
+/// - **Nudges get a reply**: a few seconds after you send one, Sam "writes back".
 ///
-/// **Isolation.** This is a `@MainActor final class` (not an `actor`). That's deliberate
-/// and matches this codebase's SwiftData convention: the app's `ModelContext` lives on
-/// the main actor and `@Model` objects are bound to it, so the `Nudge` models that flow
-/// through this service must never cross an actor boundary (see the equivalent note in
-/// `HealthKitService`). Running the whole service on the main actor keeps that safe.
-/// `@MainActor` types are implicitly `Sendable`, satisfying `BuddySyncService`.
+/// **Isolation.** A `@MainActor final class`, like the CloudKit service: the `Nudge`
+/// models that pass through are bound to the main-actor `ModelContext`.
 ///
-/// **State.** The link + inbox are persisted to `UserDefaults` (JSON) so a relaunch
-/// keeps your buddy and messages; the "pending replies" timers are in-memory only
-/// (a relaunch simply delivers any due replies immediately on the next `fetchInbox`).
-///
-/// This is the **default sync in DEBUG** (see `BuddySync.makeDefault`).
+/// **State.** The link and inbox are in `UserDefaults`; the pairing records and pending
+/// replies are in memory and rebuilt at launch from the persisted link.
 @MainActor
 final class LocalMockSyncService: BuddySyncService {
 
@@ -35,16 +25,25 @@ final class LocalMockSyncService: BuddySyncService {
     /// A stable id for "me" in the mock world, persisted so it's consistent across launches.
     private let myUserID: String
 
-    /// The simulated buddy's identity.
-    private let mockBuddyUserID = "mock.buddy.bryan"
-    private let mockBuddyDisplayName = "Bryan"
+    /// The simulated buddy.
+    nonisolated static let buddyUserID = "mock.buddy.sam"
+    nonisolated static let buddyDisplayName = "Sam"
+    /// The code the simulated buddy is showing. Typing it pairs.
+    nonisolated static let buddyCode = "VITA-SAM2"
+    /// A code someone else has already paired through.
+    nonisolated static let claimedCode = "VITA-TAKN"
+    private var mockBuddyUserID: String { Self.buddyUserID }
+    private var mockBuddyDisplayName: String { Self.buddyDisplayName }
+
+    private let engine: BuddyPairingEngine
+    private let storage: BuddyLinkStorage
 
     // MARK: Persistence keys
 
     private let defaults: UserDefaults
     private enum Key {
         static let myUserID    = "buddy.mock.myUserID"
-        static let linkedCode  = "buddy.mock.linkedCode"   // non-nil => linked
+        static let legacyCode  = "buddy.mock.linkedCode"   // how builds before the engine marked "linked"
         static let inbox       = "buddy.mock.inbox"        // [Nudge wire dto] JSON
         static let buddyStreak = "buddy.mock.buddyStreak"  // persisted so it grows believably
     }
@@ -57,42 +56,105 @@ final class LocalMockSyncService: BuddySyncService {
 
     // MARK: Init
 
-    init(defaults: UserDefaults = .standard) {
+    /// - Parameter myUserID: the app's own id for this user, so the link and "which code is
+    ///   mine" are stored under the same id the view model uses. Without one (a preview),
+    ///   the mock keeps an id of its own.
+    /// - Parameter applyDemoLink: whether a DEBUG demo argument may set or clear the link
+    ///   now. The app passes true for the first service of a launch only: SwiftUI builds a
+    ///   view model (and so a service) every time it re-creates the view that owns one, and
+    ///   applying it again would pair the user right after they unpaired.
+    init(myUserID: String? = nil,
+         defaults: UserDefaults = .standard,
+         arguments: [String] = CommandLine.arguments,
+         applyDemoLink: Bool = true) {
         self.defaults = defaults
-        if let existing = defaults.string(forKey: Key.myUserID) {
-            self.myUserID = existing
+        let me: String
+        if let myUserID {
+            me = myUserID
+        } else if let existing = defaults.string(forKey: Key.myUserID) {
+            me = existing
         } else {
-            let fresh = "me-" + UUID().uuidString.prefix(8)
-            defaults.set(fresh, forKey: Key.myUserID)
-            self.myUserID = fresh
+            me = "me-" + UUID().uuidString.prefix(8)
+            defaults.set(me, forKey: Key.myUserID)
+        }
+        self.myUserID = me
+        let storage = BuddyLinkStorage(myUserID: me, namespace: "buddy.mock", defaults: defaults)
+        self.storage = storage
+
+        // A link stored by a build from before the engine: keep it.
+        if defaults.string(forKey: Key.legacyCode)?.isEmpty == false {
+            if storage.buddyUserID == nil {
+                storage.setLinked(buddyUserID: Self.buddyUserID,
+                                  via: .init(code: Self.buddyCode, role: .claimant))
+            }
+            defaults.removeObject(forKey: Key.legacyCode)
         }
         #if DEBUG
-        // DEBUG: `--demo-buddy` starts already linked with a couple of warm notes, so the
-        // linked hub (shared panda + status + inbox) can be screenshotted without pairing.
-        if CommandLine.arguments.contains("--demo-buddy") {
-            defaults.set("VITA-DEMO", forKey: Key.linkedCode)
-            if loadInbox().isEmpty {
-                let n1 = Nudge(fromUserID: mockBuddyUserID, toUserID: myUserID,
-                               kind: .proudOfYou, text: "So proud of you today! 🙌")
-                let n2 = Nudge(fromUserID: mockBuddyUserID, toUserID: myUserID,
-                               kind: .cheer, text: "We're both crushing it 💚")
-                saveInbox([n1.wireDTO, n2.wireDTO])
+        // DEBUG: `--demo-buddy` starts already paired, so the linked hub can be shown
+        // without typing a code; `--demo-buddy-state unpaired` starts with no buddy.
+        let demo = DemoState(arguments: arguments)
+        self.demoState = demo
+        if applyDemoLink {
+            if demo == .unpaired {
+                storage.clear()
+            } else if arguments.contains("--demo-buddy") || demo != nil {
+                storage.setLinked(buddyUserID: Self.buddyUserID,
+                                  via: .init(code: Self.buddyCode, role: .claimant))
             }
+        }
+        #endif
+
+        // The "server": Sam's record (claimed by me if this phone is paired) and one that
+        // is taken. In memory, so it is rebuilt to agree with the persisted link.
+        let backend = InMemoryPairingStore.Backend()
+        let paired = storage.buddyUserID == Self.buddyUserID
+        backend.seed(BuddyPairingRecord(code: Self.buddyCode, ownerUserID: Self.buddyUserID,
+                                        claimantUserID: paired ? me : nil))
+        backend.seed(BuddyPairingRecord(code: Self.claimedCode, ownerUserID: "mock.someone",
+                                        claimantUserID: "mock.someone.else"))
+        self.engine = BuddyPairingEngine(myUserID: me,
+                                         store: InMemoryPairingStore(backend: backend),
+                                         storage: storage)
+
+        #if DEBUG
+        if arguments.contains("--demo-buddy"), loadInbox().isEmpty {
+            let n1 = Nudge(fromUserID: mockBuddyUserID, toUserID: me,
+                           kind: .proudOfYou, text: "So proud of you today! 🙌")
+            let n2 = Nudge(fromUserID: mockBuddyUserID, toUserID: me,
+                           kind: .cheer, text: "We're both crushing it 💚")
+            saveInbox([n1.wireDTO, n2.wireDTO])
         }
         #endif
     }
 
+    #if DEBUG
+    /// DEBUG: `--demo-buddy-state <stale|silent|unpaired>` puts the simulated buddy in a
+    /// state that otherwise takes days to reach, for looking at the screen that shows it.
+    enum DemoState: String {
+        /// Sam last published nine days ago.
+        case stale
+        /// Paired, and Sam has never published.
+        case silent
+        /// No buddy.
+        case unpaired
+
+        init?(arguments: [String]) {
+            guard let i = arguments.firstIndex(of: "--demo-buddy-state"), i + 1 < arguments.count,
+                  let state = DemoState(rawValue: arguments[i + 1]) else { return nil }
+            self = state
+        }
+    }
+    private var demoState: DemoState?
+    #endif
+
     // MARK: BuddySyncService
 
     nonisolated func generatePairingCode() -> String {
-        Self.makePairingCode()
+        BuddyPairingCode.make()
     }
 
     func link(usingCode code: String) async throws {
-        let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { throw BuddySyncError.invalidPairingCode }
-        // The mock is generous: any non-empty code connects you to the friendly buddy.
-        defaults.set(trimmed.uppercased(), forKey: Key.linkedCode)
+        try await engine.claim(code: code)
         // Seed a warm opening message so the inbox isn't empty on first connect.
         if loadInbox().isEmpty {
             let hello = Nudge(fromUserID: mockBuddyUserID,
@@ -104,13 +166,12 @@ final class LocalMockSyncService: BuddySyncService {
     }
 
     func publishMyPairingCode(_ code: String) async throws {
-        // The simulated buddy is always "waiting", so there's nothing to announce. No-op.
-        _ = code
+        try await engine.announce(code: code)
     }
 
     func unlink() async throws {
         // Idempotent: clearing when already unlinked is fine.
-        defaults.removeObject(forKey: Key.linkedCode)
+        await engine.unlink()
         defaults.removeObject(forKey: Key.inbox)
         defaults.removeObject(forKey: Key.buddyStreak)
         pendingReplies.removeAll()
@@ -155,8 +216,25 @@ final class LocalMockSyncService: BuddySyncService {
     }
 
     func fetchBuddySnapshot() async throws -> BuddySnapshotPayload? {
-        guard isLinked else { return nil }
+        guard isLinked else { throw BuddySyncError.notLinked }
+        try await engine.verifyLink()
         deliverDueReplies() // keep the world ticking when the UI polls
+
+        #if DEBUG
+        if demoState == .silent { return nil }
+        if demoState == .stale {
+            // Nine days without a publish: what a buddy who reinstalled leaves behind.
+            return BuddySnapshotPayload(ownerUserID: mockBuddyUserID,
+                                        displayName: mockBuddyDisplayName,
+                                        dayStreak: 6,
+                                        characterMood: .happy,
+                                        loggedToday: true,
+                                        lastActive: Date.now.addingTimeInterval(-9 * 86_400),
+                                        stepsToday: 8_400, stepGoal: 10_000,
+                                        waterToday: 80, waterGoal: 96,
+                                        workedOutToday: true, workoutSummary: "Chest · Arms")
+        }
+        #endif
 
         // A believable, *encouraging* buddy: a healthy streak that nudges upward a touch
         // each calendar day, a positive mood, usually-logged, recently active.
@@ -165,22 +243,17 @@ final class LocalMockSyncService: BuddySyncService {
         // Pretend they were active sometime in the last couple of hours.
         let lastActive = Date.now.addingTimeInterval(-Double.random(in: 300...7200))
 
-        // Believable daily ACTIVITY for the face-off (movement/hydration only — never
-        // weight/calories). The simulated buddy is "Bryan", so he carries his own goals
-        // (a higher 10k step goal, a standard ~96 oz water goal). The numbers land around
-        // — sometimes above, sometimes a touch below — his goals so the face-off feels
-        // alive and genuinely two-sided (some days he edges you, some days you edge him),
-        // and they're scored as % of HIS own goal so it's always fair.
+        // Believable daily ACTIVITY for the face-off. The simulated buddy has their own
+        // goals (10k steps, 96 oz of water); the numbers land around them, sometimes above
+        // and sometimes a little below, and are scored as a share of THEIR goal.
         let buddyStepGoal = 10_000
         let buddyWaterGoal = 96.0
         let buddySteps = Int(Double(buddyStepGoal) * Double.random(in: 0.7...1.15))
         let buddyWater = (buddyWaterGoal * Double.random(in: 0.65...1.2)).rounded()
         let buddyWorkedOut = Double.random(in: 0...1) < 0.7   // usually moves, not always
 
-        // OPT-IN full data (weight / calories / food). The mock buddy "shares everything"
-        // so the new BuddyFullStatsCard is visible in the Simulator without a real backend.
-        // Fixed, believable sample numbers (a steady loser tracking toward a 140 goal,
-        // eating under target with solid protein, a few wholesome foods logged today).
+        // OPT-IN full data (weight / calories / food). The simulated buddy has opted in, so
+        // the full-stats part of the card is visible in the Simulator. Fixed sample numbers.
         return BuddySnapshotPayload(ownerUserID: mockBuddyUserID,
                                     displayName: mockBuddyDisplayName,
                                     dayStreak: streak,
@@ -207,14 +280,10 @@ final class LocalMockSyncService: BuddySyncService {
     // MARK: - Linked-state helpers
 
     /// Protocol: the linked buddy id, read from persistence so the UI restores the paired
-    /// state at launch. The mock simulates a single buddy.
-    nonisolated var linkedBuddyID: String? {
-        (defaults.string(forKey: Key.linkedCode)?.isEmpty == false) ? "mock-buddy" : nil
-    }
+    /// state at launch.
+    nonisolated var linkedBuddyID: String? { storage.buddyUserID }
 
-    private var isLinked: Bool {
-        (defaults.string(forKey: Key.linkedCode)?.isEmpty == false)
-    }
+    private var isLinked: Bool { storage.buddyUserID != nil }
 
     private func requireLinked() throws {
         if !isLinked { throw BuddySyncError.notLinked }
@@ -265,17 +334,6 @@ final class LocalMockSyncService: BuddySyncService {
     private func saveInbox(_ inbox: [NudgeDTO]) {
         guard let data = try? JSONEncoder().encode(inbox) else { return }
         defaults.set(data, forKey: Key.inbox)
-    }
-
-    // MARK: - Pairing code generation (shared with CloudKit service)
-
-    /// "VITA-XXXX" with an unambiguous alphabet (no 0/O/1/I/L) so it's easy to read aloud.
-    /// `nonisolated` (pure, no state) so it can be called from the non-isolated
-    /// `generatePairingCode()` requirement in both backends.
-    nonisolated static func makePairingCode() -> String {
-        let alphabet = Array("ABCDEFGHJKMNPQRSTUVWXYZ23456789")
-        let suffix = String((0..<4).map { _ in alphabet.randomElement()! })
-        return "VITA-\(suffix)"
     }
 
     // MARK: - Reply tone (always kind)

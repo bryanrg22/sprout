@@ -221,7 +221,7 @@ struct ProgressSummaryCard: View {
         // Who she is — her editable About You profile, so the recap speaks to her real life, not just
         // numbers (the same canonical bio chat + the plan read). Keeps every AI surface consistent.
         let bio = profile.onboardingNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !bio.isEmpty { lines.append("About her, in her own profile: \(bio)") }
+        if !bio.isEmpty { lines.append("About the user, from their own profile: \(bio)") }
 
         // Need at least a weigh-in or some food to say anything real.
         guard !weights.isEmpty || !dayCalories.isEmpty else { return nil }
