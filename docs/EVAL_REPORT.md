@@ -30,6 +30,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 18 | The rest of the label: eleven more nutrients, and "unknown" is never zero | 2026-11-23 |
 | 19 | Buddy pairing and sync: nine defect groups closed | 2026-11-23 |
 | 20 | The chat: a testable turn engine, paged history, selection, and named failures | 2026-11-23 |
+| 21 | iCloud was backing up two of twenty models: the CloudKit schema, measured and fixed in Development | 2026-11-23 |
 
 ---
 
@@ -902,3 +903,55 @@ through a throwaway UI test.
 - Not built: regenerate, edit and resend, read aloud, feedback, token-by-token streaming.
   The history sent to the model is not trimmed by size and photos are re-sent each turn.
   The reveal animation can freeze if its row scrolls away (read, not fixed).
+
+## 21. iCloud was backing up two of twenty models: the CloudKit schema, measured and fixed in Development (2026-11-23)
+
+The owner asked for the CloudKit Production schema to be deployed for twelve new fields.
+Exporting the two live schemas first (read-only, `xcrun cktool export-schema`) showed the
+gap was not twelve fields.
+
+**Measured.** Production and Development were identical. They held six record types:
+the three public buddy types, `Users`, and two of the app's mirrored models,
+`CD_UserProfile` and `CD_WeightEntry`. The models send 20 record types and 208
+attributes (`docs/cloudkit/model-manifest.json`, generated from the Core Data model the
+app builds). So **18 record types did not exist** in either environment: food, water,
+chat, the coach's memory and plan, steps, sleep, vitals, workouts, the checklist,
+achievements and the rest. On the two that did exist, 9 fields were missing, 6 of them on
+the profile from long before this work, and none of the companion asset fields that
+carry values too large for a field (a long note, a photo) existed.
+
+**What that means.** Production rejects a record type or field it does not have, and the
+app is not told. In every TestFlight build so far, the iCloud mirror has carried at most
+the profile and weigh-ins, and since the profile gained fields Production lacks, probably
+not the profile either. The data lives on the phone only. This confirms the suspicion
+marked D-S in section 3, and it withdraws a claim made in section 7: iCloud is **not** a
+second copy of the data. **An expired build must be updated in place, never deleted;**
+deleting the app deletes the food log, the chat, the plan and the workouts for good.
+The older note in `TESTFLIGHT.md` that data mirrors to iCloud is wrong for the same reason.
+
+**Mapping, verified three ways.** Apple documents it ("Reading CloudKit Records for Core
+Data"): record type `CD_<Entity>`, field `CD_<attribute>`, a `CD_<attribute>_ckAsset`
+companion for every string, binary and transformable attribute, and `CD_entityName`. The
+41 fields Core Data had itself created in the existing schema all have exactly the type
+this mapping gives (0 mismatches). And Apple's `cktool validate-schema` accepted the
+result.
+
+**Done.** `tooling/build_cloudkit_schema.py` took the exported Development schema and
+added what was missing, changing nothing that was there (477 lines added, 0 changed or
+removed): 18 record types and 29 fields on the two existing ones. It was validated and
+imported into **Development**, and a fresh export passes
+`tooling/check_cloudkit_schema.py` with nothing missing. **Production was not touched**;
+a re-export is byte-identical to before. Development can be reset; Production cannot be
+undone, which is why it was left for the owner.
+
+**Guards added:** `CloudKitSchemaManifestTests` fails when the models and the manifest
+disagree, so a model change cannot land silently; CI checks that the checker passes the
+committed Development schema and fails the committed Production one; the release recipe
+(`docs/cloudkit/README.md`) starts with the check against Production.
+
+**Not verified.** Apple's own initializer could not be run to compare, because it needs a
+device signed in to iCloud. No record has been saved through the new schema. The proof
+that it matches what Core Data sends is a Debug build on a signed-in phone syncing
+without a CloudKit error, and that has not been done. **The owner must:** run a Debug
+build once on a signed-in phone and confirm it syncs; then deploy Development to
+Production in the CloudKit Console; then run the checker against Production.
