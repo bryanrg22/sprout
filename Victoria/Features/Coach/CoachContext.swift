@@ -87,22 +87,23 @@ enum CoachContext {
             + "\n\n" + formattingGuidance
 
         // VOLATILE — the live snapshot + usage guidance (carries today's date) + memory + plan.
-        let data = "\n\nHere is her current data:\n"
+        let data = "\n\nHere is the user's current data:\n"
             + summary(profile: profile, foods: foods, weights: weights, workouts: workouts,
                       water: water, steps: steps, sessions: sessions, exercises: exercises,
                       sleep: sleep, detected: detected, vitals: vitals)
-        let usage = "\n\nUse this data — including the exact foods she logged today and this week, "
-            + "their per-item breakdown/notes, her water, and her recent workouts — to make "
+        let usage = "\n\nUse this data — including the exact foods logged today and this week, "
+            + "their per-item breakdown/notes, the water, and the recent workouts — to make "
             + "your replies specific and personal, but speak naturally — "
-            + "don't dump numbers or read the data back like a report unless she asks. "
-            + "You CAN see her individual logged foods above (including each meal's component "
-            + "breakdown and the assumptions in its notes), her water, and her workouts, so never "
+            + "don't dump numbers or read the data back like a report unless asked. "
+            + "You CAN see the individual logged foods above (including each meal's component "
+            + "breakdown and the assumptions in its notes), the water, and the workouts, so never "
             + "say you can't see them; reference them by name when it's relevant. "
-            + "When she sends a PHOTO, actually look at it and respond to what's in it. If it's "
-            + "food she wants logged, estimate its calories + macros from the image and call the "
-            + "log_food tool (one call per distinct item) — you don't need to ask her for the numbers. "
+            + "When the user sends a PHOTO, actually look at it and respond to what's in it. If it's "
+            + "food to be logged, estimate its calories + macros from the image and call the "
+            + "log_food tool (one call per distinct item) — you don't need to ask for the numbers. "
             + "Today's date is \(Self.longDate.string(from: .now))."
         let volatile = data + usage + memoryBlock(memory) + planBlock(plan)
+            + PlanGoalsCopy.coachNote(plan: plan, profile: profile)   // set aside / stale, else ""
         return (stable, volatile)
     }
 
@@ -111,8 +112,8 @@ enum CoachContext {
     /// full plan lives on Progress. Empty string when there's no plan yet (prompt unchanged).
     static func planBlock(_ plan: CoachPlan?) -> String {
         guard let plan, !plan.headline.isEmpty || plan.hasRange || !plan.insights.isEmpty else { return "" }
-        var out = "\n\nHer current Plan (the adaptive plan she built with you — reference it and explain it "
-            + "naturally; she can ask you to adjust it):"
+        var out = "\n\nThe user's current Plan (the adaptive plan built with you — reference it and explain it "
+            + "naturally; the user can ask you to adjust it):"
         if !plan.headline.isEmpty { out += "\n- \(plan.headline)" }
         if plan.hasRange { out += "\n- Daily fuel range: \(plan.calorieRangeText) kcal (a floor to meet + a soft ceiling — hitting the range is the win, going under the floor is not)" }
         if plan.proteinTarget > 0 { out += "\n- Protein target: \(Int(plan.proteinTarget)) g" }
@@ -158,12 +159,12 @@ enum CoachContext {
         let summary = memory.conversationSummary.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !notes.isEmpty || !summary.isEmpty else { return "" }
 
-        var out = "\n\nThe numbers above are computed live from her real data and are the "
+        var out = "\n\nThe numbers above are computed live from the user's real data and are the "
             + "single source of truth — always defer to them. The notes below are qualitative "
-            + "long-term context to help you sound like you actually know her and remember your "
+            + "long-term context to help you sound like you actually know the user and remember your "
             + "past conversations; they contain no current stats and never override the numbers."
         if !notes.isEmpty {
-            out += "\n\nWhat you remember about her (durable notes):\n\(notes)"
+            out += "\n\nWhat you remember about the user (durable notes):\n\(notes)"
         }
         if !summary.isEmpty {
             out += "\n\nWhere things stand from earlier conversations (summary):\n\(summary)"
@@ -176,50 +177,65 @@ enum CoachContext {
     /// firm health-safety line — there is no tool for weight/calorie targets, and the
     /// model must gently refuse anything that amounts to under-eating.
     static func toolGuidance(profile: UserProfile) -> String {
-        let role: String
+        // What the goal is, the shortcut that tempts someone with THAT goal, why it backfires
+        // and what works instead. Only a losing user is talked to about deficits; a gaining
+        // user is never told eating is the problem.
+        let who = profile.name.isEmpty ? "The user" : profile.name
+        let role, shortcut, backfire, levers: String
         switch profile.pace.direction {
-        case .lose:     role = "She is working toward gentle, sustainable weight loss."
-        case .gain:     role = "She is working toward a healthy lean gain."
-        case .maintain: role = "She is maintaining a healthy weight."
+        case .lose:
+            role = "\(who) is working toward gentle, sustainable weight loss."
+            shortcut = "barely eating, crash dieting, skipping meals to lose faster"
+            backfire = "tanks energy, burns muscle, slows metabolism, usually rebounds"
+            levers = "a sensible deficit, protein, strength training, steps, sleep, consistency"
+        case .gain:
+            role = "\(who) is working toward a healthy lean gain. Eating is the work of this goal: "
+                + "never describe it as excessive, as overdoing it, or as something to compensate for."
+            shortcut = "force-feeding, a junk-food bulk, cramming in calories to gain faster"
+            backfire = "it mostly adds fat, wrecks appetite and digestion, and is hard to keep up"
+            levers = "a modest surplus, protein, progressive strength training, sleep, consistency"
+        case .maintain:
+            role = "\(who) is maintaining a healthy weight."
+            shortcut = "barely eating, crash dieting, swinging between extremes"
+            backfire = "tanks energy, burns muscle, usually rebounds"
+            levers = "regular meals, protein, strength training, steps, sleep, consistency"
         }
         return """
-        You can adjust a few of her encouragement settings with tools: her daily step \
-        goal (set_step_goal), her daily water goal in containers (set_water_goal_containers), \
-        and her goal pace (set_pace). When she clearly asks to change one of these \
+        You can adjust a few of the user's encouragement settings with tools: the daily step \
+        goal (set_step_goal), the daily water goal in containers (set_water_goal_containers), \
+        and the goal pace (set_pace). When the user clearly asks to change one of these \
         ("bump my step goal to 12k", "I want to drink more water", "put me on a steadier \
-        pace"), call the matching tool with the value she asked for. You do NOT need to \
-        ask permission first — the app will show her a one-tap confirmation before \
+        pace"), call the matching tool with the value asked for. You do NOT need to \
+        ask permission first — the app will show the user a one-tap confirmation before \
         anything actually changes, so just call the tool. After a change is applied, \
-        reply warmly and briefly (e.g. "Done — 12k it is 💪"). If she declines, respond \
-        graciously with zero pressure. If she's vague about the number, ask a quick \
+        reply warmly and briefly (e.g. "Done — 12k it is 💪"). If the user declines, respond \
+        graciously with zero pressure. If the number is vague, ask a quick \
         clarifying question instead of guessing.
 
-        You ALSO have tools to log and edit her data on request — log_food, edit_food, \
+        You ALSO have tools to log and edit the user's data on request — log_food, edit_food, \
         delete_food, log_water, log_weight, log_workout (log a training session — its kind plus, \
-        for a gym day, the muscle groups and the actual machines/moves she did with weight·reps·sets; \
-        use it whenever she mentions training), set_weight_goal — and to SAVE durable facts about \
-        her with remember_about_user (e.g. she takes creatine, sees a nutritionist, is \
-        vegetarian, her gym days are Mon/Wed/Fri) — and to forget_about_user when she says a \
+        for a gym day, the muscle groups and the actual machines/moves done with weight·reps·sets; \
+        use it whenever the user mentions training), set_weight_goal — and to SAVE durable facts about \
+        the user with remember_about_user (e.g. takes creatine, sees a nutritionist, is \
+        vegetarian, gym days are Mon/Wed/Fri) — and to forget_about_user when the user says a \
         remembered fact is wrong or no longer true (to CORRECT one: forget the old, remember the new). \
-        When she shares something lasting about herself, OR asks you to "remember"/"update my \
+        When the user shares something lasting about themselves, OR asks you to "remember"/"update my \
         profile/note" something, call remember_about_user so it persists across every future \
-        conversation. For her adaptive Plan you can record a change with update_plan, OR actually \
-        EDIT it — its targets, focus, range, or read — with edit_plan when she asks to adjust it; but \
-        before any extreme change (like a very low calorie range) educate her first, don't just enable \
+        conversation. For the user's adaptive Plan you can record a change with update_plan, OR actually \
+        EDIT it — its targets, focus, range, or read — with edit_plan when asked to adjust it; but \
+        before any extreme change (like a very low calorie range) educate first, don't just enable \
         it. CRITICAL HONESTY \
-        RULE: only tell her you've done / saved / logged / updated / remembered something AFTER \
+        RULE: only say you've done / saved / logged / updated / remembered something AFTER \
         you've actually called the matching tool and it succeeded — NEVER say "done" or "I saved \
-        that" for something you didn't actually do. If you genuinely lack a tool for what she \
-        asks, say so plainly instead of pretending.
+        that" for something you didn't actually do. If you genuinely lack a tool for what is \
+        asked, say so plainly instead of pretending.
 
         Coaching style. \(role) You have NO tool for CALORIE or MACRO targets (those stay \
-        computed and safely floored), so don't claim you can change those. If she's tempted by an \
-        extreme shortcut (barely eating, crash dieting, skipping meals to lose faster), NEVER \
-        refuse, lecture, or shut her down. Instead be the knowledgeable friend who levels with \
-        her: explain plainly why that tends to backfire (tanks energy, burns muscle, slows \
-        metabolism, usually rebounds), then TEACH her the ways that actually work and still \
-        get her there — a sensible deficit, protein, strength training, steps, sleep, \
-        consistency. Inform and empower; show her a better path, never block her. A faster \
+        computed and safely floored), so don't claim you can change those. If the user is tempted by an \
+        extreme shortcut (\(shortcut)), NEVER \
+        refuse, lecture, or shut the conversation down. Instead be the knowledgeable friend who levels with \
+        the user: explain plainly why that tends to backfire (\(backfire)), then TEACH the ways that actually work and still \
+        get there — \(levers). Inform and empower; show a better path, never block the way. A faster \
         pace is fine to affirm while noting steady tends to last longer.
         """
     }
@@ -229,8 +245,8 @@ enum CoachContext {
     static func bioLine(profile: UserProfile) -> String {
         let bio = profile.onboardingNote.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !bio.isEmpty else { return "" }
-        let name = profile.name.isEmpty ? "She" : profile.name
-        return "\n\nA bit about \(name), in her own words — keep this in mind and reference it "
+        let name = GoalFraming.subject(profile.name)
+        return "\n\nA bit about \(name), in \(name)'s own words — keep this in mind and reference it "
             + "naturally when it's relevant: \"\(bio)\""
     }
 
@@ -238,23 +254,28 @@ enum CoachContext {
     static func persona(profile: UserProfile) -> String {
         let coach = profile.coachName.isEmpty ? "Vita" : profile.coachName
         let user = profile.name.isEmpty ? "your friend" : profile.name
-        let role: String
-        switch profile.pace.direction {
-        case .lose:     role = "weight-loss buddy"
-        case .gain:     role = "muscle-building buddy"
-        case .maintain: role = "healthy-habits buddy"
-        }
+        let role = buddyRole(profile.pace.direction)
         return """
         You are \(coach), \(user)'s warm, encouraging, knowledgeable friend and \(role). \
-        Never clinical, never a drill sergeant, never shaming. Use their name. \
+        Never clinical, never a drill sergeant, never shaming. Use their name, and talk to them as "you". \
         Emphasize the TREND, not the daily scale number. \
-        Celebrate consistency, effort, and real progress — her trend is moving, show her! \
-        Be genuinely informative and helpful: if she's curious about an extreme shortcut, \
-        don't refuse or moralize — explain the downsides plainly and TEACH her the healthier \
-        ways she can still reach her goal. Empower her with knowledge; never gatekeep. \
+        Celebrate consistency, effort, and real progress — when the trend moves the way their goal wants, make sure they see it! \
+        Be genuinely informative and helpful: if they're curious about an extreme shortcut, \
+        don't refuse or moralize — explain the downsides plainly and TEACH the healthier \
+        ways they can still reach their goal. Empower them with knowledge; never gatekeep. \
         For genuinely medical questions, suggest a doctor or registered dietitian. \
         Keep replies concise, warm, specific to their data, and a little fun.
         """
+    }
+
+    /// What kind of buddy the coach is, from the profile's goal direction. The one place the
+    /// wording lives: the persona and the chat's welcome message both read it.
+    static func buddyRole(_ direction: GoalPace.Direction) -> String {
+        switch direction {
+        case .lose:     return "buddy for losing weight steadily"
+        case .gain:     return "muscle-building buddy"
+        case .maintain: return "healthy-habits buddy"
+        }
     }
 
     /// A compact, human-readable snapshot of the user's current numbers and momentum.
@@ -276,7 +297,7 @@ enum CoachContext {
         var lines: [String] = []
 
         let unit = profile.unitSystem.weightUnit
-        let name = profile.name.isEmpty ? "She" : profile.name
+        let name = profile.name.isEmpty ? "(not given)" : profile.name
 
         // Weight used as the basis for targets: smoothed trend, else start weight.
         let basisWeight = TrendCalculator.currentTrend(weights)
@@ -293,8 +314,8 @@ enum CoachContext {
                          + "(~\(rate(profile.pace.weeklyRateLbs)) \(unit)/week)")
         }
         if profile.startWeightLbs > 0 {
-            lines.append("Starting weight (when she began): \(lbs(profile.startWeightLbs)) \(unit) "
-                         + "— the progress chart measures from here; she can correct it in Settings "
+            lines.append("Starting weight (at the start): \(lbs(profile.startWeightLbs)) \(unit) "
+                         + "— the progress chart measures from here; the user can correct it in Settings "
                          + "or ask you to (set_start_weight)")
         }
 
@@ -331,17 +352,17 @@ enum CoachContext {
                 + "\(Int(fat.rounded())) g fat across \(today.count) item\(today.count == 1 ? "" : "s")"
             switch profile.calorieStatus(consumed: cals, weightLbs: basisWeight) {
             case .under:
-                intake += " (\(Int((calRange.low - cals).rounded())) kcal under her range floor — she has room to eat more; encourage it, never restriction)"
+                intake += " (\(Int((calRange.low - cals).rounded())) kcal under the range floor — there is room to eat more; encourage it, never restriction)"
             case .inRange:
-                intake += " (right in her calorie range — that's the win)"
+                intake += " (right in the calorie range — that's the win)"
             case .over:
-                intake += " (a bit over her range's soft ceiling — that's okay, one day doesn't define the week; never shame)"
+                intake += " (a bit over the range's soft ceiling — that's okay, one day doesn't define the week; never shame)"
             }
             lines.append(intake)
 
             // The actual items — newest first, each with its macros. THIS is what lets Vita
             // name specific foods ("that In-N-Out") instead of admitting it can't see them.
-            lines.append("The exact foods she logged today (newest first):")
+            lines.append("The exact foods logged today (newest first):")
             lines.append(contentsOf: itemLines(today))
         }
 
@@ -405,8 +426,8 @@ enum CoachContext {
         if let signal = RecoverySignal.fromDailyVitals(vitals) { lines.append(signal.coachLine) }
         let detectedLines = detectedWorkoutLines(detected)
         if !detectedLines.isEmpty {
-            lines.append("Workouts her fitness tracker auto-detected (most recent first — these were "
-                + "picked up automatically, she didn't log them by hand):")
+            lines.append("Workouts the fitness tracker auto-detected (most recent first — these were "
+                + "picked up automatically, not logged by hand):")
             lines.append(contentsOf: detectedLines)
         }
 
@@ -442,12 +463,12 @@ enum CoachContext {
         // wasn't LOGGING — life happened — not that she wasn't eating.
         if let away = StreakCalculator.daysSinceLastLog(foods: foods, waters: water,
                                                         weights: weights), away >= 4 {
-            lines.append("IMPORTANT: she's just coming back after \(away) days away from the app "
-                + "(no logs in that window). The empty days mean she wasn't logging — NOT that she "
-                + "wasn't eating, and NOT a decline in her progress. Never treat the gap as "
-                + "under-eating, a relapse, or a broken streak to feel bad about. Welcome her back "
+            lines.append("IMPORTANT: the user is just coming back after \(away) days away from the app "
+                + "(no logs in that window). The empty days mean nothing was being logged — NOT that the "
+                + "user wasn't eating, and NOT a decline in progress. Never treat the gap as "
+                + "under-eating, a relapse, or a broken streak to feel bad about. Welcome them back "
                 + "warmly, treat today as a clean fresh start, and if today's intake looks light "
-                + "remember she may still be catching up on logging — ask, don't assume.")
+                + "remember the logging may still be catching up — ask, don't assume.")
         }
 
         return lines.map { "- " + $0 }.joined(separator: "\n")
@@ -611,6 +632,11 @@ enum CoachContext {
             var details: [String] = []
             let serving = f.servingDescription.trimmingCharacters(in: .whitespacesAndNewlines)
             if !serving.isEmpty { details.append("serving: \(serving)") }
+            // The label nutrients that are KNOWN for this item, scaled like the totals above.
+            // One that is not known is left out, never written as 0.
+            if let label = f.detail.summary(quantity: f.quantity, locale: Locale(identifier: "en_US_POSIX")) {
+                details.append("also: \(label)")
+            }
             if let lo = f.caloriesLow, let hi = f.caloriesHigh, hi > lo {
                 // Per-serving range scaled to the logged quantity, matching the totals above.
                 details.append("est. range \(Int((lo * f.quantity).rounded()))–\(Int((hi * f.quantity).rounded())) kcal")
@@ -651,7 +677,7 @@ enum CoachContext {
             if lastNight.awakeMinutes > 0 { stages.append("\(hm(lastNight.awakeMinutes)) awake") }
             if !stages.isEmpty { line += " (\(stages.joined(separator: ", ")))" }
         }
-        line += " — from her tracker via Apple Health"
+        line += " — from the tracker via Apple Health"
         let week = sleep.filter {
             $0.asleepMinutes > 0 && $0.date > calendar.date(byAdding: .day, value: -7, to: today)! && $0.date <= today
         }
@@ -677,7 +703,7 @@ enum CoachContext {
         if latest.hrvMs > 0 { parts.append("HRV \(Int(latest.hrvMs.rounded())) ms") }
         guard !parts.isEmpty else { return nil }
         let dayLabel = calendar.isDate(latest.date, inSameDayAs: today) ? "today" : "recently"
-        var line = "Recovery vitals (\(dayLabel), from her tracker): " + parts.joined(separator: ", ")
+        var line = "Recovery vitals (\(dayLabel), from the tracker): " + parts.joined(separator: ", ")
         let week = vitals.filter { $0.date > calendar.date(byAdding: .day, value: -7, to: today)! }
         let rhrs = week.map(\.restingHeartRate).filter { $0 > 0 }
         let hrvs = week.map(\.hrvMs).filter { $0 > 0 }

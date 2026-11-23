@@ -2,7 +2,8 @@ import Foundation
 
 /// Free, keyless nutrition lookup via Open Food Facts (barcode + text search).
 ///
-/// Returns macros **per serving**. When the product only publishes per-100 g values
+/// Returns macros, and the label nutrients the product lists, **per serving**. When the
+/// product only publishes per-100 g values
 /// we compute the per-serving figure from the declared serving weight, so a 414 ml
 /// bottle isn't logged as if it were 100 ml. Every result is run through
 /// `NutritionSanity` so an obviously-broken community entry is flagged, not trusted.
@@ -23,9 +24,35 @@ struct OpenFoodFactsService {
         var isSuspicious: Bool = false
         /// A short note explaining the suspicion (nil when the numbers look fine).
         var sanityNote: String? = nil
+        /// The label nutrients the product states, per serving on the same basis as the
+        /// macros. One the product does not list stays nil (not known), never 0.
+        var detail: NutrientDetail = NutrientDetail()
+        /// True when the product lists salt but no sodium, so `detail.sodiumMg` was worked
+        /// out from the salt figure (sodium = salt ÷ 2.5).
+        var sodiumFromSalt: Bool = false
+
+        /// Said on the confirm sheet when sodium is a conversion rather than a listed value.
+        var sodiumNote: String? {
+            sodiumFromSalt ? "Sodium worked out from the listed salt (salt ÷ 2.5)." : nil
+        }
     }
 
-    private static let userAgent = "Victoria/1.0 (<email>)"
+    /// Salt is sodium chloride; by weight it is 2.5 times its sodium (the factor EU labelling
+    /// uses, and the one Open Food Facts itself applies between its `salt` and `sodium` keys).
+    static let saltPerSodium = 2.5
+
+    /// The `nutriments` key stem for each label nutrient. Every `_serving` / `_100g` value
+    /// under these is in GRAMS whatever the label's unit (`docs/nutrition-detail.md` section 3).
+    static let detailKeys: [Nutrient: String] = [
+        .saturatedFat: "saturated-fat", .transFat: "trans-fat", .cholesterol: "cholesterol",
+        .sodium: "sodium", .fiber: "fiber", .sugars: "sugars", .addedSugars: "added-sugars",
+        .vitaminD: "vitamin-d", .calcium: "calcium", .iron: "iron", .potassium: "potassium",
+    ]
+
+    /// Open Food Facts asks every client to identify itself with a name, a version and a
+    /// way to reach the developer. The contact is the project page, not a personal address:
+    /// this string is in a public repository and is sent with every lookup.
+    static let userAgent = "Sprout/2.1 (iOS; +https://github.com/bryanrg22/sprout)"
     private static let fields = "product_name,brands,serving_size,serving_quantity,nutriments,code"
 
     static func product(barcode: String) async throws -> FoodHit? {
@@ -74,6 +101,37 @@ struct OpenFoodFactsService {
             return per100
         }
 
+        /// The same resolution for a nutrient that may simply not be listed: `nil` when the
+        /// product has neither a `_serving` nor a `_100g` value for it. In grams.
+        func perServingIfListed(_ stem: String) -> Double? {
+            if let v = num(n, stem + "_serving") { return v }
+            guard let per100 = num(n, stem + "_100g") else { return nil }
+            if let q = servingQty, q > 0 { return per100 * q / 100.0 }
+            return per100
+        }
+
+        var detail = NutrientDetail()
+        var sodiumFromSalt = false
+        for nutrient in Nutrient.allCases {
+            guard let stem = Self.detailKeys[nutrient] else { continue }
+            var grams = perServingIfListed(stem)
+            if nutrient == .sodium, grams == nil, let salt = perServingIfListed("salt") {
+                grams = salt / Self.saltPerSodium
+                sodiumFromSalt = true
+            }
+            guard let grams else { continue }
+            // Grams to the label's unit, trimmed of the float noise the multiplication
+            // leaves (0.19 g is 190 mg, not 190.00000000000003).
+            let value = (grams * nutrient.unit.perGram * 1_000_000).rounded() / 1_000_000
+            if nutrient.accepts(value) {
+                detail[nutrient] = value
+            } else if nutrient == .sodium {
+                // A negative or absurd figure is a bad community entry: left not known,
+                // so there is no conversion to report either.
+                sodiumFromSalt = false
+            }
+        }
+
         let kcal    = perServing("energy-kcal_serving", ["energy-kcal_100g", "energy-kcal"])
         let protein = perServing("proteins_serving", ["proteins_100g"])
         let carbs   = perServing("carbohydrates_serving", ["carbohydrates_100g"])
@@ -103,7 +161,9 @@ struct OpenFoodFactsService {
             fatG: sanity.fat,
             barcode: barcode,
             isSuspicious: sanity.isSuspicious,
-            sanityNote: sanity.reason
+            sanityNote: sanity.reason,
+            detail: detail,
+            sodiumFromSalt: sodiumFromSalt
         )
     }
 

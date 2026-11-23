@@ -66,8 +66,8 @@ struct PlanIntakeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Space.lg) {
                 Text(isAdjust
-                     ? "Tell \(coachName) what's changed since your last plan — a new goal or timeframe, a different schedule, new training, anything. She'll do fresh deep research over this **and** every day you've logged, and update your whole plan."
-                     : "Tell \(coachName) what you're going for, in your own words. The more real the better — she reasons over this **and** every day you've logged to build a plan just for you.")
+                     ? "Tell \(coachName) what's changed since your last plan — a new goal or timeframe, a different schedule, new training, anything. \(coachName) will do fresh deep research over this **and** every day you've logged, and update your whole plan."
+                     : "Tell \(coachName) what you're going for, in your own words. The more real the better — \(coachName) reasons over this **and** every day you've logged to build a plan just for you.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -182,14 +182,14 @@ struct PlanIntakeView: View {
     /// is goal-specific, not durable, so it stays out of the profile.)
     /// Stable label every plan-intake note carries, so a rebuild replaces it in place instead of
     /// stacking near-duplicates.
-    nonisolated static let intakePrefix = "From her plan intake — "
+    nonisolated static let intakePrefix = CoachMemory.planIntakeLabel
 
     private func foldContextIntoProfile() {
         let bits = [dayToDay, exercise]
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
         guard !bits.isEmpty else { return }
-        let addition = Self.intakePrefix + "her life + training: " + bits.joined(separator: " · ")
+        let addition = Self.intakePrefix + "life + training: " + bits.joined(separator: " · ")
         let memory = CoachMemory.fetchOrCreate(in: context, profile: profile)
         let merged = Self.foldingIntake(addition, into: memory.profileNotes, prefix: Self.intakePrefix)
         guard merged != memory.profileNotes else { return }   // exact rebuild → nothing to write
@@ -256,7 +256,7 @@ struct PlanIntakeView: View {
             if plan.proteinTarget > 0 { out += "\nCurrent plan protein: \(Int(plan.proteinTarget)) g." }
             if !plan.headline.isEmpty { out += "\nCurrent plan headline: \(plan.headline)" }
         }
-        out += "\n\nWhat's changed since that plan, in her words:\n\(whatsChanged.trimmingCharacters(in: .whitespacesAndNewlines))"
+        out += "\n\nWhat's changed since that plan, in the user's own words:\n\(whatsChanged.trimmingCharacters(in: .whitespacesAndNewlines))"
         return out
     }
 }

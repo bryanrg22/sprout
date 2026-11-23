@@ -99,6 +99,7 @@ struct CoachView: View {
                         inlineBanner(text: errorBanner,
                                      tint: Theme.warning,
                                      systemImage: "exclamationmark.bubble.fill")
+                            .accessibilityIdentifier(AccessibilityID.Coach.errorBanner)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
@@ -326,6 +327,7 @@ struct CoachView: View {
                     .tint(Theme.brand)
                     .lineLimit(1...5)
                     .focused($inputFocused)
+                    .accessibilityIdentifier(AccessibilityID.Coach.input)
                     .padding(.horizontal, Theme.Space.md)
                     .padding(.vertical, 11)
                     // A rounded RECTANGLE, not a Capsule: a capsule's big semicircular end-caps
@@ -372,6 +374,7 @@ struct CoachView: View {
                 .scaleEffect(canSend ? 1 : 0.92)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: canSend)
                 .accessibilityLabel("Send message")
+                .accessibilityIdentifier(AccessibilityID.Coach.send)
             }
             .padding(.horizontal, Theme.Space.md)
             .padding(.bottom, Theme.Space.sm)
@@ -570,7 +573,8 @@ struct CoachView: View {
         // `todaysFoods` lets the edit/delete tools resolve "the latte" to a specific row;
         // it's harmless for the settings tools (which ignore it).
         switch CoachTools.parse(name: toolUse.name, input: toolUse.input, profile: profile,
-                                todaysFoods: CoachContext.todaysFoods(foods)) {
+                                todaysFoods: CoachContext.todaysFoods(foods),
+                                currentWeightLbs: TrendCalculator.currentTrend(weights)) {
         case .invalid(let reason):
             continueTurn(history: history,
                          assistantContent: turn.assistantContent,
@@ -597,8 +601,8 @@ struct CoachView: View {
             continueTurn(history: history,
                          assistantContent: turn.assistantContent,
                          toolUseId: toolUse.id,
-                         resultText: "Applied. \(applied.message)",
-                         isError: false,
+                         resultText: applied.resultText,
+                         isError: !applied.changed,   // a declined tool (kg) is not a success
                          depth: depth + 1)
         }
     }
@@ -826,13 +830,8 @@ struct CoachView: View {
     private func seedWelcomeIfNeeded() {
         guard messages.isEmpty else { return }
         let name = profile.name.isEmpty ? "there" : profile.name
-        // Direction-aware so Bryan (gain) isn't greeted as a "weight-loss buddy".
-        let role: String
-        switch profile.pace.direction {
-        case .lose:     role = "weight-loss buddy"
-        case .gain:     role = "muscle-building buddy"
-        case .maintain: role = "healthy-habits buddy"
-        }
+        // Direction-aware: the same wording the persona uses, from the profile's goal.
+        let role = CoachContext.buddyRole(profile.pace.direction)
         let welcome = """
         Hi \(name)! I'm \(coachName), your \(role) 💚 \
         I'm here to cheer you on, talk through the hard days, and help you make sense of your progress. \
@@ -981,6 +980,8 @@ private struct MessageRow: View {
         .textSelection(.enabled)
         .accessibilityLabel(message.isUser ? "You said" : "\(coachName) said")
         .accessibilityValue(message.imageData != nil ? "\(message.content) (photo attached)" : message.content)
+        .accessibilityIdentifier(message.isUser ? AccessibilityID.Coach.userMessage
+                                                : AccessibilityID.Coach.assistantMessage)
     }
 
     @ViewBuilder private var bubbleBackground: some View {
@@ -1111,6 +1112,7 @@ private struct TypingIndicator: View {
             )
             .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
             .accessibilityLabel("\(coachName) is typing")
+            .accessibilityIdentifier(AccessibilityID.Coach.typing)
 
             Spacer(minLength: 44)
         }
@@ -1162,6 +1164,7 @@ private struct UndoBanner: View {
                     .foregroundStyle(Theme.brand)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityID.Coach.undo)
         }
         .padding(.horizontal, Theme.Space.md)
         .padding(.vertical, 11)

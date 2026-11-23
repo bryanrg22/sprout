@@ -3,20 +3,20 @@ import Foundation
 /// The contract for syncing buddy state (pairing, nudges, daily snapshots) between two
 /// people. The app talks ONLY to this protocol; concrete backends are swappable:
 ///
-/// - `LocalMockSyncService` — in-memory + UserDefaults, simulates a friendly buddy.
-///   The default in DEBUG so the entire buddy UX is testable TODAY with no backend.
-/// - `CloudKitSyncService` — a real (minimal) CloudKit skeleton for cross-device sync
-///   LATER, once the account + entitlement + container are in place.
+/// - `CloudKitSyncService`: the real one, on a device (CloudKit public database).
+/// - `LocalMockSyncService`: the Simulator's stand-in (it cannot sign in to iCloud), with a
+///   simulated buddy. `BuddySync.makeDefault` chooses between the two.
 ///
-/// Designed to **degrade gracefully**: any method may throw `BuddySyncError`, and the
-/// UI should treat `.cloudKitUnavailable` / `.notLinked` as soft, expected states
-/// (show an encouraging empty/offline state — never an error alert that feels like a
-/// failure on the user's part).
+/// Pairing is the same code behind both: `BuddyPairingEngine`. The sequence, each failure
+/// and what the user sees are in `docs/buddy-sync.md`.
+///
+/// Any method may throw `BuddySyncError`; the UI turns each case into its own plain
+/// sentence, never an alert.
 ///
 /// Snapshot transport uses a plain `Codable` value type (`BuddySnapshotPayload`) rather
 /// than the SwiftData `@Model` `BuddySnapshot`, so the wire format is independent of the
 /// persistence layer (SwiftData models aren't `Sendable`/`Codable` and shouldn't cross
-/// actor or network boundaries). Callers map between the two at the edge.
+/// actor or network boundaries).
 protocol BuddySyncService: Sendable {
 
     /// Generate a fresh, human-shareable pairing code (e.g. "VITA-7F3K").
@@ -28,14 +28,19 @@ protocol BuddySyncService: Sendable {
     /// shown their own code. Idempotent; a no-op for backends that don't need it (the mock).
     func publishMyPairingCode(_ code: String) async throws
 
-    /// Connect this user to a buddy who shared `code` — the code-TYPER side. On success the
-    /// backend records the pairing; the caller updates the local `BuddyLink`.
-    /// - Throws: `.invalidPairingCode` if no one is waiting on that code,
-    ///   `.cloudKitUnavailable` if the backend can't be reached.
+    /// Connect this user to the buddy who shared `code` (the code-TYPER side). Returns only
+    /// when the claim was saved on the backend; `linkedBuddyID` is non-nil from then on and
+    /// not before. On any throw nothing was persisted and the user can try again.
+    /// - Throws: `.malformedPairingCode` (cannot be a code), `.ownPairingCode`,
+    ///   `.invalidPairingCode` (nobody has shared it: a typo, or not uploaded yet),
+    ///   `.pairingCodeAlreadyClaimed`, or one of the "could not reach it" cases.
     func link(usingCode code: String) async throws
 
-    /// Tear down the current pairing on the backend. Idempotent: unlinking when not
-    /// linked is a no-op, not an error.
+    /// End the pairing. This device forgets the link first, so leaving never waits for the
+    /// network; then, best-effort, the backend is told (my claim is taken off the buddy's
+    /// record and my own code's record is removed), which is how the other side finds out,
+    /// and the snapshot I published is removed. Idempotent: unlinking when not linked does
+    /// nothing.
     func unlink() async throws
 
     /// Send a kind nudge to the linked buddy.
@@ -52,8 +57,9 @@ protocol BuddySyncService: Sendable {
     /// Publish *my* current snapshot so my buddy can see how I'm doing today.
     func publish(mySnapshot snapshot: BuddySnapshotPayload) async throws
 
-    /// Fetch my buddy's latest snapshot, or `nil` if they haven't published one yet
-    /// (or we're not linked).
+    /// Fetch my buddy's latest snapshot, or `nil` if they haven't published one yet.
+    /// - Throws: `.notLinked` when there is no buddy, and `.unpairedByBuddy` when the
+    ///   backend shows the buddy ended the pairing (the local link is cleared before it throws).
     func fetchBuddySnapshot() async throws -> BuddySnapshotPayload?
 
     /// The buddy this device is currently linked to, restored from LOCAL persistence —
@@ -77,9 +83,8 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
     var loggedToday: Bool
     var lastActive: Date
 
-    // Safe daily activity for the FAIR face-off (steps / water / movement + each
-    // person's OWN goals). NO weight, NO calories — see `BuddySnapshot`. Defaulted so
-    // the type stays decodable from older payloads that predate these fields.
+    // Daily activity for the face-off (steps / water / movement + each person's OWN
+    // goals). Always shared. Defaulted so the type stays decodable from older payloads.
     var stepsToday: Int = 0
     var stepGoal: Int = 0
     var waterToday: Double = 0
@@ -271,27 +276,53 @@ extension BuddySnapshotPayload {
 
 // MARK: - Errors
 
-/// Soft, expected failure modes for buddy sync. Treat these as states, not crashes:
-/// the UI should respond with kind, encouraging copy rather than scary alerts.
+/// The ways buddy sync fails. Each is a state the UI describes in its own words
+/// (`BuddyViewModel.message(for:)`), never a crash and never an alert.
 enum BuddySyncError: Error, LocalizedError, Equatable {
-    /// CloudKit isn't usable right now (no iCloud account, no entitlement/container yet,
-    /// or the device is offline). The headline "not wired up yet" case for this round.
+    /// CloudKit could not be reached or refused the call (offline, throttled, a schema or
+    /// permission problem). The exact `CKError` is in the Diagnostics log.
     case cloudKitUnavailable
+    /// This device is not signed in to iCloud (or iCloud is restricted on it), so there is
+    /// no account to sync with. Waiting does not fix this; signing in does.
+    case iCloudAccountMissing
     /// An action needed a buddy, but this user isn't paired with anyone.
     case notLinked
-    /// The pairing code didn't match anyone waiting to connect.
+    /// What was typed cannot be a pairing code (wrong shape, or a character codes never use).
+    case malformedPairingCode
+    /// Nobody has shared that code: a typo, or the buddy's phone has not uploaded it yet.
+    /// The typer's device cannot tell which.
     case invalidPairingCode
+    /// The code is this user's own.
+    case ownPairingCode
+    /// Someone else already paired through that code.
+    case pairingCodeAlreadyClaimed
+    /// Announcing my code found another user's record under it; I need a different code.
+    case pairingCodeTaken
+    /// The buddy ended the pairing. The local link has already been cleared.
+    case unpairedByBuddy
     /// A backend operation failed for some other reason; carries a short reason string.
     case backendFailure(String)
 
     var errorDescription: String? {
         switch self {
         case .cloudKitUnavailable:
-            return "Buddy sync isn't available right now. Your buddy stuff will catch up once you're connected."
+            return "Buddy sync couldn't reach iCloud just now."
+        case .iCloudAccountMissing:
+            return "This device isn't signed in to iCloud."
         case .notLinked:
             return "You're not connected with a buddy yet."
+        case .malformedPairingCode:
+            return "That isn't a pairing code."
         case .invalidPairingCode:
-            return "Hmm, that code didn't match. Double-check it and try again."
+            return "Nobody has shared that code."
+        case .ownPairingCode:
+            return "That's your own code."
+        case .pairingCodeAlreadyClaimed:
+            return "That code is already paired with someone else."
+        case .pairingCodeTaken:
+            return "That pairing code belongs to someone else."
+        case .unpairedByBuddy:
+            return "Your buddy ended the pairing."
         case .backendFailure(let reason):
             return "Something went sideways syncing with your buddy. (\(reason))"
         }

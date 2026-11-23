@@ -7,7 +7,7 @@ import Foundation
 /// - ONE brief per day, generated lazily on first open and CACHED for the day — stability
 ///   builds trust; it never flickers to a different message on re-open.
 /// - Headline (a human observation, ≤1 number) + a 1–2 sentence body carrying ONE insight
-///   with evidence against HER OWN baseline ("your best in three weeks"), never population
+///   with evidence against the user's OWN baseline ("your best in three weeks"), never population
 ///   norms, never a data dump.
 /// - Topic picked by a deterministic PRIORITY LADDER in code (same cheap-gate architecture
 ///   as `DailyInsightEngine`): returning-from-a-gap > milestone > cross-signal connection >
@@ -185,55 +185,105 @@ enum DailyBriefService {
 
     // MARK: - LLM rephrase (cheap model, strict guardrails, template fallback)
 
+    /// Not told the goal direction (the ladder already chose the topic), so the rule about
+    /// food is the one for every direction. Nothing here depends on the user or the day.
     private static let system = """
-    You are Vita, a warm weight-and-wellness companion writing your friend her short morning \
+    You are Vita, a warm weight-and-wellness companion writing your friend a short morning \
     note. You are given ONE observation (a headline and a body). Rewrite them in your own warm, \
-    specific voice — like a caring friend texting, never a clinician or an app.
+    specific voice — like a caring friend texting, never a clinician or an app. Speak to your \
+    friend directly as "you"; never write about your friend in the third person.
 
     Hard rules:
     - Keep the SAME single insight and the SAME numbers — never add, change, or invent a number \
     or a new claim.
     - Headline: one short sentence, at most one number. Body: one or two sentences.
-    - Never guilt, shame, restriction talk, daily scale numbers, or medical claims. Rest days \
-    are good. Food is fuel. At most one tasteful emoji.
+    - Never guilt, shame, restriction talk, daily scale numbers, or medical claims. Never \
+    describe eating as excessive. Rest days are good. Food is fuel. At most one tasteful emoji.
     Reply with the headline on the FIRST line and the body on the following line(s). No labels.
     """
 
+    /// The user turn: who the note is for and the observation to rewarm. Pure.
+    static func userTurn(_ picked: (topic: Topic, headline: String, body: String), name: String) -> String {
+        """
+        Your friend's name: \(name.isEmpty ? "friend" : name)
+        The observation to rewarm (keep its meaning and numbers exactly):
+        Headline: \(picked.headline)
+        Body: \(picked.body)
+        """
+    }
+
     static func rephrase(_ picked: (topic: Topic, headline: String, body: String),
                                  name: String) async -> (headline: String, body: String)? {
+        guard let reply = await rephraseRaw(picked, name: name) else { return nil }
+        if let reason = rejection(of: reply) {
+            // The template is already on screen, so this is silent to the user; the trace is
+            // what makes "why is the brief never rewritten" answerable from a device.
+            Diagnostics.shared.log("daily brief rewrite discarded (\(picked.topic.rawValue)): \(reason)", .ai)
+        }
+        return parse(reply)
+    }
+
+    /// The model's reply as it came back, before the guardrail; nil when the call failed.
+    static func rephraseRaw(_ picked: (topic: Topic, headline: String, body: String),
+                            name: String) async -> String? {
         do {
             let client = try AIClient.make()
-            let user = """
-            Her name: \(name.isEmpty ? "friend" : name)
-            The observation to rewarm (keep its meaning and numbers exactly):
-            Headline: \(picked.headline)
-            Body: \(picked.body)
-            """
-            let reply = try await client.chat(system: system,
-                                              messages: [ChatTurnMsg(role: "user", text: user)],
-                                              model: AIConfig.model(for: .dailyBrief),
-                                              maxTokens: 160)
-            return parse(reply)
+            return try await client.chat(system: system,
+                                         messages: [ChatTurnMsg(role: "user", text: userTurn(picked, name: name))],
+                                         model: AIConfig.model(for: .dailyBrief),
+                                         maxTokens: 160)
         } catch {
             return nil   // template already shipped — silent fallback
         }
     }
 
+    static let bannedPhrases = ["eat less", "eat fewer", "barely eat", "stop eating", "skip a meal",
+                                "skip meals", "starve", "crash diet", "guilt", "guilty", "ashamed",
+                                "make up for", "burn off", "cheat"]
+
+    /// Why `parse` would throw this reply away, or nil if it would keep it.
+    static func rejection(of raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "empty" }
+        if trimmed.count > 500 { return "longer than 500 characters" }
+        let lower = trimmed.lowercased()
+        if let phrase = bannedPhrases.first(where: lower.contains) { return "contains \"\(phrase)\"" }
+        if headlineAndBody(trimmed).body.isEmpty { return "no body after the headline" }
+        return nil
+    }
+
     /// First line → headline, remainder → body; rejects harmful phrasing or runaway length.
+    ///
+    /// Models do not always put the line break in. A reply on ONE line with two or more
+    /// sentences is split at the end of its first sentence rather than thrown away: that
+    /// one formatting slip was discarding a paid, otherwise good rewrite (EVAL_REPORT 14).
     static func parse(_ raw: String) -> (headline: String, body: String)? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, trimmed.count <= 500 else { return nil }
-        let lower = trimmed.lowercased()
-        let banned = ["eat less", "eat fewer", "barely eat", "stop eating", "skip a meal",
-                      "skip meals", "starve", "crash diet", "guilt", "guilty", "ashamed",
-                      "make up for", "burn off", "cheat"]
-        guard !banned.contains(where: lower.contains) else { return nil }
+        guard rejection(of: trimmed) == nil else { return nil }
+        let parts = headlineAndBody(trimmed)
+        return parts.body.isEmpty ? nil : parts
+    }
 
+    /// Splits a reply into its headline and body: by line when there is more than one line,
+    /// otherwise at the end of the first sentence. The body is empty when there is none.
+    static func headlineAndBody(_ trimmed: String) -> (headline: String, body: String) {
         let lines = trimmed.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
-        guard let first = lines.first else { return nil }
+        guard let first = lines.first else { return ("", "") }
         let rest = lines.dropFirst().joined(separator: " ").trimmingCharacters(in: .whitespaces)
-        guard !rest.isEmpty else { return nil }   // need both a headline and a body
-        return (first.trimmingCharacters(in: .whitespaces), rest)
+        if !rest.isEmpty { return (first.trimmingCharacters(in: .whitespaces), rest) }
+
+        // One line: the first sentence is the headline.
+        var firstSentenceEnd: String.Index?
+        first.enumerateSubstrings(in: first.startIndex..., options: .bySentences) { _, range, _, stop in
+            firstSentenceEnd = range.upperBound
+            stop = true
+        }
+        guard let end = firstSentenceEnd, end < first.endIndex else { return (first, "") }
+        let headline = first[..<end].trimmingCharacters(in: .whitespaces)
+        let body = first[end...].trimmingCharacters(in: .whitespaces)
+        // A "body" with no letters (a trailing emoji) is not a body.
+        guard body.contains(where: \.isLetter) else { return (first, "") }
+        return (headline, body)
     }
 
     // MARK: - Helpers

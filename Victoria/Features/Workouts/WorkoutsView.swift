@@ -57,6 +57,7 @@ struct WorkoutsView: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
+            .accessibilityIdentifier(AccessibilityID.Workouts.root)
             .navigationTitle("Workouts")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -314,6 +315,7 @@ struct WorkoutsView: View {
         .buttonStyle(.plain)
         .bouncyPress()
         .accessibilityLabel("Log a workout")
+        .accessibilityIdentifier(AccessibilityID.Workouts.log)
     }
 
     // MARK: Empty states
@@ -337,7 +339,7 @@ struct WorkoutsView: View {
             // mid-transition spot when you first open Workouts — it just sits, then gently comes alive.
             .task { try? await Task.sleep(for: .seconds(0.45)); heroSettled = true }
             VStack(spacing: Theme.Space.xs) {
-                Text("Let's log a workout! 🏋️‍♀️")
+                Text("Let's log a workout! 🏋️")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
                 Text("Tap the machines you did — we'll assume a comfy 3×10. Edit anything you like.")
@@ -460,6 +462,7 @@ private struct SessionRow: View {
         .cardElevated()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(WorkoutSummary.title(for: session)), \(WorkoutSummary.summary(for: session, exerciseCount: exercises.count))")
+        .accessibilityIdentifier(AccessibilityID.Workouts.sessionRow)
     }
 }
 

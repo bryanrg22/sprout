@@ -21,6 +21,12 @@ extension UserProfile {
         latestLogged ?? (startWeightLbs > 0 ? startWeightLbs : 150)
     }
 
+    /// The weight every target is computed from: the smoothed trend of her weigh-ins, else
+    /// her start weight, else 150. The one definition of "her weight now".
+    func basisWeightLbs(weights: [WeightEntry]) -> Double {
+        currentWeightLbs(latestLogged: TrendCalculator.currentTrend(weights))
+    }
+
     func bmr(weightLbs: Double) -> Double {
         NutritionMath.bmr(sex: sex,
                           weightKg: NutritionMath.lbToKg(weightLbs),
@@ -120,7 +126,13 @@ extension UserProfile {
     /// computed default (~½ bodyweight). Never returns 0.
     var waterTargetOz: Double {
         if waterGoalOzOverride > 0 { return waterGoalOzOverride }
-        return NutritionMath.dailyWaterOz(weightLbs: startWeightLbs > 0 ? startWeightLbs : 150)
+        return recommendedWaterOz
+    }
+
+    /// The goal she gets with no goal of her own set: ~½ oz per lb of her START weight. It
+    /// is what "Reset to recommended" in Settings applies, so it is also what that button shows.
+    var recommendedWaterOz: Double {
+        NutritionMath.dailyWaterOz(weightLbs: startWeightLbs > 0 ? startWeightLbs : 150)
     }
 
     /// How many "containers" (bottles/glasses) the goal works out to — for the

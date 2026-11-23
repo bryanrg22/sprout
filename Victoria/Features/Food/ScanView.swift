@@ -110,7 +110,7 @@ struct ScanView: View {
 
     private var scannerFooter: some View {
         VStack(spacing: 8) {
-            Text("Hold steady — point at a barcode, or a Nutrition Facts panel to read calories and macros.")
+            Text("Hold steady — point at a barcode, or a Nutrition Facts panel to read calories, macros and the rows below them.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -301,7 +301,9 @@ struct ScanView: View {
             // exact (no "estimated range" framing) — unless sanity flagged it.
             source: .barcode,
             confidence: sanity.isSuspicious ? .low : nil,
-            notes: sanity.reason
+            notes: sanity.reason,
+            // The rows below the macros. A row the scan could not read stays not known.
+            detail: NutritionLabelDetailParser.parse(rawLines)
         )
     }
 

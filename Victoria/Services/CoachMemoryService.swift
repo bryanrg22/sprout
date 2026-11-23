@@ -95,34 +95,39 @@ enum CoachMemoryService {
     // MARK: - Consolidation (the background LLM call)
 
     private static let system = """
-    You maintain the long-term memory for a friendly, knowledgeable weight-loss coach named \
-    Vita, so she can feel like she's having one continuous conversation with her friend across \
-    many sessions. You'll be given Vita's CURRENT durable notes, her CURRENT rolling summary, \
-    and a batch of OLDER chat messages that are about to scroll out of her short-term window. \
-    Fold the new information from those messages into the two memory blocks and return the \
-    UPDATED versions.
+    You maintain the long-term memory for a friendly, knowledgeable health coach named \
+    Vita, so that Vita's chats with one user feel like one continuous conversation across \
+    many sessions. You'll be given Vita's CURRENT durable notes, Vita's CURRENT rolling \
+    summary, and a batch of OLDER chat messages that are about to scroll out of the short-term \
+    window. Fold the new information from those messages into the two memory blocks and \
+    return the UPDATED versions.
 
     Maintain two things:
 
-    1. DURABLE NOTES — a compact, curated list of qualitative facts about her that stay true \
-    over time: her preferences, life context and routine, foods she likes and dislikes, what \
-    motivates her, obstacles she runs into, and real wins. Update it: add genuinely new facts, \
-    refine ones that changed, drop anything stale or trivial. Keep it tight (about \
-    \(notesCharBudget) characters max). Markdown bullets are fine.
+    1. DURABLE NOTES — a compact, curated list of qualitative facts about the user that stay \
+    true over time: preferences, life context and routine, foods liked and disliked, what \
+    motivates the user, obstacles that come up, and real wins. Update it: add genuinely new \
+    facts, refine ones that changed, drop anything stale or trivial, and REMOVE a fact the \
+    user has taken back or corrected. Keep it tight (about \(notesCharBudget) characters \
+    max). Markdown bullets are fine.
 
     2. ROLLING SUMMARY — a concise prose recap of what's been going on in the conversation \
-    lately (themes, what she's working on, where things stand), so continuity survives after \
-    the older messages disappear. Rewrite it to absorb the new batch; keep it about \
+    lately (themes, what the user is working on, where things stand), so continuity survives \
+    after the older messages disappear. Rewrite it to absorb the new batch; keep it about \
     \(summaryCharBudget) characters max. It should read as a brief catch-up, not a transcript.
+
+    Write both blocks about "the user" or by the user's name as it appears in the messages. \
+    Do not guess the user's gender, and do not guess a goal the messages and notes do not state.
 
     CRITICAL RULES:
     - NEVER store numbers that the app owns: no body weights, no calorie counts, no macro \
     grams, no calorie/step/water targets, no goal weight, no dates of weigh-ins. Those are \
-    computed live from her real data and are the single source of truth — duplicating them in \
-    memory would let them go stale and mislead her. Keep memory PURELY qualitative.
-    - Tone for the notes: warm but direct and results-focused. She is a capable adult pursuing \
-    a goal, NOT fragile and NOT someone with an eating disorder. Do not add therapy-speak, \
-    body-image hedging, or any moralizing about food. Just record useful facts plainly.
+    computed live from the user's real data and are the single source of truth — duplicating \
+    them in memory would let them go stale and mislead. Keep memory PURELY qualitative.
+    - Tone for the notes: warm but direct and results-focused. The user is a capable adult \
+    pursuing a goal, NOT fragile and NOT someone with an eating disorder. Do not add \
+    therapy-speak, body-image hedging, or any moralizing about food. Just record useful facts \
+    plainly.
     - Don't invent facts. Only record what the messages actually support.
     - Output STRICT JSON ONLY, no prose, no code fences, exactly this shape:
     {"notes": "<updated durable notes>", "summary": "<updated rolling summary>"}
@@ -138,7 +143,7 @@ enum CoachMemoryService {
     ///   - currentSummary: the existing `CoachMemory.conversationSummary`.
     ///   - olderMessages: the batch leaving the window, oldest-first (from
     ///     `messagesToConsolidate`, snapshotted off SwiftData).
-    ///   - profileName: the user's display name, for nicer notes ("She/your friend" if empty).
+    ///   - profileName: the user's display name, for nicer notes ("Friend" if empty).
     static func consolidate(currentNotes: String,
                             currentSummary: String,
                             olderMessages: [MessageSnapshot],

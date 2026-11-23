@@ -367,7 +367,9 @@ struct PhotoFoodFlow: View {
             barcode: nil,
             notes: combinedNotes,
             photoData: jpegs.first,
-            additionalPhotoData: jpegs.count > 1 ? Array(jpegs.dropFirst()) : nil
+            additionalPhotoData: jpegs.count > 1 ? Array(jpegs.dropFirst()) : nil,
+            // Only the four the estimator is asked for, and only those it gave a basis for.
+            detail: a.detail
         )
     }
 }

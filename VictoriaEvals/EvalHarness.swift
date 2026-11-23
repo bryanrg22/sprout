@@ -39,6 +39,11 @@ enum EvalEnv {
     static var repeats: Int { max(1, Int(env["SPROUT_EVAL_REPEATS"] ?? "") ?? 1) }
     /// Run only the first N cases of each dataset (a pilot), or all of them.
     static var limit: Int? { Int(env["SPROUT_EVAL_LIMIT"] ?? "") }
+    /// Run only the cases with these ids (comma-separated), for chasing one failure.
+    static var onlyCases: Set<String> {
+        Set((env["SPROUT_EVAL_CASES"] ?? "").split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty })
+    }
     static var concurrency: Int { max(1, Int(env["SPROUT_EVAL_CONCURRENCY"] ?? "") ?? 4) }
     /// The repository's `Evals/` directory on the host (the simulator reads host paths).
     static var root: URL? { env["SPROUT_EVAL_ROOT"].map { URL(fileURLWithPath: $0) } }
@@ -162,8 +167,20 @@ enum EvalRunner {
                                     cases: [Case],
                                     caseID: @escaping @Sendable (Case) -> String,
                                     attempt: @escaping @Sendable (Case) async -> EvalOutcome) async throws {
+        try await run(taskName: task.rawValue, dataset: dataset, cases: cases, caseID: caseID, attempt: attempt)
+    }
+
+    /// The same, for a task that is not a text-model `AITask` (image generation). The
+    /// candidate's `@effort` suffix reaches `attempt` as `AIRuntime.current?.reasoningEffort`.
+    static func run<Case: Sendable>(taskName: String,
+                                    dataset: String,
+                                    cases: [Case],
+                                    caseID: @escaping @Sendable (Case) -> String,
+                                    attempt: @escaping @Sendable (Case) async -> EvalOutcome) async throws {
         try EvalEnv.requireLive()
-        let writer = try EvalWriter(task: task.rawValue)
+        let only = EvalEnv.onlyCases
+        let cases = only.isEmpty ? cases : cases.filter { only.contains(caseID($0)) }
+        let writer = try EvalWriter(task: taskName)
         let repeats = EvalEnv.repeats
 
         var jobs: [(item: Case, candidate: EvalCandidate, repeatIndex: Int)] = []
@@ -190,7 +207,7 @@ enum EvalRunner {
                     let elapsed = Int(Date().timeIntervalSince(started) * 1000)
                     let calls = usage.all
                     writer.append(EvalRecord(
-                        task: task.rawValue, dataset: dataset, caseID: caseID(job.item),
+                        task: taskName, dataset: dataset, caseID: caseID(job.item),
                         candidate: job.candidate.id, provider: job.candidate.provider.rawValue,
                         model: job.candidate.model, effort: job.candidate.effort,
                         repeatIndex: job.repeatIndex, ok: outcome.ok, error: outcome.error,

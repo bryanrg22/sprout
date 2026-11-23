@@ -196,6 +196,7 @@ struct BuddyDayCard: View {
             switch avatar {
             case .victoria: PixelVictoriaView(mood: .happy)
             case .bryan:    PixelBryanView(mood: .happy)
+            case .custom:   CustomCompanionImage().frame(width: 120, height: 144)
             }
         }
         .scaleEffect(0.34)

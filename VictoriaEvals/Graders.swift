@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 @testable import Victoria
 
 /// Pure scoring functions. Each is unit-tested in `GraderTests` against hand-written
@@ -15,6 +16,68 @@ enum Graders {
         let carbs_g: Double
         let fat_g: Double
         let source: String
+
+        // The label nutrients the estimator is asked for (`Nutrient.estimable`), from the same
+        // USDA records as the macros (`meal_describe/v3` on). `nil` = the record does not list
+        // the nutrient for at least one ingredient, so the total is not known and that
+        // nutrient is NOT graded for the case. Optional, so a v1 row still decodes. The
+        // dataset also carries the label's other seven nutrients (added sugars, trans fat,
+        // cholesterol, vitamin D, calcium, iron, potassium); nothing reads them until the
+        // estimator is asked for one.
+        var fiber_g: Double? = nil
+        var sugars_g: Double? = nil
+        var saturated_fat_g: Double? = nil
+        var sodium_mg: Double? = nil
+
+        /// Nutrients (by `Nutrient.argumentName`, e.g. "sodium_mg") for which the description
+        /// gives no basis, so the right answer is "not known". No v3 case has any: every v3
+        /// portion is a named food in grams. The field exists so a later version with vague
+        /// descriptions can label them.
+        var no_basis: [String]? = nil
+
+        func truth(for nutrient: Nutrient) -> Double? {
+            switch nutrient {
+            case .fiber: return fiber_g
+            case .sugars: return sugars_g
+            case .saturatedFat: return saturated_fat_g
+            case .sodium: return sodium_mg
+            default: return nil
+            }
+        }
+    }
+
+    /// The estimate's value for one of the estimable nutrients (`nil` = it said not known).
+    static func estimated(_ nutrient: Nutrient, in estimate: FoodPhotoAnalyzer.Estimate) -> Double? {
+        estimate.detail[nutrient]
+    }
+
+    /// Scores for the label nutrients, added to the meal scores. None of them decides the pass.
+    ///
+    /// For each nutrient the estimator is asked for:
+    /// - `<name>_abs_error`: |estimate − truth| in the nutrient's own unit (the key carries
+    ///   it: `fiber_g_abs_error`, `sodium_mg_abs_error`). Recorded only when the truth is
+    ///   known AND the estimate gave a number, so an abstention never counts as an error of
+    ///   zero or of the whole amount.
+    /// - `<name>_answered`: 1 when the estimate gave a number, 0 when it said not known.
+    ///   Recorded when the truth is known (the model had a basis); its mean is the share of
+    ///   answerable cases the model actually answered.
+    /// - `<name>_unknown_when_no_basis`: 1 when the estimate said not known, 0 when it gave a
+    ///   number anyway. Recorded only for a nutrient the case lists in `no_basis`.
+    static func mealDetail(_ estimate: FoodPhotoAnalyzer.Estimate, truth: MealTruth) -> [String: Double] {
+        var scores: [String: Double] = [:]
+        let noBasis = Set(truth.no_basis ?? [])
+        for nutrient in Nutrient.estimable {
+            let name = nutrient.argumentName
+            let got = estimated(nutrient, in: estimate)
+            if noBasis.contains(name) {
+                scores["\(name)_unknown_when_no_basis"] = got == nil ? 1 : 0
+                continue
+            }
+            guard let want = truth.truth(for: nutrient) else { continue }   // USDA does not say: not graded
+            scores["\(name)_answered"] = got == nil ? 0 : 1
+            if let got { scores["\(name)_abs_error"] = abs(got - want) }
+        }
+        return scores
     }
 
     /// The calorie tolerance a case passes within. 20% is the tolerance US food
@@ -46,6 +109,8 @@ enum Graders {
                                   && estimate.total_calories <= estimate.calories_high) ? 1 : 0,
         ]
         scores["confidence_is_valid"] = EstimateConfidence(rawValue: estimate.confidence) == nil ? 0 : 1
+        // The label nutrients are reported beside the macros; the pass rule is unchanged.
+        scores.merge(mealDetail(estimate, truth: truth)) { existing, _ in existing }
         return (scores, kcalError <= mealCalorieTolerance)
     }
 
@@ -213,5 +278,141 @@ enum Graders {
             "acted_when_should_not": (wantsNone && (called != nil || invalid)) ? 1 : 0,
         ]
         return (scores, decisionRight && kindRight && argumentsRight)
+    }
+
+    // MARK: - A generated character image (the `Avatar` evaluation)
+
+    /// What the code can tell about a character image without a person looking at it.
+    /// Likeness, and fit with the two existing characters, are the owner's own rating.
+    struct ImageMetrics: Equatable {
+        var decodable = false
+        var width = 0
+        var height = 0
+        var hasAlpha = false
+        /// Every pixel of the two TOP corner blocks is clear. This is the background check
+        /// that decides a pass: the style is a bust cut off by the bottom edge, so shoulders
+        /// may rightly reach the bottom corners (the second built-in character's do).
+        var transparentTopCorners = false
+        /// Every pixel of all four corner blocks is clear. Recorded, not required.
+        var transparentCorners = false
+        /// Share of pixels with alpha exactly 0.
+        var transparentShare = 0.0
+        /// Distinct colours among the opaque pixels after quantisation (see `distinctColours`).
+        var distinctColours = 0
+
+        var isSquare1024: Bool { width == 1024 && height == 1024 }
+    }
+
+    /// Side of each corner block checked for transparency, as a share of the image side.
+    static let cornerBlockShare = 0.03
+    /// Bits kept per channel when counting colours: 4 bits = 16 levels = 4,096 possible colours.
+    static let colourBits = 4
+    /// A quantised colour counts only if it covers at least this share of the opaque pixels,
+    /// so a handful of stray anti-aliased pixels do not look like extra palette entries.
+    static let minColourShare = 0.002
+    /// At or under this many colours the image is taken to be flat-palette pixel art. The
+    /// prompt asks for 12 to 16; a photograph or a painted illustration quantises to
+    /// hundreds. NOT calibrated on real outputs yet: the first live run should look at the
+    /// distribution of `distinct_colours` before this number is trusted.
+    static let pixelArtColourLimit = 48
+
+    static func imageMetrics(_ data: Data) -> ImageMetrics {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+              let pixels = AvatarImage.rgba(of: image) else { return ImageMetrics() }
+        var metrics = ImageMetrics()
+        metrics.decodable = true
+        metrics.width = pixels.width
+        metrics.height = pixels.height
+        metrics.hasAlpha = AvatarImage.hasAlphaChannel(image)
+        metrics.transparentShare = pixels.transparentShare
+        metrics.transparentTopCorners = cornersAreTransparent(pixels, topOnly: true)
+        metrics.transparentCorners = cornersAreTransparent(pixels, topOnly: false)
+        metrics.distinctColours = distinctColours(pixels)
+        return metrics
+    }
+
+    static func cornersAreTransparent(_ pixels: AvatarImage.Pixels, topOnly: Bool) -> Bool {
+        let block = max(1, Int((Double(min(pixels.width, pixels.height)) * cornerBlockShare).rounded()))
+        guard pixels.width >= block, pixels.height >= block else { return false }
+        let xs = [0, pixels.width - block]
+        let ys = topOnly ? [0] : [0, pixels.height - block]
+        for x0 in xs {
+            for y0 in ys {
+                for y in y0..<(y0 + block) {
+                    for x in x0..<(x0 + block) where pixels.alpha(x: x, y: y) != 0 { return false }
+                }
+            }
+        }
+        return true
+    }
+
+    /// Colours among the fully opaque pixels, each channel cut to `colourBits` bits, counting
+    /// only colours that cover at least `minColourShare` of them.
+    static func distinctColours(_ pixels: AvatarImage.Pixels, bits: Int = colourBits,
+                                minShare: Double = minColourShare) -> Int {
+        let shift = UInt8(8 - bits)
+        var counts: [UInt32: Int] = [:]
+        var opaque = 0
+        var index = 0
+        while index < pixels.bytes.count {
+            if pixels.bytes[index + 3] == 255 {
+                opaque += 1
+                let r = UInt32(pixels.bytes[index] >> shift)
+                let g = UInt32(pixels.bytes[index + 1] >> shift)
+                let b = UInt32(pixels.bytes[index + 2] >> shift)
+                counts[(r << 16) | (g << 8) | b, default: 0] += 1
+            }
+            index += 4
+        }
+        guard opaque > 0 else { return 0 }
+        let floor = Double(opaque) * minShare
+        return counts.values.filter { Double($0) >= floor }.count
+    }
+
+    /// Scores for one generated character. Pass = the app could show it as a character:
+    /// a square 1024 PNG whose top corners are clear and whose palette is small.
+    static func avatar(_ data: Data) -> (scores: [String: Double], pass: Bool) {
+        let m = imageMetrics(data)
+        let isPixelArt = m.decodable && m.distinctColours > 0 && m.distinctColours <= pixelArtColourLimit
+        let scores: [String: Double] = [
+            "decodable": m.decodable ? 1 : 0,
+            "square_1024": m.isSquare1024 ? 1 : 0,
+            "has_alpha": m.hasAlpha ? 1 : 0,
+            "transparent_top_corners": m.transparentTopCorners ? 1 : 0,
+            "transparent_corners": m.transparentCorners ? 1 : 0,
+            "transparent_share": m.transparentShare,
+            "distinct_colours": Double(m.distinctColours),
+            "is_pixel_art": isPixelArt ? 1 : 0,
+        ]
+        return (scores, m.decodable && m.isSquare1024 && m.transparentTopCorners && isPixelArt)
+    }
+
+    /// USD per million tokens for an image model.
+    struct ImageRates: Equatable {
+        var textInput: Double
+        var imageInput: Double
+        var imageOutput: Double
+    }
+
+    /// Read from each model's own page on 2026-11-22
+    /// (developers.openai.com/api/docs/models/gpt-image-2.6-flare and -sunburst). The pages
+    /// give no per-image price: the cost of an image is its tokens at these rates, which is
+    /// why the evaluation records the usage block. A model missing here gets no cost.
+    static let imageRates: [String: ImageRates] = [
+        "gpt-image-2.6-flare": ImageRates(textInput: 5, imageInput: 8, imageOutput: 30),
+        "gpt-image-2.6-sunburst": ImageRates(textInput: 5, imageInput: 8, imageOutput: 30),
+    ]
+
+    /// The list-price cost of one image call, or nil for a model with no rates on file.
+    /// Input tokens the response does not attribute to text or image are priced as image
+    /// input (the dearer of the two), so an incomplete breakdown never understates the cost.
+    static func imageCostUSD(model: String, usage: AvatarGenerator.Usage,
+                             rates: [String: ImageRates] = imageRates) -> Double? {
+        guard let rate = rates[model] else { return nil }
+        let unattributed = max(0, usage.inputTokens - usage.inputTextTokens - usage.inputImageTokens)
+        let input = Double(usage.inputTextTokens) * rate.textInput
+            + Double(usage.inputImageTokens + unattributed) * rate.imageInput
+        return (input + Double(usage.outputTokens) * rate.imageOutput) / 1_000_000
     }
 }
