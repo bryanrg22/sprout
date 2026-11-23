@@ -27,6 +27,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 15 | A character from a photo | 2026-11-22 |
 | 16 | Settings that change what depends on them: the plan, kilograms, and where a key goes | 2026-11-22 |
 | 17 | UI smoke flows: the app driven end to end, and what the accessibility audit found | 2026-11-23 |
+| 18 | The rest of the label: eleven more nutrients, and "unknown" is never zero | 2026-11-23 |
 
 ---
 
@@ -747,3 +748,43 @@ fixed.
 **Not covered:** onboarding beyond its first screen (the character step was being added);
 the light theme; locales other than en-US; a run that crosses midnight; a simulator
 signed in to iCloud.
+
+## 18. The rest of the label: eleven more nutrients, and "unknown" is never zero (2026-11-23)
+
+Objective G10. A food entry carried calories, protein, carbohydrate and fat.
+
+**Researched** (`docs/nutrition-detail.md`, sources there): what the US Nutrition Facts
+label requires, what Open Food Facts and USDA FoodData Central provide, and what can
+honestly be estimated from a photo or a description. Two of its claims about what other
+trackers show come from search excerpts, not from the products.
+
+**Decided:** eleven optional fields, in label order: saturated fat, trans fat,
+cholesterol, sodium, fiber, total sugars, added sugars, vitamin D, calcium, iron,
+potassium. The photo and description estimator is asked for four of them (fiber, total
+sugars, saturated fat, sodium) and not for the other seven, which are shown only when
+they come from a label, a barcode or the user.
+
+**The rule the feature rests on:** a value that is not known is stored as absent, shown
+as unknown, and never counted as zero. A day's total for a nutrient says how many of the
+day's foods it covers ("from 3 of 4 foods"). How "unknown" arrives from each source is
+defined and tested: an absent or implausible key from Open Food Facts; an absent or
+unreadable row, or a bare percent daily value, from a label scan; `null`, a missing key,
+a negative or impossible amount, or four exact zeros on a food of 50 kcal or more from
+the estimator (the filler a strict schema produces, section 10); an absent argument from
+the coach's tools; an empty field in manual entry.
+
+**Verified:** 111 new tests; suite **891 tests, 888 passed, 3 known defects pinned**;
+evaluation self-tests 37 passed, 4 live evaluations skipped. A store written before the
+change opens with the new build: its 10 rows are kept and the 11 new columns are empty.
+The day card and the entry detail were seen in the simulator
+(`docs/screenshots/review/nutrition-*.png`).
+
+**Not verified:** no model has been sent the new schema, so how often each candidate
+fills the four estimated fields, and how accurately, is unmeasured. The label parser ran
+on typed text, not on a camera scan. `meal_describe/v3` (the existing cases with these
+nutrients from the same USDA records) is **not built**: USDA's demo key refused every
+request for about sixteen hours, the fetch code for nutrient details has never run
+against the service, and the nutrient ids in it were written from memory, so they must
+be checked on the first successful fetch. The live meal evaluation stays on v1 until then.
+**The owner must deploy the CloudKit Production schema** for the eleven new `FoodEntry`
+fields before a build with this reaches TestFlight.

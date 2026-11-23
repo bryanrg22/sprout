@@ -40,6 +40,11 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **More of the label.** Fiber, sugars and added sugars, saturated and trans fat, sodium,
+  cholesterol, potassium, calcium, iron and vitamin D, per food and per day, from
+  barcodes, label scans, photos, descriptions, Vita and manual entry. A value nobody knows
+  is shown as unknown, never as zero, and each daily total says how many of the day's
+  foods it covers (EVAL_REPORT 18).
 - **Your own character.** A new step in onboarding, and "Make my character" in More → You,
   turns a photo into a pixel character. It needs an OpenAI key, asks before the photo is
   sent, never keeps the photo, and falls back to a built-in character if anything goes
@@ -66,7 +71,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 780 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- Tests: 443 → 891 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
 - UI smoke flows: 15 end-to-end flows against a scripted model (EVAL_REPORT 17).
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).
