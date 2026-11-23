@@ -38,6 +38,7 @@
 		1B0FDDBEE5057F58E909C673 /* BuddyPublishTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618B3D2CFCB3C2AD35E5874A /* BuddyPublishTests.swift */; };
 		1B661D25D06937C12212A21F /* ThemeCompat.swift in Sources */ = {isa = PBXBuildFile; fileRef = C87C52A579E029DF6B5AD58E /* ThemeCompat.swift */; };
 		1CB6B6193BD3906708185933 /* HealthTrackerImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F40D2384517B589D42C17D12 /* HealthTrackerImportTests.swift */; };
+		1CEAF93BFDD2BBBEF6E6F873 /* AnthropicStructuredFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0490185AC4676637F6D810B0 /* AnthropicStructuredFormat.swift */; };
 		1CF2E7F15C134EF0125F96EE /* CoachTurnEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E63DE685027436E16FE2852 /* CoachTurnEngine.swift */; };
 		1DB7F7C6CCE4DBC5B1A0F81E /* FoodDetailInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 756CBEA246489FB15F1C3A37 /* FoodDetailInput.swift */; };
 		1E2251F1939D39D9598A63FF /* ChatWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0D19EC560A702A67C623C5 /* ChatWindowTests.swift */; };
@@ -189,6 +190,7 @@
 		9386D2360A86BF815E2F1CD5 /* BuddyAutoPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE4B46B0CBE4F638B0FF7C59 /* BuddyAutoPublisher.swift */; };
 		94B939DD153DFC0B4714199A /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E4A42B2C87E461A8B39E48 /* Theme.swift */; };
 		94E301ED3C6C44F074AC0761 /* InsightPhraser.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA392B30954206C0A273659A /* InsightPhraser.swift */; };
+		9566B43429E9B1D940E019AA /* AnthropicStructuredFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5475E205D5A0453FB7E54EBC /* AnthropicStructuredFormatTests.swift */; };
 		96365126679D26683EF2D76F /* LLMClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07CDE37F0E17F17E000DB5B /* LLMClient.swift */; };
 		963ABF20CD1118C8C109A892 /* StoreTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997B2E2FA6E3ACED533605CD /* StoreTestSupport.swift */; };
 		972F508A211137A44DD7BA13 /* BuddyFreshness.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADBDBD414177EA404C6EA52 /* BuddyFreshness.swift */; };
@@ -372,6 +374,7 @@
 		01237BF5090CC34748AC55DF /* TravelSignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelSignal.swift; sourceTree = "<group>"; };
 		01A77E62146C85D65BC7CE57 /* CompanionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionEngine.swift; sourceTree = "<group>"; };
 		02B0811F067E550FC2088B7F /* WeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightView.swift; sourceTree = "<group>"; };
+		0490185AC4676637F6D810B0 /* AnthropicStructuredFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicStructuredFormat.swift; sourceTree = "<group>"; };
 		0600062D459C89D845F194F7 /* AchievementsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementsView.swift; sourceTree = "<group>"; };
 		0629E4D01F839FB22C070693 /* AddFoodSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFoodSheet.swift; sourceTree = "<group>"; };
 		066CEAB4D51B49C2AC9788C7 /* ExerciseEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseEntry.swift; sourceTree = "<group>"; };
@@ -469,6 +472,7 @@
 		532C79AF194CAD27DF107CF3 /* RecoverySignal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoverySignal.swift; sourceTree = "<group>"; };
 		53D5739FC39DCF615DF984F9 /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntry.swift; sourceTree = "<group>"; };
 		53D6F34B68AAFFE23789A611 /* FoodLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogView.swift; sourceTree = "<group>"; };
+		5475E205D5A0453FB7E54EBC /* AnthropicStructuredFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicStructuredFormatTests.swift; sourceTree = "<group>"; };
 		54B35ED15B7ACC33D219615C /* PlanGoalsFlag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanGoalsFlag.swift; sourceTree = "<group>"; };
 		54FD13B54DEE361DF4F9CE03 /* VictoriaTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = VictoriaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		55BAB56761423AA82A8F152B /* StoreVerificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreVerificationTests.swift; sourceTree = "<group>"; };
@@ -930,6 +934,7 @@
 				2212ADD4A554F5E9AC9AF5FB /* AIRuntime.swift */,
 				49799D1186F331A7E89174A4 /* AITask.swift */,
 				823E80CB1CB4EB3CC067B43B /* AnthropicClient.swift */,
+				0490185AC4676637F6D810B0 /* AnthropicStructuredFormat.swift */,
 				1DF63A33D9A7F10ED58AA7D4 /* AvatarGenerator.swift */,
 				8AB1DEE9824F88CF66565DD2 /* GoalFraming.swift */,
 				B07CDE37F0E17F17E000DB5B /* LLMClient.swift */,
@@ -1003,6 +1008,7 @@
 				B7C927DB4F4B798413A20B4C /* AIKeyRoutingTests.swift */,
 				2CB20C4AE3EA68A9F2DCD524 /* AIRuntimeTests.swift */,
 				407820F82E16B7C15CC60B70 /* AITaskModelTests.swift */,
+				5475E205D5A0453FB7E54EBC /* AnthropicStructuredFormatTests.swift */,
 				A830FBD2B7F6B264B43D7406 /* AnthropicThinkingTests.swift */,
 				B499D8A334F7A5353E87A068 /* AppModeTests.swift */,
 				4794E441CC1CE4A7C75CB44D /* AvatarCreationModelTests.swift */,
@@ -1583,6 +1589,7 @@
 				E222376F00F9BC4B1C898D90 /* AddFoodSheet.swift in Sources */,
 				1FB386C391D534986A636DDF /* AlejandroGagOverlay.swift in Sources */,
 				0556DE2F936E8140B4D4F9F9 /* AnthropicClient.swift in Sources */,
+				1CEAF93BFDD2BBBEF6E6F873 /* AnthropicStructuredFormat.swift in Sources */,
 				F0A856B463156AE57288E1CF /* AppDelegate.swift in Sources */,
 				BEA1711039178AFB45F2207A /* AppIconPickerView.swift in Sources */,
 				396164DC3252BBEC42478466 /* AppMode.swift in Sources */,
@@ -1771,6 +1778,7 @@
 				8588F6EEC52F6CA7A0C89F80 /* AchievementConsistencyTests.swift in Sources */,
 				F0E4EB6760B0E4D172C2F1AA /* ActivityWeekTests.swift in Sources */,
 				70D2A089E581BF037263EE91 /* AdaptivePlanTests.swift in Sources */,
+				9566B43429E9B1D940E019AA /* AnthropicStructuredFormatTests.swift in Sources */,
 				DEA7008A2334BA69FB99F32C /* AnthropicThinkingTests.swift in Sources */,
 				8D4DE46BBB96FA4705B145B4 /* AppModeTests.swift in Sources */,
 				DA8E8DEECF9278E72268D6FD /* AvatarCreationModelTests.swift in Sources */,

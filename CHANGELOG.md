@@ -7,6 +7,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **Meal estimates, suggestions, the checklist and the recap work on the newest Claude
+  models** (Sonnet 5.5, Opus 5.5, Fable 5.2), which refuse the request the app used; an
+  answer that breaks the expected shape is no longer shown (EVAL_REPORT 30).
+
 - VoiceOver no longer reaches the hidden half of the Home | Gym switch (its content; one
   tab button is still under check), and secondary text in the light look is darker so it
   meets the contrast minimum (EVAL_REPORT 29).
@@ -119,7 +123,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,180 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- Tests: 443 → 1,197 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
 - UI smoke flows: 24 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
   through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
