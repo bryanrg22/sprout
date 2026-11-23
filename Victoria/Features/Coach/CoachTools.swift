@@ -95,8 +95,8 @@ enum CoachTools {
     // Bounds for the data-logging tools. These mirror what the manual UI accepts so the
     // coach can never write a value the user couldn't enter themselves.
     /// Weigh-in / goal-weight bounds in lb — matches the weigh-in slider (50…500 lb).
-    /// (Weights are stored as the entered number in the user's unit, like every other
-    /// write path; true kg conversion is an app-wide gap handled elsewhere, not here.)
+    /// Every weight is stored, entered and shown in pounds (`UnitSystem.weightUnit`); there is
+    /// no kg conversion, which is why `set_units` declines metric (docs/settings-dependencies.md).
     static let weightRangeLbs = 50.0...500.0
     /// One logged water amount, in oz — generous so any real glass/bottle/jug fits.
     static let waterOzRange = 1.0...300.0
@@ -504,8 +504,8 @@ enum CoachTools {
         ],
     ]
 
-    /// Weight-logging schema — the value is in HER unit (lb or kg), stored as the entered
-    /// number, exactly how the weigh-in sheet records it (no kg conversion here).
+    /// Weight-logging schema — the value is in pounds and stored as entered, exactly how the
+    /// weigh-in sheet records it.
     private static func logWeightSchema(for profile: UserProfile) -> [String: Any] {
         let unit = profile.unitSystem.weightUnit
         return [
@@ -604,10 +604,11 @@ enum CoachTools {
     private static let setUnitsSchema: [String: Any] = [
         "name": Name.setUnits.rawValue,
         "description": """
-        Set the user's UNIT SYSTEM — imperial (lb) or metric (kg). Use when she asks to switch \
-        units, e.g. "show my weight in kg" or "switch me to pounds". This changes only how \
-        weights are displayed/entered; it doesn't alter any logged values. The app shows a \
-        one-tap confirm before it's saved.
+        Set the user's UNIT SYSTEM. Call this whenever she asks to switch units, e.g. "show my \
+        weight in kg", "switch the app to metric" or "switch me to pounds". Only imperial (lb) \
+        works today: for "metric" the app changes nothing and answers that kilograms aren't \
+        supported yet — still make the call, then tell her that plainly. No logged value is \
+        ever altered.
         """,
         "input_schema": [
             "type": "object",
@@ -957,6 +958,9 @@ enum CoachTools {
         /// goal-changing is gated behind a confirm. This is the single source of truth the
         /// view reads to pick its flow — keeping the risk policy here, next to the tools.
         var requiresConfirm: Bool {
+            // Switching to metric is declined (no kg conversion exists), so there is nothing to
+            // confirm: the answer goes straight back to the model.
+            if case .setUnits(.metric) = action { return false }
             switch name {
             case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan, .logWorkout,
                  .forgetFact,
@@ -1060,10 +1064,15 @@ enum CoachTools {
     /// `delete_food` to resolve "the latte" to a specific row (and to report not-found /
     /// ambiguous as a friendly `.invalid`). It defaults to `[]` so the settings-only call
     /// sites and existing tests keep their exact signatures.
+    ///
+    /// `currentWeightLbs` is where she is now (the smoothed trend), used by `set_weight_goal`
+    /// to check the goal lies on the right side of it. Nil when the caller has no weigh-ins,
+    /// in which case the start weight stands in.
     static func parse(name rawName: String,
                       input: [String: Any],
                       profile: UserProfile,
-                      todaysFoods: [FoodEntry] = []) -> ParseResult {
+                      todaysFoods: [FoodEntry] = [],
+                      currentWeightLbs: Double? = nil) -> ParseResult {
         guard let name = Name(rawValue: rawName) else {
             return .invalid("Unknown tool \"\(rawName)\". No change was made.")
         }
@@ -1132,7 +1141,7 @@ enum CoachTools {
             return parseLogWeight(input: input, profile: profile)
 
         case .setWeightGoal:
-            return parseWeightGoal(input: input, profile: profile)
+            return parseWeightGoal(input: input, profile: profile, currentWeightLbs: currentWeightLbs)
 
         case .setStartWeight:
             return parseStartWeight(input: input, profile: profile)
@@ -1847,7 +1856,8 @@ enum CoachTools {
             action: .logWeight(lbs: weight)))
     }
 
-    private static func parseWeightGoal(input: [String: Any], profile: UserProfile) -> ParseResult {
+    private static func parseWeightGoal(input: [String: Any], profile: UserProfile,
+                                        currentWeightLbs: Double? = nil) -> ParseResult {
         let unit = profile.unitSystem.weightUnit
         guard let goal = doubleValue(input["weight"]) else {
             return .invalid("I need a number for your goal weight. Nothing was changed.")
@@ -1856,11 +1866,11 @@ enum CoachTools {
             return .invalid("A goal of \(trimmed(goal)) \(unit) is outside the sensible range "
                           + "(\(Int(weightRangeLbs.lowerBound))–\(Int(weightRangeLbs.upperBound)) \(unit)). Nothing was changed.")
         }
-        // The goal must lie in her goal DIRECTION relative to where she is now (her start
-        // weight; see `currentWeightLbs`). This is a target only; her calorie intake stays
-        // computed + floored regardless, so there's no eat-less lever here — just a guard
-        // against an obviously contradictory target.
-        let current = currentWeightLbs(profile)
+        // The goal must lie in her goal DIRECTION relative to where she is now (her weight
+        // trend when the caller has it, else her start weight; see `currentWeightLbs`). This is
+        // a target only; her calorie intake stays computed + floored regardless, so there's no
+        // eat-less lever here — just a guard against an obviously contradictory target.
+        let current = currentWeightLbs ?? Self.currentWeightLbs(profile)
         switch profile.pace.direction {
         case .lose:
             guard goal < current else {
@@ -1933,12 +1943,23 @@ enum CoachTools {
 
     // MARK: - Apply (called after confirm, or immediately for auto-apply tools)
 
+    /// What `set_units` answers for metric. Goes to the model, which relays it.
+    static let metricUnsupportedMessage =
+        "Kilograms aren't supported yet, so nothing was changed: weights stay in pounds (lb). "
+        + "Tell her that plainly. If she gives a weight in kg, convert it to pounds yourself "
+        + "(1 kg = 2.2046 lb) before logging it."
+
     /// The outcome of applying a tool: the model-facing confirmation string, plus an optional
     /// `undo` that EXACTLY reverses the write (present for the reversible auto-apply logs).
     /// The undo runs on the main actor moments later; for edits it re-fetches by id.
     struct Applied {
         let message: String
         let undo: (@MainActor () -> Void)?
+        /// False when the tool declined and wrote nothing (today: `set_units` to metric).
+        var changed: Bool = true
+
+        /// The text handed back to the model as the tool result.
+        var resultText: String { changed ? "Applied. \(message)" : "Not applied. \(message)" }
     }
 
     /// The authoritative "today so far" calorie line for a tool result, computed EXACTLY like the
@@ -1980,10 +2001,39 @@ enum CoachTools {
 
     /// Apply a change and persist it, returning the message AND (for reversible logs) an
     /// `undo` closure. The auto-apply path uses the undo to offer a one-tap revert.
+    ///
+    /// Whatever the tool was, two things that depend on the profile are brought up to date
+    /// before this returns, so no tool can forget them: the plan is flagged when a goal input
+    /// changed (`PlanGoalInputs`), and the plan's numbers are mirrored into, or taken out of,
+    /// the targets (`PlanTargetSync`). Undo does the same in reverse.
     @MainActor
     static func applyReturningUndo(_ request: ParsedRequest,
                                    to profile: UserProfile,
                                    context: ModelContext) -> Applied {
+        let before = PlanGoalInputs(profile)
+        let planBefore = CoachPlan.current(in: context)
+        let wasFlagged = planBefore?.goalsChangedSinceBuild ?? false
+        // Before the tool runs: a plan with no direction record is one written for the
+        // direction in force now, not for the one a tool may be about to set.
+        planBefore?.adoptAnchorsIfMissing(current: before.direction)
+        let applied = applyCore(request, to: profile, context: context)
+        PlanGoalInputs.profileChanged(from: before, profile: profile, context: context)
+        Self.saveOrLog(context)
+        guard let undo = applied.undo else { return applied }
+        return Applied(message: applied.message, undo: {
+            undo()
+            let plan = CoachPlan.current(in: context)
+            // The flag this call raised goes away with the change that raised it.
+            if !wasFlagged, PlanGoalInputs(profile) == before { plan?.clearGoalsChanged() }
+            PlanTargetSync.apply(plan: plan, to: profile)
+            Self.saveOrLog(context)
+        }, changed: applied.changed)
+    }
+
+    @MainActor
+    private static func applyCore(_ request: ParsedRequest,
+                                  to profile: UserProfile,
+                                  context: ModelContext) -> Applied {
         switch request.action {
         case .stepGoal(let steps):
             let old = profile.dailyStepGoal
@@ -2097,12 +2147,18 @@ enum CoachTools {
             // Snapshot everything edit_plan can touch so undo restores exactly it.
             let b = (plan.headline, plan.assessment, plan.strategy,
                      plan.calorieMin, plan.calorieMax, plan.proteinTarget, plan.changelog, plan.updatedAt)
+            let anchors = (plan.caloriesDirection, plan.proteinDirection)
             if let h = edit.headline { plan.headline = h }
             if let a = edit.assessment { plan.assessment = a }
             if let s = edit.strategy { plan.strategy = s }
             if let lo = edit.calorieMin { plan.calorieMin = lo }
             if let hi = edit.calorieMax { plan.calorieMax = hi }
             if let p = edit.proteinTarget { plan.proteinTarget = p }
+            // A number set now is set for the goal direction she has now, so it drives the
+            // targets even if the rest of the plan was written for another direction. The
+            // calorie range counts as set when its floor is: the floor is the target.
+            if edit.calorieMin != nil { plan.caloriesDirection = profile.pace.direction }
+            if edit.proteinTarget != nil { plan.proteinDirection = profile.pace.direction }
             plan.changelog = plan.changelog + [PlanChange(date: .now, summary: edit.changeNote)]
             plan.updatedAt = .now
             Self.saveOrLog(context)
@@ -2110,6 +2166,7 @@ enum CoachTools {
                 plan.headline = b.0; plan.assessment = b.1; plan.strategy = b.2
                 plan.calorieMin = b.3; plan.calorieMax = b.4; plan.proteinTarget = b.5
                 plan.changelog = b.6; plan.updatedAt = b.7
+                plan.caloriesDirection = anchors.0; plan.proteinDirection = anchors.1
                 Self.saveOrLog(context)
             })
 
@@ -2179,7 +2236,7 @@ enum CoachTools {
                            undo: { context.delete(water); Self.saveOrLog(context) })
 
         case .logWeight(let lbs):
-            // Stored as the entered number, like the weigh-in sheet (no kg conversion here).
+            // Pounds in, pounds stored, like the weigh-in sheet.
             let weight = WeightEntry(weightLbs: lbs)
             context.insert(weight)
             Self.saveOrLog(context)
@@ -2242,11 +2299,16 @@ enum CoachTools {
         // MARK: Settings / preferences applies (each captures the old value for Undo)
 
         case .setUnits(let system):
+            // Metric is declined, not half-done. Every weight is stored in pounds and nothing
+            // converts on the way in or out, so a "kg" label would sit beside pound values and
+            // the next weigh-in typed in kg would be stored as pounds (L-B7).
+            guard system == .imperial else {
+                return Applied(message: Self.metricUnsupportedMessage, undo: nil, changed: false)
+            }
             let old = profile.unitSystem
             profile.unitSystem = system   // enum setter writes unitSystemRaw
             Self.saveOrLog(context)
-            let name = system == .imperial ? "imperial (lb)" : "metric (kg)"
-            return Applied(message: "Units are now \(name).",
+            return Applied(message: "Units are now imperial (lb).",
                            undo: { profile.unitSystem = old; Self.saveOrLog(context) })
 
         case .setTheme(let theme):
@@ -2278,16 +2340,22 @@ enum CoachTools {
             case .maintain: label = "maintaining"
             }
             let paceNote = direction == .maintain ? "" : " (\(newPace.label) pace)"
-            // A direction flip can strand two things: an adaptive Plan authored for the OLD
-            // direction (its calorie range keeps driving the targets via the overrides), and a
-            // goal weight now on the wrong side of her current weight. Tell the model so it
-            // follows up naturally instead of leaving stale numbers in charge.
+            // A direction flip leaves two things behind: an adaptive Plan written for the OLD
+            // direction, and a goal weight now on the wrong side of her current weight. The
+            // plan's numbers stop driving her targets here and now (`PlanTargetSync`), and the
+            // model is told what happened so it says so instead of quoting the old numbers.
             var staleNotes: [String] = []
-            if let activePlan = CoachPlan.current(in: context), activePlan.hasRange {
-                staleNotes.append("her adaptive Plan was written for the previous goal and still drives her calorie/protein targets — suggest rebuilding or adjusting the plan (edit_plan / the Plan card)")
-                activePlan.markGoalsChanged()   // PlanCard offers the full re-research rebuild
+            let activePlan = CoachPlan.current(in: context)
+            PlanTargetSync.apply(plan: activePlan, to: profile)
+            if let activePlan, activePlan.hasRange || activePlan.proteinTarget > 0 {
+                if PlanTargetSync.isSuspended(plan: activePlan, for: profile) {
+                    staleNotes.append("her adaptive Plan was written for the previous goal, so its calorie and protein numbers are set aside: her targets are the calculated ones until the plan is rebuilt (the Plan card on Progress offers the rebuild) — tell her, and don't quote the plan's old numbers as her targets")
+                } else {
+                    staleNotes.append("her adaptive Plan's numbers were written for this goal direction and are driving her targets")
+                }
             }
-            let current = currentWeightLbs(profile)
+            let weights = (try? context.fetch(FetchDescriptor<WeightEntry>())) ?? []
+            let current = profile.basisWeightLbs(weights: weights)
             if (direction == .lose && profile.goalWeightLbs >= current && profile.goalWeightLbs > 0)
                 || (direction == .gain && profile.goalWeightLbs <= current && profile.goalWeightLbs > 0) {
                 staleNotes.append("her goal weight (\(trimmed(profile.goalWeightLbs))) is now on the wrong side of her current weight — offer to set a new one (set_weight_goal)")
@@ -2374,7 +2442,9 @@ enum CoachTools {
             // (which `macroTargets` honors directly).
             if let plan = CoachPlan.current(in: context) {
                 let before = (plan.proteinTarget, plan.changelog, plan.updatedAt, old)
+                let anchor = plan.proteinDirection
                 plan.proteinTarget = grams
+                plan.proteinDirection = profile.pace.direction   // chosen for the goal she has now
                 plan.changelog = plan.changelog + [PlanChange(date: .now,
                     summary: grams == 0 ? "Cleared the protein target" : "Set protein target to \(Int(grams.rounded()))g")]
                 plan.updatedAt = .now
@@ -2385,6 +2455,7 @@ enum CoachTools {
                     : "Daily protein target is now \(Int(grams.rounded()))g (saved to your plan, so it sticks)."
                 return Applied(message: msg, undo: {
                     plan.proteinTarget = before.0; plan.changelog = before.1; plan.updatedAt = before.2
+                    plan.proteinDirection = anchor
                     profile.proteinTargetOverride = before.3
                     Self.saveOrLog(context)
                 })
@@ -2491,11 +2562,11 @@ enum CoachTools {
         profile.waterContainerOz > 0 ? profile.waterContainerOz : 16.9
     }
 
-    /// Her current weight for the goal-direction check. `parse` is pure (no weigh-in
-    /// history), so we use her start weight — the "where you are now" she set at onboarding —
-    /// falling back to the same 150 lb default the rest of the app uses. This guards only
-    /// against an obviously contradictory target (e.g. a loss user aiming higher); it is not
-    /// an intake lever.
+    /// Stand-in for her current weight when `parse` was given none: her start weight, falling
+    /// back to the same 150 lb default the rest of the app uses. The caller that has her
+    /// weigh-ins passes the trend instead (`parse(currentWeightLbs:)`), because a start weight
+    /// stops being "where she is now" as soon as she makes progress. This guards only against
+    /// an obviously contradictory target (e.g. a loss user aiming higher); it is not an intake lever.
     private static func currentWeightLbs(_ profile: UserProfile) -> Double {
         profile.startWeightLbs > 0 ? profile.startWeightLbs : 150
     }

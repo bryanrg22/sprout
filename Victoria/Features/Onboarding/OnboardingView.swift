@@ -1224,7 +1224,7 @@ struct OnboardingView: View {
     private func saveKey() {
         let trimmed = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        KeychainStore.setAPIKey(trimmed, for: AIConfig.provider)
+        AIKeyRouting.savePastedKey(trimmed)   // filed by the key's own provider, which becomes active
         keyFocused = false
         apiKeyDraft = ""
         withAnimation { keySaved = true }
@@ -1630,7 +1630,7 @@ struct OnboardingView: View {
         // isn't left unable to chat just because she skipped the explicit save.
         let typedKey = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         if !typedKey.isEmpty && !AIConfig.hasActiveKey {
-            KeychainStore.setAPIKey(typedKey, for: AIConfig.provider)
+            AIKeyRouting.savePastedKey(typedKey)
         }
     }
 }

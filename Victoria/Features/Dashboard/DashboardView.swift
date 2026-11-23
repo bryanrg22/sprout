@@ -142,7 +142,8 @@ struct DashboardView: View {
                         }
                         .appearLift(didAppear, index: 4)
                     CompanionCard(profile: profile, caloriesEaten: consumed,
-                                  protein: protein, waterOz: waterToday)
+                                  protein: protein, waterOz: waterToday,
+                                  basisWeightLbs: basisWeight)
                         .askVita {
                             AskVitaTopic(
                                 name: "\(profile.coachName.isEmpty ? "Your companion" : profile.coachName) the companion",

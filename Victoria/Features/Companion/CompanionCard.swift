@@ -21,17 +21,23 @@ struct CompanionCard: View {
     let caloriesEaten: Double
     let protein: Double
     let waterOz: Double
+    /// The weight the dashboard computes its targets from (trend, else start weight, else 150).
+    /// Nil only in previews, which have no weigh-ins.
+    let basisWeightLbs: Double?
 
     /// - Parameters:
     ///   - profile: the user profile (supplies name + targets).
     ///   - caloriesEaten: kcal logged so far today.
     ///   - protein: grams of protein logged today.
     ///   - waterOz: fluid ounces of water logged today.
-    init(profile: UserProfile, caloriesEaten: Double, protein: Double, waterOz: Double) {
+    ///   - basisWeightLbs: the dashboard's basis weight, so the companion and the ring agree.
+    init(profile: UserProfile, caloriesEaten: Double, protein: Double, waterOz: Double,
+         basisWeightLbs: Double? = nil) {
         self.profile = profile
         self.caloriesEaten = caloriesEaten
         self.protein = protein
         self.waterOz = waterOz
+        self.basisWeightLbs = basisWeightLbs
     }
 
     // MARK: Life / animation state
@@ -62,16 +68,16 @@ struct CompanionCard: View {
     /// double-blink feel from the short close interval.
     private let blinkTimer = Timer.publish(every: 3.4, on: .main, in: .common).autoconnect()
 
-    // MARK: Targets (mirrors the dashboard's basis-weight fallback)
+    // MARK: Targets (the dashboard's, not a second computation)
     //
-    // The dashboard bases targets on the smoothed trend weight; without a weights
-    // query here we fall back to exactly its no-trend default
-    // (`startWeightLbs > 0 ? startWeightLbs : 150`), so targets stay consistent.
-    private var basisWeight: Double {
-        profile.startWeightLbs > 0 ? profile.startWeightLbs : 150
+    // The companion's "enough food" and the calorie ring are the same judgement, so they use
+    // the same basis weight. This card used the START weight, which drifts from the trend as
+    // soon as she makes progress (`CompanionTargets`).
+    private var targets: CompanionTargets {
+        CompanionTargets(profile: profile, basisWeightLbs: basisWeightLbs)
     }
-    private var calorieTarget: Double { profile.dailyCalorieTarget(weightLbs: basisWeight) }
-    private var proteinTarget: Double { profile.macroTargets(weightLbs: basisWeight).proteinG }
+    private var calorieTarget: Double { targets.calories }
+    private var proteinTarget: Double { targets.proteinG }
     private var waterTarget: Double { profile.waterTargetOz }
 
     /// "Has she logged anything today?" — any fuel or water counts.
@@ -641,3 +647,16 @@ private struct BubbleTail: Shape {
     .preferredColorScheme(.dark)
 }
 #endif
+
+/// The calorie and protein targets the companion reacts to: the profile's targets at the
+/// dashboard's basis weight. Without a basis weight (a preview) the start weight stands in.
+struct CompanionTargets: Equatable {
+    let calories: Double
+    let proteinG: Double
+
+    init(profile: UserProfile, basisWeightLbs: Double?) {
+        let basis = basisWeightLbs ?? profile.currentWeightLbs(latestLogged: nil)
+        calories = profile.dailyCalorieTarget(weightLbs: basis)
+        proteinG = profile.macroTargets(weightLbs: basis).proteinG
+    }
+}
