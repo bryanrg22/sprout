@@ -18,6 +18,15 @@ enum AccessibilityID {
         static let coach = "tab.coach"
     }
 
+    enum Launch {
+        /// "Sprout couldn't open your data": shown instead of onboarding when the store did not open.
+        static let storeUnavailable = "launch.storeUnavailable"
+        static let sendReport = "launch.sendReport"
+        /// "Looking for your data in iCloud": a launch with no profile, before onboarding.
+        static let restoring = "launch.restoring"
+        static let startFresh = "launch.startFresh"
+    }
+
     enum Onboarding {
         /// The step indicator; its label carries the step number.
         static let steps = "onboarding.steps"
@@ -27,6 +36,9 @@ enum AccessibilityID {
         static let back = "onboarding.back"
         /// "Start my journey", on the last step only.
         static let start = "onboarding.start"
+        /// The sex picker on the about step (no default), and the line asking for a choice.
+        static let sex = "onboarding.sex"
+        static let sexRequired = "onboarding.sexRequired"
     }
 
     enum Today {

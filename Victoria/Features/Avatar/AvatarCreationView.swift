@@ -278,7 +278,7 @@ struct AvatarCreationView: View {
                 Text("Drawing your character…")
                     .font(.headline)
                     .foregroundStyle(Theme.textPrimary)
-                Text("This can take a minute or two. You don't have to wait here.")
+                Text("This usually takes under half a minute. You don't have to wait here.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)

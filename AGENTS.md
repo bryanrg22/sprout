@@ -105,7 +105,7 @@ xcodebuild test -project Victoria.xcodeproj -scheme Victoria \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' \
   -resultBundlePath /tmp/t.xcresult
 # NEVER trust the pipe's exit code — read the counts out of the bundle:
-python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1131
+python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1154
 # The evaluation harness's offline self-tests (its own scheme; 3 live evals skip without a key):
 xcodebuild test -project Victoria.xcodeproj -scheme VictoriaEvals \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' -resultBundlePath /tmp/e.xcresult

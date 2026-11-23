@@ -140,9 +140,9 @@ final class AvatarGeneratorTests: XCTestCase {
         XCTAssertEqual(character.model, "gpt-image-2.6-sunburst")
     }
 
-    func testTheShippedSettingIsFlareMediumTransparentPNG1024() {
+    func testTheShippedSettingIsSunburstLowTransparentPNG1024() {
         XCTAssertEqual(AIConfig.avatarImage,
-                       AIConfig.ImageSetting(model: "gpt-image-2.6-flare", quality: "medium", size: "1024x1024",
+                       AIConfig.ImageSetting(model: "gpt-image-2.6-sunburst", quality: "low", size: "1024x1024",
                                              background: "transparent", outputFormat: "png"))
     }
 

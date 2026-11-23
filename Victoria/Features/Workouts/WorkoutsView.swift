@@ -18,7 +18,7 @@ struct WorkoutsView: View {
     @Query private var profiles: [UserProfile]
     @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
 
-    private var coachName: String { profiles.first?.coachName ?? "Vita" }
+    private var coachName: String { UserProfile.primary(of: profiles)?.coachName ?? "Vita" }
 
     @State private var showLogFlow = false
     /// Bumped on delete for a soft haptic.
@@ -95,7 +95,7 @@ struct WorkoutsView: View {
     private var isViewingToday: Bool { cal.isDateInToday(selectedDay) }
     private var canGoForward: Bool { selectedDay < startOfToday }
     /// The day the account began — no data exists before it, so don't browse earlier (mirrors Nutrients).
-    private var accountStart: Date { min(cal.startOfDay(for: profiles.first?.createdAt ?? startOfToday), startOfToday) }
+    private var accountStart: Date { min(cal.startOfDay(for: UserProfile.primary(of: profiles)?.createdAt ?? startOfToday), startOfToday) }
     private var canGoBack: Bool { selectedDay > accountStart }
 
     private var dayLabel: String {
