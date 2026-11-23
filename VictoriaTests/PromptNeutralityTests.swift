@@ -862,6 +862,29 @@ final class PromptNeutralityTests: XCTestCase {
         XCTAssertEqual(failed.result, template)
     }
 
+    func testTheBuiltInOnboardingNoteReadsRightWithAndWithoutAName() {
+        // Seen in the simulator after an onboarding with nothing typed: "friend, you're in".
+        func note(_ name: String, _ direction: GoalPace.Direction, note: String = "") -> String {
+            OnboardingCoachMessage.template(for: .init(name: name, direction: direction, paceLabel: "Relaxed",
+                                                       activityLabel: "Lightly active", note: note))
+        }
+        XCTAssertEqual(note("", .lose), "You're in — let's go. Your plan's built to get real results: enough protein, "
+                       + "smart choices, and consistency that actually sticks. Show up, trust the process, and the "
+                       + "results follow. I've got you 💪")
+        XCTAssertTrue(note("   ", .maintain).hasPrefix("You're in — let's go. We'll lock in the habits"))
+        XCTAssertTrue(note("", .gain).hasPrefix("Let's build. A steady, protein-forward surplus"))
+        for direction in [GoalPace.Direction.lose, .maintain, .gain] {
+            let text = note("", direction)
+            XCTAssertFalse(text.lowercased().contains("friend"), "no stand-in name: \(text)")
+            XCTAssertEqual(text.first?.isUppercase, true, text)
+        }
+        // With a name the sentences are as they were.
+        XCTAssertTrue(note("Sam", .lose).hasPrefix("Sam, you're in — let's go. Your plan's built"))
+        XCTAssertTrue(note(" Alex ", .gain).hasPrefix("Alex, let's build. A steady"))
+        XCTAssertTrue(note("Sam", .maintain, note: "night shifts").hasSuffix(
+            "Thanks for telling me what's going on — I'll keep it in mind and build this around your real life. I've got you 💪"))
+    }
+
     func testOnboardingNoteIsUsedOrFallsBack() async {
         let inputs = onboardingInputs(user("Sam"))
         let template = OnboardingCoachMessage.template(for: inputs)

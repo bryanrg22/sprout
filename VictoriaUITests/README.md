@@ -16,14 +16,14 @@ xcodegen generate
 xcodebuild test -project Victoria.xcodeproj -scheme VictoriaUITests \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' \
   -resultBundlePath /tmp/ui.xcresult
-python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 15
+python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 20
 ```
 
 The scheme is separate, so `-scheme Victoria` (the unit suite) neither builds nor runs
 these. Read the count from the result bundle, as for the unit suite. One flow:
 `-only-testing:VictoriaUITests/CoachFlowTests/testProviderFailureShowsTheErrorAndTheAppStaysUsable`.
 
-There are 15 tests and a run takes about five minutes on one simulator. Today the result
+There are 20 tests and a run takes about six minutes on one simulator. Today the result
 is 10 passed and 5 expected failures. An expected failure is not a pass: it is a flow whose
 behaviour assertions all held and which also carries a known defect or a known
 accessibility-audit result (see below), kept visible in every result.
@@ -43,6 +43,7 @@ passed (`UITestHooksTests`).
 | `--seed-demo --demo-gain` | Existing arguments. With `--ui-testing` they seed the dark demo profile into the in-memory store. The flows only ever use this profile. Without them the launch is a fresh install and shows onboarding. |
 | `--demo-tab <name>` | Existing argument. The flows pass `--demo-tab today` so a launch opens Home on Today whatever mode an earlier launch stored, and `--demo-tab workouts` to open on Gym. Passing no `--demo-tab` lets the stored mode decide, as on a normal launch. |
 | `--ui-test-scripted-ai=<name>` | Needs `--ui-testing`. Every model call in the app is answered by the named script instead of the network, and the app behaves as if a key were present. An unknown name stops the launch with the list of known names. |
+| `--ui-test-fresh-defaults` | Needs `--ui-testing`. The app's own defaults are cleared before anything reads them: the stored mode, the provider choice and every once-a-day cache of that install on that simulator. `launch` passes it on a flow's first launch and not on a relaunch, so a flow never sees what an earlier flow (or a person using the simulator) left, and a relaunch still sees what the flow itself stored. The app group's defaults are not touched. |
 
 The Home or Gym choice lives in UserDefaults, which outlives the in-memory store. A flow
 that can leave Gym stored registers `leaveStoredModeAtHome()` as a teardown block.
@@ -74,6 +75,7 @@ flow sees the same screen on every run. To script one of them, add a case to
 | `LoggingFlowTests` | e. a food logged by hand changes Today by its calories. f. logged twice, one deleted, totals right both times. g. water from Today. h. a workout through the log flow. |
 | `CoachFlowTests` | i. a tool call that logs water, the reply, Today's figure, and Undo. j. the provider down, twice, and the app still usable. |
 | `InterruptionFlowTests` | k. the app backgrounded in the middle of the manual-food sheet, and in the middle of a coach turn. |
+| `OnboardingFlowTests` | m. every step in order with nothing filled in ends on a working Today. n. back and forward keeps the place. o. every step passed by swiping, never by its button, then finishing. p. leaving in the middle keeps the step; quitting in the middle starts onboarding again. |
 
 Flows b, c, e, h and i end with `performAccessibilityAudit()` on the screen they finish on
 (Progress, Workouts, Today, Workouts again, the coach).

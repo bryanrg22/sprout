@@ -10,6 +10,9 @@ class SproutUITestCase: XCTestCase {
 
     let app = XCUIApplication()
 
+    /// Whether this flow has launched the app yet (see `launch`).
+    private(set) var hasLaunched = false
+
     /// Long enough for a cold launch on a loaded CI runner; a wait returns as soon as
     /// its condition holds, so a passing run does not spend it.
     static let timeout: TimeInterval = 20
@@ -40,6 +43,11 @@ class SproutUITestCase: XCTestCase {
     ///   - script: a `--ui-test-scripted-ai` name; nil leaves the app with no key.
     func launch(seeded: Bool = true, tab: String? = "today", script: String? = nil) {
         var arguments = ["--ui-testing"]
+        // The first launch of a flow starts from empty app defaults, so a cache or a stored
+        // setting left by an earlier flow (or by a person using this simulator) cannot
+        // decide what it sees. A relaunch inside a flow keeps them: that is what it tests.
+        if !hasLaunched { arguments.append("--ui-test-fresh-defaults") }
+        hasLaunched = true
         if seeded { arguments += ["--seed-demo", "--demo-gain"] }
         if let tab { arguments += ["--demo-tab", tab] }
         if let script { arguments.append("--ui-test-scripted-ai=\(script)") }

@@ -13,10 +13,17 @@ import SwiftData
 ///
 /// DEBUG only. The decision is the pure `plan(arguments:isDebugBuild:)`, which returns
 /// `.inert` for any build that is not a DEBUG build, and the only code that acts on a
-/// plan (`makeContainer`, `installAIRuntime`) is compiled out of Release.
+/// plan (`makeContainer`, `installAIRuntime`, `resetDefaultsIfAsked`) is compiled out of Release.
 enum UITestHooks {
     static let uiTestingArgument = "--ui-testing"
     static let scriptedAIPrefix = "--ui-test-scripted-ai="
+    /// With `--ui-testing`: start from empty app defaults. The store of a `--ui-testing`
+    /// launch is in memory, but the app also keeps once-a-day caches and small settings in
+    /// its defaults, which outlive a launch. Seen before this existed: a fresh onboarding
+    /// showed "28 days of showing up in a row" beside a streak of 1, because the day's brief
+    /// had been cached by an earlier, seeded launch on the same simulator. A flow passes it
+    /// on its first launch and not when it relaunches to see what was kept.
+    static let freshDefaultsArgument = "--ui-test-fresh-defaults"
 
     /// What one launch's arguments ask for.
     struct Plan: Equatable, Sendable {
@@ -24,6 +31,8 @@ enum UITestHooks {
         var isActive = false
         /// The script named by `--ui-test-scripted-ai=`; nil when none was named.
         var scriptedAI: String?
+        /// `--ui-test-fresh-defaults` was passed as well: clear the app's defaults first.
+        var freshDefaults = false
 
         static let inert = Plan()
     }
@@ -34,7 +43,8 @@ enum UITestHooks {
         guard isDebugBuild, arguments.contains(uiTestingArgument) else { return .inert }
         let name = arguments.first { $0.hasPrefix(scriptedAIPrefix) }
             .map { String($0.dropFirst(scriptedAIPrefix.count)) }
-        return Plan(isActive: true, scriptedAI: name)
+        return Plan(isActive: true, scriptedAI: name,
+                    freshDefaults: arguments.contains(freshDefaultsArgument))
     }
 
     static var isDebugBuild: Bool {
@@ -78,6 +88,19 @@ enum UITestHooks {
         }
         return AIRuntime(provider: .anthropic, apiKey: UITestAIScript.placeholderKey,
                          transport: UITestScriptedTransport(script: script))
+    }
+
+    /// Clear the app's own defaults when the plan asks for it, and only then. This is the
+    /// defaults domain of the app on the simulator the flows run on: the stored mode, the
+    /// provider choice and the day caches of that install go with it. The app group's
+    /// defaults (the widget snapshot) are a different domain and are not touched.
+    /// Returns whether anything was cleared.
+    @discardableResult
+    static func resetDefaultsIfAsked(for plan: Plan = current, defaults: UserDefaults = .standard,
+                                     domain: String? = Bundle.main.bundleIdentifier) -> Bool {
+        guard plan.isActive, plan.freshDefaults, let domain else { return false }
+        defaults.removePersistentDomain(forName: domain)
+        return true
     }
 
     /// Install this launch's AI runtime. A no-op for an inert plan.

@@ -109,15 +109,20 @@ enum OnboardingCoachMessage {
     /// A warm, direct, direction-aware message that needs no network. Reflects that she
     /// left a note when she did. Confident and results-focused — no hedging.
     static func template(for i: Inputs) -> String {
-        let name = displayName(i.name)
+        // With no name there is nobody to address: the note starts with the sentence itself.
+        // (It used to start with a lower-case "friend, you're in", the stand-in for a name.)
+        let given = i.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        func lead(_ sentence: String) -> String {
+            given.isEmpty ? sentence.prefix(1).uppercased() + sentence.dropFirst() : "\(given), \(sentence)"
+        }
         let opener: String
         switch i.direction {
         case .lose:
-            opener = "\(name), you're in — let's go. Your plan's built to get real results: enough protein, smart choices, and consistency that actually sticks."
+            opener = lead("you're in — let's go.") + " Your plan's built to get real results: enough protein, smart choices, and consistency that actually sticks."
         case .maintain:
-            opener = "\(name), you're in — let's go. We'll lock in the habits that keep you strong and steady, and make them feel easy."
+            opener = lead("you're in — let's go.") + " We'll lock in the habits that keep you strong and steady, and make them feel easy."
         case .gain:
-            opener = "\(name), let's build. A steady, protein-forward surplus — we'll add real muscle, not just weight."
+            opener = lead("let's build.") + " A steady, protein-forward surplus — we'll add real muscle, not just weight."
         }
         let trimmedNote = i.note.trimmingCharacters(in: .whitespacesAndNewlines)
         let close = trimmedNote.isEmpty

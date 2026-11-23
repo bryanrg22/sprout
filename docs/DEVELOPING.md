@@ -67,7 +67,7 @@ non-zero if a gate failed and writes the record either way.
 xcodegen generate
 xcodebuild test -project Victoria.xcodeproj -scheme Victoria \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' -resultBundlePath /tmp/t.xcresult
-python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1127
+python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1131
 ```
 
 ### Verify a store

@@ -48,6 +48,50 @@ final class UITestHooksTests: XCTestCase {
         XCTAssertEqual(plan, UITestHooks.Plan(isActive: true, scriptedAI: "fail-500"))
     }
 
+    // MARK: - Starting from empty app defaults
+
+    func testFreshDefaultsIsAskedForByItsOwnArgumentAndOnlyWithUITesting() {
+        XCTAssertFalse(UITestHooks.plan(arguments: ["Victoria", "--ui-testing"], isDebugBuild: true).freshDefaults)
+        XCTAssertEqual(UITestHooks.plan(arguments: ["Victoria", "--ui-testing", "--ui-test-fresh-defaults"],
+                                        isDebugBuild: true),
+                       UITestHooks.Plan(isActive: true, scriptedAI: nil, freshDefaults: true))
+        XCTAssertEqual(UITestHooks.plan(arguments: ["Victoria", "--ui-test-fresh-defaults"], isDebugBuild: true),
+                       .inert, "without --ui-testing nothing may be cleared")
+        XCTAssertEqual(UITestHooks.plan(arguments: ["Victoria", "--ui-testing", "--ui-test-fresh-defaults"],
+                                        isDebugBuild: false), .inert, "a Release build never clears anything")
+    }
+
+    func testDefaultsAreClearedOnlyWhenThePlanAsks() throws {
+        let suite = "ui-test-hooks-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        func fill() {
+            defaults.set("gym", forKey: "app_mode")
+            defaults.set(Data([1, 2, 3]), forKey: "a.day.cache")
+        }
+
+        fill()
+        XCTAssertFalse(UITestHooks.resetDefaultsIfAsked(for: .inert, defaults: defaults, domain: suite))
+        XCTAssertFalse(UITestHooks.resetDefaultsIfAsked(for: .init(isActive: true), defaults: defaults, domain: suite),
+                       "--ui-testing alone keeps the defaults: a relaunch inside a flow depends on that")
+        XCTAssertFalse(UITestHooks.resetDefaultsIfAsked(for: .init(isActive: false, freshDefaults: true),
+                                                        defaults: defaults, domain: suite))
+        XCTAssertFalse(UITestHooks.resetDefaultsIfAsked(for: .init(isActive: true, freshDefaults: true),
+                                                        defaults: defaults, domain: nil), "no domain, nothing to clear")
+        XCTAssertEqual(defaults.string(forKey: "app_mode"), "gym")
+        XCTAssertNotNil(defaults.data(forKey: "a.day.cache"))
+
+        XCTAssertTrue(UITestHooks.resetDefaultsIfAsked(for: .init(isActive: true, freshDefaults: true),
+                                                       defaults: defaults, domain: suite))
+        XCTAssertNil(defaults.string(forKey: "app_mode"))
+        XCTAssertNil(defaults.data(forKey: "a.day.cache"))
+    }
+
+    func testTheTestHostsOwnDefaultsAreNeverClearedByDefault() {
+        // `current` is inert in the unit-test host, so the default call does nothing.
+        XCTAssertFalse(UITestHooks.resetDefaultsIfAsked())
+    }
+
     func testAScriptNameWithoutUITestingDoesNothing() {
         XCTAssertEqual(UITestHooks.plan(arguments: ["Victoria", "--ui-test-scripted-ai=coach-prose"],
                                         isDebugBuild: true), .inert)

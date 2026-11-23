@@ -22,7 +22,7 @@ Last updated: 2026-11-22.
 | G3 | A widget never shows anyone else's data, or yesterday's as today's | blocked: the owner restarts his phone on a build and looks at the widget before unlocking |
 | G4 | The store returns what was put in | in progress: schema, round trips, merges, queries and the SQL script are done; entry points, on-disk and UI comparison remain |
 | G5 | Changing a setting changes everything that depends on it | in progress: three defects fixed and 95 matrix tests (EVAL_REPORT 16); the dependency table and kilograms remain |
-| G6 | No step breaks when done out of order, repeated, or skipped | in progress: 15 UI flows pass (EVAL_REPORT 17); the onboarding flow and its skip combinations remain |
+| G6 | No step breaks when done out of order, repeated, or skipped | in progress: 20 UI flows pass, five of them through onboarding in order, back and forth, by swiping, and across a background and a quit (EVAL_REPORT 17, 26); open: onboarding with things typed in, skip combinations as a set, finishing twice, pairing on the local mock |
 | G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); the coach's 28 tool descriptions reworded, scanned by a test and re-measured (EVAL_REPORT 24); open: the built-in characters' names, onboarding copy, Settings, buddy, widgets and the demo seed |
 | G8 | A new person gets their own pixel character from a photo | in progress: built (EVAL_REPORT 15) and the call made for real on generated faces, 18 of 18 usable (EVAL_REPORT 23); open: the owner's rating of the images and choice of model, a real photo, the flow in the app with a live image, and the CloudKit schema |
 | G9 | Home and Gym as two modes, switched at the top | in progress: built, tapped by a UI test both ways with state kept (EVAL_REPORT 12, 17); open: VoiceOver reaches the hidden surface (U-1), the light theme, and the owner's look at the screenshots |
@@ -132,7 +132,12 @@ in `~/dev/GitHub/sprout`, switch to auto mode so the turns run unattended, and p
   tool, confirm, undo; pair and unpair a buddy on the local mock; each ends with an
   accessibility audit; (c) interrupted flows: background the app mid-onboarding and
   mid-coach-turn, relaunch, and land in a valid state.
-- **Status:** open.
+- **Status:** in progress. (b) and (c) are covered for launch, logging, the coach, the mode
+  switch, interruptions (EVAL_REPORT 17) and onboarding (EVAL_REPORT 26). Open: (a), the
+  state behind onboarding has no test of its own and lives in the view; onboarding with
+  values typed in; finishing twice; pairing on the local mock; an audit of the onboarding
+  pages. **Needs the owner:** the personal first page, and whether the sex used for the
+  energy estimate may be left at a default.
 
 ## G7. Prompts and copy fit whoever is using the app
 
