@@ -46,10 +46,24 @@ python3 tooling/check_xcresult.py "$WORK/evals.xcresult" --min-tests 1 --max-ski
   --summary-out "$OUT/summary_evals.json" > "$WORK/evals.check" 2>&1; EVALS_CHECK=$?
 xcrun xccov view --report --only-targets "$WORK/unit.xcresult" > "$OUT/coverage.txt" 2>/dev/null
 xcrun xccov view --report --json "$WORK/unit.xcresult" > "$WORK/coverage.json" 2>/dev/null
-grep -E "^Test Case '.*' (passed|failed|skipped)" "$WORK/unit.log" \
-  | sed -E "s/^Test Case '-\[([^]]+)\]' (passed|failed|skipped).*/\2 \1/" | sort > "$OUT/tests.txt"
-grep -E "^Test Case '.*' (passed|failed|skipped)" "$WORK/evals.log" \
-  | sed -E "s/^Test Case '-\[([^]]+)\]' (passed|failed|skipped).*/\2 \1/" | sort > "$OUT/tests_evals.txt"
+# The list of tests comes from the result bundle, not the log (log lines interleave).
+list_tests() {
+  xcrun xcresulttool get test-results tests --path "$1" 2>/dev/null | python3 -c '
+import json, sys
+def walk(node, suite):
+    kind = node.get("nodeType")
+    if kind == "Test Case":
+        print("{} {}/{}".format(node.get("result", "?").lower(), suite, node.get("name", "?")))
+        return
+    name = node.get("name", "") if kind == "Test Suite" else suite
+    for child in node.get("children", []):
+        walk(child, name)
+for root in json.load(sys.stdin).get("testNodes", []):
+    walk(root, "")
+' | sort
+}
+list_tests "$WORK/unit.xcresult" > "$OUT/tests.txt"
+list_tests "$WORK/evals.xcresult" > "$OUT/tests_evals.txt"
 WARNINGS=$(grep -E '\.swift:[0-9]+:[0-9]+: warning:' "$WORK/unit.log" | sed -E 's#^.*/(Victoria|Shared|VictoriaWidgets|VictoriaTests)/#\1/#' | sort -u)
 echo "$WARNINGS" > "$OUT/compiler_warnings.txt"
 

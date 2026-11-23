@@ -12,7 +12,7 @@ final class AIRuntimeTests: XCTestCase {
                          effort: String? = nil) -> AIRuntime {
         AIRuntime(provider: provider, apiKey: "test-key-not-real", model: model,
                   reasoningEffort: effort, transport: transport,
-                  onUsage: usage.map { recorder in { recorder.record($0) } })
+                  onUsage: usage.map { recorder in { @Sendable reported in recorder.record(reported) } })
     }
 
     private let anthropicText: [String: Any] = [
