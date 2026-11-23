@@ -1,4 +1,199 @@
 {
+ "almonds": {
+  "hits": [
+   {
+    "description": "Nuts, almonds",
+    "fdcId": 170567,
+    "per100g": {
+     "carbs_g": 21.6,
+     "fat_g": 49.9,
+     "kcal": 579,
+     "protein_g": 21.2
+    }
+   },
+   {
+    "description": "Nuts, almond paste",
+    "fdcId": 170160,
+    "per100g": {
+     "carbs_g": 47.8,
+     "fat_g": 27.7,
+     "kcal": 458,
+     "protein_g": 9.0
+    }
+   },
+   {
+    "description": "Nuts, almonds, blanched",
+    "fdcId": 170568,
+    "per100g": {
+     "carbs_g": 18.7,
+     "fat_g": 52.5,
+     "kcal": 590,
+     "protein_g": 21.4
+    }
+   },
+   {
+    "description": "Nuts, almonds, honey roasted, unblanched",
+    "fdcId": 168592,
+    "per100g": {
+     "carbs_g": 27.9,
+     "fat_g": 49.9,
+     "kcal": 594,
+     "protein_g": 18.2
+    }
+   },
+   {
+    "description": "Nuts, almond butter, plain, with salt added",
+    "fdcId": 168603,
+    "per100g": {
+     "carbs_g": 18.8,
+     "fat_g": 55.5,
+     "kcal": 614,
+     "protein_g": 21.0
+    }
+   },
+   {
+    "description": "Nuts, almonds, dry roasted, with salt added",
+    "fdcId": 168596,
+    "per100g": {
+     "carbs_g": 21.0,
+     "fat_g": 52.5,
+     "kcal": 598,
+     "protein_g": 21.0
+    }
+   }
+  ],
+  "query": "Nuts, almonds"
+ },
+ "apple": {
+  "hits": [
+   {
+    "description": "Apples, raw, without skin",
+    "fdcId": 171689,
+    "per100g": {
+     "carbs_g": 12.8,
+     "fat_g": 0.13,
+     "kcal": 48.0,
+     "protein_g": 0.27
+    }
+   },
+   {
+    "description": "Apples, raw, golden delicious, with skin",
+    "fdcId": 168202,
+    "per100g": {
+     "carbs_g": 13.6,
+     "fat_g": 0.15,
+     "kcal": 57.0,
+     "protein_g": 0.28
+    }
+   },
+   {
+    "description": "Apples, raw, without skin, cooked, boiled",
+    "fdcId": 173928,
+    "per100g": {
+     "carbs_g": 13.6,
+     "fat_g": 0.36,
+     "kcal": 53.0,
+     "protein_g": 0.26
+    }
+   },
+   {
+    "description": "Apples, raw, without skin, cooked, microwave",
+    "fdcId": 173929,
+    "per100g": {
+     "carbs_g": 14.4,
+     "fat_g": 0.42,
+     "kcal": 56.0,
+     "protein_g": 0.28
+    }
+   },
+   {
+    "description": "Potatoes, raw, skin",
+    "fdcId": 170032,
+    "per100g": {
+     "carbs_g": 12.4,
+     "fat_g": 0.1,
+     "kcal": 58.0,
+     "protein_g": 2.57
+    }
+   },
+   {
+    "description": "Pheasant, raw, meat and skin",
+    "fdcId": 174472,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 9.29,
+     "kcal": 181,
+     "protein_g": 22.7
+    }
+   }
+  ],
+  "query": "Apples, raw, with skin"
+ },
+ "avocado": {
+  "hits": [
+   {
+    "description": "Avocados, raw, all commercial varieties",
+    "fdcId": 171705,
+    "per100g": {
+     "carbs_g": 8.53,
+     "fat_g": 14.7,
+     "kcal": 160,
+     "protein_g": 2.0
+    }
+   },
+   {
+    "description": "Oranges, raw, all commercial varieties",
+    "fdcId": 169097,
+    "per100g": {
+     "carbs_g": 11.8,
+     "fat_g": 0.12,
+     "kcal": 47.0,
+     "protein_g": 0.94
+    }
+   },
+   {
+    "description": "Pineapple, raw, all varieties",
+    "fdcId": 169124,
+    "per100g": {
+     "carbs_g": 13.1,
+     "fat_g": 0.12,
+     "kcal": 50.0,
+     "protein_g": 0.54
+    }
+   },
+   {
+    "description": "Squash, summer, all varieties, raw",
+    "fdcId": 170487,
+    "per100g": {
+     "carbs_g": 3.35,
+     "fat_g": 0.18,
+     "kcal": 16.0,
+     "protein_g": 1.21
+    }
+   },
+   {
+    "description": "Squash, winter, all varieties, raw",
+    "fdcId": 170489,
+    "per100g": {
+     "carbs_g": 8.59,
+     "fat_g": 0.13,
+     "kcal": 34.0,
+     "protein_g": 0.95
+    }
+   },
+   {
+    "description": "Avocados, raw, California",
+    "fdcId": 171706,
+    "per100g": {
+     "carbs_g": 8.64,
+     "fat_g": 15.4,
+     "kcal": 167,
+     "protein_g": 1.96
+    }
+   }
+  ],
+  "query": "Avocados, raw, all commercial varieties"
+ },
  "banana": {
   "hits": [
    {
@@ -129,6 +324,71 @@
   ],
   "query": "Bread, whole-wheat, commercially prepared"
  },
+ "broccoli_cooked": {
+  "hits": [
+   {
+    "description": "Broccoli, cooked, boiled, drained, without salt",
+    "fdcId": 169967,
+    "per100g": {
+     "carbs_g": 7.18,
+     "fat_g": 0.41,
+     "kcal": 35.0,
+     "protein_g": 2.38
+    }
+   },
+   {
+    "description": "Broccoli, frozen, chopped, cooked, boiled, drained, without salt",
+    "fdcId": 169969,
+    "per100g": {
+     "carbs_g": 5.35,
+     "fat_g": 0.12,
+     "kcal": 28.0,
+     "protein_g": 3.1
+    }
+   },
+   {
+    "description": "Broccoli, frozen, spears, cooked, boiled, drained, without salt",
+    "fdcId": 170380,
+    "per100g": {
+     "carbs_g": 5.36,
+     "fat_g": 0.11,
+     "kcal": 28.0,
+     "protein_g": 3.1
+    }
+   },
+   {
+    "description": "Broccoli, cooked, boiled, drained, with salt",
+    "fdcId": 168510,
+    "per100g": {
+     "carbs_g": 7.18,
+     "fat_g": 0.41,
+     "kcal": 35.0,
+     "protein_g": 2.38
+    }
+   },
+   {
+    "description": "Arrowhead, cooked, boiled, drained, without salt",
+    "fdcId": 169204,
+    "per100g": {
+     "carbs_g": 16.1,
+     "fat_g": 0.1,
+     "kcal": 78.0,
+     "protein_g": 4.49
+    }
+   },
+   {
+    "description": "Borage, cooked, boiled, drained, without salt",
+    "fdcId": 170482,
+    "per100g": {
+     "carbs_g": 3.55,
+     "fat_g": 0.81,
+     "kcal": 25.0,
+     "protein_g": 2.09
+    }
+   }
+  ],
+  "query": "Broccoli, cooked, boiled, drained, without salt"
+ },
  "chicken_breast_grilled": {
   "hits": [
    {
@@ -258,6 +518,71 @@
    }
   ],
   "query": "Egg, whole, cooked, hard-boiled"
+ },
+ "greek_yogurt_nonfat": {
+  "hits": [
+   {
+    "description": "Yogurt, Greek, nonfat, plain, CHOBANI",
+    "fdcId": 171312,
+    "per100g": {
+     "carbs_g": 3.43,
+     "fat_g": 0.24,
+     "kcal": 54.0,
+     "protein_g": 9.53
+    }
+   },
+   {
+    "description": "Yogurt, Greek, plain, lowfat",
+    "fdcId": 170903,
+    "per100g": {
+     "carbs_g": 3.94,
+     "fat_g": 1.92,
+     "kcal": 73.0,
+     "protein_g": 9.95
+    }
+   },
+   {
+    "description": "Yogurt, Greek, strawberry, nonfat",
+    "fdcId": 170901,
+    "per100g": {
+     "carbs_g": 12.1,
+     "fat_g": 0.15,
+     "kcal": 82.0,
+     "protein_g": 8.05
+    }
+   },
+   {
+    "description": "Yogurt, Greek, vanilla, nonfat",
+    "fdcId": 170902,
+    "per100g": {
+     "carbs_g": 10.4,
+     "fat_g": 0.18,
+     "kcal": 78.0,
+     "protein_g": 8.64
+    }
+   },
+   {
+    "description": "Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)",
+    "fdcId": 170894,
+    "per100g": {
+     "carbs_g": 3.6,
+     "fat_g": 0.39,
+     "kcal": 59.0,
+     "protein_g": 10.2
+    }
+   },
+   {
+    "description": "Yogurt, Greek, plain, whole milk",
+    "fdcId": 171304,
+    "per100g": {
+     "carbs_g": 3.98,
+     "fat_g": 5.0,
+     "kcal": 97.0,
+     "protein_g": 9.0
+    }
+   }
+  ],
+  "query": "Yogurt, Greek, plain, nonfat"
  },
  "milk_whole": {
   "hits": [
@@ -519,6 +844,71 @@
   ],
   "query": "Peanut butter, smooth style, with salt"
  },
+ "potato_baked": {
+  "hits": [
+   {
+    "description": "Potatoes, baked, flesh and skin, without salt",
+    "fdcId": 170093,
+    "per100g": {
+     "carbs_g": 21.2,
+     "fat_g": 0.13,
+     "kcal": 93.0,
+     "protein_g": 2.5
+    }
+   },
+   {
+    "description": "Potatoes, baked, flesh, without salt",
+    "fdcId": 170033,
+    "per100g": {
+     "carbs_g": 21.6,
+     "fat_g": 0.1,
+     "kcal": 93.0,
+     "protein_g": 1.96
+    }
+   },
+   {
+    "description": "Sweet potato, cooked, baked in skin, flesh, without salt",
+    "fdcId": 168483,
+    "per100g": {
+     "carbs_g": 20.7,
+     "fat_g": 0.15,
+     "kcal": 90.0,
+     "protein_g": 2.01
+    }
+   },
+   {
+    "description": "Potatoes, baked, flesh and skin, with salt",
+    "fdcId": 170111,
+    "per100g": {
+     "carbs_g": 21.2,
+     "fat_g": 0.13,
+     "kcal": 93.0,
+     "protein_g": 2.5
+    }
+   },
+   {
+    "description": "Potatoes, boiled, cooked without skin, flesh, without salt",
+    "fdcId": 170440,
+    "per100g": {
+     "carbs_g": 20.0,
+     "fat_g": 0.1,
+     "kcal": 86.0,
+     "protein_g": 1.71
+    }
+   },
+   {
+    "description": "Potatoes, microwaved, cooked in skin, flesh and skin, without salt",
+    "fdcId": 170094,
+    "per100g": {
+     "carbs_g": 24.2,
+     "fat_g": 0.1,
+     "kcal": 105,
+     "protein_g": 2.44
+    }
+   }
+  ],
+  "query": "Potatoes, baked, flesh and skin, without salt"
+ },
  "rice_white_cooked": {
   "hits": [
    {
@@ -583,5 +973,70 @@
    }
   ],
   "query": "Rice, white, long-grain, regular, enriched, cooked"
+ },
+ "salmon_cooked": {
+  "hits": [
+   {
+    "description": "Fish, salmon, Atlantic, farmed, cooked, dry heat",
+    "fdcId": 175168,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 12.4,
+     "kcal": 206,
+     "protein_g": 22.1
+    }
+   },
+   {
+    "description": "Fish, salmon, Atlantic, wild, cooked, dry heat",
+    "fdcId": 171998,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 8.13,
+     "kcal": 182,
+     "protein_g": 25.4
+    }
+   },
+   {
+    "description": "Fish, salmon, coho, farmed, cooked, dry heat",
+    "fdcId": 173716,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 8.23,
+     "kcal": 178,
+     "protein_g": 24.3
+    }
+   },
+   {
+    "description": "Fish, cod, Atlantic, cooked, dry heat",
+    "fdcId": 171956,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 0.86,
+     "kcal": 105,
+     "protein_g": 22.8
+    }
+   },
+   {
+    "description": "Fish, herring, Atlantic, cooked, dry heat",
+    "fdcId": 175117,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 11.6,
+     "kcal": 203,
+     "protein_g": 23.0
+    }
+   },
+   {
+    "description": "Fish, mackerel, Atlantic, cooked, dry heat",
+    "fdcId": 175120,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 17.8,
+     "kcal": 262,
+     "protein_g": 23.8
+    }
+   }
+  ],
+  "query": "Fish, salmon, Atlantic, farmed, cooked, dry heat"
  }
 }
