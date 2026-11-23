@@ -28,6 +28,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 16 | Settings that change what depends on them: the plan, kilograms, and where a key goes | 2026-11-22 |
 | 17 | UI smoke flows: the app driven end to end, and what the accessibility audit found | 2026-11-23 |
 | 18 | The rest of the label: eleven more nutrients, and "unknown" is never zero | 2026-11-23 |
+| 19 | Buddy pairing and sync: nine defect groups closed | 2026-11-23 |
 
 ---
 
@@ -788,3 +789,42 @@ against the service, and the nutrient ids in it were written from memory, so the
 be checked on the first successful fetch. The live meal evaluation stays on v1 until then.
 **The owner must deploy the CloudKit Production schema** for the eleven new `FoodEntry`
 fields before a build with this reaches TestFlight.
+
+## 19. Buddy pairing and sync: nine defect groups closed (2026-11-23)
+
+Objective G11, the data-and-sync table of section 3. Every claim was checked against the
+current code before it was fixed; none of the audit's claims turned out to be wrong.
+
+| ID | Was | Now |
+|---|---|---|
+| D-V2 | A mistyped or not-yet-uploaded code said "You're connected!" | Pairing succeeds only when the code resolves to another user's record. A code that is not a code, your own code, a code nobody has shared, and a code already claimed each say so, and nothing is stored on failure. |
+| D-V3 | The link was stored before the claim was saved. | Stored after the remote write succeeds; a failed claim leaves the user unpaired and able to retry. |
+| D-V4, L-B11 | No way out of a pairing; a reinstall stranded the partner on a frozen snapshot. | An Unpair action with a confirmation, which tells the other side through the pairing record and deletes the published snapshot. A buddy who has published nothing for three days is shown as "hasn't shared an update since" that date, with Unpair, and their old day is not shown as current. |
+| D-V9 | The publisher read the link once at launch. | It notices a new link without a relaunch. |
+| D-V10/11 | Streak nudges re-fired daily; a milestone was used up before a failed send. | Each milestone is sent once and marked sent only when the send succeeded. |
+| D-V14 | The silent-push handler returned before its work ran. | It waits for the refresh, bounded at 20 seconds. |
+| L-B6 | The 7- and 14-day achievements counted imported steps as logged days. | They use the streak's definition of an active day. An achievement already unlocked stays unlocked. |
+| L-B12 | No reminders and no permission prompt until the second launch. | Scheduled when an onboarded profile first appears. |
+| V16–V18, V22 | A diagnostics flood during pairing, concurrent publishes, a nudge gated on the snapshot, a badge never cleared. | Fixed in the app; see below for what remains. |
+
+Also changed: the pairing screen promised "never your weight or calories" while sharing
+full stats is on by default, so it now says what is shared. Linking no longer publishes
+an invented "logged today" snapshot.
+
+**Verified:** 93 new tests; 47 of them were run against the old behaviour first and
+failed there, and five written later were checked by breaking the code on purpose. Suite
+**984 tests, 981 passed, 3 known defects pinned**. Ten states were seen in the simulator
+(`docs/screenshots/review/buddy-*.png`), reached by debug launch arguments rather than
+by tapping; on a fresh install the reminder prompt appeared on the first launch.
+
+**Not verified:** nothing was sent to CloudKit. The pairing store, the snapshot delete,
+the account-status mapping and the handling of a real push payload are tested against a
+double of the sync service only. **Still open:** the diagnostics log rewrites its whole
+file for each line; CloudKit's server-side badge count keeps growing until the
+subscription is re-created on a device; the "first steps" achievement still unlocks from
+imported steps; a durable identity that survives a reinstall is a design
+(`docs/buddy-identity.md`), not built. **The owner must check in the CloudKit Dashboard**
+(`docs/buddy-sync.md` section 10): that Production has every `BuddyPairing`, `Nudge` and
+`BuddySnapshot` field and the three indexes, and that signed-in users can write
+`BuddyPairing` and `Nudge` records, since claiming a code, unpairing and marking a nudge
+read each write to a record another user created.
