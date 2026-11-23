@@ -97,7 +97,7 @@ final class CoachContextItemsTests: XCTestCase {
         ]
         let s = CoachContext.summary(profile: p, foods: foods, weights: [])
         XCTAssertTrue(s.contains("In-N-Out Double Double"))            // the item, not just "1 item"
-        XCTAssertTrue(s.contains("The exact foods she logged today"))
+        XCTAssertTrue(s.contains("The exact foods logged today"))
         XCTAssertTrue(s.contains("This week's daily food totals"))
         XCTAssertTrue(s.contains("g carbs"))                          // carbs/fat now in totals line
         XCTAssertTrue(s.contains("g fat"))
@@ -107,7 +107,7 @@ final class CoachContextItemsTests: XCTestCase {
         let p = UserProfile()
         let s = CoachContext.summary(profile: p, foods: [], weights: [])
         XCTAssertTrue(s.contains("nothing logged yet"))
-        XCTAssertFalse(s.contains("The exact foods she logged today"))
+        XCTAssertFalse(s.contains("The exact foods logged today"))
         XCTAssertFalse(s.contains("This week's daily food totals"))
     }
 
@@ -125,7 +125,7 @@ final class CoachContextItemsTests: XCTestCase {
         ]
         let s = CoachContext.summary(profile: p, foods: foods, weights: [])
         XCTAssertTrue(s.contains("coming back after 14 days away"))
-        XCTAssertTrue(s.contains("NOT that she wasn't eating"))
+        XCTAssertTrue(s.contains("NOT that the user wasn't eating"))
     }
 
     /// No gap (logged yesterday) and brand-new user (first log today): no away note.
