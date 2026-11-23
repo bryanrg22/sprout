@@ -39,16 +39,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     /// CloudKit pushes land here: a nudge alert OR a SILENT snapshot-changed wake-up
-    /// (`ensureSnapshotSubscription`). Either way it means "buddy data moved" — tell the hub to pull
-    /// the latest. Posting a notification keeps this decoupled from the (MainActor) view model.
+    /// (`ensureSnapshotSubscription`). Either way it means "buddy data moved": whoever is
+    /// showing it refreshes (`BuddyRemoteChangeCenter`).
     func application(_ application: UIApplication,
                      didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
-        NotificationCenter.default.post(name: .buddyRemoteChange, object: nil)
+        _ = await BuddyRemoteChangeCenter.shared.deliver()
         return .newData
     }
-}
-
-extension Notification.Name {
-    /// A CloudKit push arrived signalling the buddy's data may have changed; the Buddy hub refreshes.
-    static let buddyRemoteChange = Notification.Name("buddyRemoteChange")
 }

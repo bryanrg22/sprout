@@ -51,6 +51,16 @@ final class BuddyViewModel {
 
     let myUserID: String
     private let service: any BuddySyncService
+    /// Where this model keeps what must survive a relaunch (my code, last publish, which
+    /// milestones were sent). Injected so a test never touches the app's own defaults.
+    private let defaults: UserDefaults
+    /// The clock. Injected: nothing below reads the wall clock directly.
+    private let now: @MainActor () -> Date
+    private let calendar: Calendar
+    /// One line to the field Diagnostics log. A test replaces it to count what is written.
+    var log: (String) -> Void = { Diagnostics.shared.log($0, .sync) }
+    /// Sets the app-icon badge. A test replaces it to read what was set.
+    var setBadge: (Int) -> Void = { _ in }
 
     // MARK: Observable state
 
@@ -68,6 +78,10 @@ final class BuddyViewModel {
 
     /// A kind, transient banner message (errors *and* small successes). Cleared by the UI.
     var banner: BuddyBanner?
+
+    /// Why the last attempt to connect failed, in words for the pairing screen. Stays until
+    /// the next attempt (a banner is gone in three seconds; this has to be read and acted on).
+    private(set) var linkError: String?
 
     /// True while a link attempt is in flight (disables the button, shows progress).
     private(set) var isLinking = false
@@ -102,6 +116,9 @@ final class BuddyViewModel {
     ///   wants this; the always-on `BuddyAutoPublisher` (which only publishes, never displays) passes
     ///   `false` so we don't run a second redundant refresh loop.
     init(defaults: UserDefaults = .standard, observePushes: Bool = true) {
+        self.defaults = defaults
+        self.now = { .now }
+        self.calendar = .current
         self.myUserID = Self.resolveMyUserID(defaults: defaults)
         self.service = BuddySync.makeDefault(myUserID: myUserID)
         self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service, defaults: defaults)
@@ -118,33 +135,34 @@ final class BuddyViewModel {
         }
     }
 
-    /// Test / preview seam: inject a specific service + id.
-    init(service: any BuddySyncService, myUserID: String) {
+    /// Test / preview seam: inject a specific service + id, and for a test its own
+    /// defaults and clock.
+    init(service: any BuddySyncService,
+         myUserID: String,
+         defaults: UserDefaults = .standard,
+         observePushes: Bool = true,
+         now: @escaping @MainActor () -> Date = { .now },
+         calendar: Calendar = .current) {
+        self.defaults = defaults
+        self.now = now
+        self.calendar = calendar
         self.myUserID = myUserID
         self.service = service
-        self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service)
+        self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service, defaults: defaults)
         self.isLinked = (service.linkedBuddyID != nil)
-        observeRemotePushes()
+        self.lastPublishAt = defaults.object(forKey: Self.lastPublishKey(myUserID)) as? Date
+        if observePushes { observeRemotePushes() }
     }
-
-    // `nonisolated(unsafe)` so `deinit` (which is nonisolated) can remove the observer. Safe: it's
-    // assigned once in init and only read in deinit — no concurrent access.
-    nonisolated(unsafe) private var pushObserver: NSObjectProtocol?
 
     /// Refresh the buddy data when a CloudKit push says it may have changed (the snapshot
-    /// subscription fires a silent wake-up the moment the buddy logs).
+    /// subscription fires a silent wake-up the moment the buddy logs). The handler holds
+    /// this model weakly and reports `false` once it is gone, which unregisters it.
     private func observeRemotePushes() {
-        pushObserver = NotificationCenter.default.addObserver(
-            forName: .buddyRemoteChange, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in
-                guard let self, self.isLinked else { return }
-                await self.refresh()
-            }
+        BuddyRemoteChangeCenter.shared.addObserver { [weak self] in
+            guard let self else { return false }
+            if self.isLinked { await self.refresh() }
+            return true
         }
-    }
-
-    deinit {
-        if let pushObserver { NotificationCenter.default.removeObserver(pushObserver) }
     }
 
     // MARK: - Derived UI values
@@ -179,6 +197,11 @@ final class BuddyViewModel {
         case 1...2: return .hungry     // a couple quiet days — drooping
         default:    return .fainted    // 3+ neglected days — keeled over (any log revives it)
         }
+    }
+
+    /// How old the buddy's last published day is, by this model's clock.
+    var buddyFreshness: BuddyFreshness {
+        BuddyFreshness.evaluate(lastPublished: buddySnapshot?.lastActive, now: now(), calendar: calendar)
     }
 
     /// Count of unread nudges, for a small inbox badge.
@@ -216,7 +239,7 @@ final class BuddyViewModel {
         do {
             let snap = try await service.fetchBuddySnapshot()
             buddySnapshot = snap
-            lastBuddyFetchAt = .now
+            lastBuddyFetchAt = now()
             if snap != nil { isLinked = true }
         } catch {
             // A snapshot failure is a soft state — keep whatever we had, stay quiet here
@@ -233,6 +256,7 @@ final class BuddyViewModel {
             return
         }
         isLinking = true
+        linkError = nil
         defer { isLinking = false }
         do {
             try await service.link(usingCode: trimmed)
@@ -244,11 +268,17 @@ final class BuddyViewModel {
             await refresh()
         } catch let err as BuddySyncError {
             linkFailureCount += 1
+            linkError = kindMessage(for: err)
             banner = .init(text: kindMessage(for: err), tone: .info)
         } catch {
             linkFailureCount += 1
+            linkError = "That didn't go through — let's try again in a moment."
             banner = .init(text: "That didn't go through — let's try again in a moment.", tone: .info)
         }
+    }
+
+    /// End the pairing from this device.
+    func unpair() async {
     }
 
     #if DEBUG
@@ -338,7 +368,7 @@ final class BuddyViewModel {
         guard !milestones.isEmpty,
               let buddyID = buddySnapshot?.ownerUserID ?? service.linkedBuddyID else { return }
         for m in milestones {
-            Diagnostics.shared.log("buddy: auto-celebrate \(m.rawValue)", .sync)
+            log("buddy: auto-celebrate \(m.rawValue)")
             let nudge = Nudge(fromUserID: myUserID, toUserID: buddyID, kind: .flex, text: m.message(name: myName))
             try? await service.sendNudge(nudge)
         }
@@ -432,7 +462,7 @@ final class BuddyViewModel {
             dayStreak: max(dayStreak, 0),
             characterMood: mood,
             loggedToday: loggedToday,
-            lastActive: .now,
+            lastActive: now(),
             stepsToday: max(stepsToday, 0),
             stepGoal: max(stepGoal, 0),
             waterToday: Self.fin(waterToday),
@@ -454,6 +484,21 @@ final class BuddyViewModel {
             todayFoods: todayFoods
         )
         await publishSerialized(payload)
+    }
+
+    /// Publish my day, then cheer the buddy for any goal just crossed. The one entry point
+    /// for both publishers (the hub and the always-on `BuddyAutoPublisher`).
+    func publishIfLinked(_ s: MyBuddyState) async {
+        guard isLinked else { return }
+        await publishMine(s)
+        let input = BuddyMilestoneInput(
+            caloriesEaten: s.caloriesEaten, calorieTarget: s.calorieTarget,
+            proteinEaten: s.proteinEaten, proteinTarget: s.proteinTarget,
+            steps: s.stepsToday, stepGoal: s.stepGoal,
+            waterOz: s.waterToday, waterGoal: s.waterGoal,
+            dayStreak: s.dayStreak)
+        let fresh = BuddyMilestones.consumeNewlyReached(input, myUserID: myUserID, day: now(), defaults: defaults)
+        await celebrate(fresh, myName: s.displayName)
     }
 
     /// True while a publish is in flight; a newer payload arriving meanwhile is parked in
@@ -478,10 +523,11 @@ final class BuddyViewModel {
         }
         do {
             try await service.publish(mySnapshot: payload)
-            lastPublishAt = .now
+            let at = now()
+            lastPublishAt = at
             lastPublishFailed = false
-            UserDefaults.standard.set(Date.now, forKey: Self.lastPublishKey(myUserID))
-            Diagnostics.shared.log("buddy: snapshot published OK", .sync)
+            defaults.set(at, forKey: Self.lastPublishKey(myUserID))
+            log("buddy: snapshot published OK")
         } catch {
             lastPublishFailed = true
             handleSilently(error, "snapshot publish")
@@ -516,7 +562,7 @@ final class BuddyViewModel {
     /// field Diagnostics log, because invisible sync failures are exactly how a buddy's
     /// snapshot froze for a month with nobody able to say why.
     private func handleSilently(_ error: Error, _ op: String = "op") {
-        Diagnostics.shared.log("buddy: \(op) failed quietly — \(error.localizedDescription)", .sync)
+        log("buddy: \(op) failed quietly — \(error.localizedDescription)")
     }
 }
 

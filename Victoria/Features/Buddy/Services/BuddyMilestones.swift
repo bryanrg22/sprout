@@ -88,10 +88,11 @@ enum BuddyMilestones {
         "buddy.milestone.\(myUserID).\(m.rawValue).\(dayKey)"
     }
 
-    private static func dayKey(_ day: Date) -> String {
+    private static func dayKey(_ day: Date, calendar: Calendar) -> String {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
         f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = calendar.timeZone
         f.dateFormat = "yyyy-MM-dd"
         return f.string(from: day)
     }
@@ -101,8 +102,9 @@ enum BuddyMilestones {
     static func consumeNewlyReached(_ i: BuddyMilestoneInput,
                                     myUserID: String,
                                     day: Date = .now,
+                                    calendar: Calendar = .current,
                                     defaults: UserDefaults = .standard) -> Set<BuddyMilestone> {
-        let dk = dayKey(day)
+        let dk = dayKey(day, calendar: calendar)
         let already = Set(BuddyMilestone.allCases.filter {
             defaults.bool(forKey: key($0, myUserID: myUserID, dayKey: dk))
         })
