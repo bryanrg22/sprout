@@ -26,7 +26,7 @@ Last updated: 2026-11-22.
 | G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); tool descriptions, onboarding copy and the demo seed remain |
 | G8 | A new person gets their own pixel character from a photo | blocked: built and seen in the simulator (EVAL_REPORT 15); the owner supplies photos and approves the image runs, and deploys the CloudKit schema |
 | G9 | Home and Gym as two modes, switched at the top | in progress: built, tapped by a UI test both ways with state kept (EVAL_REPORT 12, 17); open: VoiceOver reaches the hidden surface (U-1), the light theme, and the owner's look at the screenshots |
-| G10 | Nutrition is as specific as it can honestly be | open |
+| G10 | Nutrition is as specific as it can honestly be | in progress: built and tested from every source (EVAL_REPORT 18); the estimator's accuracy on the new fields is unmeasured, and the owner deploys the CloudKit schema |
 | G11 | The open defects are closed | open |
 | G12 | Competitions | todo (spec needed) |
 | G13 | The app is back on the phones and does not expire again | open, last |
