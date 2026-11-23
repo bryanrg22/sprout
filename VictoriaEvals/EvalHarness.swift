@@ -114,6 +114,10 @@ struct EvalRecord: Encodable {
     var cacheReadTokens: Int
     var cacheWriteTokens: Int
     var outputTokens: Int
+    /// Output tokens spent thinking, summed over the calls that reported it; nil when none did.
+    var thinkingTokens: Int?
+    /// The last call's stop reason in the provider's word, when it gave one.
+    var stopReason: String?
     var calls: Int
     /// The parsed output, compact JSON or text, for reading failures by hand.
     var output: String
@@ -267,6 +271,9 @@ enum EvalRunner {
                         cacheReadTokens: calls.reduce(0) { $0 + $1.cacheReadTokens },
                         cacheWriteTokens: calls.reduce(0) { $0 + $1.cacheWriteTokens },
                         outputTokens: calls.reduce(0) { $0 + $1.outputTokens },
+                        thinkingTokens: calls.contains { $0.thinkingTokens != nil }
+                            ? calls.reduce(0) { $0 + ($1.thinkingTokens ?? 0) } : nil,
+                        stopReason: calls.last?.stopReason,
                         calls: calls.count, output: outcome.output))
                 }
             }

@@ -270,6 +270,7 @@
 		DDDDBD91C7DEAC32EBC774F5 /* ScanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D78F0C2E1353FFC3CEA830 /* ScanView.swift */; };
 		DE41FFADE9DBF826CCF20C31 /* Diagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C4CA5F5D180DFADDDE951B /* Diagnostics.swift */; };
 		DE4F901A4A052EC68F8F585A /* WorkoutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3818882D403D7B694B2C73E4 /* WorkoutsView.swift */; };
+		DEA7008A2334BA69FB99F32C /* AnthropicThinkingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A830FBD2B7F6B264B43D7406 /* AnthropicThinkingTests.swift */; };
 		DFA5F3A775AF37EAE4D7E047 /* TestImages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F8815A306895384CA88EFF9 /* TestImages.swift */; };
 		DFB52974EB17D1BE727DD0CB /* LEDGER.md in Resources */ = {isa = PBXBuildFile; fileRef = 60C5CFEF50EAABDA8B485048 /* LEDGER.md */; };
 		E09BCCDFAACBFB21099CB032 /* VitalsEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC784E04E92AD7AAFB83C61 /* VitalsEntry.swift */; };
@@ -539,6 +540,7 @@
 		A144C6BA1EBCBEB134C5DA95 /* CoachContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachContext.swift; sourceTree = "<group>"; };
 		A29952DE600E5F36FE892650 /* WeeklyReflectionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyReflectionCard.swift; sourceTree = "<group>"; };
 		A4F98C9C7162C24B9E7B0060 /* SettingsCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCopy.swift; sourceTree = "<group>"; };
+		A830FBD2B7F6B264B43D7406 /* AnthropicThinkingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicThinkingTests.swift; sourceTree = "<group>"; };
 		A9B4F51B49943A36D2B97164 /* NudgeInboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeInboxView.swift; sourceTree = "<group>"; };
 		AAA11F9853F548753DF12D9E /* VictoriaWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VictoriaWidgets.entitlements; sourceTree = "<group>"; };
 		AB4362F0D33B85508A10FF7E /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
@@ -968,6 +970,7 @@
 				B7C927DB4F4B798413A20B4C /* AIKeyRoutingTests.swift */,
 				2CB20C4AE3EA68A9F2DCD524 /* AIRuntimeTests.swift */,
 				407820F82E16B7C15CC60B70 /* AITaskModelTests.swift */,
+				A830FBD2B7F6B264B43D7406 /* AnthropicThinkingTests.swift */,
 				B499D8A334F7A5353E87A068 /* AppModeTests.swift */,
 				4794E441CC1CE4A7C75CB44D /* AvatarCreationModelTests.swift */,
 				B68E084308C4F9A69FE1A3F2 /* AvatarGeneratorTests.swift */,
@@ -1692,6 +1695,7 @@
 				17C6B5C73F026B7FF2F850FF /* AITaskModelTests.swift in Sources */,
 				8588F6EEC52F6CA7A0C89F80 /* AchievementConsistencyTests.swift in Sources */,
 				70D2A089E581BF037263EE91 /* AdaptivePlanTests.swift in Sources */,
+				DEA7008A2334BA69FB99F32C /* AnthropicThinkingTests.swift in Sources */,
 				8D4DE46BBB96FA4705B145B4 /* AppModeTests.swift in Sources */,
 				DA8E8DEECF9278E72268D6FD /* AvatarCreationModelTests.swift in Sources */,
 				BA6E9F2FEB4FA46DD0B691A6 /* AvatarGeneratorTests.swift in Sources */,

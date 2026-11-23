@@ -11,6 +11,8 @@
 #             (Avatar: image models; the @suffix is the image quality, e.g.
 #              "openai:gpt-image-2.6-flare@low,openai:gpt-image-2.6-sunburst@medium";
 #              the cases are the photos in Evals/datasets/avatar/photos/, see its README)
+#             (Anthropic text models: "anthropic:<model>@default" leaves thinking at the model's own
+#              default on the plain-text tasks, where the app turns it off; use it to measure the difference)
 #   repeats   how many times each case runs per model (default 1; use 3 to see variance)
 #   limit     only the first N cases (a cheap pilot); omit for the whole dataset
 #   SPROUT_EVAL_CASES=id1,id2 in the environment runs only those cases (to chase one failure)
