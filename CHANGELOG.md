@@ -7,6 +7,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- VoiceOver no longer reaches the hidden half of the Home | Gym switch (its content; one
+  tab button is still under check), and secondary text in the light look is darker so it
+  meets the contrast minimum (EVAL_REPORT 29).
+
 - **Updating never starts you over.** An update installed over the old app keeps
   everything and goes straight to Today (measured from build 15). If an update cannot
   open your data, the app now says so instead of showing onboarding on an empty app; a
@@ -62,6 +66,11 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **A weekly competition with your buddy**, in the Buddy hub: a point a day for each of
+  your own targets you hit (calories in your range, protein, water, steps, being active),
+  Monday to Sunday, with last week's result. Only which targets were hit is shared, never
+  a number (EVAL_REPORT 29).
+
 - **Your week on Workouts:** how many of its 7 days you were active (anything logged, or a
   workout Apple Health or your tracker saw), each day tappable to see what you did, and
   arrows back through past weeks. Workouts your tracker detected now show on each day
@@ -110,8 +119,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,162 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 23 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+- Tests: 443 → 1,180 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- UI smoke flows: 24 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
   through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

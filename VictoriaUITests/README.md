@@ -16,14 +16,14 @@ xcodegen generate
 xcodebuild test -project Victoria.xcodeproj -scheme VictoriaUITests \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' \
   -resultBundlePath /tmp/ui.xcresult
-python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 23
+python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 24
 ```
 
 The scheme is separate, so `-scheme Victoria` (the unit suite) neither builds nor runs
 these. Read the count from the result bundle, as for the unit suite. One flow:
 `-only-testing:VictoriaUITests/CoachFlowTests/testProviderFailureShowsTheErrorAndTheAppStaysUsable`.
 
-There are 23 tests and a run takes about six and a half minutes on one simulator. Today the result
+There are 24 tests and a run takes about six and a half minutes on one simulator. Today the result
 is 10 passed and 5 expected failures. An expected failure is not a pass: it is a flow whose
 behaviour assertions all held and which also carries a known defect or a known
 accessibility-audit result (see below), kept visible in every result.
@@ -78,6 +78,7 @@ flow sees the same screen on every run. To script one of them, add a case to
 | `InterruptionFlowTests` | k. the app backgrounded in the middle of the manual-food sheet, and in the middle of a coach turn. |
 | `OnboardingFlowTests` | m. every step in order with nothing filled in ends on a working Today. n. back and forward keeps the place. o. every step passed by swiping: finishing goes back to the one required choice (sex), then finishes. p. leaving in the middle keeps the step; quitting in the middle starts onboarding again. r. Next on the about step asks for a sex before going on. Flows choose a sex as they pass that step. |
 | `WorkoutWeekFlowTests` | s. the week card on Workouts counts active days; tapping a day opens it (a logged workout, a tracked one); the arrows move between weeks and stop at this one. |
+| `CompetitionFlowTests` | t. the weekly competition in the Buddy hub against the mock buddy: both scores, last week's result, a day's targets on a tap. |
 
 Flows b, c, e, h and i end with `performAccessibilityAudit()` on the screen they finish on
 (Progress, Workouts, Today, Workouts again, the coach).

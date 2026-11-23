@@ -77,6 +77,7 @@ struct WorkoutsView: View {
             .sheet(isPresented: $showDatePicker) { dayPickerSheet }
             .sensoryFeedback(.impact(weight: .light), trigger: deleteTick)
             .sensoryFeedback(.selection, trigger: navTick)
+            .surfaceContent()   // Home | Gym: hidden from VoiceOver when not showing (U-1)
         }
     }
 

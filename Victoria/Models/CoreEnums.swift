@@ -125,8 +125,9 @@ enum UnitSystem: String, Codable, CaseIterable, Identifiable {
     /// app has no kg conversion, and labelling a stored pound value "kg" is how a weigh-in
     /// typed in kg came to be stored as pounds (EVAL_REPORT 3, L-B7). Vita's `set_units`
     /// declines metric for the same reason. `metric` stays a case so a profile that was
-    /// switched before this still decodes; `docs/settings-dependencies.md` lists every
-    /// weight input and output a real conversion has to cover.
+    /// switched before this still decodes. Every weight input and output a real conversion
+    /// has to cover is every reader of `weightUnit` and every "lb" in the views; no list of
+    /// them is kept yet (GOALS G5).
     var weightUnit: String { "lb" }
 }
 

@@ -29,6 +29,16 @@ enum AccessibilityID {
         static let startFresh = "launch.startFresh"
     }
 
+    enum Competition {
+        static let card = "competition.card"
+        /// "<me> – <them>" for this week; its label carries both totals.
+        static let score = "competition.score"
+        static let lastWeek = "competition.lastWeek"
+        static let dayDetail = "competition.dayDetail"
+        /// Shown when the buddy's app is older than the competition.
+        static let waiting = "competition.waiting"
+    }
+
     enum Onboarding {
         /// The step indicator; its label carries the step number.
         static let steps = "onboarding.steps"

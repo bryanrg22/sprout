@@ -32,6 +32,8 @@ struct BuddyHomeView: View {
     // `WorkoutEntry` is only written by a debug-only screen, so a real gym session never set this
     // flag and the face-off "Exercise" row stayed "Not yet" even after a logged workout.)
     @Query(sort: \WorkoutSession.date) private var workouts: [WorkoutSession]
+    /// Tracker-detected workouts: they make a day active in the weekly competition.
+    @Query(sort: \DetectedWorkout.date) private var detectedWorkouts: [DetectedWorkout]
     @Query private var profiles: [UserProfile]
     // Weigh-ins, for the OPT-IN full-stats share (weight trend + weekly rate). Read the same
     // way SettingsView/Dashboard do, so the trend the buddy sees matches what I see. Only
@@ -201,10 +203,18 @@ struct BuddyHomeView: View {
     /// `sharesFullData` is false and the full-data values stay at 0/"" (the publish path
     /// sends nothing meaningful, and the buddy's card hides itself). A nil profile degrades
     /// gracefully to "not sharing".
+    /// My competition record, computed exactly as it is published (the same composer).
+    private var myCompetition: CompetitionRecord {
+        CompetitionRecord.decode(BuddyStateComposer.compose(
+            profile: profile, foods: allFood, water: water, steps: steps, sessions: workouts,
+            weights: weights, detected: detectedWorkouts).competitionWeeks)
+    }
+
     private func publishMyState() async {
         // One source of truth for the snapshot (shared with the always-on `BuddyAutoPublisher`).
         let s = BuddyStateComposer.compose(profile: profile, foods: allFood, water: water,
-                                           steps: steps, sessions: workouts, weights: weights)
+                                           steps: steps, sessions: workouts, weights: weights,
+                                           detected: detectedWorkouts)
         // Publishes only while linked, then cheers the buddy for any goal just crossed.
         await model.publishIfLinked(s)
     }
@@ -245,6 +255,12 @@ struct BuddyHomeView: View {
                 buddy: snap
             )
             .appearLift(didAppear, index: 3)
+
+            // (c2) The weekly competition: points for days inside each person's own ranges.
+            CompetitionCard(mine: myCompetition,
+                            theirs: CompetitionRecord.decode(snap.competitionWeeks),
+                            myName: "You", buddyName: model.buddyFirstNameCapitalized)
+                .appearLift(didAppear, index: 4)
         }
 
         // (d) Nudge buttons + write-your-own composer.

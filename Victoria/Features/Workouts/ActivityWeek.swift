@@ -141,8 +141,8 @@ struct ActivityWeekCard: View {
         return Button { onSelect(day.date) } label: {
             VStack(spacing: 6) {
                 Text(day.date.formatted(.dateTime.weekday(.narrow)))
-                    .font(.caption2.weight(day.isToday ? .bold : .regular))
-                    .foregroundStyle(day.isToday ? Theme.brand : Theme.textSecondary)
+                    .font(.caption2.weight(day.isToday ? .bold : .semibold))
+                    .foregroundStyle(day.isToday ? Theme.brand : Theme.textPrimary)
                 ZStack {
                     Circle()
                         .fill(day.isActive ? AnyShapeStyle(Theme.brandGradient) : AnyShapeStyle(Theme.divider.opacity(day.isFuture ? 0.4 : 1)))
@@ -154,9 +154,11 @@ struct ActivityWeekCard: View {
                 }
                 .frame(width: 30, height: 30)
                 .overlay(Circle().strokeBorder(Theme.brand, lineWidth: day.isToday && !day.isActive ? 2 : 0))
+                // Future days are told apart by their empty dot and by being disabled, not by
+                // fading the number: a faded number failed the contrast audit.
                 Text(day.date.formatted(.dateTime.day()))
                     .font(.caption2.monospacedDigit())
-                    .foregroundStyle(day.isFuture ? Theme.textSecondary.opacity(0.5) : Theme.textPrimary)
+                    .foregroundStyle(day.isFuture ? Theme.textSecondary : Theme.textPrimary)
             }
             .frame(maxWidth: .infinity, minHeight: 72)
             .padding(.vertical, 4)
@@ -177,6 +179,7 @@ struct ActivityWeekCard: View {
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(enabled ? Theme.brand : Theme.textSecondary.opacity(0.35))
                 .frame(width: 44, height: 44)
+                .contentShape(Rectangle())   // the whole 44 pt square is the target, not the glyph
         }
         .buttonStyle(.plain)
         .disabled(!enabled)

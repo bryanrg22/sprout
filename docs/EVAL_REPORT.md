@@ -1513,3 +1513,76 @@ stopped at the profile's creation day.
 
 **Not verified:** the light theme; the card with a large Dynamic Type size; months of
 history on a phone.
+
+## 29. The weekly competition; Home and Gym out of each other's way for VoiceOver; readable secondary text (2026-11-23)
+
+### The competition (G12)
+
+The owner asked for everything that remained, including the competition, after the
+proposal in G12. It is built as proposed, so every rule below is the proposal's:
+
+- **Scoring** (`Competition.swift`): a point a day for each of a person's OWN targets hit,
+  up to five: calories inside the range Today shows (with its step bonus, and the same 3%
+  grace at the floor as `calorieStatus`), protein at or above target, water at or above
+  goal, steps at or above goal, and an active day (a workout logged or detected, the
+  Workouts week card's rule). A day with no food logged scores nothing. Someone losing and
+  someone gaining compete on equal terms because each is measured against their own range.
+- **The week** runs Monday to Sunday on both phones, whatever each phone's calendar says,
+  so both score the same seven days.
+- **What crosses to the buddy:** one short string per person, which targets each day of
+  this week and last week hit (`2026-11-16:5,0,31;2026-11-23:16`). No calories, weights or
+  food. It is sent whatever the "share my full stats" switch says, because it holds no
+  numbers; a test checks that the switch still blanks the numbers and leaves this alone.
+- **Where:** a card in the Buddy hub under the daily face-off: this week's totals and who
+  is ahead, a row of seven days for each person with their points, last week's result, and
+  a tap on a day lists the five targets with which were hit. A buddy on an older build
+  sends nothing, and the card says it is waiting for their app to update.
+- **CloudKit:** the snapshot record gains one String field, `competitionWeeks`. The
+  Development schema takes it on the first write; **Production needs it deployed** (the
+  same Console step as section 21). Until it is, a publish from a TestFlight build fails
+  on that field and the buddy sees a stale snapshot, so the field and the Production
+  deploy must ship together.
+
+**Verified:** 15 unit tests (a perfect day; no food is zero; the calorie edges at the 97%
+grace, the ceiling and one over, a gain goal with no ceiling; the other targets exactly
+at and just under; the targets equal Today's, with and without the step bonus; Monday
+weeks on a Sunday-first phone; a worked example over two weeks scoring 2 and 6; the wire
+format round trip and five malformed inputs that are dropped, not scored; the opt-out;
+the CloudKit record with and without the field; the simulated buddy's fixed record; what
+VoiceOver says). A UI flow against the simulator's mock buddy: both scores, last week's
+"– 20", and a tap on the buddy's Monday shows "3 of 5" and closes again.
+**Not verified:** two phones. Everything above ran against the mock; the CloudKit write
+was exercised only through the record mapping.
+
+### Home and Gym out of each other's way (U-1)
+
+`.accessibilityHidden` on a surface does not reach the content of its navigation stacks
+(UIKit underneath). Three attempts, measured with Apple's accessibility audit, which
+reports each issue as on or off screen:
+
+| Attempt | Result |
+|---|---|
+| Ignore the hidden surface's children | worse: the hidden Gym surface became one element covering the screen, found as shown |
+| Mark the visible surface modal (`.isModal`) | no change the tests could see |
+| **Hide the content inside each navigation stack, read from the environment, and the tab bar with it** | **issues on the hidden surface: Gym screen about 7 → 0, Today about 23 → 0** (the 3 left "off screen" on Today are its own cards below the fold) |
+
+So the audit no longer finds either surface while the other shows. **Still open:** in
+Gym, XCUITest still finds Home's "Today" tab button; whether VoiceOver can land on it was
+not checked (no VoiceOver in the simulator here). The check stays pinned as a known defect
+with that wording.
+
+### Readable secondary text
+
+The light look's secondary text, `#9A8C7C`, was 3.2:1 on cards and 2.9:1 on the page,
+under WCAG 2.x's 4.5:1 for normal text, everywhere it was used. It is now `#76695B`, the
+same warm brown, darker: 5.2:1 and 4.75:1. The dark look already passed (5.7:1). A test
+computes all twelve text and surface pairs of both looks with WCAG's formula. The audit's
+remaining contrast flags in the dark look are other pairs (text on tinted or gradient
+backgrounds), not checked one by one.
+
+### Two flaky UI flows, from CI
+
+On a slow CI runner two flows failed that pass locally: a tap on a menu item the instant
+it existed, lost mid-animation, and typing into a field before it had the keyboard. The
+shared helpers now wait for an element to be hittable before tapping and retry a field's
+tap until it has the keyboard focus.
