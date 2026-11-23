@@ -162,8 +162,18 @@ enum EvalRunner {
                                     cases: [Case],
                                     caseID: @escaping @Sendable (Case) -> String,
                                     attempt: @escaping @Sendable (Case) async -> EvalOutcome) async throws {
+        try await run(taskName: task.rawValue, dataset: dataset, cases: cases, caseID: caseID, attempt: attempt)
+    }
+
+    /// The same, for a task that is not a text-model `AITask` (image generation). The
+    /// candidate's `@effort` suffix reaches `attempt` as `AIRuntime.current?.reasoningEffort`.
+    static func run<Case: Sendable>(taskName: String,
+                                    dataset: String,
+                                    cases: [Case],
+                                    caseID: @escaping @Sendable (Case) -> String,
+                                    attempt: @escaping @Sendable (Case) async -> EvalOutcome) async throws {
         try EvalEnv.requireLive()
-        let writer = try EvalWriter(task: task.rawValue)
+        let writer = try EvalWriter(task: taskName)
         let repeats = EvalEnv.repeats
 
         var jobs: [(item: Case, candidate: EvalCandidate, repeatIndex: Int)] = []
@@ -190,7 +200,7 @@ enum EvalRunner {
                     let elapsed = Int(Date().timeIntervalSince(started) * 1000)
                     let calls = usage.all
                     writer.append(EvalRecord(
-                        task: task.rawValue, dataset: dataset, caseID: caseID(job.item),
+                        task: taskName, dataset: dataset, caseID: caseID(job.item),
                         candidate: job.candidate.id, provider: job.candidate.provider.rawValue,
                         model: job.candidate.model, effort: job.candidate.effort,
                         repeatIndex: job.repeatIndex, ok: outcome.ok, error: outcome.error,
