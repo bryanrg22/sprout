@@ -1196,3 +1196,132 @@ app shows, and needs the owner to say what they are called. Onboarding copy, Set
 the buddy feature, the widgets and the demo seed have not been scanned.
 
 **Spend to date across every run: $19.04 over 9,771 attempts.**
+
+## 25. A note lost to thinking: measured, fixed per model, and measured again (2026-11-23)
+
+Objective G1. Section 22 found that the newest Claude models failed some short-writing
+cases with exactly the task's cap as the output count, and called it thinking using up
+the cap. That was an inference: no thinking count had been recorded. This section
+measures it, fixes it, and measures the fix.
+
+### The cause, measured
+
+The client now records `usage.output_tokens_details.thinking_tokens` and the stop reason
+of every Anthropic call, and evaluation records keep both. The case that failed in
+section 22 was run again on the unchanged request (`Evals/runs/20261123-103734-InsightLine`):
+
+| Model | Attempts | Output tokens | Of them thinking | Stop reason | Text returned |
+|---|---|---|---|---|---|
+| `claude-haiku-5-5` | 3 | 80, 80, 80 | 80, 80, 80 | `max_tokens` | none |
+| `claude-sonnet-5-5` | 3 | 80, 80, 80 | 80, 80, 80 | `max_tokens` | none |
+| `claude-sonnet-5` | 3 | 31, 31, 29 | 0, 0, 0 | `end_turn` | a line, each time |
+
+So the inference was right, and it is not random: on this case both 5.5 models think the
+whole cap away every time. On an easier prompt they do not think at all (the probe below
+got text in about 32 tokens from every model with nothing sent), which is why most cases
+passed and this looked intermittent. In the app the result was the built-in template and
+no trace in the log.
+
+### What each model accepts
+
+Read in Anthropic's documentation by a research pass (thinking, effort, structured
+outputs and the model migration pages, fetched 2026-11-23), then checked against the API
+with one request per model, setting and cap (`Evals/probe_anthropic_thinking.py`, 24
+requests). The documentation and the API agreed on every cell.
+
+| Model | Nothing sent | `{"type":"disabled"}` | `{"type":"between_tools"}` |
+|---|---|---|---|
+| `claude-haiku-5-5` | 200 | 200 | 400, not supported for this model |
+| `claude-sonnet-5-5` | 200 | 400, "send between_tools instead" | 200 |
+| `claude-sonnet-5` | 200 | 200 | 400, not supported for this model |
+| `claude-haiku-4-5` | 200 | 200 | 400, not supported for this model |
+
+`claude-haiku-4-5` reports no thinking count at all (the field is absent, not zero).
+
+### The change
+
+- `AnthropicModelProfile.thinkingOff(for:)` is that table. The plain-text path, which is
+  only used for short writing under a small cap (the insight line, the daily brief, the
+  weekly reflection, the onboarding note and the memory fold), sends the value its model
+  accepts. `claude-haiku-4-5` and any model the table does not know are sent nothing: a
+  wrong value is a 400 on every call, which is worse than the model's default.
+- A reply that stops at the cap with nothing usable now throws
+  `AIError.cutOffBeforeOutput` with the model, the cap and the thinking count, and is
+  written to the field log. Before, it was "empty text", the same as a malformed reply.
+- The structured and tool-calling paths are not changed. A forced tool call skips
+  thinking on the models that accept one, and the coach's turn has a 1,500-token cap that
+  no run has reached.
+- This is what the OpenAI client already did for the same five tasks (`plainChatEffort`,
+  section 6).
+
+14 tests through a scripted transport pin the table, what is sent per model, the named
+error and the usage fields. 1,127 unit tests and 96 evaluation self-tests pass.
+
+### The fix, measured
+
+The five tasks, four models, three repeats, 900 attempts
+(`Evals/runs/20261123-1039…` to `…1047…`, $1.64). "Before" is section 22's run, or
+section 10's for the brief. Passed / attempts:
+
+| Task (cap) | `haiku-5-5` before → after | `sonnet-5-5` before → after | `sonnet-5` before → after | `haiku-4-5` before → after (request unchanged) |
+|---|---|---|---|---|
+| Insight line (80) | 54/57 → 54/57 | 54/57 → 57/57 | 57/57 → 57/57 | 57/57 → 57/57 |
+| Weekly reflection (420) | 41/48 → 46/48 | 33/48 → 41/48 | 44/48 → 40/48 | 44/48 → 41/48 |
+| Onboarding note (320) | 40/45 → 44/45 | 34/45 → 45/45 | 40/45 → 38/45 | 43/45 → 42/45 |
+| Memory fold (1,200) | 33/36 → 36/36 | 36/36 → 36/36 | 36/36 → 33/36 | 36/36 → 35/36 |
+| Daily brief (160) | 36/39 → 39/39 | not run → 39/39 | not run → 36/39 | 39/39 → 39/39 |
+
+- **No reply was lost at the cap after the change:** 0 of 675 calls on the three models
+  that think, and the largest thinking count in any of them was 0. Before, 26 of the 300
+  calls of the two 5.5 models on the first three tasks returned nothing.
+- **The last column is the noise.** `claude-haiku-4-5` was sent the same request both
+  times and still moved by up to three cases a task. Differences of that size in the
+  other columns mean nothing.
+- **Read, not counted:** the three insight misses of `claude-haiku-5-5` after the change
+  are one case, where it wrote "two weeks away" for a 14-day gap and the grader counted
+  "two" as an invented number. That is a correct restatement and a limit of the grader,
+  not a defect of the model. The brief's "before" misses were the missing line break
+  fixed in section 10, not thinking.
+
+**The one result that looked like harm, tested on its own.** With thinking off,
+`claude-sonnet-5` returned a memory fold that did not parse three times in 36 (a
+typographic quote where the closing quote of the JSON belonged), against none before.
+Rather than argue about it, the switch was made measurable (`anthropic:<model>@default`
+leaves the model's default in force) and the fold was run both ways, five repeats, 60
+attempts an arm (`Evals/runs/20261123-104943-MemoryFold`, $0.94):
+
+| Model | Thinking off | Model default |
+|---|---|---|
+| `claude-sonnet-5` | 60/60, 4.5 s, $6.65 per 1,000 | 58/60 (2 did not parse), 6.1 s, $8.10 |
+| `claude-haiku-5-5` | 60/60, 2.2 s, $0.35 per 1,000 | 57/60 (1 did not parse, 1 cut off at 1,200 after 747 thinking tokens, 1 dropped a fact), 3.7 s, $0.51 |
+
+The malformed reply happens with thinking on as well, so it is not caused by turning it
+off; the three in 36 were chance. Off is also faster and cheaper, and on the memory fold
+the default did reach the cap once.
+
+**What thinking does buy on the memory fold**, in two scores that are recorded but are
+not part of the pass rule: with thinking off `claude-haiku-5-5` stored a number the app
+owns (a calorie target) in 12% of folds against 0%, and kept small talk in 50% against
+27%. Neither model is the memory fold's default (`claude-haiku-4-5`, which cannot think,
+is), so nothing shipped changes. If a 5.x model is ever proposed for the fold, the right
+comparison is thinking on with a larger cap, not this setting.
+
+### Still open
+
+- **Structured calls on `claude-sonnet-5-5`** (section 10, defect 2). The documentation
+  is clear that the model rejects any forced tool call and that the replacement is
+  `output_config.format` with a JSON schema. That route has schema rules the app's
+  schemas break today (every object needs `additionalProperties: false`; array length
+  limits other than 0 or 1 and number ranges are not allowed). Not built: it touches
+  seven schemas, and the model is no task's default.
+- **The memory fold asks for JSON as plain text and parses it by hand.** About 2% to 3%
+  of `claude-sonnet-5` replies did not parse, with thinking on or off. It should be a
+  structured call like the other JSON tasks.
+- **The coach's own turn** leaves thinking at the model default with a 1,500 cap. No
+  cut-off has been measured there, and none of these runs was designed to look for one.
+- The number-word grader does not know that 14 days is two weeks.
+- A refusal (`stop_reason: "refusal"`) on the plain-text path is still read as empty text.
+
+**Spend:** $2.60 for this section (the reproduction, 900 attempts after the fix, 240 for
+the comparison, and 24 probe requests outside the harness).
+**Spend to date across every run: $21.64 over 10,920 attempts.**
