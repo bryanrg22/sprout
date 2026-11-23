@@ -8,36 +8,8 @@ struct VictoriaApp: App {
     let container: ModelContainer
 
     init() {
-        let schema = Schema([
-            UserProfile.self,
-            WeightEntry.self,
-            FoodEntry.self,
-            WorkoutEntry.self,
-            WaterEntry.self,
-            ChatMessage.self,
-            // Vita's long-term memory (durable notes + rolling conversation summary).
-            CoachMemory.self,
-            // The adaptive Plan — the AI-authored, evolving "understanding of you" (see docs/adaptive-plan.md).
-            CoachPlan.self,
-            StepsEntry.self,
-            // Passive tracker data (Fitbit via the direct Google Health pipe, or
-            // anything Apple Health carries): nightly sleep (+stages), auto-detected
-            // workouts, daily recovery vitals. Never counts toward the streak.
-            SleepEntry.self,
-            DetectedWorkout.self,
-            VitalsEntry.self,
-            AchievementUnlock.self,
-            InsightShown.self,
-            // Buddy / accountability-buddy layer (data + sync foundation).
-            BuddyLink.self,
-            Nudge.self,
-            BuddySnapshot.self,
-            // Daily "Today's checklist" tasks (gym / run / etc).
-            ChecklistItem.self,
-            // The Workouts tab: a session + its per-machine exercise rows (flat sessionID link).
-            WorkoutSession.self,
-            ExerciseEntry.self,
-        ])
+        // The model list lives in `AppSchema` (one source of truth, shared with the tests).
+        let schema = AppSchema.schema
         do {
             container = try ModelContainer(for: schema)
         } catch {
