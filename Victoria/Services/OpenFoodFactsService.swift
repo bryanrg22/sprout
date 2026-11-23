@@ -25,7 +25,10 @@ struct OpenFoodFactsService {
         var sanityNote: String? = nil
     }
 
-    private static let userAgent = "Victoria/1.0 (bryanram2024@gmail.com)"
+    /// Open Food Facts asks every client to identify itself with a name, a version and a
+    /// way to reach the developer. The contact is the project page, not a personal address:
+    /// this string is in a public repository and is sent with every lookup.
+    static let userAgent = "Sprout/2.1 (iOS; +https://github.com/bryanrg22/sprout)"
     private static let fields = "product_name,brands,serving_size,serving_quantity,nutriments,code"
 
     static func product(barcode: String) async throws -> FoodHit? {
