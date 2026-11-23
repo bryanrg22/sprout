@@ -73,6 +73,7 @@ struct ProgressSummaryService {
             toolName: "write_summary",
             toolDescription: "Write a short, honest, encouraging progress recap from the data.",
             schema: schema,
+            model: AIConfig.model(for: .progressSummary),
             maxTokens: 600)
 
         let data = try JSONSerialization.data(withJSONObject: dict)

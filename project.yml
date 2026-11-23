@@ -104,6 +104,23 @@ targets:
         CURRENT_PROJECT_VERSION: "15"
         MARKETING_VERSION: "2.1"
 
+  # Model evaluations (Evals/): the app's real AI code paths run against labelled
+  # datasets across candidate models. Its own scheme, so `-scheme Victoria` never
+  # runs it; live cases skip unless Evals/run.sh configured them.
+  VictoriaEvals:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: VictoriaEvals
+      - path: VictoriaTests/Support
+    dependencies:
+      - target: Victoria
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.evals
+        GENERATE_INFOPLIST_FILE: YES
+
   VictoriaTests:
     type: bundle.unit-test
     platform: iOS
@@ -116,3 +133,13 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.tests
         GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  VictoriaEvals:
+    build:
+      targets:
+        Victoria: all
+        VictoriaEvals: [test]
+    test:
+      targets:
+        - VictoriaEvals

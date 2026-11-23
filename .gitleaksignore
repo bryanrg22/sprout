@@ -1,0 +1,5 @@
+# Findings reviewed and confirmed not to be secrets. One fingerprint per line
+# (commit:file:rule:line), each with the reason above it.
+
+# The DailyBriefService line that names the UserDefaults entry for the cached daily brief.
+c58fad3278eaf0e56590377d4d098a7787ef99cd:Victoria/Services/DailyBriefService.swift:generic-api-key:122

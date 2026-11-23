@@ -196,11 +196,12 @@ struct MainTabView: View {
     /// No plan (or no targets set) → 0, which falls back to the computed defaults.
     private func syncPlanTargets() {
         let plan = coachPlans.first
-        let newCalorie = (plan?.hasRange == true) ? (plan?.calorieMin ?? 0) : 0
-        let newCalorieMax = (plan?.hasRange == true) ? (plan?.calorieMax ?? 0) : 0
-        let newProtein = max(0, plan?.proteinTarget ?? 0)
-        if profile.calorieTargetOverride != newCalorie { profile.calorieTargetOverride = newCalorie }
-        if profile.calorieMaxOverride != newCalorieMax { profile.calorieMaxOverride = newCalorieMax }
-        if profile.proteinTargetOverride != newProtein { profile.proteinTargetOverride = newProtein }
+        let next = PlanTargetSync.overrides(
+            plan: plan.map { .init(hasRange: $0.hasRange, calorieMin: $0.calorieMin,
+                                   calorieMax: $0.calorieMax, proteinTarget: $0.proteinTarget) },
+            currentProtein: profile.proteinTargetOverride)
+        if profile.calorieTargetOverride != next.calorie { profile.calorieTargetOverride = next.calorie }
+        if profile.calorieMaxOverride != next.calorieMax { profile.calorieMaxOverride = next.calorieMax }
+        if profile.proteinTargetOverride != next.protein { profile.proteinTargetOverride = next.protein }
     }
 }

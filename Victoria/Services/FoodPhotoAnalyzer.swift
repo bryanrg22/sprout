@@ -99,7 +99,7 @@ struct FoodPhotoAnalyzer {
         if let n = userNote, !n.isEmpty { prompt += " The user adds: \"\(n)\"." }
         var content: [[String: Any]] = imagesData.map { AnthropicClient.imageBlock($0) }
         content.append(AnthropicClient.textBlock(prompt))
-        return try await run(system: system, content: content)
+        return try await run(task: .mealPhoto, system: system, content: content)
     }
 
     /// Text-only estimate from a spoken/typed description ("a Chipotle chicken burrito with
@@ -109,11 +109,11 @@ struct FoodPhotoAnalyzer {
         let content: [[String: Any]] = [
             AnthropicClient.textBlock("Estimate the calories and macros for this meal: \"\(description)\"."),
         ]
-        return try await run(system: describeSystem, content: content)
+        return try await run(task: .mealDescribe, system: describeSystem, content: content)
     }
 
     /// Shared call + decode for both the photo and text paths.
-    private static func run(system: String, content: [[String: Any]]) async throws -> Estimate {
+    private static func run(task: AITask, system: String, content: [[String: Any]]) async throws -> Estimate {
         let client = try AIClient.makeFull()
         let dict = try await client.structured(
             system: system,
@@ -121,6 +121,7 @@ struct FoodPhotoAnalyzer {
             toolName: "log_food",
             toolDescription: "Record the estimated nutrition for the food.",
             schema: schema,
+            model: AIConfig.model(for: task),
             maxTokens: 2048
         )
         let data = try JSONSerialization.data(withJSONObject: dict)

@@ -136,7 +136,7 @@ enum DailyBriefService {
 
     // MARK: - Daily cache
 
-    private static let cacheKey = "dailyBrief.v1"
+    private static let cacheKey = "dailyBrief.v1"   // gitleaks:allow (a UserDefaults key name, not a secret)
 
     static func dayKey(for date: Date = .now, calendar: Calendar = .current) -> String {
         let c = calendar.dateComponents([.year, .month, .day], from: date)
@@ -199,7 +199,7 @@ enum DailyBriefService {
     Reply with the headline on the FIRST line and the body on the following line(s). No labels.
     """
 
-    private static func rephrase(_ picked: (topic: Topic, headline: String, body: String),
+    static func rephrase(_ picked: (topic: Topic, headline: String, body: String),
                                  name: String) async -> (headline: String, body: String)? {
         do {
             let client = try AIClient.make()
@@ -211,7 +211,7 @@ enum DailyBriefService {
             """
             let reply = try await client.chat(system: system,
                                               messages: [ChatTurnMsg(role: "user", text: user)],
-                                              model: AIConfig.insightModel,
+                                              model: AIConfig.model(for: .dailyBrief),
                                               maxTokens: 160)
             return parse(reply)
         } catch {
