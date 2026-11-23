@@ -81,8 +81,8 @@ jobs:
       - name: Verify unit test counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 756 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 756
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 780 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 780
 
       - name: Coverage by target
         if: ${{ !cancelled() }}
@@ -119,6 +119,52 @@ jobs:
           path: |
             ${{ runner.temp }}/unit.xcresult
             ${{ runner.temp }}/evals.xcresult
+          if-no-files-found: warn
+          retention-days: 14
+
+  # End-to-end flows through the real UI, against a scripted model and an in-memory store
+  # (VictoriaUITests/README.md). Separate from `test` so a slow or flaky simulator boot
+  # here cannot hide a unit-test result.
+  ui-tests:
+    runs-on: macos-26
+    timeout-minutes: 40
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: brew install xcodegen && xcodegen generate
+      - name: Create a simulator
+        id: sim
+        run: |
+          RUNTIME=$(xcrun simctl list runtimes -j | python3 -c "
+          import json, sys
+          rts = [r for r in json.load(sys.stdin)['runtimes'] if r.get('isAvailable') and r.get('platform') == 'iOS']
+          rts.sort(key=lambda r: [int(x) for x in r['version'].split('.')])
+          print(rts[-1]['identifier'])")
+          UDID=$(xcrun simctl create Sprout-CI-UI "iPhone 17 Pro" "$RUNTIME")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+      - name: UI smoke flows
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Victoria.xcodeproj -scheme VictoriaUITests \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath "$RUNNER_TEMP/ui.xcresult" \
+            -parallel-testing-enabled NO \
+            | xcbeautify --quiet
+      - name: Verify UI flow counts
+        if: ${{ !cancelled() }}
+        run: |
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/ui.xcresult" --min-tests 15 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/ui.xcresult" --min-tests 15
+      - name: Upload the result bundle
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-xcresult
+          path: ${{ runner.temp }}/ui.xcresult
           if-no-files-found: warn
           retention-days: 14
 
