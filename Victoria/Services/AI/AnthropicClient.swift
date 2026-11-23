@@ -11,12 +11,15 @@ struct AnthropicClient {
     private let key: String
 
     init() throws {
-        guard let k = KeychainStore.apiKey(), !k.isEmpty else { throw AIConfig.AIError.missingKey }
+        // A scoped override (tests / evals) supplies its own key; the app reads the Keychain.
+        let k = AIRuntime.current?.apiKey ?? KeychainStore.apiKey()
+        guard let k, !k.isEmpty else { throw AIConfig.AIError.missingKey }
         key = k
     }
 
     // MARK: - Plain text chat (the coach)
     func chat(system: String, messages: [Msg], model: String = AIConfig.chatModel, maxTokens: Int = 1024) async throws -> String {
+        let model = AIRuntime.resolve(model: model)
         let body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
@@ -75,6 +78,7 @@ struct AnthropicClient {
                        maxTokens: Int = 1500,
                        cachedSystemPrefix: String? = nil,
                        forbidToolUse: Bool = false) async throws -> ChatTurn {
+        let model = AIRuntime.resolve(model: model)
         var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
@@ -161,6 +165,7 @@ struct AnthropicClient {
                     schema: [String: Any],
                     model: String = AIConfig.foodModel,
                     maxTokens: Int = 1300) async throws -> [String: Any] {
+        let model = AIRuntime.resolve(model: model)
         let tool: [String: Any] = [
             "name": toolName,
             "description": toolDescription,
@@ -198,6 +203,7 @@ struct AnthropicClient {
                   model: String = AIConfig.planModel,
                   maxUses: Int = 5,
                   maxTokens: Int = 1800) async throws -> (text: String, usedSearch: Bool) {
+        let model = AIRuntime.resolve(model: model)
         let body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
@@ -260,6 +266,8 @@ struct AnthropicClient {
         // returns 429 (rate limit) / 503 / 529 (overloaded) under load — exactly the "try again in
         // a moment" case. A single short backoff recovers it automatically instead of surfacing an
         // error. Everything else (4xx auth/validation, network) throws straight away.
+        let transport = AIRuntime.transport
+        let started = Date()
         for attempt in 0..<2 {
             var req = URLRequest(url: AIConfig.baseURL.appendingPathComponent("v1/messages"))
             req.httpMethod = "POST"
@@ -269,7 +277,7 @@ struct AnthropicClient {
             req.httpBody = httpBody
             req.timeoutInterval = 60
 
-            let (data, response) = try await URLSession.shared.data(for: req)
+            let (data, response) = try await transport.data(for: req)
             guard let http = response as? HTTPURLResponse else {
                 throw AIConfig.AIError.badResponse("no response")
             }
@@ -285,6 +293,15 @@ struct AnthropicClient {
                     Diagnostics.shared.log(
                         "anthropic usage: in \(input) out \(output) cacheRead \(cacheRead) cacheWrite \(cacheWrite)",
                         .ai)
+                    // Anthropic's `input_tokens` already excludes the cached part.
+                    AIRuntime.report(AIUsage(
+                        provider: .anthropic,
+                        model: (json["model"] as? String) ?? (body["model"] as? String) ?? "",
+                        endpoint: "/v1/messages",
+                        uncachedInputTokens: input, cacheReadTokens: cacheRead,
+                        cacheWriteTokens: cacheWrite, outputTokens: output,
+                        latencyMs: Int(Date().timeIntervalSince(started) * 1000),
+                        attempts: attempt + 1))
                 }
                 return json
             }

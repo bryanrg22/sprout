@@ -45,7 +45,7 @@ enum PlanService {
             toolName: "write_plan",
             toolDescription: "Author the user's personalized, data-grounded coaching plan.",
             schema: planSchema,
-            model: AIConfig.planModel,
+            model: AIConfig.model(for: .planBuild),
             maxTokens: 2200
         )
 
@@ -78,11 +78,13 @@ enum PlanService {
             existing.updatedAt = fresh.updatedAt
             existing.researchNotes = research.notes   // the cited brief that grounded this build
             try? context.save()
+            existing.clearGoalsChanged()              // built against the goals as they are now
             return existing
         }
         fresh.researchNotes = research.notes
         context.insert(fresh)
         try? context.save()
+        fresh.clearGoalsChanged()
         return fresh
     }
 
@@ -127,7 +129,7 @@ enum PlanService {
             toolName: "write_plan",
             toolDescription: "Re-emit the user's plan, adapted to the latest data (same shape as the build).",
             schema: planSchema,
-            model: AIConfig.planModel,
+            model: AIConfig.model(for: .planReview),
             maxTokens: 2200
         )
 
@@ -250,9 +252,11 @@ enum PlanService {
         let research: (text: String, usedSearch: Bool)?
         switch AIConfig.provider {
         case .anthropic:
-            research = try? await AnthropicClient().research(system: system, userContent: user)
+            research = try? await AnthropicClient().research(system: system, userContent: user,
+                                                             model: AIConfig.model(for: .planResearch))
         case .openai:
-            research = try? await OpenAIClient().research(system: system, userContent: user)
+            research = try? await OpenAIClient().research(system: system, userContent: user,
+                                                          model: AIConfig.model(for: .planResearch))
         }
         guard let research, !research.text.isEmpty else {
             Diagnostics.shared.log("plan research: none (web search unavailable or empty)", .ai)

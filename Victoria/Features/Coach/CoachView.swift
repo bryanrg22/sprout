@@ -509,7 +509,10 @@ struct CoachView: View {
                 let client = try AIClient.makeFull()
                 let turn = try await client.chatWithTools(system: systemParts.volatile,
                                                           messages: history, tools: tools,
-                                                          cachedSystemPrefix: systemParts.stable)
+                                                          model: AIConfig.model(for: .coachTurn),
+                                                          maxTokens: 1500,
+                                                          cachedSystemPrefix: systemParts.stable,
+                                                          forbidToolUse: false)
                 Diagnostics.shared.log("coach reply ok: \(turn.text.count) chars, tool=\(turn.toolUse?.name ?? "none")", .coach)
                 await MainActor.run { handle(turn: turn, history: history) }
             } catch AIConfig.AIError.missingKey {
@@ -713,6 +716,8 @@ struct CoachView: View {
                 // common case is a plain warm reply.
                 let turn = try await client.chatWithTools(system: systemParts.volatile,
                                                           messages: continued, tools: tools,
+                                                          model: AIConfig.model(for: .coachTurn),
+                                                          maxTokens: 1500,
                                                           cachedSystemPrefix: systemParts.stable,
                                                           forbidToolUse: forbidToolUse)
                 await MainActor.run { handle(turn: turn, history: continued, depth: depth) }

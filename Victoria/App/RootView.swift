@@ -135,7 +135,10 @@ struct RootView: View {
 
 struct MainTabView: View {
     @Bindable var profile: UserProfile
-    @State private var selection = DemoSeed.initialTab
+    @State private var selection = HomeTab.initial(arguments: CommandLine.arguments).rawValue
+    /// Home or Gym. Stored, so the app reopens where it was left; `ModeSwitch` writes the same key.
+    @AppStorage(AppMode.storageKey) private var storedMode: String = AppMode.home.rawValue
+    private var mode: AppMode { AppMode.resolve(stored: storedMode) }
     /// Shared "Ask Vita about this" bus: a long-press on any card sets a topic here, which
     /// flips us to the Vita tab so the coach can explain that component.
     @State private var askVita = AskVitaCenter()
@@ -147,32 +150,50 @@ struct MainTabView: View {
     @Query(sort: \CoachPlan.updatedAt, order: .reverse) private var coachPlans: [CoachPlan]
 
     var body: some View {
-        TabView(selection: $selection) {
-            DashboardView(profile: profile)
-                .tabItem { Label("Today", systemImage: "house.fill") }.tag(0)
+        // Both surfaces stay alive under the switch, so each keeps its scroll position, its
+        // navigation path and any half-typed text while the other is showing.
+        ZStack {
+            TabView(selection: $selection) {
+                DashboardView(profile: profile)
+                    .tabItem { Label("Today", systemImage: "house.fill") }.tag(HomeTab.today.rawValue)
 
-            FoodLogView(profile: profile)
-                .tabItem { Label("Nutrients", systemImage: "fork.knife") }.tag(1)
+                FoodLogView(profile: profile)
+                    .tabItem { Label("Nutrients", systemImage: "fork.knife") }.tag(HomeTab.nutrients.rawValue)
 
-            WeightView(profile: profile)
-                .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(2)
+                WeightView(profile: profile)
+                    .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }.tag(HomeTab.progress.rawValue)
+
+                CoachView(profile: profile)
+                    .tabItem { Label(profile.coachName, systemImage: "sparkles") }.tag(HomeTab.coach.rawValue)
+            }
+            .opacity(mode == .home ? 1 : 0)
+            .allowsHitTesting(mode == .home)
+            .accessibilityHidden(mode != .home)
 
             WorkoutsView()
-                .tabItem { Label("Workouts", systemImage: "dumbbell.fill") }.tag(3)
-
-            CoachView(profile: profile)
-                .tabItem { Label(profile.coachName, systemImage: "sparkles") }.tag(4)
+                .opacity(mode == .gym ? 1 : 0)
+                .allowsHitTesting(mode == .gym)
+                .accessibilityHidden(mode != .gym)
+        }
+        .onAppear {
+            // A demo launch can ask for Gym; otherwise the stored choice stands.
+            let initial = AppMode.initial(arguments: CommandLine.arguments, stored: storedMode)
+            if initial.rawValue != storedMode { storedMode = initial.rawValue }
         }
         .environment(askVita)
         // Keep my buddy snapshot fresh app-wide — publish the moment I log on ANY tab (debounced) and
         // when the app backgrounds, not only while the Buddy page is open. (See `BuddyAutoPublisher`.)
         .background(BuddyAutoPublisher())
-        // Five tabs is iOS's max before it collapses the rest into a "More" list — which would bury
-        // Vita (the flagship coach). So the bar is Today · Nutrients · Progress · Workouts · Vita,
-        // and Buddy lives as a Dashboard quick-link (it was one before, and stays one tap away).
-        // When a long-press asks Vita about something, jump to her tab so she can answer (tag 4).
+        // Home's bar is Today · Nutrients · Progress · Vita; workouts are the Gym surface, reached
+        // by the Home | Gym switch. Buddy is a Dashboard quick-link.
+        // When a long-press asks Vita about something, jump to her tab so she can answer.
         .onChange(of: askVita.pendingTopic) { _, topic in
-            if topic != nil { selection = 4 }
+            if topic != nil {
+                // The coach lives in Home: a question asked from Gym switches surface too.
+                let destination = AppMode.destinationForCoach()
+                storedMode = destination.mode.rawValue
+                selection = destination.homeTab.rawValue
+            }
         }
         // "What's New" once per update — a celebratory rundown of the release. The adaptive-plan
         // invite is intentionally NOT chained here: building a plan is something the user opts into
@@ -196,11 +217,12 @@ struct MainTabView: View {
     /// No plan (or no targets set) → 0, which falls back to the computed defaults.
     private func syncPlanTargets() {
         let plan = coachPlans.first
-        let newCalorie = (plan?.hasRange == true) ? (plan?.calorieMin ?? 0) : 0
-        let newCalorieMax = (plan?.hasRange == true) ? (plan?.calorieMax ?? 0) : 0
-        let newProtein = max(0, plan?.proteinTarget ?? 0)
-        if profile.calorieTargetOverride != newCalorie { profile.calorieTargetOverride = newCalorie }
-        if profile.calorieMaxOverride != newCalorieMax { profile.calorieMaxOverride = newCalorieMax }
-        if profile.proteinTargetOverride != newProtein { profile.proteinTargetOverride = newProtein }
+        let next = PlanTargetSync.overrides(
+            plan: plan.map { .init(hasRange: $0.hasRange, calorieMin: $0.calorieMin,
+                                   calorieMax: $0.calorieMax, proteinTarget: $0.proteinTarget) },
+            currentProtein: profile.proteinTargetOverride)
+        if profile.calorieTargetOverride != next.calorie { profile.calorieTargetOverride = next.calorie }
+        if profile.calorieMaxOverride != next.calorieMax { profile.calorieMaxOverride = next.calorieMax }
+        if profile.proteinTargetOverride != next.protein { profile.proteinTargetOverride = next.protein }
     }
 }

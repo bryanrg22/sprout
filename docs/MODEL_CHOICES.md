@@ -1,5 +1,12 @@
 # Model selection — decision record
 
+> **Superseded as a method on 2026-11-22.** This document argued each default from price
+> and release notes; none was measured against a test set. Defaults are now chosen by
+> running the candidates on labelled cases (`Evals/`, results in `docs/EVAL_REPORT.md`).
+> It is kept as the record of the reasoning at the time. Several facts in it are out of
+> date: `gpt-4.1-mini` is deprecated and shuts down 2027-01-14, and newer, cheaper models
+> exist on both providers (EVAL_REPORT 6).
+
 *Last revisited: **2026-07-12**. Every default below is a deliberate choice with a rejected alternative. Users can override any model string in Settings without a rebuild; these are the defaults a new user gets.*
 
 ## The framework

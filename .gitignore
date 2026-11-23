@@ -19,3 +19,6 @@ Victoria [0-9]*.xcodeproj/
 .claude/worktrees/
 
 build_rel/
+
+# Evaluation runs keep their records and summaries; the build log tail holds local paths
+Evals/runs/*/xcodebuild*.log

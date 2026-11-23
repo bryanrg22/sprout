@@ -31,14 +31,14 @@ enum InsightPhraser {
     /// template) if anything goes wrong. `context` is a tiny factual hint, e.g.
     /// "28-day logging streak" — never numbers the model should parrot as advice.
     static func phrase(template fallback: String, factualHint: String) async -> String {
-        guard KeychainStore.hasAPIKey(for: AIConfig.provider) else { return fallback }
+        guard AIConfig.hasActiveKey else { return fallback }
         do {
             let client = try AIClient.make()
             let user = "Observation to rephrase: \(factualHint)\nHer current template line (match this meaning): \"\(fallback)\""
             let reply = try await client.chat(
                 system: system,
                 messages: [ChatTurnMsg(role: "user", text: user)],
-                model: AIConfig.insightModel,
+                model: AIConfig.model(for: .insightLine),
                 maxTokens: 80
             )
             let cleaned = sanitize(reply)

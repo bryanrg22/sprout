@@ -60,6 +60,7 @@ struct WorkoutsView: View {
             .navigationTitle("Workouts")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .principal) { ModeSwitch() }
                 ToolbarItem(placement: .primaryAction) { addButton }
             }
             .sheet(isPresented: $showLogFlow) {

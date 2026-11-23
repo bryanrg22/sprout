@@ -1,0 +1,587 @@
+{
+ "banana": {
+  "hits": [
+   {
+    "description": "Bananas, raw",
+    "fdcId": 173944,
+    "per100g": {
+     "carbs_g": 22.8,
+     "fat_g": 0.33,
+     "kcal": 89.0,
+     "protein_g": 1.09
+    }
+   },
+   {
+    "description": "Pepper, banana, raw",
+    "fdcId": 169394,
+    "per100g": {
+     "carbs_g": 5.35,
+     "fat_g": 0.45,
+     "kcal": 27.0,
+     "protein_g": 1.66
+    }
+   },
+   {
+    "description": "Bananas, dehydrated, or banana powder",
+    "fdcId": 173945,
+    "per100g": {
+     "carbs_g": 88.3,
+     "fat_g": 1.81,
+     "kcal": 346,
+     "protein_g": 3.89
+    }
+   },
+   {
+    "description": "Abiyuch, raw",
+    "fdcId": 167782,
+    "per100g": {
+     "carbs_g": 17.6,
+     "fat_g": 0.1,
+     "kcal": 69.0,
+     "protein_g": 1.5
+    }
+   },
+   {
+    "description": "Apricots, raw",
+    "fdcId": 171697,
+    "per100g": {
+     "carbs_g": 11.1,
+     "fat_g": 0.39,
+     "kcal": 48.0,
+     "protein_g": 1.4
+    }
+   },
+   {
+    "description": "Arrowhead, raw",
+    "fdcId": 169203,
+    "per100g": {
+     "carbs_g": 20.2,
+     "fat_g": 0.29,
+     "kcal": 99.0,
+     "protein_g": 5.33
+    }
+   }
+  ],
+  "query": "Bananas, raw"
+ },
+ "bread_whole_wheat": {
+  "hits": [
+   {
+    "description": "Bread, whole-wheat, commercially prepared",
+    "fdcId": 172688,
+    "per100g": {
+     "carbs_g": 42.7,
+     "fat_g": 3.5,
+     "kcal": 252,
+     "protein_g": 12.4
+    }
+   },
+   {
+    "description": "Bread, whole-wheat, commercially prepared, toasted",
+    "fdcId": 172689,
+    "per100g": {
+     "carbs_g": 51.2,
+     "fat_g": 4.07,
+     "kcal": 306,
+     "protein_g": 16.3
+    }
+   },
+   {
+    "description": "Bread, naan, whole wheat, commercially prepared, refrigerated",
+    "fdcId": 174077,
+    "per100g": {
+     "carbs_g": 46.2,
+     "fat_g": 6.7,
+     "kcal": 286,
+     "protein_g": 10.2
+    }
+   },
+   {
+    "description": "Bread, paratha, whole wheat, commercially prepared, frozen",
+    "fdcId": 174076,
+    "per100g": {
+     "carbs_g": 45.4,
+     "fat_g": 13.2,
+     "kcal": 326,
+     "protein_g": 6.36
+    }
+   },
+   {
+    "description": "Bread, chapati or roti, whole wheat, commercially prepared, frozen",
+    "fdcId": 174075,
+    "per100g": {
+     "carbs_g": 46.1,
+     "fat_g": 9.2,
+     "kcal": 299,
+     "protein_g": 7.85
+    }
+   },
+   {
+    "description": "Bread, white, commercially prepared, toasted",
+    "fdcId": 174925,
+    "per100g": {
+     "carbs_g": 54.5,
+     "fat_g": 4.0,
+     "kcal": 290,
+     "protein_g": 9.0
+    }
+   }
+  ],
+  "query": "Bread, whole-wheat, commercially prepared"
+ },
+ "chicken_breast_grilled": {
+  "hits": [
+   {
+    "description": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, cooked, grilled",
+    "fdcId": 171534,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 3.17,
+     "kcal": 151,
+     "protein_g": 30.5
+    }
+   },
+   {
+    "description": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, with added solution, cooked, grilled",
+    "fdcId": 171536,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 3.39,
+     "kcal": 148,
+     "protein_g": 29.5
+    }
+   },
+   {
+    "description": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, cooked, braised",
+    "fdcId": 171140,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 3.24,
+     "kcal": 157,
+     "protein_g": 32.1
+    }
+   },
+   {
+    "description": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw",
+    "fdcId": 171077,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 2.62,
+     "kcal": 120,
+     "protein_g": 22.5
+    }
+   },
+   {
+    "description": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, with added solution, cooked, braised",
+    "fdcId": 171535,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 3.61,
+     "kcal": 145,
+     "protein_g": 28.2
+    }
+   },
+   {
+    "description": "Chicken, broilers or fryers, breast, skinless, boneless, meat only, with added solution, raw",
+    "fdcId": 171509,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 3.0,
+     "kcal": 108,
+     "protein_g": 20.3
+    }
+   }
+  ],
+  "query": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, cooked, grilled"
+ },
+ "egg_hard_boiled": {
+  "hits": [
+   {
+    "description": "Egg, whole, cooked, hard-boiled",
+    "fdcId": 173424,
+    "per100g": {
+     "carbs_g": 1.12,
+     "fat_g": 10.6,
+     "kcal": 155,
+     "protein_g": 12.6
+    }
+   },
+   {
+    "description": "Egg, whole, cooked, fried",
+    "fdcId": 173423,
+    "per100g": {
+     "carbs_g": 0.83,
+     "fat_g": 14.8,
+     "kcal": 196,
+     "protein_g": 13.6
+    }
+   },
+   {
+    "description": "Egg, whole, cooked, omelet",
+    "fdcId": 172185,
+    "per100g": {
+     "carbs_g": 0.64,
+     "fat_g": 11.7,
+     "kcal": 154,
+     "protein_g": 10.6
+    }
+   },
+   {
+    "description": "Egg, whole, cooked, poached",
+    "fdcId": 172186,
+    "per100g": {
+     "carbs_g": 0.71,
+     "fat_g": 9.47,
+     "kcal": 143,
+     "protein_g": 12.5
+    }
+   },
+   {
+    "description": "Egg, whole, cooked, scrambled",
+    "fdcId": 172187,
+    "per100g": {
+     "carbs_g": 1.61,
+     "fat_g": 11.0,
+     "kcal": 149,
+     "protein_g": 9.99
+    }
+   },
+   {
+    "description": "Onions, frozen, whole, cooked, boiled, drained, with salt",
+    "fdcId": 170507,
+    "per100g": {
+     "carbs_g": 6.11,
+     "fat_g": 0.05,
+     "kcal": 26.0,
+     "protein_g": 0.71
+    }
+   }
+  ],
+  "query": "Egg, whole, cooked, hard-boiled"
+ },
+ "milk_whole": {
+  "hits": [
+   {
+    "description": "Milk, whole, 3.25% milkfat, with added vitamin D",
+    "fdcId": 171265,
+    "per100g": {
+     "carbs_g": 4.8,
+     "fat_g": 3.25,
+     "kcal": 61.0,
+     "protein_g": 3.15
+    }
+   },
+   {
+    "description": "Milk, whole, 3.25% milkfat, without added vitamin A and vitamin D",
+    "fdcId": 172217,
+    "per100g": {
+     "carbs_g": 4.78,
+     "fat_g": 3.27,
+     "kcal": 61.0,
+     "protein_g": 3.15
+    }
+   },
+   {
+    "description": "Milk, lowfat, fluid, 1% milkfat, with added vitamin A and vitamin D",
+    "fdcId": 170872,
+    "per100g": {
+     "carbs_g": 4.99,
+     "fat_g": 0.97,
+     "kcal": 42.0,
+     "protein_g": 3.37
+    }
+   },
+   {
+    "description": "Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D",
+    "fdcId": 171267,
+    "per100g": {
+     "carbs_g": 4.8,
+     "fat_g": 1.98,
+     "kcal": 50.0,
+     "protein_g": 3.3
+    }
+   },
+   {
+    "description": "Milk, dry, whole, with added vitamin D",
+    "fdcId": 170876,
+    "per100g": {
+     "carbs_g": 38.4,
+     "fat_g": 26.7,
+     "kcal": 496,
+     "protein_g": 26.3
+    }
+   },
+   {
+    "description": "Milk, lowfat, fluid, 1% milkfat, with added nonfat milk solids, vitamin A and vitamin D",
+    "fdcId": 170873,
+    "per100g": {
+     "carbs_g": 4.97,
+     "fat_g": 0.97,
+     "kcal": 43.0,
+     "protein_g": 3.48
+    }
+   }
+  ],
+  "query": "Milk, whole, 3.25% milkfat, with added vitamin D"
+ },
+ "oats_dry": {
+  "hits": [
+   {
+    "description": "Cereals, oats, regular and quick, not fortified, dry",
+    "fdcId": 173904,
+    "per100g": {
+     "carbs_g": 67.7,
+     "fat_g": 6.52,
+     "kcal": 379,
+     "protein_g": 13.2
+    }
+   },
+   {
+    "description": "Cereals, QUAKER, Quick Oats, Dry",
+    "fdcId": 172989,
+    "per100g": {
+     "carbs_g": 68.2,
+     "fat_g": 6.87,
+     "kcal": 371,
+     "protein_g": 13.7
+    }
+   },
+   {
+    "description": "Cereals, oats, instant, fortified, plain, dry",
+    "fdcId": 171661,
+    "per100g": {
+     "carbs_g": 69.5,
+     "fat_g": 6.9,
+     "kcal": 362,
+     "protein_g": 11.9
+    }
+   },
+   {
+    "description": "Cereals, QUAKER, Quick Oats with Iron, Dry",
+    "fdcId": 174640,
+    "per100g": {
+     "carbs_g": 68.2,
+     "fat_g": 6.87,
+     "kcal": 371,
+     "protein_g": 13.7
+    }
+   },
+   {
+    "description": "Cereals, oats, instant, fortified, with cinnamon and spice, dry",
+    "fdcId": 171664,
+    "per100g": {
+     "carbs_g": 76.1,
+     "fat_g": 4.84,
+     "kcal": 369,
+     "protein_g": 9.53
+    }
+   },
+   {
+    "description": "Cereals, corn grits, white, regular and quick, enriched, dry",
+    "fdcId": 171654,
+    "per100g": {
+     "carbs_g": 79.1,
+     "fat_g": 1.75,
+     "kcal": 370,
+     "protein_g": 7.65
+    }
+   }
+  ],
+  "query": "Cereals, oats, regular and quick, not fortified, dry"
+ },
+ "olive_oil": {
+  "hits": [
+   {
+    "description": "Oil, olive, salad or cooking",
+    "fdcId": 171413,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 100,
+     "kcal": 884,
+     "protein_g": 0.0
+    }
+   },
+   {
+    "description": "Oil, cottonseed, salad or cooking",
+    "fdcId": 171024,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 100,
+     "kcal": 884,
+     "protein_g": 0.0
+    }
+   },
+   {
+    "description": "Oil, peanut, salad or cooking",
+    "fdcId": 171410,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 100,
+     "kcal": 884,
+     "protein_g": 0.0
+    }
+   },
+   {
+    "description": "Oil, sesame, salad or cooking",
+    "fdcId": 171016,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 100,
+     "kcal": 884,
+     "protein_g": 0.0
+    }
+   },
+   {
+    "description": "Oil, soybean, salad or cooking",
+    "fdcId": 171411,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 100,
+     "kcal": 884,
+     "protein_g": 0.0
+    }
+   },
+   {
+    "description": "Oil, cooking and salad, ENOVA, 80% diglycerides",
+    "fdcId": 171433,
+    "per100g": {
+     "carbs_g": 0.0,
+     "fat_g": 100,
+     "kcal": 884,
+     "protein_g": 0.0
+    }
+   }
+  ],
+  "query": "Oil, olive, salad or cooking"
+ },
+ "peanut_butter": {
+  "hits": [
+   {
+    "description": "Peanut butter, smooth style, without salt",
+    "fdcId": 172470,
+    "per100g": {
+     "carbs_g": 22.3,
+     "fat_g": 51.4,
+     "kcal": 598,
+     "protein_g": 22.2
+    }
+   },
+   {
+    "description": "Peanut butter, smooth style, with salt (Includes foods for USDA's Food Distribution Program)",
+    "fdcId": 174266,
+    "per100g": {
+     "carbs_g": 22.3,
+     "fat_g": 51.4,
+     "kcal": 598,
+     "protein_g": 22.2
+    }
+   },
+   {
+    "description": "Peanut butter, chunk style, with salt",
+    "fdcId": 174265,
+    "per100g": {
+     "carbs_g": 21.6,
+     "fat_g": 49.9,
+     "kcal": 589,
+     "protein_g": 24.1
+    }
+   },
+   {
+    "description": "Peanut butter, smooth, reduced fat",
+    "fdcId": 172458,
+    "per100g": {
+     "carbs_g": 35.6,
+     "fat_g": 34.0,
+     "kcal": 520,
+     "protein_g": 25.9
+    }
+   },
+   {
+    "description": "Peanut butter, chunk style, without salt",
+    "fdcId": 172469,
+    "per100g": {
+     "carbs_g": 21.6,
+     "fat_g": 49.9,
+     "kcal": 589,
+     "protein_g": 24.1
+    }
+   },
+   {
+    "description": "Peanut butter, smooth, vitamin and mineral fortified",
+    "fdcId": 172459,
+    "per100g": {
+     "carbs_g": 18.8,
+     "fat_g": 50.8,
+     "kcal": 591,
+     "protein_g": 25.7
+    }
+   }
+  ],
+  "query": "Peanut butter, smooth style, with salt"
+ },
+ "rice_white_cooked": {
+  "hits": [
+   {
+    "description": "Rice, white, long-grain, regular, enriched, cooked",
+    "fdcId": 168878,
+    "per100g": {
+     "carbs_g": 28.2,
+     "fat_g": 0.28,
+     "kcal": 130,
+     "protein_g": 2.69
+    }
+   },
+   {
+    "description": "Rice, white, long-grain, regular, cooked, enriched, with salt",
+    "fdcId": 169753,
+    "per100g": {
+     "carbs_g": 28.2,
+     "fat_g": 0.28,
+     "kcal": 130,
+     "protein_g": 2.69
+    }
+   },
+   {
+    "description": "Rice, white, long-grain, regular, raw, enriched",
+    "fdcId": 168877,
+    "per100g": {
+     "carbs_g": 80.0,
+     "fat_g": 0.66,
+     "kcal": 365,
+     "protein_g": 7.13
+    }
+   },
+   {
+    "description": "Rice, white, long-grain, regular, cooked, unenriched, with salt",
+    "fdcId": 168935,
+    "per100g": {
+     "carbs_g": 28.2,
+     "fat_g": 0.28,
+     "kcal": 130,
+     "protein_g": 2.69
+    }
+   },
+   {
+    "description": "Rice, white, long-grain, parboiled, enriched, cooked",
+    "fdcId": 169708,
+    "per100g": {
+     "carbs_g": 26.0,
+     "fat_g": 0.37,
+     "kcal": 123,
+     "protein_g": 2.91
+    }
+   },
+   {
+    "description": "Rice, white, long-grain, regular, unenriched, cooked without salt",
+    "fdcId": 169757,
+    "per100g": {
+     "carbs_g": 28.2,
+     "fat_g": 0.28,
+     "kcal": 130,
+     "protein_g": 2.69
+    }
+   }
+  ],
+  "query": "Rice, white, long-grain, regular, enriched, cooked"
+ }
+}

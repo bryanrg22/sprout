@@ -507,7 +507,10 @@ final class CloudKitSyncService: BuddySyncService {
         }
     }
 
-    func publish(mySnapshot snapshot: BuddySnapshotPayload) async throws {
+    func publish(mySnapshot incoming: BuddySnapshotPayload) async throws {
+        // The payload's fields are mutable, so check again at the upload itself: this record
+        // goes to the PUBLIC database, and nothing opt-in may be in it without the opt-in.
+        let snapshot = incoming.sharesFullData ? incoming : incoming.withoutFullData
         try await ensureAvailable()
 
         // One snapshot record per owner — stable record name keyed on the owner id so

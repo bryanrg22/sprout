@@ -1,0 +1,358 @@
+{
+ "run": "20261123-052539-MealDescribe",
+ "tasks": [
+  {
+   "task": "mealDescribe",
+   "dataset": "meal_describe/v1",
+   "cases": 14,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-4-5-20251001",
+     "attempts": 42,
+     "usable": 35,
+     "passed": 34,
+     "pass_rate": 0.8095238095238095,
+     "ci95": [
+      0.6669893264500356,
+      0.9001811039014357
+     ],
+     "per_repeat_pass": [
+      0.8571428571428571,
+      0.8571428571428571,
+      0.7142857142857143
+     ],
+     "latency_p50_s": 2.455,
+     "latency_p95_s": 3.592,
+     "mean_uncached_input_tokens": 1153,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 318.9761904761905,
+     "mean_cost_usd": 0.002747880952380952,
+     "scores": {
+      "carbs_abs_error_g": 0.27428571428571447,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.40714285714285686,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.023351571563811624,
+      "kcal_within_20pct": 0.9714285714285714,
+      "protein_abs_error_g": 1.877142857142857,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 0.6857142857142857
+     },
+     "errors": [
+      "decoding(\"DecodingError.keyNotFound: Key \\'total_calories\\' not found in keyed decoding container. Debug description: No value associated with key CodingKeys(stringValue: \\\"total_calories\\\", intValue: nil) (\\\"total_calories\\\").\")"
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 42,
+     "usable": 42,
+     "passed": 42,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9161983874908382,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.569,
+     "latency_p95_s": 2.123,
+     "mean_uncached_input_tokens": 1155.5714285714287,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 405.42857142857144,
+     "mean_cost_usd": 0.0003182714285714286,
+     "scores": {
+      "carbs_abs_error_g": 0.3023809523809525,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.2642857142857141,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.017472225763404372,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0.29047619047619033,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 0.9285714285714286
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 42,
+     "usable": 41,
+     "passed": 41,
+     "pass_rate": 0.9761904761904762,
+     "ci95": [
+      0.8767851883475174,
+      0.9957847045008997
+     ],
+     "per_repeat_pass": [
+      1.0,
+      0.9285714285714286,
+      1.0
+     ],
+     "latency_p50_s": 3.281,
+     "latency_p95_s": 4.003,
+     "mean_uncached_input_tokens": 1221.5714285714287,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 372.2857142857143,
+     "mean_cost_usd": 0.006166,
+     "scores": {
+      "carbs_abs_error_g": 0.24390243902439038,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.2365853658536586,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.014342563112763485,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0.4146341463414636,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 1
+     },
+     "errors": [
+      "decoding(\"DecodingError.typeMismatch: expected value of type Array<Any>. Path: items. Debug description: Expected to decode Array<Any> but found a string instead.\")"
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5-5",
+     "attempts": 42,
+     "usable": 0,
+     "passed": 0,
+     "pass_rate": 0.0,
+     "ci95": [
+      0.0,
+      0.08380161250916197
+     ],
+     "per_repeat_pass": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "latency_p50_s": 0,
+     "latency_p95_s": 0,
+     "mean_uncached_input_tokens": 0,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 0,
+     "mean_cost_usd": 0.0,
+     "scores": {},
+     "errors": [
+      "badResponse(\"tool_choice: type \\\"tool\\\" and \\\"any\\\" are not supported for this model.\")"
+     ]
+    },
+    {
+     "candidate": "openai:gpt-4.1-mini",
+     "attempts": 42,
+     "usable": 42,
+     "passed": 42,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9161983874908382,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.557,
+     "latency_p95_s": 2.127,
+     "mean_uncached_input_tokens": 337.42857142857144,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 130.8095238095238,
+     "mean_cost_usd": 0.00034426666666666667,
+     "scores": {
+      "carbs_abs_error_g": 0.6166666666666667,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.4095238095238095,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.02165107762234805,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0.430952380952381,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 0.7380952380952381
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-5.6-luna",
+     "attempts": 42,
+     "usable": 42,
+     "passed": 41,
+     "pass_rate": 0.9761904761904762,
+     "ci95": [
+      0.8767851883475174,
+      0.9957847045008997
+     ],
+     "per_repeat_pass": [
+      1.0,
+      0.9285714285714286,
+      1.0
+     ],
+     "latency_p50_s": 2.43,
+     "latency_p95_s": 3.497,
+     "mean_uncached_input_tokens": 331.42857142857144,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 170.4047619047619,
+     "mean_cost_usd": 0.00027077142857142856,
+     "scores": {
+      "carbs_abs_error_g": 2.0904761904761906,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.3380952380952379,
+      "items_sum_to_total": 0.9523809523809523,
+      "kcal_pct_error": 0.030786497770472994,
+      "kcal_within_20pct": 0.9761904761904762,
+      "protein_abs_error_g": 0.21428571428571433,
+      "range_well_formed": 0.8095238095238095,
+      "truth_in_stated_range": 0.7142857142857143
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-5.6-terra",
+     "attempts": 42,
+     "usable": 42,
+     "passed": 42,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9161983874908382,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.653,
+     "latency_p95_s": 3.867,
+     "mean_uncached_input_tokens": 331.42857142857144,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 202.61904761904762,
+     "mean_cost_usd": 0.0030942857142857143,
+     "scores": {
+      "carbs_abs_error_g": 0.2142857142857145,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.33333333333333304,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.018796333966836887,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0.43095238095238103,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 0.9285714285714286
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6-luna",
+     "attempts": 42,
+     "usable": 42,
+     "passed": 42,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9161983874908382,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.193,
+     "latency_p95_s": 2.92,
+     "mean_uncached_input_tokens": 331.42857142857144,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 153.45238095238096,
+     "mean_cost_usd": 0.00010986904761904762,
+     "scores": {
+      "carbs_abs_error_g": 0.8380952380952384,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.5047619047619045,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.02006752390221582,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0.26666666666666666,
+      "range_well_formed": 0.9047619047619048,
+      "truth_in_stated_range": 0.7619047619047619
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.1-terra",
+     "attempts": 42,
+     "usable": 42,
+     "passed": 42,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9161983874908382,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.75,
+     "latency_p95_s": 4.379,
+     "mean_uncached_input_tokens": 331.42857142857144,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 152.45238095238096,
+     "mean_cost_usd": 0.0010936904761904762,
+     "scores": {
+      "carbs_abs_error_g": 0.25476190476190486,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.47857142857142826,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.02103299176455871,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0.5452380952380953,
+      "range_well_formed": 0.9285714285714286,
+      "truth_in_stated_range": 0.8095238095238095
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 42,
+     "usable": 42,
+     "passed": 42,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9161983874908382,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.63,
+     "latency_p95_s": 3.556,
+     "mean_uncached_input_tokens": 356.42857142857144,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 139.88095238095238,
+     "mean_cost_usd": 0.0021116666666666666,
+     "scores": {
+      "carbs_abs_error_g": 0.23809523809523786,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.32142857142857145,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.01727932236176014,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0.2285714285714287,
+      "range_well_formed": 1,
+      "truth_in_stated_range": 0.9047619047619048
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

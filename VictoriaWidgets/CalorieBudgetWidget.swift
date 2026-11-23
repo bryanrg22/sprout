@@ -28,7 +28,10 @@ private struct CalorieBudgetEntryView: View {
         // would otherwise stay at its `.cool` default. Adopt the user's skin (from the
         // snapshot) BEFORE any Theme color — incl. the container background — resolves.
         Theme.current = entry.snap.skin
-        return CalorieBudgetView(snap: entry.snap, family: family)
+        return Group {
+                if entry.isUnavailable { WidgetUnavailableView(family: family) }
+                else { CalorieBudgetView(snap: entry.snap, family: family) }
+            }
             .containerBackground(Theme.background, for: .widget)
             .environment(\.colorScheme, entry.snap.skin.colorScheme)
     }

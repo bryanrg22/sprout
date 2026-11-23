@@ -222,7 +222,7 @@ enum CoachPromptService {
             toolName: "suggest_prompts",
             toolDescription: "Return a few short, personalized quick-prompt chips (in her voice) for the chat input.",
             schema: schema,
-            model: AIConfig.coachModel,
+            model: AIConfig.model(for: .coachPrompts),
             maxTokens: 300          // bounded: a handful of short strings is well under this
         )
 

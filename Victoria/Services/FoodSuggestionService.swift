@@ -159,6 +159,7 @@ struct FoodSuggestionService {
             toolName: "suggest_foods",
             toolDescription: "Return 2–3 specific, additive food suggestions for the user.",
             schema: schema,
+            model: AIConfig.model(for: .foodSuggestions),
             maxTokens: 700        // bounded: 3 short suggestions is well under this
         )
 
