@@ -87,6 +87,9 @@ struct RootView: View {
         .animation(.easeInOut, value: profile?.onboardingComplete)
         .task {
             DemoSeed.seedIfNeeded(context, hasProfile: profile != nil)
+            #if DEBUG
+            ChatDebug.seedLongChatIfRequested(context)   // `--demo-long-chat <n>`
+            #endif
             Diagnostics.shared.log("app launched (onboarded=\(profile?.onboardingComplete == true))", .app)
             // Travel awareness: one timezone comparison — powers the jet-lag framing in
             // Vita's context and the daily brief. (DST changes are filtered out.)
@@ -97,7 +100,12 @@ struct RootView: View {
             await refreshTrackerData(stepsDays: 30, days: 14)
             WidgetDataWriter.refresh(context: context, profile: profile)
             // Ask for notification permission + (re)build gentle reminders once on launch.
-            if let profile, profile.onboardingComplete {
+            var asksForNotifications = true
+            #if DEBUG
+            // A screenshot run cannot tap the permission alert away, so it can ask not to see it.
+            asksForNotifications = !ChatDebug.has("--no-notification-prompt")
+            #endif
+            if let profile, profile.onboardingComplete, asksForNotifications {
                 await NotificationService.refreshOnLaunch(for: profile)
             }
         }
