@@ -103,6 +103,7 @@ enum CoachContext {
             + "log_food tool (one call per distinct item) — you don't need to ask her for the numbers. "
             + "Today's date is \(Self.longDate.string(from: .now))."
         let volatile = data + usage + memoryBlock(memory) + planBlock(plan)
+            + PlanGoalsCopy.coachNote(plan: plan, profile: profile)   // set aside / stale, else ""
         return (stable, volatile)
     }
 

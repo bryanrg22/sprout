@@ -90,7 +90,9 @@ struct FinishSetupCard: View {
 
     private func save() {
         guard !trimmed.isEmpty else { return }
-        KeychainStore.setAPIKey(trimmed, for: AIConfig.provider)
+        // Filed by what the key is (an OpenAI key never lands in the Anthropic slot), and the
+        // active provider follows it. See `AIKeyRouting`.
+        AIKeyRouting.savePastedKey(trimmed)
         focused = false
         draft = ""
         withAnimation { hasKey = true }

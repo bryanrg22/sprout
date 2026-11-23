@@ -570,7 +570,8 @@ struct CoachView: View {
         // `todaysFoods` lets the edit/delete tools resolve "the latte" to a specific row;
         // it's harmless for the settings tools (which ignore it).
         switch CoachTools.parse(name: toolUse.name, input: toolUse.input, profile: profile,
-                                todaysFoods: CoachContext.todaysFoods(foods)) {
+                                todaysFoods: CoachContext.todaysFoods(foods),
+                                currentWeightLbs: TrendCalculator.currentTrend(weights)) {
         case .invalid(let reason):
             continueTurn(history: history,
                          assistantContent: turn.assistantContent,
@@ -597,8 +598,8 @@ struct CoachView: View {
             continueTurn(history: history,
                          assistantContent: turn.assistantContent,
                          toolUseId: toolUse.id,
-                         resultText: "Applied. \(applied.message)",
-                         isError: false,
+                         resultText: applied.resultText,
+                         isError: !applied.changed,   // a declined tool (kg) is not a success
                          depth: depth + 1)
         }
     }

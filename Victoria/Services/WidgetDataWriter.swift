@@ -10,13 +10,19 @@ enum WidgetDataWriter {
     @MainActor
     static func refresh(context: ModelContext, profile: UserProfile?) {
         guard let profile else { return }
-        let cal = Calendar.current
-
         let foods   = (try? context.fetch(FetchDescriptor<FoodEntry>())) ?? []
         let weights = (try? context.fetch(FetchDescriptor<WeightEntry>(sortBy: [SortDescriptor(\.date)]))) ?? []
         let waters  = (try? context.fetch(FetchDescriptor<WaterEntry>())) ?? []
         let steps   = (try? context.fetch(FetchDescriptor<StepsEntry>())) ?? []
+        WidgetSharedStore.save(snapshot(profile: profile, foods: foods, weights: weights,
+                                        waters: waters, steps: steps))
+        WidgetCenter.shared.reloadAllTimelines()
+    }
 
+    /// The snapshot for these rows: everything `refresh` writes, with no store and no WidgetKit.
+    static func snapshot(profile: UserProfile, foods: [FoodEntry], weights: [WeightEntry],
+                         waters: [WaterEntry], steps: [StepsEntry],
+                         calendar cal: Calendar = .current) -> WidgetSnapshot {
         let todayFood = foods.filter { cal.isDateInToday($0.date) }
         let eaten   = todayFood.reduce(0) { $0 + $1.totalCalories }
         let protein = todayFood.reduce(0) { $0 + $1.totalProteinG }
@@ -34,7 +40,7 @@ enum WidgetDataWriter {
         let waterToday = waters.filter { cal.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz }
         let spark = Array(TrendCalculator.trend(weights).suffix(14).map(\.value))
 
-        let snap = WidgetSnapshot(
+        return WidgetSnapshot(
             updated: .now,
             // First name only — the widget is narrow and a full name truncates ("Bryan Ramir…").
             name: profile.name.isEmpty ? "Your"
@@ -57,7 +63,5 @@ enum WidgetDataWriter {
             // scale-synced weights, which would otherwise inflate the streak. See StreakCalculator.
             streak: StreakCalculator.loggingStreak(foods: foods, waters: waters, weights: weights, calendar: cal)
         )
-        WidgetSharedStore.save(snap)
-        WidgetCenter.shared.reloadAllTimelines()
     }
 }

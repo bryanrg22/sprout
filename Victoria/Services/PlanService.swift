@@ -79,12 +79,16 @@ enum PlanService {
             existing.researchNotes = research.notes   // the cited brief that grounded this build
             try? context.save()
             existing.clearGoalsChanged()              // built against the goals as they are now
+            existing.anchorTargets(to: profile.pace.direction)   // its numbers are for this direction
+            PlanTargetSync.apply(plan: existing, to: profile)    // and drive the targets from here
             return existing
         }
         fresh.researchNotes = research.notes
         context.insert(fresh)
         try? context.save()
         fresh.clearGoalsChanged()
+        fresh.anchorTargets(to: profile.pace.direction)
+        PlanTargetSync.apply(plan: fresh, to: profile)
         return fresh
     }
 
