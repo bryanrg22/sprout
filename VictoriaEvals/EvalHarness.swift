@@ -151,10 +151,54 @@ struct EvalOutcome {
     var pass: Bool
     var output: String
 
-    static func failed(_ error: Error) -> EvalOutcome {
+    static func failed(_ error: Error) -> EvalOutcome { failed(error, output: "") }
+
+    /// A failure that still has the model's reply in hand (a reply the app could not decode).
+    static func failed(_ error: Error, output: String) -> EvalOutcome {
         EvalOutcome(ok: false, error: String(describing: error).prefix(300).description,
-                    scores: [:], pass: false, output: "")
+                    scores: [:], pass: false, output: String(output.prefix(EvalRunner.outputLimit)))
     }
+
+    /// The app showed its template or its fallback instead of the model's reply: the call
+    /// failed (`raw` is nil), or the feature's own guardrail threw the reply away. Both
+    /// count as "not used"; the record says which, and keeps the reply.
+    static func notUsed(raw: String?, failure: String?, discardedBy guardrail: String) -> EvalOutcome {
+        let error = raw == nil ? "the call failed" + (failure.map { ": \($0)" } ?? "")
+                               : "\(guardrail) discarded the reply"
+        return EvalOutcome(ok: false, error: String(error.prefix(300)), scores: ["used": 0], pass: false,
+                           output: String((raw ?? "").prefix(EvalRunner.outputLimit)))
+    }
+}
+
+/// A transport that hands every request to the one in force and keeps each response body.
+/// This is how an evaluation calls the app's own function (which returns nil, or throws,
+/// when its guardrail or its decoder rejects a reply) and still records what the model wrote.
+final class ResponseRecorder: AITransport, @unchecked Sendable {
+    private let inner: any AITransport
+    private let lock = NSLock()
+    private var bodies: [Data] = []
+
+    init(around inner: any AITransport) { self.inner = inner }
+
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let (data, response) = try await inner.data(for: request)
+        lock.withLock { bodies.append(data) }
+        return (data, response)
+    }
+
+    var last: Data? { lock.withLock { bodies.last } }
+}
+
+/// What a recorded call produced: the app's own result, and the model's reply behind it.
+struct Recorded<T> {
+    let result: Result<T, Error>
+    /// The model's reply in the last response (text, or the JSON of a tool call's input);
+    /// nil when no response carried one.
+    let raw: String?
+    /// The provider's error message in the last response, if it was an error.
+    let failure: String?
+
+    var value: T? { try? result.get() }
 }
 
 enum EvalRunner {
@@ -224,6 +268,70 @@ enum EvalRunner {
             while await group.next() != nil { addNext() }
         }
         XCTAssertEqual(writer.count, jobs.count, "every job must leave a record")
+    }
+
+    /// Longest reply kept in a record (the memory fold's two blocks can reach 2,500 characters).
+    static let outputLimit = 4000
+
+    /// Runs `body`, which calls the app's real code path, with every provider response
+    /// recorded. The runtime in force is kept as it is (provider, key, model, usage
+    /// reporting); only its transport is wrapped.
+    static func recording<T>(isolation: isolated (any Actor)? = #isolation,
+                             _ body: () async throws -> T) async -> Recorded<T> {
+        let recorder = ResponseRecorder(around: AIRuntime.transport)
+        var runtime = AIRuntime.current ?? AIRuntime()
+        runtime.transport = recorder
+        let result: Result<T, Error>
+        do {
+            result = .success(try await AIRuntime.$current.withValue(runtime) { try await body() })
+        } catch {
+            result = .failure(error)
+        }
+        let reply = recorder.last.map(modelOutput(inResponse:))
+        return Recorded(result: result, raw: reply?.text, failure: reply?.failure)
+    }
+
+    /// What the model wrote in one provider response, whichever wire format it is in:
+    /// Anthropic Messages (`content` blocks), OpenAI Responses (`output` items) or OpenAI
+    /// Chat Completions (`choices`). Text is returned as it is; a tool call is returned as
+    /// the JSON of its input. `failure` is the provider's error message, if there is one.
+    static func modelOutput(inResponse data: Data) -> (text: String?, failure: String?) {
+        guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return (nil, nil) }
+        let failure = (json["error"] as? [String: Any])?["message"] as? String
+        var parts: [String] = []
+        // Only what the app itself reads: a reasoning or thinking block is not the reply.
+        for block in (json["content"] as? [[String: Any]]) ?? [] {                   // Anthropic
+            switch block["type"] as? String {
+            case "text": if let text = block["text"] as? String { parts.append(text) }
+            case "tool_use": if let input = block["input"] as? [String: Any] { parts.append(compactJSON(input)) }
+            default: break
+            }
+        }
+        for item in (json["output"] as? [[String: Any]]) ?? [] {                     // OpenAI Responses
+            switch item["type"] as? String {
+            case "message":
+                for block in (item["content"] as? [[String: Any]]) ?? [] where (block["type"] as? String) == "output_text" {
+                    if let text = block["text"] as? String { parts.append(text) }
+                }
+            case "function_call": if let arguments = item["arguments"] as? String { parts.append(arguments) }
+            default: break
+            }
+        }
+        if let message = (json["choices"] as? [[String: Any]])?.first?["message"] as? [String: Any] {  // Chat Completions
+            if let text = message["content"] as? String { parts.append(text) }
+            for call in (message["tool_calls"] as? [[String: Any]]) ?? [] {
+                if let arguments = (call["function"] as? [String: Any])?["arguments"] as? String { parts.append(arguments) }
+            }
+        }
+        if parts.isEmpty, let text = json["output_text"] as? String { parts.append(text) }
+        let text = parts.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return (text.isEmpty ? nil : text, failure)
+    }
+
+    /// A reply that should be a JSON object (a tool call's input), or nil.
+    static func jsonObject(_ text: String?) -> [String: Any]? {
+        guard let text, let data = text.data(using: .utf8) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
     }
 
     static func compactJSON(_ object: Any) -> String {

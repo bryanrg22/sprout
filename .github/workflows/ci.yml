@@ -95,8 +95,8 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       # The evaluation harness's own checks: graders against hand-written outputs and
-      # every dataset row against the app. The four live evaluations skip here
-      # (no key, by design), which is why exactly 4 skips are allowed.
+      # every dataset row against the app. The twelve live evaluations skip here
+      # (no key, by design), which is why exactly 12 skips are allowed.
       - name: Evaluation harness self-tests (offline)
         run: |
           set -o pipefail
@@ -109,7 +109,7 @@ jobs:
 
       - name: Verify evaluation self-test counts
         if: ${{ !cancelled() }}
-        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 41 --max-skipped 4
+        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 91 --max-skipped 12
 
       - name: Upload result bundles
         if: ${{ !cancelled() }}

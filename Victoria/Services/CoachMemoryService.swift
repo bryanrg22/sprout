@@ -221,7 +221,7 @@ enum CoachMemoryService {
     }
 
     /// Drop a leading/trailing ```json … ``` fence if the model added one despite instructions.
-    private static func stripCodeFences(_ s: String) -> String {
+    static func stripCodeFences(_ s: String) -> String {
         var t = s.trimmingCharacters(in: .whitespacesAndNewlines)
         guard t.hasPrefix("```") else { return t }
         // Remove the first line (``` or ```json) and a trailing ``` line.

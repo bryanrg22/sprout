@@ -5,6 +5,9 @@
 #   Evals/run.sh <eval> "<provider:model[@effort]>[,...]" [repeats] [limit]
 #
 #   eval      MealDescribe | CoachToolChoice | DailyBrief | Avatar
+#             | InsightLine | WeeklyReflection | OnboardingNote | MemoryFold    (cheap-tier wording tasks)
+#             | ProgressSummary | FoodSuggestions | CoachPrompts | ChecklistPlan (structured tasks; each forces
+#               a tool call, which claude-sonnet-5-5 rejects, so it scores 0% usable on these four)
 #             (Avatar: image models; the @suffix is the image quality, e.g.
 #              "openai:gpt-image-2.6-flare@low,openai:gpt-image-2.6-sunburst@medium";
 #              the cases are the photos in Evals/datasets/avatar/photos/, see its README)
@@ -16,7 +19,7 @@
 # The keys are read from the environment only; they are never written to a record.
 set -euo pipefail
 
-EVAL="${1:?eval name: MealDescribe | CoachToolChoice | DailyBrief | Avatar}"
+EVAL="${1:?eval name: one of those listed at the top of this script, e.g. MealDescribe or InsightLine}"
 MODELS="${2:?models, e.g. anthropic:claude-haiku-4-5,openai:gpt-4.1-mini}"
 REPEATS="${3:-1}"
 LIMIT="${4:-}"
