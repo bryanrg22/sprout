@@ -18,6 +18,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 6 | The model line-up on 2026-11-22, and what it does to the current defaults | 2026-11-22 |
 | 7 | Distribution: why the app stopped opening, and the ways to stop that recurring | 2026-11-22 |
 | 8 | Continuous integration | 2026-11-22 |
+| 9 | Test evidence for build 16, and what the tests do not cover | 2026-11-22 |
 
 ---
 
@@ -326,3 +327,60 @@ when the minimum is not met; gitleaks is clean over 85 commits; the scripts pars
 **Not verified:** the workflow has never run on GitHub. The simulator-creation step,
 the runner's Xcode 26.4.1 against a project developed on 26.4, and the unsigned Release
 build are each untested until the branch is pushed. Expect the first run to need a fix.
+
+## 9. Test evidence for build 16, and what the tests do not cover (2026-11-22)
+
+`docs/test-evidence/v2.1.0-b16/`, captured by `tooling/evidence/capture.sh` from the tree
+that was then committed with it (the files were uncommitted at capture time and the
+manifest lists them). **Verified by running:**
+
+| Gate | Result |
+|---|---|
+| Unit suite | **491 passed, 0 failed, 0 skipped** (443 at the start of the day) |
+| Evaluation harness self-tests | 16 passed, 3 skipped (the live evaluations) |
+| Release build | succeeded |
+| Secret scan, full history | no leaks |
+| Signed device archive of 2.1 (16) | `ARCHIVE SUCCEEDED` (built separately; not exported or uploaded) |
+
+**The number that matters more than 491: the tests execute 19.1% of the app's lines**
+(9,143 of 47,820; the widget extension 4.1%). The suite is deep where the logic is pure
+(nutrition maths, trend, streaks, merges, parsers, the tool parser) and absent where the
+app is a screen or a network conversation.
+
+`VictoriaTests/LEDGER.md` lists every test file with the invariant it protects, and the
+logic no test reaches. The ten highest-risk untested areas, from that ledger:
+
+1. The coach's turn loop in `CoachView` (confirm gate, depth cap, undo, memory
+   write-back). It lives inside a view and cannot be called from a test as written.
+2. `CloudKitSyncService`: the pairing handshake, the public-database publish, record mapping.
+3. `VictoriaApp`: the full 20-model schema is never opened in a test; the silent
+   in-memory fallback; no migration plan.
+4. `BuddyViewModel`'s publish queue and state.
+5. `BuddyStateComposer.compose` (what a buddy is shown).
+6. Anthropic `chatWithTools` response handling (several tool calls in one turn, a turn cut
+   off mid-tool-call).
+7. Google Health token exchange and refresh.
+8. Seven coach tools with no test anywhere, and four more tested for parsing only.
+9. `PlanService.generate` and `review`.
+10. `ScanView.parseNutritionLabel`, the label OCR parser.
+
+Tests the ledger judged able to fail for reasons other than a defect (**read, not
+observed failing**): `TravelSignalTests.testCheckNowRecordsShiftAndCurrentExpires` in the
+weeks when US and EU daylight saving are out of step; tests in `BuddyMilestones`,
+`CoachContextItems`, `HealthTrackerImport` and `CoachToolsWrite` that read the wall clock
+and can straddle midnight; `DailyBriefTests.testBigDaySteadyHeartIsCrossSignal`, which
+depends on the locale's number formatting; `OpenAIProviderTests.testPlanModelFollowsProvider`,
+which fails if a plan-model override is set on the simulator. None failed today.
+
+**Layers that do not exist:** UI tests (no XCUITest target), snapshot tests, migration
+tests, any test against CloudKit, any performance test, a test plan file. The
+recommended order for adding them is in `research-standards.md` section B.11; the next
+two by value are SwiftData integration tests that run every ingest path twice on the
+production schema in memory, and three to five UI smoke flows seeded by launch argument
+with a scripted model.
+
+**What "verified" covers for this build.** The four fixes of section 3 are verified at
+the level of their unit tests. Nothing in this change was exercised in the running app's
+UI, no request was sent to a model provider, nothing was sent to CloudKit, and the CI
+workflow has not run. The first live evaluation doubles as the first real request
+through the changed clients on both providers and should come before an upload.

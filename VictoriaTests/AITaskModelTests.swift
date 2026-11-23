@@ -63,13 +63,19 @@ final class AITaskModelTests: XCTestCase {
     }
 
     func testEveryMeasuredDefaultCitesItsEvalSection() {
-        for (task, byProvider) in AIConfig.measuredDefaults {
-            for (provider, choice) in byProvider {
-                XCTAssertTrue(choice.evidence.hasPrefix("EVAL_REPORT "),
-                              "\(task) on \(provider) must cite the section that measured it")
-                XCTAssertFalse(choice.model.isEmpty)
-            }
-        }
+        XCTAssertEqual(AIConfig.uncitedDefaults(in: AIConfig.measuredDefaults), [])
+    }
+
+    func testTheCitationRuleRejectsRowsWithoutASection() {
+        // The shipped table may be empty, so the rule is exercised on a table that breaks it.
+        let table: [AITask: [AIProvider: AITaskDefault]] = [
+            .dailyBrief: [.openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 9"),
+                          .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "seemed fine")],
+            .mealPhoto: [.openai: AITaskDefault(model: "", evidence: "EVAL_REPORT 10")],
+            .coachTurn: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT ")],
+        ]
+        XCTAssertEqual(AIConfig.uncitedDefaults(in: table),
+                       ["coachTurn/anthropic", "dailyBrief/anthropic", "mealPhoto/openai"])
     }
 
     func testSettingsOverrideForTheTierBeatsTheDefault() {

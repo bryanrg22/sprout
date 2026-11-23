@@ -66,6 +66,18 @@ extension AIConfig {
     /// that justifies it, and `AITaskModelTests` pins every resolved value.
     static let measuredDefaults: [AITask: [AIProvider: AITaskDefault]] = [:]
 
+    /// Rows of a defaults table that do not say which EVAL_REPORT section measured them.
+    /// The rule is a function of the table so it can be tested on a table that breaks it.
+    static func uncitedDefaults(in table: [AITask: [AIProvider: AITaskDefault]]) -> [String] {
+        table.flatMap { task, byProvider in
+            byProvider.compactMap { provider, choice in
+                let cited = choice.evidence.hasPrefix("EVAL_REPORT ")
+                    && Int(choice.evidence.dropFirst("EVAL_REPORT ".count)) != nil
+                return (cited && !choice.model.isEmpty) ? nil : "\(task.rawValue)/\(provider.rawValue)"
+            }
+        }.sorted()
+    }
+
     /// The model a task runs on for a provider.
     ///
     /// Order: the user's Settings override for the task's tier (an explicit choice

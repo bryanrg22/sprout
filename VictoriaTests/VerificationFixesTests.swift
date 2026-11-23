@@ -164,6 +164,13 @@ final class VerificationFixesTests: XCTestCase {
         r = FoodLogDay.rolledForward(selected: sunday, lastKnownToday: tuesday,
                                      now: date(2026, 11, 23, 23), calendar: cal)
         XCTAssertEqual(r.selected, sunday, "an earlier browsed day is still valid")
+        // A browsed day that the moved clock has put in the future is pulled back to today:
+        // the view was on Tuesday while "today" was Wednesday, and today is now Monday.
+        let wednesday = date(2026, 11, 25)
+        r = FoodLogDay.rolledForward(selected: tuesday, lastKnownToday: wednesday,
+                                     now: date(2026, 11, 23, 23), calendar: cal)
+        XCTAssertEqual(r.selected, monday, "a selection is never left in the future")
+        XCTAssertEqual(r.today, monday)
     }
 
     func testDaylightSavingDayRollsLikeAnyOther() {
