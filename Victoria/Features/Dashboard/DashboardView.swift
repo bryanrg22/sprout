@@ -417,6 +417,7 @@ struct DashboardView: View {
             switch profile.companionAvatar {
             case .bryan:    PixelArtView(rows: PixelBryan.rows(mood: .happy, eyesOpen: true), palette: PixelBryan.palette)
             case .victoria: PixelArtView(rows: PixelVictoria.rows(mood: .happy, eyesOpen: true), palette: PixelVictoria.palette)
+            case .custom:   CustomCompanionImage(png: profile.customAvatarPNG)
             }
         }
         .frame(width: 30, height: 36)

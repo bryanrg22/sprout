@@ -34,13 +34,20 @@ enum WidgetDataWriter {
         let waterToday = waters.filter { cal.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz }
         let spark = Array(TrendCalculator.trend(weights).suffix(14).map(\.value))
 
+        // The custom character reaches the widget as a small file beside the snapshot; the
+        // snapshot names its digest. A built-in character removes any file left from before.
+        let avatar = profile.companionAvatar
+        let avatarDigest = WidgetAvatarFile.sync(sourcePNG: avatar == .custom ? profile.customAvatarPNG : nil,
+                                                 in: WidgetAvatarFile.defaultDirectory)
+
         let snap = WidgetSnapshot(
             updated: .now,
             // First name only — the widget is narrow and a full name truncates ("Bryan Ramir…").
             name: profile.name.isEmpty ? "Your"
                 : (profile.name.split(separator: " ").first.map(String.init) ?? profile.name).capitalized,
             themeStyleRaw: profile.themeStyle.rawValue,            // so the widget paints in her/his skin
-            companionAvatarRaw: profile.companionAvatar.rawValue,  // so the widget shows the right buddy
+            companionAvatarRaw: avatar.rawValue,                   // so the widget shows the right buddy
+            companionAvatarDigest: avatarDigest,
             calorieTarget: target,
             calorieMax: calMax,
             caloriesEaten: eaten,

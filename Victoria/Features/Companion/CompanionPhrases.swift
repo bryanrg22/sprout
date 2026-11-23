@@ -21,11 +21,18 @@ enum CompanionPhrases {
         "Let's go", "Locked in", "Easy", "Dialed", "Sheesh", "We up",
     ]
 
+    /// A custom character's voice: short, neutral lines that are nobody's catchphrases,
+    /// since the person it was made from has not given it any.
+    static let custom: [String] = [
+        "Here we go", "Nice one", "One step at a time", "Feeling good", "We got this", "Onward",
+    ]
+
     /// The phrase list for a given companion character.
     static func phrases(for avatar: CompanionAvatar) -> [String] {
         switch avatar {
         case .victoria: return victoria
         case .bryan:    return bryan
+        case .custom:   return custom
         }
     }
 

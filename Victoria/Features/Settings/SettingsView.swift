@@ -12,6 +12,8 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     /// Holds the just-generated backup file so a share sheet can present it.
     @State private var exportItem: ExportItem?
+    /// Settings → Appearance → "Make my character" (the same flow as the onboarding step).
+    @State private var showAvatarCreation = false
 
     private struct ExportItem: Identifiable { let id = UUID(); let url: URL }
 
@@ -78,6 +80,9 @@ struct SettingsView: View {
         .sheet(item: $exportItem) { item in
             ActivityShareSheet(items: [item.url])
         }
+        .sheet(isPresented: $showAvatarCreation) {
+            AvatarCreationSheet(profile: profile)
+        }
     }
 
     // MARK: - Your data
@@ -129,6 +134,7 @@ struct SettingsView: View {
             switch profile.companionAvatar {
             case .bryan:    PixelArtView(rows: PixelBryan.rows(mood: .happy, eyesOpen: true), palette: PixelBryan.palette)
             case .victoria: PixelArtView(rows: PixelVictoria.rows(mood: .happy, eyesOpen: true), palette: PixelVictoria.palette)
+            case .custom:   CustomCompanionImage(png: profile.customAvatarPNG)
             }
         }
         .frame(width: 34, height: 41)
@@ -327,8 +333,32 @@ struct SettingsView: View {
                 Picker("Companion", selection: $profile.companionAvatar) {
                     Text("Victoria").tag(CompanionAvatar.victoria)
                     Text("Bryan").tag(CompanionAvatar.bryan)
+                    // Offered only once a custom character exists; without its image the
+                    // choice would resolve straight back to a built-in.
+                    if profile.customAvatarPNG != nil {
+                        Text("My character").tag(CompanionAvatar.custom)
+                    }
                 }
             }
+
+            // A pixel character made from a photo (one call to OpenAI, after consent).
+            Button {
+                showAvatarCreation = true
+            } label: {
+                row(icon: "wand.and.stars") {
+                    Text(profile.customAvatarPNG == nil ? "Make my character" : "Make a new character")
+                        .foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    Text("From a photo")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.textSecondary)
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.textSecondary.opacity(0.6))
+                        .accessibilityHidden(true)
+                }
+            }
+            .accessibilityHint("Turns a photo of you into a pixel character")
 
             // Your primary gym — used to show machine photos + personalize advice. (Doesn't change
             // which machines are listed; the catalog stays the same.)

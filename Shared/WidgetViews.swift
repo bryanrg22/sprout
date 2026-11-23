@@ -232,10 +232,24 @@ struct CompanionView: View {
     private var toGo: Int { Int(max(snap.caloriesRemaining, 0).rounded()) }
     private var fueled: Bool { snap.caloriesRemaining <= 0 }
 
-    /// The right frozen pixel buddy for this profile (Bryan vs Victoria).
+    /// Where the custom character's widget copy is read from. The widget gallery (in the
+    /// app) passes its own directory; the widget itself uses the App Group container.
+    var avatarDirectory: URL? = WidgetAvatarFile.defaultDirectory
+
+    /// The right frozen pixel buddy for this profile: a built-in character, the person's
+    /// own character (one image, whatever the mood), or the neutral mark when that image
+    /// cannot be shown. Never another person's character.
     @ViewBuilder private var companion: some View {
-        if snap.usesBryanAvatar { WidgetPixelBryanView() }
-        else                    { WidgetPixelVictoriaView() }
+        let file = WidgetAvatarFile.read(expectedDigest: snap.companionAvatarDigest, in: avatarDirectory)
+        switch WidgetCompanionArt.resolve(raw: snap.companionAvatarRaw, file: file) {
+        case .builtIn:
+            if snap.usesBryanAvatar { WidgetPixelBryanView() }
+            else                    { WidgetPixelVictoriaView() }
+        case .custom(let png):
+            WidgetCustomAvatarView(png: png)
+        case .neutral:
+            WidgetNeutralCompanionView()
+        }
     }
 
     // systemSmall — companion in its step ring on the left, calories-to-go on the right.

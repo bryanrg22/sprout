@@ -287,6 +287,10 @@ struct CompanionCard: View {
             switch profile.companionAvatar {
             case .bryan:    PixelBryanView(mood: state.mood, eyesOpen: open)
             case .victoria: PixelVictoriaView(mood: state.mood, eyesOpen: open)
+            // One image whatever the mood or blink (version 1); the ring, halo and aura
+            // around it still carry the mood. Same 120×144 box as the grid characters.
+            case .custom:   CustomCompanionImage(png: profile.customAvatarPNG)
+                                .frame(width: 120, height: 144)
             }
         }
     }

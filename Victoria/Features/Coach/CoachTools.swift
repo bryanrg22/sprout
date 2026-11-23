@@ -799,7 +799,7 @@ enum CoachTools {
         "description": """
         Set the user's little COMPANION — its name and/or its pixel avatar. Provide whichever she \
         wants to change (at least one). The avatar choices are \
-        \(CompanionAvatar.allCases.map { "\"\($0.rawValue)\"" }.joined(separator: " or ")). Use when \
+        \(CompanionAvatar.builtIns.map { "\"\($0.rawValue)\"" }.joined(separator: " or ")). Use when \
         she says e.g. "rename my buddy to Sprout" (name) or "make my companion Bryan" (avatar). \
         This is a fun cosmetic change and applies right away (she can undo).
         """,
@@ -810,7 +810,7 @@ enum CoachTools {
                 "avatar": [
                     "type": "string",
                     "description": "Which pixel avatar the companion uses, if changing it.",
-                    "enum": CompanionAvatar.allCases.map { $0.rawValue },
+                    "enum": CompanionAvatar.builtIns.map { $0.rawValue },
                 ],
             ],
         ],
@@ -1569,8 +1569,10 @@ enum CoachTools {
         }
         var avatar: CompanionAvatar?
         if let a = (input["avatar"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !a.isEmpty {
-            guard let parsed = CompanionAvatar(rawValue: a.lowercased()) else {
-                let names = CompanionAvatar.allCases.map { "\"\($0.rawValue)\"" }.joined(separator: " or ")
+            // Only the built-in characters: a custom one needs an image, which is made in
+            // Settings → Appearance, not by a tool call.
+            guard let parsed = CompanionAvatar(rawValue: a.lowercased()), parsed.isBuiltIn else {
+                let names = CompanionAvatar.builtIns.map { "\"\($0.rawValue)\"" }.joined(separator: " or ")
                 return .invalid("\"\(a)\" isn't an avatar I have — pick \(names). Nothing was changed.")
             }
             avatar = parsed

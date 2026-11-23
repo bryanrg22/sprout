@@ -37,19 +37,29 @@ struct RootView: View {
         case "workout":      WorkoutLogView()                                   // brings its own NavigationStack
         case "achievements": NavigationStack { AchievementsView(profile: profile) }
         case "buddy":        NavigationStack { BuddyHomeView() }
+        case "settings":     SettingsView(profile: profile)
+        case "avatar":       AvatarCreationSheet(profile: profile)
         default:             MainTabView(profile: profile)
         }
     }
 
     /// The active visual skin, from the profile — defaults to `.cute` for onboarding /
     /// first run (either look can be the first; Bryan switches to Cool in Settings).
-    private var themeStyle: ThemeStyle { profile?.themeStyle ?? .cute }
+    private var themeStyle: ThemeStyle {
+        #if DEBUG
+        if profile == nil, let look = OnboardingView.debugLook { return look }   // screenshots only
+        #endif
+        return profile?.themeStyle ?? .cute
+    }
 
     var body: some View {
         // Set the global skin BEFORE the subtree reads any Theme color; `.id` rebuilds
         // the subtree when the user flips themes so every token + the scheme re-resolve.
         Theme.current = themeStyle.skin
         return content
+            // The custom character, once, for every view that draws the companion from a
+            // `CompanionAvatar` alone (see `CustomCompanionImage`).
+            .environment(\.customCompanionPNG, profile?.customAvatarPNG)
             .tint(Theme.brand)
             .preferredColorScheme(themeStyle.skin.colorScheme)
             .id(themeStyle)
