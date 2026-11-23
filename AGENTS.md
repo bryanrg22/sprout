@@ -152,6 +152,11 @@ xcrun simctl launch <UDID> com.bryanram.victoria --seed-demo               # lig
 xcrun simctl launch <UDID> com.bryanram.victoria --seed-demo --demo-gain   # dark theme, lean-gain
 # also: --demo-fueled, --demo-tab <food|progress|coach|workouts>, --demo-screen <workout|achievements|buddy>
 # (--demo-tab workouts opens Gym mode; the others open that tab in Home mode)
+# the coach chat, DEBUG only (Victoria/Features/Coach/CoachDebug.swift has the full list):
+#   --demo-long-chat <n>        replace the conversation with n seeded messages
+#   --chat-probe                log load time and memory to tmp/chat-probe.log in the data container
+#   --chat-debug-script <name>  answer the coach from a canned script (ok, tool, confirm, flaky, 401, 429, …)
+#   --no-notification-prompt    skip the permission alert (a screenshot run cannot tap it away)
 ```
 
 - Seeding only happens when no profile exists. To reseed: terminate app, then delete the
