@@ -17,7 +17,7 @@ struct ProgressSummary: Codable, Equatable {
 /// load-bearing tone contract — celebrate real results, be direct, NO therapy-speak / shame.
 struct ProgressSummaryService {
 
-    private static let system = """
+    static let system = """
     You are the coach inside a results-focused weight + nutrition app, writing a short \
     PROGRESS RECAP for the user from a factual snapshot of their journey. Report it by \
     calling the `write_summary` tool — return ONLY the tool call, no other text.
@@ -45,7 +45,7 @@ struct ProgressSummaryService {
     (each 3–8 words; a leading emoji is welcome). Keep all of it tight.
     """
 
-    private static let schema: [String: Any] = [
+    static let schema: [String: Any] = [
         "type": "object",
         "properties": [
             "headline": ["type": "string"],
