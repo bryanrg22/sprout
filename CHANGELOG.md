@@ -45,6 +45,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **A chat that holds up.** Select text in Vita's replies and ask about just that part;
+  copy, share or quote any message; long conversations open fast and load earlier
+  messages as you scroll up; and when something fails Vita says what (offline, a rejected
+  key, a rate limit with a countdown) and lets you retry without retyping (EVAL_REPORT 20).
 - **More of the label.** Fiber, sugars and added sugars, saturated and trans fat, sodium,
   cholesterol, potassium, calcium, iron and vitamin D, per food and per day, from
   barcodes, label scans, photos, descriptions, Vita and manual entry. A value nobody knows
@@ -76,7 +80,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 984 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- Tests: 443 → 1,098 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
 - UI smoke flows: 15 end-to-end flows against a scripted model (EVAL_REPORT 17).
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).
