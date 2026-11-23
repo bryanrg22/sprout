@@ -1586,3 +1586,50 @@ On a slow CI runner two flows failed that pass locally: a tap on a menu item the
 it existed, lost mid-animation, and typing into a field before it had the keyboard. The
 shared helpers now wait for an element to be hittable before tapping and retry a field's
 tap until it has the keyboard focus.
+
+## 30. Structured answers from the Claude models that refuse a forced tool call (2026-11-23)
+
+Objective G1. The app gets every structured answer (meal estimates, food suggestions, the
+checklist, the progress recap, the coach's prompt chips) by forcing a tool call. Checked
+against the API: **`claude-sonnet-5-5`, `claude-opus-5-5` and `claude-fable-5-2` all
+refuse that** with a 400. Anyone typing one of them into Settings → AI provider lost every
+structured feature; section 22 measured `claude-sonnet-5-5` at 0% usable on all four it ran.
+
+**The change** (`AnthropicStructuredFormat.swift`): for those three models, and for any
+other model that answers with that exact refusal (one failed request, then the same call
+again), the request asks for Anthropic's JSON-schema response format instead, and the
+answer is the reply's text. Two things that format needs, both found by trying it: every
+object must say `additionalProperties: false` (a 400 otherwise), and it does not accept
+limits on array length beyond 0 or 1, on numbers or on string length. Those limits move
+into the field's description, where the model still reads them, **and are checked on the
+answer**, because the format no longer enforces them. An answer that breaks one is not
+used; the feature falls back to its built-in text. A format answer that stopped at the
+output cap is never used either, even when its text parses (Anthropic's guidance for these
+models). The double-encoded-field repair of section 22 still applies.
+
+**Measured** on `claude-sonnet-5-5`, the five structured tasks (0% usable before):
+
+| Task | Usable | Passed |
+|---|---|---|
+| Checklist (3 repeats) | 48 / 48 | 48 / 48 |
+| Coach prompt chips | 16 / 16 | 16 / 16 |
+| Meal description | 14 / 14 | 14 / 14 |
+| Food suggestions (3 repeats, with the answer check) | 52 / 54 | 52 / 54 |
+| Progress recap | 15 / 15 | 11 / 15 |
+
+Read, not counted: the two food-suggestion misses are the model returning ONE suggestion
+where two or three are asked for. Before the answer check, the first run let one through,
+and the app would have shown it as "x placeholder: placeholder". They are now rejected.
+The four recap misses are derived numbers ("13.2 lb remain", a goal date), the grader
+question already open in section 22, not the format.
+
+**Tests:** 16 unit tests (listed in the ledger). An evaluation self-test that scripted
+"a refusal means unusable" now scripts "a refusal, then the format answer is used; a
+second failure is reported".
+
+**Not verified:** `claude-opus-5-5` and `claude-fable-5-2` beyond the refusal itself (no
+evaluation run on them; Fable costs $10 / $50 per million tokens); the meal photo task
+(only the typed description was run).
+
+**Spend:** $1.17 (181 attempts and 8 probe requests). **Spend to date: $23.02 over
+11,107 attempts.**

@@ -6,8 +6,8 @@
 #
 #   eval      MealDescribe | CoachToolChoice | DailyBrief | Avatar
 #             | InsightLine | WeeklyReflection | OnboardingNote | MemoryFold    (cheap-tier wording tasks)
-#             | ProgressSummary | FoodSuggestions | CoachPrompts | ChecklistPlan (structured tasks; each forces
-#               a tool call, which claude-sonnet-5-5 rejects, so it scores 0% usable on these four)
+#             | ProgressSummary | FoodSuggestions | CoachPrompts | ChecklistPlan (structured tasks: a forced
+#               tool call, or the JSON-schema format on the models that refuse one, EVAL_REPORT 30)
 #             (Avatar: image models; the @suffix is the image quality, e.g.
 #              "openai:gpt-image-2.6-flare@low,openai:gpt-image-2.6-sunburst@medium";
 #              the cases are the photos in Evals/datasets/avatar/photos/, see its README)

@@ -250,6 +250,12 @@ struct AnthropicClient {
                     model: String = AIConfig.foodModel,
                     maxTokens: Int = 1300) async throws -> [String: Any] {
         let model = AIRuntime.resolve(model: model)
+        // A model known to refuse a forced tool call goes straight to the JSON-schema format;
+        // any other model that refuses is moved there on its 400 (`AnthropicStructuredFormat`).
+        if AnthropicStructuredFormat.refusesForcedToolChoice(model) {
+            return try await structuredByFormat(system: system, userContent: userContent, schema: schema,
+                                                model: model, maxTokens: maxTokens)
+        }
         let tool: [String: Any] = [
             "name": toolName,
             "description": toolDescription,
@@ -263,7 +269,14 @@ struct AnthropicClient {
             "tool_choice": ["type": "tool", "name": toolName],
             "messages": [["role": "user", "content": userContent]],
         ]
-        let json = try await send(body)
+        let json: [String: Any]
+        do {
+            json = try await send(body)
+        } catch where AnthropicStructuredFormat.isForcedToolRefusal(error) {
+            Diagnostics.shared.log("anthropic \(model): refuses a forced tool call; using the JSON-schema format", .ai)
+            return try await structuredByFormat(system: system, userContent: userContent, schema: schema,
+                                                model: model, maxTokens: maxTokens)
+        }
         guard let content = json["content"] as? [[String: Any]] else {
             throw AIConfig.AIError.decoding("missing content")
         }
@@ -273,6 +286,42 @@ struct AnthropicClient {
             }
         }
         throw Self.emptyReplyError(json, model: model, cap: maxTokens, what: "no tool_use block")
+    }
+
+    /// The same answer through `output_config.format`: the reply's text is the JSON object.
+    private func structuredByFormat(system: String, userContent: Any, schema: [String: Any],
+                                    model: String, maxTokens: Int) async throws -> [String: Any] {
+        var body: [String: Any] = [
+            "model": model,
+            "max_tokens": maxTokens,
+            "system": system,
+            "messages": [["role": "user", "content": userContent]],
+            "output_config": ["format": ["type": "json_schema",
+                                         "schema": AnthropicStructuredFormat.schema(schema)]],
+        ]
+        // As on the plain-text path: a model that thinks first can spend the cap doing so.
+        if let off = AnthropicModelProfile.thinkingOff(for: model) { body["thinking"] = off }
+        let json = try await send(body)
+        guard let content = json["content"] as? [[String: Any]] else {
+            throw AIConfig.AIError.decoding("missing content")
+        }
+        let text = content.compactMap { ($0["type"] as? String) == "text" ? $0["text"] as? String : nil }.joined()
+        guard !text.isEmpty else { throw Self.emptyReplyError(json, model: model, cap: maxTokens, what: "empty text") }
+        // Anthropic: a format answer that stopped at max_tokens is to be treated as failed even
+        // when its text parses, so it is never used.
+        if (json["stop_reason"] as? String) == "max_tokens" {
+            throw AIConfig.AIError.decoding("the answer was cut off at \(maxTokens) tokens")
+        }
+        guard let object = AnthropicStructuredFormat.object(fromText: text) else {
+            throw AIConfig.AIError.decoding("the answer was not a JSON object")
+        }
+        let repaired = StructuredOutputRepair.repair(object, schema: schema)
+        let broken = AnthropicStructuredFormat.violations(repaired, against: schema)
+        guard broken.isEmpty else {
+            Diagnostics.shared.log("anthropic \(model): format answer breaks the schema: \(broken.joined(separator: "; "))", .ai)
+            throw AIConfig.AIError.decoding("the answer broke the schema (\(broken[0]))")
+        }
+        return repaired
     }
 
     // MARK: - Web-search-grounded research (the heavy plan build only)

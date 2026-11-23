@@ -17,7 +17,7 @@ Last updated: 2026-11-22.
 
 | | Objective | Status |
 |---|---|---|
-| G1 | Every model default is chosen by measurement | in progress: 11 of 15 tasks measured, 5 with a changed default, none on a deprecated model (EVAL_REPORT 10, 14, 22); a reply lost to thinking on the newer Claude models is fixed and re-measured (EVAL_REPORT 25); open: structured calls on claude-sonnet-5-5, quality measures for the coach, meals and the four structured tasks, the plan tasks and meal photos |
+| G1 | Every model default is chosen by measurement | in progress: 11 of 15 tasks measured, 5 with a changed default, none on a deprecated model (EVAL_REPORT 10, 14, 22); a reply lost to thinking on the newer Claude models is fixed and re-measured (EVAL_REPORT 25); structured calls on the models that refuse a forced tool call work (EVAL_REPORT 30); open: quality measures for the coach, meals and the four structured tasks, the plan tasks and meal photos |
 | G2 | CI is green and stays the gate | met: 4 of 4 jobs on the pull request and on `main` after the merge |
 | G3 | A widget never shows anyone else's data, or yesterday's as today's | blocked: the owner restarts his phone on a build and looks at the widget before unlocking |
 | G4 | The store returns what was put in | in progress: schema, round trips, merges, queries and the SQL script are done; entry points, on-disk and UI comparison remain |

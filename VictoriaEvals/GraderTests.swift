@@ -1764,11 +1764,19 @@ final class GraderTests: XCTestCase {
         outcome = await scripted([textReply("Here is your recap.")]) { await LiveEvals.progressAttempt(item) }
         XCTAssertFalse(outcome.ok)
         XCTAssertEqual(outcome.output, "Here is your recap.")
-        outcome = await scripted([.json(400, ["error": ["message": "tool_choice is not supported for this model"]])]) {
+        // A model that refuses the forced call is asked again with the JSON-schema format, whose
+        // answer is the reply's text (EVAL_REPORT 30)...
+        let refusal: ScriptedTransport.Reply = .json(400, ["error": ["message": "tool_choice is not supported for this model"]])
+        let goodText = String(data: try JSONSerialization.data(withJSONObject: good), encoding: .utf8)!
+        outcome = await scripted([refusal, textReply(goodText)]) { await LiveEvals.progressAttempt(item) }
+        XCTAssertTrue(outcome.ok, outcome.error ?? "")
+        XCTAssertTrue(outcome.pass)
+        // ...and when that fails too, the call is not usable and says why.
+        outcome = await scripted([refusal, .json(400, ["error": ["message": "overloaded schema"]])]) {
             await LiveEvals.progressAttempt(item)
         }
         XCTAssertFalse(outcome.ok)
-        XCTAssertTrue(outcome.error?.contains("tool_choice is not supported") ?? false, outcome.error ?? "")
+        XCTAssertTrue(outcome.error?.contains("overloaded schema") ?? false, outcome.error ?? "")
     }
 
     // MARK: - foodSuggestions
