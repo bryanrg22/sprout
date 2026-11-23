@@ -81,8 +81,8 @@ jobs:
       - name: Verify unit test counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1098 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1098
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1099 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1099
 
       - name: Coverage by target
         if: ${{ !cancelled() }}
@@ -222,6 +222,13 @@ jobs:
           persist-credentials: false
       - name: Scripts compile
         run: python3 -m py_compile tooling/*.py Evals/*.py Evals/datasets/*/*.py
+      # The checker must find a schema that lacks what the manifest lists, and pass one that has it.
+      - name: CloudKit schema checker agrees with the committed schemas
+        run: |
+          python3 tooling/check_cloudkit_schema.py docs/cloudkit/schema-development-2026-11-23.ckdb docs/cloudkit/model-manifest.json
+          if python3 tooling/check_cloudkit_schema.py docs/cloudkit/schema-production-2026-11-23.ckdb docs/cloudkit/model-manifest.json > /dev/null; then
+            echo "the checker passed a schema known to be missing 18 record types"; exit 1
+          fi
       - name: Shell scripts parse
         run: bash -n Evals/run.sh && bash -n tooling/evidence/capture.sh
       # Builds temporary SQLite stores with one violation of each rule and checks the

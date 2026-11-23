@@ -240,6 +240,7 @@
 		C0F535D1E5108A4F3C8E453C /* WorkoutLogFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A643AED41ECECF35F6B8DE0 /* WorkoutLogFlow.swift */; };
 		C374AF768A97710B0A87EFA3 /* AIRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2212ADD4A554F5E9AC9AF5FB /* AIRuntime.swift */; };
 		C4836AC4967F889127359112 /* CoachContextItemsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E30C4AE8F36B15F1CBC8BD70 /* CoachContextItemsTests.swift */; };
+		C690B096FB86287BDC81737E /* CloudKitSchemaManifestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17045926E7A0FE3560871D57 /* CloudKitSchemaManifestTests.swift */; };
 		C6F16BA8A960690B12D6DF23 /* GoogleHealthSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19DAF858E08B8CB3BEB9DE4 /* GoogleHealthSettingsView.swift */; };
 		C7DF343EF1B587C4A66DEA5F /* OpenFoodFactsDetailTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDAF5349598D8B3D952079D4 /* OpenFoodFactsDetailTests.swift */; };
 		C967E16A1DAEE1BEB037D975 /* DetectedWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FDD671E6D161D740EBFF814 /* DetectedWorkout.swift */; };
@@ -370,6 +371,7 @@
 		114CF6B6DDBABA9A1F5E69ED /* NudgeButtonsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NudgeButtonsRow.swift; sourceTree = "<group>"; };
 		11A32423208EAFBC36161D1C /* LoggingFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingFlowTests.swift; sourceTree = "<group>"; };
 		13B3DD3C193FA5B13818EF83 /* ScriptedTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptedTransport.swift; sourceTree = "<group>"; };
+		17045926E7A0FE3560871D57 /* CloudKitSchemaManifestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSchemaManifestTests.swift; sourceTree = "<group>"; };
 		184871AE7BB850D549B3B194 /* ChecklistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistItem.swift; sourceTree = "<group>"; };
 		19061CEB334011B4266ADFA5 /* FoodSuggestionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodSuggestionEngineTests.swift; sourceTree = "<group>"; };
 		190873FBB555D61AB5E4BE1E /* CoachFoodDetailToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachFoodDetailToolTests.swift; sourceTree = "<group>"; };
@@ -975,6 +977,7 @@
 				4448840E1E3639D3B9C3F320 /* ChatTranscriptTests.swift */,
 				EF0D19EC560A702A67C623C5 /* ChatWindowTests.swift */,
 				C0E4CDE039B26F00BB51C618 /* ChecklistPlanTests.swift */,
+				17045926E7A0FE3560871D57 /* CloudKitSchemaManifestTests.swift */,
 				E30C4AE8F36B15F1CBC8BD70 /* CoachContextItemsTests.swift */,
 				190873FBB555D61AB5E4BE1E /* CoachFoodDetailToolTests.swift */,
 				916DE65AB42E40566D66C45A /* CoachMemoryTests.swift */,
@@ -1698,6 +1701,7 @@
 				FB74830A113E716083E4E8E6 /* ChatTurnSupport.swift in Sources */,
 				1E2251F1939D39D9598A63FF /* ChatWindowTests.swift in Sources */,
 				CDEC6AD7C5A3045065BBFC7B /* ChecklistPlanTests.swift in Sources */,
+				C690B096FB86287BDC81737E /* CloudKitSchemaManifestTests.swift in Sources */,
 				C4836AC4967F889127359112 /* CoachContextItemsTests.swift in Sources */,
 				FE8522E149728D0FBE08341B /* CoachFoodDetailToolTests.swift in Sources */,
 				7809433D1B684134ADE42D01 /* CoachMemoryTests.swift in Sources */,
