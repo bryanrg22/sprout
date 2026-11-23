@@ -19,6 +19,8 @@ struct SettingsView: View {
 
     // Weight history, used to derive the current trend for live target math.
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
+    // Newest first, so `.first` is the current plan (as in `CoachPlan.current`).
+    @Query(sort: \CoachPlan.updatedAt, order: .reverse) private var coachPlans: [CoachPlan]
 
     #if DEBUG
     /// Status line for the dev-only CloudKit schema seeder (see `developerSection`).
@@ -39,8 +41,14 @@ struct SettingsView: View {
     /// The EFFECTIVE daily calorie target she actually eats to — the plan's number when a plan is
     /// active (mirrored into the override), else the computed goal. Macros already honor the override.
     private var effectiveCalories: Int { Int(profile.dailyCalorieTarget(weightLbs: currentWeightLbs)) }
-    /// True when the adaptive plan is driving the targets (so the footer can say so).
-    private var planDrivesTargets: Bool { profile.calorieTargetOverride > 0 }
+    /// What sets the targets right now: the plan, the calculation, or the calculation because
+    /// the plan was written for another goal direction. The footers say which.
+    private var targetSource: SettingsCopy.TargetSource {
+        let plan = coachPlans.first
+        return SettingsCopy.targetSource(
+            hasPlanNumbers: plan.map { $0.hasRange || $0.proteinTarget > 0 } ?? false,
+            suspended: PlanTargetSync.isSuspended(plan: plan, for: profile))
+    }
 
     private var macros: NutritionMath.Macros {
         profile.macroTargets(weightLbs: currentWeightLbs)
@@ -69,6 +77,13 @@ struct SettingsView: View {
             .background(Theme.background)
             .navigationTitle("More")
             .navigationBarTitleDisplayMode(.large)
+            // Anything a plan is built around (direction, pace, activity, goal or starting weight,
+            // sex) marks the plan for a rebuild, and the plan's numbers leave or re-enter the
+            // targets with the direction. On the Form, not a row: a row scrolled off screen
+            // stops observing.
+            .onChange(of: PlanGoalInputs(profile)) { old, _ in
+                PlanGoalInputs.profileChanged(from: old, profile: profile, context: context)
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -185,7 +200,8 @@ struct SettingsView: View {
 
     /// ONE place that answers "what exactly am I working toward, and what did I tell it?" —
     /// direction, pace, goal weight, and (finally editable) starting weight, with a plain
-    /// summary of the journey. Everything here recomputes targets on the next read.
+    /// summary of the journey. What a change here does to the targets depends on the plan;
+    /// the footer says which (`SettingsCopy.whatChangingDoes`).
     private var goalsSection: some View {
         Section {
             row(icon: "target") {
@@ -193,15 +209,6 @@ struct SettingsView: View {
                     Text("Lose").tag(GoalPace.Direction.lose)
                     Text("Maintain").tag(GoalPace.Direction.maintain)
                     Text("Gain").tag(GoalPace.Direction.gain)
-                }
-                // A direction or goal-weight change invalidates the plan's PREMISES,
-                // not just its numbers — flag it so PlanCard offers the full
-                // re-research rebuild.
-                .onChange(of: profile.pace.direction) { _, _ in
-                    CoachPlan.current(in: context)?.markGoalsChanged()
-                }
-                .onChange(of: profile.goalWeightLbs) { _, _ in
-                    CoachPlan.current(in: context)?.markGoalsChanged()
                 }
             }
 
@@ -245,28 +252,17 @@ struct SettingsView: View {
         .listRowBackground(Theme.card)
     }
 
-    /// "Started at 158 lb → aiming for 140 lb at a relaxed pace (~0.5 lb/week)." — the
-    /// journey in one sentence, plus a heads-up when direction and goal weight disagree.
+    /// The journey in one sentence, a heads-up when direction and goal weight disagree, and
+    /// what changing these does given what sets the targets today (`SettingsCopy`).
     private var goalsFooterText: String {
-        var text = "Started at \(Int(profile.startWeightLbs)) lb → aiming for \(Int(profile.goalWeightLbs)) lb at a \(profile.pace.label.lowercased()) pace."
-        let current = currentWeightLbs
-        switch profile.pace.direction {
-        case .lose where profile.goalWeightLbs >= current:
-            text += " Heads-up: your goal weight is at or above where you are now — for a lose goal, set it below your current weight."
-        case .gain where profile.goalWeightLbs <= current:
-            text += " Heads-up: your goal weight is at or below where you are now — for a gain goal, set it above your current weight."
-        default:
-            text += " Changing any of these updates your daily targets right away."
-        }
-        return text
+        SettingsCopy.goalsFooter(startWeightLbs: profile.startWeightLbs,
+                                 goalWeightLbs: profile.goalWeightLbs,
+                                 currentWeightLbs: currentWeightLbs,
+                                 pace: profile.pace,
+                                 source: targetSource)
     }
 
-    private var heightText: String {
-        let cm = profile.heightCm
-        let totalInches = cm / 2.54
-        let ft = Int(totalInches) / 12, inch = Int(totalInches.rounded()) % 12
-        return "\(ft)′\(inch)″ (\(Int(cm.rounded())) cm)"
-    }
+    private var heightText: String { SettingsCopy.heightText(cm: profile.heightCm) }
 
     // MARK: - You
 
@@ -507,7 +503,7 @@ struct SettingsView: View {
             }
 
             if profile.waterGoalOzOverride > 0 {
-                Button("Reset to recommended (\(profile.waterAmount(NutritionMath.dailyWaterOz(weightLbs: currentWeightLbs))))") {
+                Button("Reset to recommended (\(profile.waterAmount(profile.recommendedWaterOz)))") {
                     profile.waterGoalOzOverride = 0
                 }
                 .foregroundStyle(Theme.water)
@@ -556,13 +552,12 @@ struct SettingsView: View {
         } header: {
             sectionHeader("Your daily targets")
         } footer: {
-            if planDrivesTargets {
-                footer("Set by your adaptive plan — floor \(Int(profile.calorieTargetOverride)) kcal\(profile.proteinTargetOverride > 0 ? ", protein \(Int(profile.proteinTargetOverride)) g" : ""). Ask Vita to adjust the plan to change these. (Calories are kept at or above a safe minimum.)")
-            } else if calorieGoal.wasClampedToFloor {
-                footer("Adjusted up to a safe minimum — we never recommend going lower. Targets update with your weight and plan.")
-            } else {
-                footer("Calculated from your weight. Updates automatically as you log.")
-            }
+            footer(SettingsCopy.targetsFooter(
+                source: targetSource,
+                planFloor: profile.calorieTargetOverride,
+                planProtein: profile.proteinTargetOverride,
+                clampedToFloor: calorieGoal.wasClampedToFloor,
+                coachName: profile.coachName.isEmpty ? "Vita" : profile.coachName))
         }
         .listRowBackground(Theme.card)
     }

@@ -22,6 +22,10 @@ struct RootView: View {
 
     private var profile: UserProfile? { profiles.first }
 
+    /// Runs before any view reads the provider or asks whether a key is stored: after a
+    /// reinstall the provider choice is gone but the keys are not (`AIKeyRouting`).
+    init() { AIKeyRouting.reconcileProviderAtLaunch() }
+
     /// DEBUG: `--demo-screen <workout|achievements>` deep-links straight to a
     /// quick-link screen (normally reached from the Dashboard) so it can be
     /// screenshotted in isolation. Never used in the normal flow.
@@ -219,20 +223,17 @@ struct MainTabView: View {
         // Keep the app's targets mirroring the plan whenever it's built / reviewed / edited (any of
         // those bumps updatedAt), so a change Vita makes to the plan reflects everywhere instantly.
         .onChange(of: coachPlans.first?.updatedAt) { _, _ in syncPlanTargets() }
+        // A change of goal direction (Settings or Vita) takes the plan's numbers out of the
+        // targets, or puts them back, at once: they were written for one direction only.
+        .onChange(of: profile.paceRaw) { _, _ in syncPlanTargets() }
         // Settings now lives behind the pixel-avatar button in the Dashboard header.
     }
 
     /// Mirror the active plan's targets into the profile overrides — the single source of truth the
     /// rings / achievements / Vita context all read through `dailyCalorieTarget` / `macroTargets`.
-    /// No plan (or no targets set) → 0, which falls back to the computed defaults.
+    /// No plan (or no targets set, or numbers written for another goal direction) → 0, which
+    /// falls back to the computed defaults. See `PlanTargetSync`.
     private func syncPlanTargets() {
-        let plan = coachPlans.first
-        let next = PlanTargetSync.overrides(
-            plan: plan.map { .init(hasRange: $0.hasRange, calorieMin: $0.calorieMin,
-                                   calorieMax: $0.calorieMax, proteinTarget: $0.proteinTarget) },
-            currentProtein: profile.proteinTargetOverride)
-        if profile.calorieTargetOverride != next.calorie { profile.calorieTargetOverride = next.calorie }
-        if profile.calorieMaxOverride != next.calorieMax { profile.calorieMaxOverride = next.calorieMax }
-        if profile.proteinTargetOverride != next.protein { profile.proteinTargetOverride = next.protein }
+        PlanTargetSync.apply(plan: coachPlans.first, to: profile)
     }
 }

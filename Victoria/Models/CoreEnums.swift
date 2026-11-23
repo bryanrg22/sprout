@@ -121,7 +121,13 @@ enum GoalPace: String, Codable, CaseIterable, Identifiable {
 enum UnitSystem: String, Codable, CaseIterable, Identifiable {
     case imperial, metric
     var id: String { rawValue }
-    var weightUnit: String { self == .imperial ? "lb" : "kg" }
+    /// The unit every weight is stored, entered and shown in. Pounds for BOTH systems: the
+    /// app has no kg conversion, and labelling a stored pound value "kg" is how a weigh-in
+    /// typed in kg came to be stored as pounds (EVAL_REPORT 3, L-B7). Vita's `set_units`
+    /// declines metric for the same reason. `metric` stays a case so a profile that was
+    /// switched before this still decodes; `docs/settings-dependencies.md` lists every
+    /// weight input and output a real conversion has to cover.
+    var weightUnit: String { "lb" }
 }
 
 enum MealType: String, Codable, CaseIterable, Identifiable {

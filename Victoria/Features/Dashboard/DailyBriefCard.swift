@@ -75,6 +75,12 @@ struct DailyBriefCard: View {
         Date.now.formatted(date: .omitted, time: .shortened)
     }
 
+    /// The one signal that depends on a setting: a trend easing down at a sustainable pace is
+    /// a result to celebrate only on a loss goal.
+    static func trendEasedDown(direction: GoalPace.Direction, ratePerWeek rate: Double) -> Bool {
+        direction == .lose && rate < -0.2 && rate > -2.5
+    }
+
     // MARK: - Signals from local data (the only facts the brief may use)
 
     private var signals: DailyBriefService.Signals {
@@ -119,7 +125,7 @@ struct DailyBriefCard: View {
         // Celebrate-only trend signal: eased down at a sustainable pace.
         let realWeights = weights.filter { $0.date <= .now }
         let rate = TrendCalculator.ratePerWeek(realWeights)
-        s.trendEasedDown = profile.pace.direction == .lose && rate < -0.2 && rate > -2.5
+        s.trendEasedDown = Self.trendEasedDown(direction: profile.pace.direction, ratePerWeek: rate)
 
         return s
     }
