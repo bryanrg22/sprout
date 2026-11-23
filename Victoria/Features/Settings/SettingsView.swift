@@ -12,7 +12,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var context
     /// Holds the just-generated backup file so a share sheet can present it.
     @State private var exportItem: ExportItem?
-    /// Settings → Appearance → "Make my character" (the same flow as the onboarding step).
+    /// Settings → You → "Make my character" (the same flow as the onboarding step).
     @State private var showAvatarCreation = false
 
     private struct ExportItem: Identifiable { let id = UUID(); let url: URL }

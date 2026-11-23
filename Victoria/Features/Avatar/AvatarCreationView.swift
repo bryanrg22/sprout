@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 /// "Make my character": the card shown as an onboarding step (after the key step) and in
-/// Settings → Appearance. All of its rules live in `AvatarCreationModel`; this is the look.
+/// Settings → You. All of its rules live in `AvatarCreationModel`; this is the look.
 ///
 /// States: no OpenAI key · consent + pick a photo · drawing · preview (Use this / Try
 /// again / Use a built-in character instead) · accepted · failed (the built-in character
@@ -247,7 +247,7 @@ struct AvatarCreationView: View {
             .disabled(keyDraftIsEmpty)
             .opacity(keyDraftIsEmpty ? 0.45 : 1)
 
-            fallbackRow("No key? Skip this. You'll start with this built-in character and can make your own later in Settings → Appearance.")
+            fallbackRow("No key? Skip this. You'll start with this built-in character and can make your own later in More → You.")
         }
     }
 
@@ -340,6 +340,8 @@ struct AvatarCreationView: View {
             .padding(18)
             .frame(width: 176, height: 176)
             .background(Theme.brandSoft, in: Circle())
+            // A character's shoulders reach the corners of its square; keep them inside the ring.
+            .clipShape(Circle())
             .overlay(Circle().strokeBorder(Theme.brand.opacity(0.45), lineWidth: 2))
             .frame(maxWidth: .infinity)
             .accessibilityLabel("Your pixel character")
@@ -357,7 +359,7 @@ struct AvatarCreationView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            fallbackRow("Nothing's lost: you'll start with this built-in character, and you can make your own any time in Settings → Appearance.")
+            fallbackRow("Nothing's lost: you'll start with this built-in character, and you can make your own any time in More → You.")
 
             HStack(spacing: Theme.Space.sm) {
                 if failure.isWorthRetrying, model.photo != nil {
@@ -370,7 +372,7 @@ struct AvatarCreationView: View {
 
     private var declinedStage: some View {
         VStack(alignment: .leading, spacing: Theme.Space.md) {
-            fallbackRow("This is your character. You can make your own from a photo any time in Settings → Appearance.")
+            fallbackRow("This is your character. You can make your own from a photo any time in More → You.")
             outlineButton(title: "Make one from a photo after all", icon: "wand.and.stars") { model.startOver() }
         }
     }
@@ -452,7 +454,7 @@ struct BuiltInCompanionThumb: View {
     }
 }
 
-/// Settings → Appearance → "Make my character": the same flow, in a sheet, applied to the
+/// Settings → You → "Make my character": the same flow, in a sheet, applied to the
 /// profile the moment the person taps "Use this".
 struct AvatarCreationSheet: View {
     @Bindable var profile: UserProfile
