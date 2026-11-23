@@ -87,6 +87,9 @@ struct RootView: View {
         .animation(.easeInOut, value: profile?.onboardingComplete)
         .task {
             DemoSeed.seedIfNeeded(context, hasProfile: profile != nil)
+            #if DEBUG
+            ChatDebug.seedLongChatIfRequested(context)   // `--demo-long-chat <n>`
+            #endif
             Diagnostics.shared.log("app launched (onboarded=\(profile?.onboardingComplete == true))", .app)
             // Travel awareness: one timezone comparison — powers the jet-lag framing in
             // Vita's context and the daily brief. (DST changes are filtered out.)
@@ -207,6 +210,14 @@ struct MainTabView: View {
         .onChange(of: askVita.pendingTopic) { _, topic in
             if topic != nil {
                 // The coach lives in Home: a question asked from Gym switches surface too.
+                let destination = AppMode.destinationForCoach()
+                storedMode = destination.mode.rawValue
+                selection = destination.homeTab.rawValue
+            }
+        }
+        // A passage quoted for the coach from another screen goes to her tab the same way.
+        .onChange(of: askVita.pendingQuote) { _, quote in
+            if quote != nil {
                 let destination = AppMode.destinationForCoach()
                 storedMode = destination.mode.rawValue
                 selection = destination.homeTab.rawValue
