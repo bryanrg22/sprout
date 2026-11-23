@@ -22,6 +22,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 10 | First live comparison: ten models on three tasks, and four defects it found | 2026-11-22 |
 | 11 | The widget that showed someone else's data | 2026-11-22 |
 | 12 | Home and Gym: two surfaces and the switch between them | 2026-11-22 |
+| 13 | The store returns what was put in: verification through the real store, and by SQL | 2026-11-22 |
 
 ---
 
@@ -539,3 +540,45 @@ prompt is over part of both).
 the light theme; Dynamic Type sizes; that hidden-surface state really survives a switch;
 VoiceOver. There is still no UI test target, so none of this is guarded against
 regression. **Needs the owner's eyes** before it counts as done.
+
+## 13. The store returns what was put in: verification through the real store, and by SQL (2026-11-22)
+
+Objective G4. Until now every data test ran on plain arrays or on a container holding a
+handful of models; nothing opened the schema the app ships.
+
+**Added:**
+
+- `AppSchema`: the list of models in one place, used by the app and the tests. The store's
+  version hash and table layout are identical before and after the change.
+- 44 tests on an in-memory container with the full production schema and CloudKit off:
+  the schema opens with all 20 models, and a model class in the source tree that is not
+  registered fails a test; every model round-trips every field through a second context;
+  each ingest merge (steps, sleep, vitals, detected workouts, the Google overlay) run
+  twice leaves the same rows as once, and a changed value updates in place; the queries
+  the screens depend on return hand-computed values from a fixed fixture; deletes are
+  isolated to their model.
+- `tooling/verify_store.py`: opens a SwiftData store read-only with SQL and reports every
+  entity table and its row count and the per-day food, water, steps and weight totals, and
+  fails on a null id, a negative quantity, or two rows for one day in a one-row-per-day
+  table. It has a self-test that plants each violation, run in CI.
+
+**Verified by running:** suite **560 tests: 558 passed, 2 expected failures, 0 failed,
+0 skipped**. `verify_store.py` on a `--seed-demo --demo-gain` simulator store: 20 entity
+tables, per-day totals printed, no violations.
+
+**Two defects found, pinned as expected failures, app not changed:**
+
+| ID | Defect | Where |
+|---|---|---|
+| S-1 | A detected workout that is delivered again with corrected minutes or calories is never updated: the merge only inserts. Its comment says this is by design; the owner decides. | `HealthKitSleepWorkouts.swift:297` |
+| S-2 | Steps (and sleep, and workouts by the same match) are stored at local midnight and matched by calendar day, so a trip Los Angeles → New York → Los Angeles leaves two step rows for one day. | `HealthKitSteps.swift:93`; same match at `HealthKitSleepWorkouts.swift:121`, `:211` |
+
+**Two behaviours pinned as known risks** (the tests assert what the app does today, and are
+named so): the merges trust the caller's snapshot of existing rows, so a stale snapshot
+duplicates a day; and with two profiles in the store the gate takes whichever the store
+returns first, whatever its state (the case that can follow an iCloud restore, L-S1).
+
+**Not covered:** the on-disk store and CloudKit; food logged from each entry point;
+HealthKit weight and today's-steps import, which need HealthKit; the screens' own filters,
+which are re-stated in the tests rather than called; whether the SQL totals match what
+the screens show (the script prints them; nobody compared them to the UI).

@@ -51,7 +51,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 516 unit tests, plus 18 offline evaluation self-tests.
+- Tests: 443 → 560 unit tests (2 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
+  which checks a store by SQL (EVAL_REPORT 13).
 - First live model comparison: ten models, three tasks, 3,636 graded attempts, $6.23
   (EVAL_REPORT 10). `docs/GOALS.md` lists the objectives and the `/goal` condition that
   works through them.

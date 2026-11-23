@@ -20,7 +20,7 @@ Last updated: 2026-11-22.
 | G1 | Every model default is chosen by measurement | in progress |
 | G2 | CI is green and stays the gate | met on the pull request (4 of 4 jobs, first run); to be re-checked on `main` |
 | G3 | A widget never shows anyone else's data, or yesterday's as today's | blocked: the owner restarts his phone on a build and looks at the widget before unlocking |
-| G4 | The store returns what was put in | in progress |
+| G4 | The store returns what was put in | in progress: schema, round trips, merges, queries and the SQL script are done; entry points, on-disk and UI comparison remain |
 | G5 | Changing a setting changes everything that depends on it | open |
 | G6 | No step breaks when done out of order, repeated, or skipped | open |
 | G7 | Prompts and copy fit whoever is using the app | open |
@@ -99,7 +99,10 @@ in `~/dev/GitHub/sprout`, switch to auto mode so the turns run unattended, and p
   the streak inputs, the buddy snapshot inputs) returns the expected rows from a fixed
   fixture; (e) `tooling/verify_store.py` runs the same counts as SQL against a seeded
   simulator store and agrees with what the app shows.
-- **Status:** open.
+- **Status:** in progress (EVAL_REPORT 13). Done: (a), (b), (c) for the tracker merges, (d),
+  and the script of (e) with its self-test in CI. Remaining: food from each entry point and
+  the HealthKit weight import under (c); comparing the SQL totals with what the screens
+  show under (e). Two defects it found are open (S-1, S-2).
 
 ## G5. Changing a setting changes everything that depends on it
 
@@ -194,7 +197,7 @@ Prerequisite for G8 and for inviting a third person.
 - **Check:** every row of the "Open" tables in EVAL_REPORT 3 is either fixed with a test
   that fails on the old code, or marked "won't fix" with the owner's reason. High ones
   first: L-B2, L-B7, L-B9, D-V2.
-- **Status:** open (four fixed on 2026-11-22; about forty open).
+- **Status:** open (eight fixed on 2026-11-22; about forty open, plus S-1 and S-2 from EVAL_REPORT 13).
 
 ## G12. Competitions
 
