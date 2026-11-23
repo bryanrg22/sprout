@@ -11,6 +11,11 @@ final class LiveEvals: XCTestCase {
 
     func testMealDescribe() async throws {
         try EvalEnv.requireLive()
+        // v3 = v1's cases plus the label nutrients of the same USDA records; the pass rule is
+        // still calories within 20%, and the four estimated nutrients are scored beside it.
+        // v3 (the same cases with the label nutrients) is not built yet: the USDA fetch that
+        // produces its truth was rate-limited, and nothing in it may come from memory. Until
+        // `build_v3.py` has run on fetched data this stays on v1, which exists and is cited.
         let cases = try EvalDataset.load("meal_describe/v1.jsonl", as: Graders.MealTruth.self)
         try await EvalRunner.run(task: .mealDescribe, dataset: "meal_describe/v1", cases: cases,
                                  caseID: { $0.id }) { truth in

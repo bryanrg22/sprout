@@ -68,6 +68,10 @@ enum NotificationService {
     static func requestAuthorization() async -> Bool {
         // UI smoke flows: no system alert over the screen under test (reads as "not granted").
         guard !UITestHooks.isActive else { return false }
+        #if DEBUG
+        // A screenshot run cannot tap the system prompt away, and the prompt covers the screen.
+        if CommandLine.arguments.contains("--demo-no-notification-prompt") { return false }
+        #endif
         do {
             return try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .sound, .badge])

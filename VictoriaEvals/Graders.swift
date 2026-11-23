@@ -16,6 +16,68 @@ enum Graders {
         let carbs_g: Double
         let fat_g: Double
         let source: String
+
+        // The label nutrients the estimator is asked for (`Nutrient.estimable`), from the same
+        // USDA records as the macros (`meal_describe/v3` on). `nil` = the record does not list
+        // the nutrient for at least one ingredient, so the total is not known and that
+        // nutrient is NOT graded for the case. Optional, so a v1 row still decodes. The
+        // dataset also carries the label's other seven nutrients (added sugars, trans fat,
+        // cholesterol, vitamin D, calcium, iron, potassium); nothing reads them until the
+        // estimator is asked for one.
+        var fiber_g: Double? = nil
+        var sugars_g: Double? = nil
+        var saturated_fat_g: Double? = nil
+        var sodium_mg: Double? = nil
+
+        /// Nutrients (by `Nutrient.argumentName`, e.g. "sodium_mg") for which the description
+        /// gives no basis, so the right answer is "not known". No v3 case has any: every v3
+        /// portion is a named food in grams. The field exists so a later version with vague
+        /// descriptions can label them.
+        var no_basis: [String]? = nil
+
+        func truth(for nutrient: Nutrient) -> Double? {
+            switch nutrient {
+            case .fiber: return fiber_g
+            case .sugars: return sugars_g
+            case .saturatedFat: return saturated_fat_g
+            case .sodium: return sodium_mg
+            default: return nil
+            }
+        }
+    }
+
+    /// The estimate's value for one of the estimable nutrients (`nil` = it said not known).
+    static func estimated(_ nutrient: Nutrient, in estimate: FoodPhotoAnalyzer.Estimate) -> Double? {
+        estimate.detail[nutrient]
+    }
+
+    /// Scores for the label nutrients, added to the meal scores. None of them decides the pass.
+    ///
+    /// For each nutrient the estimator is asked for:
+    /// - `<name>_abs_error`: |estimate − truth| in the nutrient's own unit (the key carries
+    ///   it: `fiber_g_abs_error`, `sodium_mg_abs_error`). Recorded only when the truth is
+    ///   known AND the estimate gave a number, so an abstention never counts as an error of
+    ///   zero or of the whole amount.
+    /// - `<name>_answered`: 1 when the estimate gave a number, 0 when it said not known.
+    ///   Recorded when the truth is known (the model had a basis); its mean is the share of
+    ///   answerable cases the model actually answered.
+    /// - `<name>_unknown_when_no_basis`: 1 when the estimate said not known, 0 when it gave a
+    ///   number anyway. Recorded only for a nutrient the case lists in `no_basis`.
+    static func mealDetail(_ estimate: FoodPhotoAnalyzer.Estimate, truth: MealTruth) -> [String: Double] {
+        var scores: [String: Double] = [:]
+        let noBasis = Set(truth.no_basis ?? [])
+        for nutrient in Nutrient.estimable {
+            let name = nutrient.argumentName
+            let got = estimated(nutrient, in: estimate)
+            if noBasis.contains(name) {
+                scores["\(name)_unknown_when_no_basis"] = got == nil ? 1 : 0
+                continue
+            }
+            guard let want = truth.truth(for: nutrient) else { continue }   // USDA does not say: not graded
+            scores["\(name)_answered"] = got == nil ? 0 : 1
+            if let got { scores["\(name)_abs_error"] = abs(got - want) }
+        }
+        return scores
     }
 
     /// The calorie tolerance a case passes within. 20% is the tolerance US food
@@ -47,6 +109,8 @@ enum Graders {
                                   && estimate.total_calories <= estimate.calories_high) ? 1 : 0,
         ]
         scores["confidence_is_valid"] = EstimateConfidence(rawValue: estimate.confidence) == nil ? 0 : 1
+        // The label nutrients are reported beside the macros; the pass rule is unchanged.
+        scores.merge(mealDetail(estimate, truth: truth)) { existing, _ in existing }
         return (scores, kcalError <= mealCalorieTolerance)
     }
 

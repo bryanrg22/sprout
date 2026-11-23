@@ -443,31 +443,11 @@ struct RecentFoodsSheet: View {
 
     /// Inserts a fresh copy of `food` onto `date` for the time-appropriate meal, then
     /// dismisses. The copy keeps the user-meaningful fields (name, serving, quantity,
-    /// calories, macros, source, notes, favorite flag) but gets a brand-new identity
+    /// calories, macros, label nutrients, source, notes, favorite flag) but gets a brand-new identity
     /// and timestamps via the model's init — so it reads as a genuinely new log,
     /// including the freshly-added `.popIn` in FoodLogView (which keys off createdAt).
     private func logAgain(_ food: FoodEntry) {
-        let copy = FoodEntry(
-            date: date,
-            mealType: selectedMeal,
-            name: food.name,
-            servingDescription: food.servingDescription,
-            quantity: food.quantity,
-            calories: food.calories,
-            proteinG: food.proteinG,
-            carbsG: food.carbsG,
-            fatG: food.fatG,
-            caloriesLow: food.caloriesLow,
-            caloriesHigh: food.caloriesHigh,
-            source: food.source,
-            confidence: food.confidence,
-            notes: food.notes,
-            barcode: food.barcode,
-            // Don't copy the original photo: a re-log is a quick repeat, not the same
-            // meal/photo, and copying external-storage blobs would bloat the store.
-            photoData: nil,
-            isFavorite: food.isFavorite
-        )
+        let copy = food.relogged(on: date, meal: selectedMeal)
         context.insert(copy)
         try? context.save()
         logTick += 1
