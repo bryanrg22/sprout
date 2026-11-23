@@ -17,20 +17,20 @@ Last updated: 2026-11-22.
 
 | | Objective | Status |
 |---|---|---|
-| G1 | Every model default is chosen by measurement | in progress |
+| G1 | Every model default is chosen by measurement | in progress: 11 of 15 tasks measured, 5 with a changed default, none on a deprecated model (EVAL_REPORT 10, 14, 22); a reply lost to thinking on the newer Claude models is fixed and re-measured (EVAL_REPORT 25); open: structured calls on claude-sonnet-5-5, quality measures for the coach, meals and the four structured tasks, the plan tasks and meal photos |
 | G2 | CI is green and stays the gate | met: 4 of 4 jobs on the pull request and on `main` after the merge |
 | G3 | A widget never shows anyone else's data, or yesterday's as today's | blocked: the owner restarts his phone on a build and looks at the widget before unlocking |
 | G4 | The store returns what was put in | in progress: schema, round trips, merges, queries and the SQL script are done; entry points, on-disk and UI comparison remain |
 | G5 | Changing a setting changes everything that depends on it | in progress: three defects fixed and 95 matrix tests (EVAL_REPORT 16); the dependency table and kilograms remain |
-| G6 | No step breaks when done out of order, repeated, or skipped | in progress: 15 UI flows pass (EVAL_REPORT 17); the onboarding flow and its skip combinations remain |
-| G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); tool descriptions, onboarding copy and the demo seed remain |
-| G8 | A new person gets their own pixel character from a photo | blocked: built and seen in the simulator (EVAL_REPORT 15); the owner supplies photos and approves the image runs, and deploys the CloudKit schema |
+| G6 | No step breaks when done out of order, repeated, or skipped | in progress: 20 UI flows pass, five of them through onboarding in order, back and forth, by swiping, and across a background and a quit (EVAL_REPORT 17, 26); open: onboarding with things typed in, skip combinations as a set, finishing twice, pairing on the local mock |
+| G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); the coach's 28 tool descriptions reworded, scanned by a test and re-measured (EVAL_REPORT 24); open: the built-in characters' names, onboarding copy, Settings, buddy, widgets and the demo seed |
+| G8 | A new person gets their own pixel character from a photo | in progress: built (EVAL_REPORT 15) and the call made for real on generated faces, 18 of 18 usable (EVAL_REPORT 23); open: the owner's rating of the images and choice of model, a real photo, the flow in the app with a live image, and the CloudKit schema |
 | G9 | Home and Gym as two modes, switched at the top | in progress: built, tapped by a UI test both ways with state kept (EVAL_REPORT 12, 17); open: VoiceOver reaches the hidden surface (U-1), the light theme, and the owner's look at the screenshots |
 | G10 | Nutrition is as specific as it can honestly be | in progress: built and tested from every source (EVAL_REPORT 18); the estimator's accuracy on the new fields is unmeasured, and the owner deploys the CloudKit schema |
 | G11 | The open defects are closed | in progress: the high-severity lifecycle defects and nine buddy groups are fixed (EVAL_REPORT 16, 19); open: kilograms, widgets' gain framing, travel day keys, HealthKit sync, U-1 to U-3, S-1, S-2 and the accessibility findings |
 | G12 | Competitions | todo (spec needed) |
-| G13 | The app is back on the phones and does not expire again | open, last |
-| G14 | The chat holds up: long histories, selection and copy, "ask about this", real error handling | in progress |
+| G13 | The app is back on the phones and does not expire again | blocked: the owner deploys the CloudKit schema to Production (EVAL_REPORT 21) and uploads the build; an expired build must be updated in place, never deleted, because iCloud holds almost none of the data |
+| G14 | The chat holds up: long histories, selection and copy, "ask about this", real error handling | in progress: built, tested and seen running (EVAL_REPORT 20); open: the view still jumps on some "load earlier" loads, nothing was run against a real provider or on a phone, and regenerate, edit-and-resend and streaming are not built |
 
 ## Running it
 
@@ -132,7 +132,12 @@ in `~/dev/GitHub/sprout`, switch to auto mode so the turns run unattended, and p
   tool, confirm, undo; pair and unpair a buddy on the local mock; each ends with an
   accessibility audit; (c) interrupted flows: background the app mid-onboarding and
   mid-coach-turn, relaunch, and land in a valid state.
-- **Status:** open.
+- **Status:** in progress. (b) and (c) are covered for launch, logging, the coach, the mode
+  switch, interruptions (EVAL_REPORT 17) and onboarding (EVAL_REPORT 26). Open: (a), the
+  state behind onboarding has no test of its own and lives in the view; onboarding with
+  values typed in; finishing twice; pairing on the local mock; an audit of the onboarding
+  pages. **Needs the owner:** the personal first page, and whether the sex used for the
+  energy estimate may be left at a default.
 
 ## G7. Prompts and copy fit whoever is using the app
 
@@ -142,7 +147,11 @@ Prerequisite for G8 and for inviting a third person.
   direction (EVAL_REPORT 3, A-1 lists them); a test scans the prompt sources for
   "her", "she", "weight-loss" used about the user; the `dailyBrief` evaluation's
   `wrong_person_pronoun` score is 0 for the chosen model.
-- **Status:** open.
+- **Status:** in progress. Done: the prompts (EVAL_REPORT 14) and the coach's tools
+  (EVAL_REPORT 24), each with a test that scans what the model receives. **Needs the
+  owner:** what the two built-in characters are called; they are stored and offered as
+  `victoria` and `bryan`. Not yet scanned: onboarding copy, Settings, the buddy feature,
+  the widgets, the demo seed.
 
 ## G8. A new person gets their own pixel character from a photo
 
@@ -162,8 +171,11 @@ Prerequisite for G8 and for inviting a third person.
   with a preset character; (e) the character appears everywhere the two existing ones do
   (Today, the buddy screens, the widgets); (f) request building and response handling are
   tested through `AIRuntime` with a scripted transport.
-- **Status:** open. **Needs the owner:** a decision on one image or a set of mood frames
-  (cost multiplies), and sample photos for the evaluation.
+- **Status:** in progress. (b) to (f) are built and tested (EVAL_REPORT 15). (a) was run
+  on three generated faces, twice: every image usable, $0.035 to $0.054 each (EVAL_REPORT
+  23). **Needs the owner:** his rating of the 18 saved images and the choice between the
+  three candidates; one run of the flow in the app with his key; and, if he wants it
+  measured on real photos, consented ones.
 
 ## G9. Home and Gym as two modes, switched at the top
 
@@ -231,4 +243,6 @@ Prerequisite for G8 and for inviting a third person.
   the user's message is never lost and a failed turn can be retried without a duplicate;
   the turn logic lives outside the view with a test for every branch on both providers'
   wire formats; screenshots reviewed by the owner.
-- **Status:** in progress.
+- **Status:** in progress (EVAL_REPORT 20). Remaining: a stable scroll position on every
+  load of earlier messages; a real provider and a phone; regenerate, edit and resend,
+  streaming; the owner's review of `docs/screenshots/review/chat-*.png`.

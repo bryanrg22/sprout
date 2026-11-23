@@ -35,6 +35,12 @@ struct AIUsage: Sendable, Equatable {
     var latencyMs: Int
     /// HTTP attempts made (2 means the one transient-overload retry was used).
     var attempts: Int
+    /// The part of `outputTokens` the model spent thinking before it wrote, when the
+    /// provider reports it (Anthropic: `usage.output_tokens_details.thinking_tokens`).
+    /// nil means "not reported", which is not the same as zero.
+    var thinkingTokens: Int? = nil
+    /// Why the model stopped, in the provider's own word (`end_turn`, `max_tokens`, …).
+    var stopReason: String? = nil
 
     /// Every input token the request carried, cached or not.
     var totalInputTokens: Int { uncachedInputTokens + cacheReadTokens + cacheWriteTokens }

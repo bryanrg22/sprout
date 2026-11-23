@@ -105,7 +105,7 @@ xcodebuild test -project Victoria.xcodeproj -scheme Victoria \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' \
   -resultBundlePath /tmp/t.xcresult
 # NEVER trust the pipe's exit code — read the counts out of the bundle:
-python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 984
+python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1131
 # The evaluation harness's offline self-tests (its own scheme; 3 live evals skip without a key):
 xcodebuild test -project Victoria.xcodeproj -scheme VictoriaEvals \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' -resultBundlePath /tmp/e.xcresult
@@ -154,6 +154,11 @@ xcrun simctl launch <UDID> com.bryanram.victoria --seed-demo --demo-gain   # dar
 # (--demo-tab workouts opens Gym mode; the others open that tab in Home mode)
 # on the Nutrients tab (with --demo-tab food): --demo-scroll-nutrients, --demo-food-detail <name>,
 #   --demo-food-edit <name> [--demo-scroll-label]; --demo-no-notification-prompt for a screenshot run
+# the coach chat, DEBUG only (Victoria/Features/Coach/CoachDebug.swift has the full list):
+#   --demo-long-chat <n>        replace the conversation with n seeded messages
+#   --chat-probe                log load time and memory to tmp/chat-probe.log in the data container
+#   --chat-debug-script <name>  answer the coach from a canned script (ok, tool, confirm, flaky, 401, 429, …)
+#   --no-notification-prompt    skip the permission alert (a screenshot run cannot tap it away)
 ```
 
 - Seeding only happens when no profile exists. To reseed: terminate app, then delete the

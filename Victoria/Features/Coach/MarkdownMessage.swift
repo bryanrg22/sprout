@@ -70,7 +70,8 @@ struct MarkdownMessage: View {
 
     // MARK: - Block model
 
-    private enum Block {
+    /// Internal, not private: `SelectableMarkdownText` lays out the same blocks in a text view.
+    enum Block: Equatable {
         case paragraph(String)        // one or more soft-wrapped lines (inline markup preserved)
         case heading(String)
         case bullet(Int, String)      // indent level, content
@@ -83,7 +84,7 @@ struct MarkdownMessage: View {
     /// Split the raw message into ordered blocks. Consecutive plain lines fold into one
     /// paragraph (keeping their soft line breaks); a blank line ends a paragraph; list/heading/
     /// rule lines each become their own block.
-    private static func parse(_ raw: String) -> [Block] {
+    static func parse(_ raw: String) -> [Block] {
         var blocks: [Block] = []
         var paragraph: [String] = []
 
@@ -159,7 +160,7 @@ struct MarkdownMessage: View {
 
     /// Inline-only markdown (bold / italic / code / links) within a single block, preserving the
     /// block's whitespace. Falls back to plain text if parsing fails.
-    private static func inline(_ s: String) -> AttributedString {
+    static func inline(_ s: String) -> AttributedString {
         (try? AttributedString(
             markdown: s,
             options: .init(allowsExtendedAttributes: true,

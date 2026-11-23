@@ -1,0 +1,154 @@
+{
+ "run": "20261123-104337-OnboardingNote",
+ "tasks": [
+  {
+   "task": "onboardingNote",
+   "dataset": "onboarding_note/v1",
+   "cases": 15,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-4-5-20251001",
+     "attempts": 45,
+     "usable": 42,
+     "passed": 42,
+     "pass_rate": 0.9333333333333333,
+     "ci95": [
+      0.8214312561135918,
+      0.977068383537853
+     ],
+     "per_repeat_pass": [
+      0.9333333333333333,
+      0.9333333333333333,
+      0.9333333333333333
+     ],
+     "latency_p50_s": 1.571,
+     "latency_p95_s": 1.863,
+     "mean_uncached_input_tokens": 457.8,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 89.31111111111112,
+     "mean_cost_usd": 0.0009043555555555556,
+     "scores": {
+      "at_most_one_emoji": 1,
+      "name_used_once": 0.8717948717948718,
+      "names_only_the_given_goal": 1,
+      "no_list_or_header": 1,
+      "no_number_invented": 1,
+      "two_to_four_sentences": 1,
+      "used": 0.9333333333333333,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "the sanitiser discarded the reply"
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 45,
+     "usable": 44,
+     "passed": 44,
+     "pass_rate": 0.9777777777777777,
+     "ci95": [
+      0.8843305361128119,
+      0.9960665024772425
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      0.9333333333333333
+     ],
+     "latency_p50_s": 1.218,
+     "latency_p95_s": 1.49,
+     "mean_uncached_input_tokens": 636.4666666666667,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 128.51111111111112,
+     "mean_cost_usd": 0.00012790222222222223,
+     "scores": {
+      "at_most_one_emoji": 1,
+      "name_used_once": 1,
+      "names_only_the_given_goal": 1,
+      "no_list_or_header": 1,
+      "no_number_invented": 1,
+      "two_to_four_sentences": 0.9545454545454546,
+      "used": 0.9777777777777777,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "the sanitiser discarded the reply"
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 45,
+     "usable": 39,
+     "passed": 38,
+     "pass_rate": 0.8444444444444444,
+     "ci95": [
+      0.712158094887512,
+      0.9225467468867133
+     ],
+     "per_repeat_pass": [
+      0.8666666666666667,
+      0.8666666666666667,
+      0.8
+     ],
+     "latency_p50_s": 2.546,
+     "latency_p95_s": 2.867,
+     "mean_uncached_input_tokens": 635.4666666666667,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 132.2888888888889,
+     "mean_cost_usd": 0.0025938222222222224,
+     "scores": {
+      "at_most_one_emoji": 1,
+      "name_used_once": 1,
+      "names_only_the_given_goal": 1,
+      "no_list_or_header": 1,
+      "no_number_invented": 0.9743589743589743,
+      "two_to_four_sentences": 0.9743589743589743,
+      "used": 0.8666666666666667,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "the sanitiser discarded the reply"
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5-5",
+     "attempts": 45,
+     "usable": 45,
+     "passed": 45,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9213457380593594,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.199,
+     "latency_p95_s": 4.296,
+     "mean_uncached_input_tokens": 636.4666666666667,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 138.84444444444443,
+     "mean_cost_usd": 0.002661377777777778,
+     "scores": {
+      "at_most_one_emoji": 1,
+      "name_used_once": 0.9761904761904762,
+      "names_only_the_given_goal": 1,
+      "no_list_or_header": 1,
+      "no_number_invented": 1,
+      "two_to_four_sentences": 0.7777777777777778,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

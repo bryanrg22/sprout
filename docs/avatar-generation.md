@@ -1,8 +1,9 @@
 # A pixel character from a photo (G8)
 
 How the custom character is made, what OpenAI's documentation did and did not confirm
-about the call, and what is still unverified. Read on 2026-11-22. Nothing here was checked
-against the live API: no paid call was made while building this.
+about the call, and what is still unverified. Read on 2026-11-22. The call was first made
+for real on 2026-11-23, on generated faces: what that confirmed, and what it did not, is in
+"The evaluation" at the end and in EVAL_REPORT 23.
 
 ## Decisions already made (by the owner)
 
@@ -24,8 +25,8 @@ against the live API: no paid call was made while building this.
 - Error codes guide: <https://developers.openai.com/api/docs/guides/error-codes>
 
 The pages were read through a fetch tool that summarises long pages, so a quotation below
-is a quotation of that reading. The live call is the check that matters, and it has not
-been run.
+is a quotation of that reading. The live call is the check that matters; it was run on
+2026-11-23 (EVAL_REPORT 23).
 
 ## The request: `POST https://api.openai.com/v1/images/edits`
 
@@ -141,7 +142,7 @@ Anything else is a typed `AvatarGenerator.Failure` and the built-in character st
   accepted or declined, and the upload is re-encoded from pixels, without the camera's
   EXIF block (location, device).
 
-## The evaluation (not run)
+## The evaluation (run twice on 2026-11-23, EVAL_REPORT 23)
 
 `Evals/run.sh Avatar "openai:gpt-image-2.6-flare@low,openai:gpt-image-2.6-flare@medium,openai:gpt-image-2.6-sunburst@medium" 3`
 
@@ -152,5 +153,22 @@ The `@suffix` is the image quality. The cases are the photos in
 counts and `cost_usd`. Each image is saved under the run's `avatars/` folder (git-ignored)
 for the owner's rating of likeness and fit, which no code measures.
 
-Open: `Graders.pixelArtColourLimit` (48 colours after 4-bit quantisation) is not
-calibrated on real outputs.
+`Evals/regrade-avatars.sh Evals/runs/<run>` grades a past run's saved characters again
+with the graders as they are now, at no cost, and writes `<run>/regrade-avatar.json`.
+
+**Confirmed live, on three generated faces, 18 images:** a transparent background on both
+2.6 models; the multipart request as built; the `usage` block and its split of text and
+image input; 1024 x 1024 PNG output. Per character: $0.035 at low quality and $0.054 at
+medium (tokens at the published rates), about 8 to 10 seconds on `flare` and 20 on
+`sunburst`.
+
+**What the models actually return, and the code must not assume otherwise:** no pixel is
+at alpha 255. The body of a character is at 253 or 254, and the cleared background has
+stray pixels at alpha 1 and 2. The graders treat alpha at or under 8 as clear and at or
+over 250 as solid. The app keeps the image as returned.
+
+`Graders.pixelArtColourLimit` is 58 colours after 4-bit quantisation: pixel characters
+counted 24 to 45 and photographs 72 to 81, on thirteen images. A small set.
+
+**Still not confirmed:** a real photograph of any kind, a refusal and its HTTP status, and
+the flow in the app producing a live image.

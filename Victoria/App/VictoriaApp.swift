@@ -16,6 +16,8 @@ struct VictoriaApp: App {
         // real store or read a key; a failure here stops the launch rather than falling
         // through to the real store. See `UITestHooks`.
         if UITestHooks.isActive {
+            // Before anything reads a default (the views' stored settings, the day caches).
+            UITestHooks.resetDefaultsIfAsked()
             do {
                 container = try UITestHooks.makeContainer()
             } catch {

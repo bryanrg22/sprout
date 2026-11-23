@@ -73,7 +73,7 @@ struct FoodSuggestionService {
 
     /// The persona + hard tone rules. Kept separate from the per-call context so it's easy
     /// to read and reason about against the tone constraint.
-    private static let system = """
+    static let system = """
     You are the nutrition brain inside a results-focused nutrition app. Given a factual \
     snapshot of what the user has eaten today, the user's targets and goal, the current meal, \
     and the foods the user actually logs, produce 2–3 specific food suggestions by calling \
@@ -123,7 +123,7 @@ struct FoodSuggestionService {
 
     /// Strict JSON schema for the forced tool call. Bounds output to 2–3 items and a fixed
     /// `kind` enum so decoding is reliable.
-    private static let schema: [String: Any] = [
+    static let schema: [String: Any] = [
         "type": "object",
         "properties": [
             "suggestions": [

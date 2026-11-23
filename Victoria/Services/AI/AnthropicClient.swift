@@ -1,5 +1,43 @@
 import Foundation
 
+/// What differs between Claude models in how a request must be written.
+///
+/// Each row was read in Anthropic's documentation and then checked against the API on
+/// 2026-11-23 with one request per model and setting (EVAL_REPORT 25): the wrong value
+/// for a model is a 400, not a default.
+///
+/// | Model | Thinks unless told not to | Accepted "do not think" value |
+/// |---|---|---|
+/// | `claude-sonnet-5-5` | yes | `between_tools` (`disabled` is a 400) |
+/// | `claude-haiku-5-5` | yes | `disabled` (`between_tools` is a 400) |
+/// | `claude-sonnet-5` | yes | `disabled` (`between_tools` is a 400) |
+/// | `claude-haiku-4-5` | no | nothing is sent |
+enum AnthropicModelProfile {
+
+    /// The `thinking` field that stops `model` thinking before it writes, or nil when
+    /// nothing should be sent: a model that does not think unless asked, or one this table
+    /// does not know. An unknown model is left at its own default on purpose. Guessing a
+    /// value risks a 400 on every call; a reply lost to thinking is at least reported by
+    /// name (`AIError.cutOffBeforeOutput`).
+    static func thinkingOff(for model: String) -> [String: Any]? {
+        if isModel(model, "claude-sonnet-5-5") { return ["type": "between_tools"] }
+        if isModel(model, "claude-haiku-5-5") || isModel(model, "claude-sonnet-5") { return ["type": "disabled"] }
+        return nil
+    }
+
+    /// The scoped `reasoningEffort` value that leaves thinking at the model's own default.
+    static let keepModelDefault = "default"
+
+    /// `id` is `family` itself or a dated snapshot of it (`family-YYYYMMDD`). A plain
+    /// prefix test would take `claude-sonnet-5-5` for `claude-sonnet-5`.
+    static func isModel(_ id: String, _ family: String) -> Bool {
+        if id == family { return true }
+        guard id.hasPrefix(family + "-") else { return false }
+        let suffix = id.dropFirst(family.count + 1)
+        return suffix.count == 8 && suffix.allSatisfy(\.isNumber)
+    }
+}
+
 /// Thin async client for the Anthropic Messages API. Supports plain chat,
 /// "structured output" via forced tool use, and a tool-enabled chat turn where the
 /// model may *optionally* request a function call (`chatWithTools`). Uses
@@ -20,19 +58,38 @@ struct AnthropicClient {
     // MARK: - Plain text chat (the coach)
     func chat(system: String, messages: [Msg], model: String = AIConfig.chatModel, maxTokens: Int = 1024) async throws -> String {
         let model = AIRuntime.resolve(model: model)
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
             "system": system,
             "messages": messages.map { ["role": $0.role, "content": $0.content] },
         ]
+        // Every caller of the plain-text path asks for a short piece of writing under a
+        // small cap. A model that thinks first can spend the whole cap doing so and
+        // return nothing (EVAL_REPORT 25), so this path asks it not to.
+        // A scoped runtime can leave the model's own default in force (an evaluation
+        // measuring what turning it off costs): `anthropic:<model>@default` in `Evals/run.sh`.
+        let keepDefault = AIRuntime.effective?.reasoningEffort == AnthropicModelProfile.keepModelDefault
+        if !keepDefault, let off = AnthropicModelProfile.thinkingOff(for: model) { body["thinking"] = off }
         let json = try await send(body)
         guard let content = json["content"] as? [[String: Any]] else {
             throw AIConfig.AIError.decoding("missing content")
         }
         let text = content.compactMap { ($0["type"] as? String) == "text" ? $0["text"] as? String : nil }.joined()
-        guard !text.isEmpty else { throw AIConfig.AIError.decoding("empty text") }
+        guard !text.isEmpty else { throw Self.emptyReplyError(json, model: model, cap: maxTokens, what: "empty text") }
         return text
+    }
+
+    /// Why a 200 response held nothing usable. A reply that stopped at `max_tokens` with no
+    /// text (or no tool call) is named as such, with the thinking tokens the response
+    /// reports, so a field log and an evaluation record can tell it from a malformed reply.
+    static func emptyReplyError(_ json: [String: Any], model: String, cap: Int, what: String) -> AIConfig.AIError {
+        guard (json["stop_reason"] as? String) == "max_tokens" else { return .decoding(what) }
+        let usage = json["usage"] as? [String: Any]
+        let thinking = (usage?["output_tokens_details"] as? [String: Any])?["thinking_tokens"] as? Int
+        Diagnostics.shared.log("anthropic \(model): cut off at max_tokens \(cap) before any output"
+                               + (thinking.map { " (thinking \($0))" } ?? ""), .ai)
+        return .cutOffBeforeOutput(model: model, cap: cap, thinkingTokens: thinking)
     }
 
     // MARK: - Chat with optional tools (the coach, with function calling)
@@ -60,6 +117,32 @@ struct AnthropicClient {
         /// The assistant turn's `content` blocks, verbatim — pass back as the assistant
         /// message (via `assistantMessage`) when continuing after a tool_result.
         let assistantContent: [[String: Any]]
+        /// Why the model stopped, when it was not a normal end of turn. Both providers
+        /// report these with an HTTP 200, so nothing is thrown: the caller has to look.
+        var finish: Finish = .complete
+
+        enum Finish: Equatable {
+            /// A normal end of turn, or a tool call.
+            case complete
+            /// The output cap ended the reply (`max_tokens` / `length` / `max_output_tokens`).
+            /// `text` is partial, and a tool call that was being written has been dropped.
+            case cutOff
+            /// The model or a safety filter declined (`refusal` / `content_filter`).
+            case refusal
+            /// The conversation no longer fits the model (`model_context_window_exceeded`).
+            case contextOverflow
+        }
+    }
+
+    /// Anthropic `stop_reason` → `ChatTurn.Finish`. Every value not named here (`end_turn`,
+    /// `tool_use`, `stop_sequence`, `pause_turn`, a value added later) is `.complete`.
+    static func finish(stopReason: String?) -> ChatTurn.Finish {
+        switch stopReason {
+        case "max_tokens": return .cutOff
+        case "refusal": return .refusal
+        case "model_context_window_exceeded": return .contextOverflow
+        default: return .complete
+        }
     }
 
     /// One turn of a tool-enabled conversation. `tools` is an array of Anthropic tool
@@ -133,7 +216,8 @@ struct AnthropicClient {
             assistantContent = content.filter { ($0["type"] as? String) != "tool_use" }
         }
 
-        return ChatTurn(text: text, toolUse: toolUse, assistantContent: assistantContent)
+        return ChatTurn(text: text, toolUse: toolUse, assistantContent: assistantContent,
+                        finish: Self.finish(stopReason: json["stop_reason"] as? String))
     }
 
     /// Build the `assistant` message that echoes a prior turn's content back into history.
@@ -184,9 +268,11 @@ struct AnthropicClient {
             throw AIConfig.AIError.decoding("missing content")
         }
         for block in content where (block["type"] as? String) == "tool_use" {
-            if let input = block["input"] as? [String: Any] { return input }
+            if let input = block["input"] as? [String: Any] {
+                return StructuredOutputRepair.repair(input, schema: schema)
+            }
         }
-        throw AIConfig.AIError.decoding("no tool_use block")
+        throw Self.emptyReplyError(json, model: model, cap: maxTokens, what: "no tool_use block")
     }
 
     // MARK: - Web-search-grounded research (the heavy plan build only)
@@ -290,8 +376,11 @@ struct AnthropicClient {
                     let output = usage["output_tokens"] as? Int ?? 0
                     let cacheRead = usage["cache_read_input_tokens"] as? Int ?? 0
                     let cacheWrite = usage["cache_creation_input_tokens"] as? Int ?? 0
+                    let thinking = (usage["output_tokens_details"] as? [String: Any])?["thinking_tokens"] as? Int
+                    let stopReason = json["stop_reason"] as? String
                     Diagnostics.shared.log(
-                        "anthropic usage: in \(input) out \(output) cacheRead \(cacheRead) cacheWrite \(cacheWrite)",
+                        "anthropic usage: in \(input) out \(output) cacheRead \(cacheRead) cacheWrite \(cacheWrite)"
+                        + (thinking.map { " thinking \($0)" } ?? "") + (stopReason == "max_tokens" ? " STOPPED AT max_tokens" : ""),
                         .ai)
                     // Anthropic's `input_tokens` already excludes the cached part.
                     AIRuntime.report(AIUsage(
@@ -301,18 +390,24 @@ struct AnthropicClient {
                         uncachedInputTokens: input, cacheReadTokens: cacheRead,
                         cacheWriteTokens: cacheWrite, outputTokens: output,
                         latencyMs: Int(Date().timeIntervalSince(started) * 1000),
-                        attempts: attempt + 1))
+                        attempts: attempt + 1,
+                        thinkingTokens: thinking, stopReason: stopReason))
                 }
                 return json
             }
 
-            let msg = ((json["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"
+            let failure = AIHTTPFailure(provider: .anthropic, response: http, json: json)
+            let msg = failure.message
             Diagnostics.shared.log("anthropic HTTP \(http.statusCode): \(msg)", .ai)
 
-            if [429, 503, 529].contains(http.statusCode), attempt == 0 {
-                try? await Task.sleep(for: .milliseconds(700))
+            // A `retry-after` short enough to sit out is honoured; a longer one, and an
+            // account that is out of credit, are not retried: the caller is told instead.
+            if attempt == 0,
+               let delay = failure.automaticRetryDelay(retryableStatuses: [429, 503, 529]) {
+                try? await Task.sleep(for: .milliseconds(Int((delay * 1000).rounded())))
                 continue
             }
+            AIFailureRecorder.report(failure)
             throw AIConfig.AIError.badResponse(msg)
         }
         throw AIConfig.AIError.badResponse("request failed after a retry")

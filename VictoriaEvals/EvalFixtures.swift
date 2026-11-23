@@ -13,6 +13,24 @@ enum EvalFixtures {
         let water: [WaterEntry]
     }
 
+    /// Who a case is about, for a grader: the name the feature is given and which
+    /// third-person pronouns about the reader would be wrong. No SwiftData objects.
+    /// `gain` is Alex (a man, gaining); anything else is Sam (a woman, losing).
+    nonisolated static func reader(_ key: String, name: String? = nil) -> Graders.Reader {
+        let gaining = key == "gain"
+        return Graders.Reader(name: name ?? (gaining ? "Alex" : "Sam"), isWoman: !gaining, isMan: gaining)
+    }
+
+    /// The goal direction of a fixture user, unless the case states another.
+    nonisolated static func direction(_ key: String, override: String? = nil) -> GoalPace.Direction? {
+        switch override ?? (key == "gain" ? "gain" : "lose") {
+        case "lose": return .lose
+        case "gain": return .gain
+        case "maintain": return .maintain
+        default: return nil
+        }
+    }
+
     static func user(_ key: String) -> User {
         let gaining = key == "gain"
         let calendar = Calendar.current

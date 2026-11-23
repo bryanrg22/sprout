@@ -1,4 +1,5 @@
 import UIKit
+import ImageIO
 @testable import Victoria
 
 /// Small images drawn in code, for tests of the character pipeline and its graders. No
@@ -29,6 +30,49 @@ enum TestImages {
                     context.fill(CGRect(x: CGFloat(c) * cellW, y: CGFloat(r) * cellH, width: cellW, height: cellH))
                 }
             }
+        }
+    }
+
+    /// A PNG whose pixels are given one by one as straight (not premultiplied) RGBA, for
+    /// what a drawn rectangle cannot make: an exact alpha such as 253 or 1, which is what
+    /// the image models return in place of "solid" and "clear".
+    static func png(width: Int, height: Int,
+                    pixel: (_ x: Int, _ y: Int) -> (r: UInt8, g: UInt8, b: UInt8, a: UInt8)) -> Data {
+        var bytes = [UInt8](repeating: 0, count: width * height * 4)
+        for y in 0..<height {
+            for x in 0..<width {
+                let p = pixel(x, y)
+                let i = (y * width + x) * 4
+                bytes[i] = p.r; bytes[i + 1] = p.g; bytes[i + 2] = p.b; bytes[i + 3] = p.a
+            }
+        }
+        let out = NSMutableData()
+        guard let provider = CGDataProvider(data: Data(bytes) as CFData),
+              let image = CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32,
+                                  bytesPerRow: width * 4,
+                                  space: CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
+                                  provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent),
+              let destination = CGImageDestinationCreateWithData(out, "public.png" as CFString, 1, nil) else { return Data() }
+        CGImageDestinationAddImage(destination, image, nil)
+        return CGImageDestinationFinalize(destination) ? out as Data : Data()
+    }
+
+    /// The character of `characterGrid` as the image models return one (measured, EVAL_REPORT
+    /// 23): solid pixels at alpha 253 and 254, never 255, and a scatter of alpha 1 and 2 in
+    /// the cleared background, the top corner blocks included.
+    static func characterPNGAsReturnedByAModel(side: Int = 1024) -> Data {
+        let rows = characterGrid.map(Array.init)
+        let rgb: [Character: (UInt8, UInt8, UInt8)] = [
+            "H": (0x4C, 0x38, 0x28), "S": (0xD8, 0xA8, 0x88), "E": (0x18, 0x18, 0x18),
+            "M": (0x98, 0x48, 0x48), "T": (0x38, 0x78, 0xB8),
+        ]
+        let cell = side / rows.count
+        return png(width: side, height: side) { x, y in
+            let ch = rows[min(y / cell, rows.count - 1)][min(x / cell, rows[0].count - 1)]
+            if let c = rgb[ch] { return (c.0, c.1, c.2, (x + y) % 3 == 0 ? 254 : 253) }
+            // Every 97th background pixel carries a trace of alpha, as the real ones do.
+            return (255, 255, 255, (x * 31 + y * 17) % 97 == 0 ? ((x + y) % 2 == 0 ? 1 : 2) : 0)
         }
     }
 

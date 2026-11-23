@@ -21,6 +21,12 @@ enum AccessibilityID {
     enum Onboarding {
         /// The step indicator; its label carries the step number.
         static let steps = "onboarding.steps"
+        /// The footer's forward button on every step but the last (its title varies by step).
+        static let next = "onboarding.next"
+        /// The footer's back button; absent on the first step.
+        static let back = "onboarding.back"
+        /// "Start my journey", on the last step only.
+        static let start = "onboarding.start"
     }
 
     enum Today {

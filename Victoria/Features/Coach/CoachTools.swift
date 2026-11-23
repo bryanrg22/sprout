@@ -3,7 +3,7 @@ import SwiftData
 
 /// The coach's SAFE, agentic tool surface.
 ///
-/// Vita ("the coach") can do two kinds of things here: *log/edit the user's data* on her
+/// Vita ("the coach") can do two kinds of things here: *log/edit the user's data* on their
 /// behalf (food, water, weight) and *propose changing* a small set of encouragement
 /// settings (step goal, water goal, goal pace, goal weight). Everything is designed around
 /// these hard rules:
@@ -56,16 +56,16 @@ enum CoachTools {
         // permanent after onboarding; now editable in Settings and here.
         case setStartWeight        = "set_start_weight"
         // Durable memory: save a lasting fact about the user (creatine, nutritionist, allergy…)
-        // to her long-term notes so it persists across every future conversation.
+        // to their long-term notes so it persists across every future conversation.
         case rememberFact          = "remember_about_user"
-        // Adaptive Plan: record a change to her evolving Plan (the AI-authored "understanding
+        // Adaptive Plan: record a change to their evolving Plan (the AI-authored "understanding
         // of you" on Progress) so every adaptation is visible in its changelog.
         case updatePlan            = "update_plan"
-        // Log a workout / training session — she could READ workouts but not WRITE one until now.
+        // Log a workout / training session — they could READ workouts but not WRITE one until now.
         case logWorkout            = "log_workout"
         // Edit the user's adaptive PLAN's content directly (targets / prose / focus) + log the change.
         case editPlan              = "edit_plan"
-        // Correct/forget a fact from her durable profile notes — the counterpart to remember.
+        // Correct/forget a fact from their durable profile notes — the counterpart to remember.
         case forgetFact            = "forget_about_user"
         // Settings / preferences tools — let Vita change every setting the user can in Settings.
         // Each writes a single profile field, validated to the same options/ranges the UI allows.
@@ -109,11 +109,11 @@ enum CoachTools {
     // the coach can never write a value the user couldn't set themselves.
     /// Height in cm — comfortably spans the onboarding stepper (48–84 in ≈ 122–213 cm).
     static let heightCmRange = 120.0...230.0
-    /// A plausible adult age in whole years (used when she gives an age instead of a birth date).
+    /// A plausible adult age in whole years (used when they give an age instead of a birth date).
     static let ageYearsRange = 13...100
     /// A directly-set daily protein target, in grams — generous but sane (0 clears any override).
     static let proteinGoalRange = 0.0...400.0
-    /// The size of "one drink" she logs, in oz — spans the Settings presets (glass 8 … big bottle 32)
+    /// The size of "one drink" they log, in oz — spans the Settings presets (glass 8 … big bottle 32)
     /// with a little headroom for a custom container.
     static let waterContainerOzRange = 4.0...64.0
 
@@ -137,17 +137,17 @@ enum CoachTools {
     }
 
     /// Save a durable fact about the user to long-term memory. This is the tool that lets Vita
-    /// actually "update the profile" when the user shares something lasting — and it means she
+    /// actually "update the profile" when the user shares something lasting — and it means Vita
     /// must never CLAIM to have saved something without calling it.
     private static let rememberSchema: [String: Any] = [
         "name": Name.rememberFact.rawValue,
         "description": """
         Save a DURABLE fact about the user to your long-term memory so it persists across ALL \
-        future conversations (not just this chat). Use this whenever she shares something \
-        lasting about her life, health, habits, routine, or preferences — e.g. "I take \
+        future conversations (not just this chat). Use this whenever they share something \
+        lasting about their life, health, habits, routine, or preferences — e.g. "I take \
         creatine daily", "I see a nutritionist", "I'm vegetarian", "I work night shifts", \
         "I'm allergic to peanuts", "my gym days are Mon/Wed/Fri". Once you call it you genuinely \
-        remember it. NEVER tell her you've saved or updated something about her without calling \
+        remember it. NEVER tell them you've saved or updated something about them without calling \
         this tool — if you didn't call it, you didn't do it.
         """,
         "input_schema": [
@@ -170,10 +170,10 @@ enum CoachTools {
         "name": Name.updatePlan.rawValue,
         "description": """
         Record a change to the user's adaptive PLAN — the evolving "understanding of you" that \
-        lives on the Progress tab. Use when you and she agree to adjust her approach, e.g. \
+        lives on the Progress tab. Use when you and they agree to adjust their approach, e.g. \
         "let's add a protein focus", "shifting your timeframe to October", or "easing off on \
-        cardio for now". This appends a visible line to her plan's changelog so the adaptation \
-        is never silent. NEVER tell her you've updated her plan without calling this tool — if \
+        cardio for now". This appends a visible line to their plan's changelog so the adaptation \
+        is never silent. NEVER tell them you've updated their plan without calling this tool — if \
         you didn't call it, you didn't do it.
         """,
         "input_schema": [
@@ -310,19 +310,19 @@ enum CoachTools {
         "name": Name.logFood.rawValue,
         "description": """
         Log a FOOD ITEM or meal to the user's diary — TODAY by default (the normal case), or a \
-        PAST day she forgot via the optional `date`. Use when she tells you what \
-        she ate and wants it recorded, e.g. "log a chicken bowl, about 600 calories, 45g \
+        PAST day they forgot via the optional `date`. Use when they tell you what \
+        they ate and wants it recorded, e.g. "log a chicken bowl, about 600 calories, 45g \
         protein" or "add my oatmeal breakfast". Provide your best calorie + macro estimate \
-        from what she described; portion size is the biggest unknown, so estimate sensibly. \
-        This logs immediately (she can undo), so only call it when she clearly wants the \
-        item recorded — if she's just chatting about food, don't. The label nutrients \
+        from what they described; portion size is the biggest unknown, so estimate sensibly. \
+        This logs immediately (they can undo), so only call it when they clearly want the \
+        item recorded — if they're just chatting about food, don't. The label nutrients \
         (saturated fat, sodium, fiber, sugars and the rest) are optional: one you leave out \
         is recorded as not known, which is better than a guess.
         """,
         "input_schema": [
             "type": "object",
             "properties": withDetail([
-                "name": ["type": "string", "description": "What she ate, e.g. \"Chicken burrito bowl\"."],
+                "name": ["type": "string", "description": "What they ate, e.g. \"Chicken burrito bowl\"."],
                 "meal": [
                     "type": "string",
                     "description": "Which meal it belongs to.",
@@ -334,12 +334,12 @@ enum CoachTools {
                 "fat_g": ["type": "number", "description": "Fat grams in ONE serving.", "minimum": 0],
                 "quantity": [
                     "type": "number",
-                    "description": "How many servings she ate. The per-serving calories/macros above are multiplied by this — so DON'T pre-multiply them. Use 1 for a single item; only set higher for genuine multiples (e.g. 2 for two identical bowls). Defaults to 1.",
+                    "description": "How many servings they ate. The per-serving calories/macros above are multiplied by this — so DON'T pre-multiply them. Use 1 for a single item; only set higher for genuine multiples (e.g. 2 for two identical bowls). Defaults to 1.",
                     "minimum": 0,
                 ],
                 "date": [
                     "type": "string",
-                    "description": "ONLY when she means a PAST day she forgot to log (e.g. \"add the burger I had yesterday\"): \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
+                    "description": "ONLY when they mean a PAST day they forgot to log (e.g. \"add the burger I had yesterday\"): \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
                 ],
             ], editing: false),
             "required": ["name", "meal", "calories", "protein_g", "carbs_g", "fat_g"],
@@ -350,16 +350,16 @@ enum CoachTools {
         "name": Name.editFood.rawValue,
         "description": """
         Edit a food item the user ALREADY logged TODAY. Identify it by its name (match what \
-        she logged, e.g. "my latte"). Only include the fields she wants to change — omit the \
+        they logged, e.g. "my latte"). Only include the fields they want to change — omit the \
         rest and they stay as they are. Use for corrections like "actually my latte was 250 \
-        calories" or "change the burrito to lunch". If you can't tell which item she means, \
-        ask her to clarify rather than guessing.
+        calories" or "change the burrito to lunch". If you can't tell which item they mean, \
+        ask them to clarify rather than guessing.
         """,
         "input_schema": [
             "type": "object",
             "properties": withDetail([
                 "name": ["type": "string", "description": "The CURRENT name of the logged item to find."],
-                "new_name": ["type": "string", "description": "A new name, if she's renaming it."],
+                "new_name": ["type": "string", "description": "A new name, if they're renaming it."],
                 "meal": [
                     "type": "string",
                     "description": "Move it to this meal, if changing.",
@@ -378,10 +378,10 @@ enum CoachTools {
     private static let deleteFoodSchema: [String: Any] = [
         "name": Name.deleteFood.rawValue,
         "description": """
-        Delete a food item the user logged TODAY, found by its name. Use only when she \
-        clearly asks to remove something, e.g. "delete the fries I logged" or "remove my \
-        snack". This is destructive, so the app asks her to confirm before it's removed. If \
-        the name is ambiguous, ask her which one she means instead of guessing.
+        Delete a food item the user logged TODAY, found by its name. Use only when they \
+        clearly ask to remove something, e.g. "delete the fries I logged" or "remove my \
+        snack". This is destructive, so the app asks them to confirm before it's removed. If \
+        the name is ambiguous, ask them which one they mean instead of guessing.
         """,
         "input_schema": [
             "type": "object",
@@ -392,17 +392,17 @@ enum CoachTools {
         ],
     ]
 
-    /// Water-logging schema — phrased in HER container so she never thinks in oz, but `oz`
+    /// Water-logging schema — phrased in their container so they never think in oz, but `oz`
     /// is also accepted for "I drank a big glass / 20 oz". One of the two must be present.
     private static func logWaterSchema(for profile: UserProfile) -> [String: Any] {
         let label = profile.waterContainerLabel.isEmpty ? "bottle" : profile.waterContainerLabel
         return [
             "name": Name.logWater.rawValue,
             "description": """
-            Log water the user drank, ADDING to today's total. Prefer `containers` — her usual \
+            Log water the user drank, ADDING to today's total. Prefer `containers` — their usual \
             drink is a \(label) (\(Int(containerSize(profile).rounded())) oz) — e.g. "I had 2 \
-            \(label)s of water" → containers: 2. Use `oz` only when she gives an explicit ounce \
-            amount. Encouraging hydration is always healthy, so log it whenever she mentions \
+            \(label)s of water" → containers: 2. Use `oz` only when they give an explicit ounce \
+            amount. Encouraging hydration is always healthy, so log it whenever they mention \
             drinking water.
             """,
             "input_schema": [
@@ -410,19 +410,19 @@ enum CoachTools {
                 "properties": [
                     "containers": [
                         "type": "integer",
-                        "description": "Number of her usual \(label)s, e.g. 2.",
+                        "description": "Number of their usual \(label)s, e.g. 2.",
                         "minimum": waterContainersLogRange.lowerBound,
                         "maximum": waterContainersLogRange.upperBound,
                     ],
                     "oz": [
                         "type": "number",
-                        "description": "Explicit fluid ounces, if she gave one.",
+                        "description": "Explicit fluid ounces, if they gave one.",
                         "minimum": waterOzRange.lowerBound,
                         "maximum": waterOzRange.upperBound,
                     ],
                     "date": [
                         "type": "string",
-                        "description": "ONLY when she means a PAST day she forgot to log: \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
+                        "description": "ONLY when they mean a PAST day they forgot to log: \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
                     ],
                 ],
             ],
@@ -437,11 +437,11 @@ enum CoachTools {
         "name": Name.logWorkout.rawValue,
         "description": """
         Log a workout / training session the user did — TODAY by default, or a PAST day via the \
-        optional `date`. Use whenever she mentions exercising — "I hit the gym", "ran 3 miles", \
+        optional `date`. Use whenever they mention exercising — "I hit the gym", "ran 3 miles", \
         "did chest and arms today". Only `kind` is required (gym/run/walk/cycle/swim/sport/yoga/other). \
-        For a GYM day you can also pass `focuses` (the muscle groups she trained) and an `exercises` \
-        list of the machines/moves she did (with weight/reps/sets if she gave them) — e.g. "chest \
-        press 90lb 3x10, incline press". Add `minutes` and a short `notes` if she mentioned them. \
+        For a GYM day you can also pass `focuses` (the muscle groups they trained) and an `exercises` \
+        list of the machines/moves they did (with weight/reps/sets if they gave them) — e.g. "chest \
+        press 90lb 3x10, incline press". Add `minutes` and a short `notes` if they mentioned them. \
         Showing up always counts — log it whenever it comes up.
         """,
         "input_schema": [
@@ -454,13 +454,13 @@ enum CoachTools {
                 ],
                 "minutes": [
                     "type": "integer",
-                    "description": "Duration in minutes, if she gave one.",
+                    "description": "Duration in minutes, if they gave one.",
                     "minimum": workoutMinutesRange.lowerBound,
                     "maximum": workoutMinutesRange.upperBound,
                 ],
                 "focuses": [
                     "type": "array",
-                    "description": "GYM days only: the muscle groups she trained (one or more).",
+                    "description": "GYM days only: the muscle groups they trained (one or more).",
                     "items": [
                         "type": "string",
                         "enum": MuscleFocus.allCases.map { $0.rawValue },
@@ -468,12 +468,12 @@ enum CoachTools {
                 ],
                 "exercises": [
                     "type": "array",
-                    "description": "GYM days only: the machines/moves she did. One object per exercise.",
+                    "description": "GYM days only: the machines/moves they did. One object per exercise.",
                     "items": [
                         "type": "object",
                         "properties": [
                             "name": ["type": "string", "description": "The machine / exercise name, e.g. \"Chest press\" or \"Incline dumbbell press\"."],
-                            "weight_lbs": ["type": "number", "description": "Working weight in lbs, if she gave one. Omit if unknown.", "minimum": 0],
+                            "weight_lbs": ["type": "number", "description": "Working weight in lbs, if they gave one. Omit if unknown.", "minimum": 0],
                             "reps": ["type": "integer", "description": "Reps per set (defaults to 10).", "minimum": 1],
                             "sets": ["type": "integer", "description": "Number of sets (defaults to 3).", "minimum": 1],
                         ],
@@ -483,23 +483,23 @@ enum CoachTools {
                 "notes": ["type": "string", "description": "A short optional note, e.g. 'felt strong'."],
                 "date": [
                     "type": "string",
-                    "description": "ONLY when she means a PAST day she forgot to log: \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
+                    "description": "ONLY when they mean a PAST day they forgot to log: \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
                 ],
             ],
             "required": ["kind"],
         ],
     ]
 
-    /// Edit the user's adaptive PLAN's content directly — set only the fields she asked to change,
+    /// Edit the user's adaptive PLAN's content directly — set only the fields they asked to change,
     /// like edit_food. Vita's coaching judgment (educate, don't enable extremes) is the guardrail;
     /// there's no hard gate. `change_note` becomes the changelog line so the edit is visible.
     private static let editPlanSchema: [String: Any] = [
         "name": Name.editPlan.rawValue,
         "description": """
-        Edit the user's adaptive PLAN in place when she asks to change it ("bump my protein to 150", \
-        "make the focus about dinners", "shift my range up"). Set ONLY the fields she wants changed — \
-        you can see her plan in your context, so keep the rest. Before any extreme change (e.g. a very \
-        low calorie range), educate her first — never just enable it. Always include a short change_note.
+        Edit the user's adaptive PLAN in place when they ask to change it ("bump my protein to 150", \
+        "make the focus about dinners", "shift my range up"). Set ONLY the fields they want changed — \
+        you can see their plan in your context, so keep the rest. Before any extreme change (e.g. a very \
+        low calorie range), educate them first — never just enable it. Always include a short change_note.
         """,
         "input_schema": [
             "type": "object",
@@ -516,12 +516,12 @@ enum CoachTools {
         ],
     ]
 
-    /// Forget / correct a fact in her durable profile notes — removes any remembered lines matching
-    /// `fact`. The counterpart to remember_about_user; together they let her profile be edited.
+    /// Forget / correct a fact in their durable profile notes — removes any remembered lines matching
+    /// `fact`. The counterpart to remember_about_user; together they let their profile be edited.
     private static let forgetSchema: [String: Any] = [
         "name": Name.forgetFact.rawValue,
         "description": """
-        Remove something from your durable memory about her when she says it's wrong or no longer true \
+        Remove something from your durable memory about them when they say it's wrong or no longer true \
         ("I don't take creatine anymore", "forget that I work nights"). Pass the `fact` to forget; any \
         remembered note matching it is dropped. To CORRECT a fact, forget the old one then remember the new.
         """,
@@ -541,9 +541,9 @@ enum CoachTools {
         return [
             "name": Name.logWeight.rawValue,
             "description": """
-            Log today's weigh-in for the user, in \(unit) (her unit). Use when she tells you \
+            Log today's weigh-in for the user, in \(unit) (their unit). Use when they tell you \
             the scale number, e.g. "I'm \(unit == "lb" ? "152" : "69") today" or "log my \
-            weigh-in at \(unit == "lb" ? "150.4" : "68.2")". Remind her gently that one number \
+            weigh-in at \(unit == "lb" ? "150.4" : "68.2")". Remind them gently that one number \
             is just one day — the trend is what matters — but go ahead and log it. Value must \
             be between \(Int(weightRangeLbs.lowerBound)) and \(Int(weightRangeLbs.upperBound)) \(unit).
             """,
@@ -552,7 +552,7 @@ enum CoachTools {
                 "properties": [
                     "weight": [
                         "type": "number",
-                        "description": "Her weight today in \(unit).",
+                        "description": "Their weight today in \(unit).",
                         "minimum": weightRangeLbs.lowerBound,
                         "maximum": weightRangeLbs.upperBound,
                     ],
@@ -562,24 +562,24 @@ enum CoachTools {
         ]
     }
 
-    /// Goal-weight schema — moves only her TARGET, never her intake. The model is told the
+    /// Goal-weight schema — moves only their TARGET, never their intake. The model is told the
     /// direction it must respect so it can't propose an out-of-direction goal; `parse`
     /// enforces it regardless.
     private static func weightGoalSchema(for profile: UserProfile) -> [String: Any] {
         let unit = profile.unitSystem.weightUnit
         let dir: String
         switch profile.pace.direction {
-        case .lose:     dir = "Her goal is weight LOSS, so a new goal must be BELOW her current weight."
-        case .gain:     dir = "Her goal is a lean GAIN, so a new goal must be ABOVE her current weight."
-        case .maintain: dir = "She is MAINTAINING, so a new goal should be close to her current weight."
+        case .lose:     dir = "Their goal is weight LOSS, so a new goal must be BELOW their current weight."
+        case .gain:     dir = "Their goal is a lean GAIN, so a new goal must be ABOVE their current weight."
+        case .maintain: dir = "They are MAINTAINING, so a new goal should be close to their current weight."
         }
         return [
             "name": Name.setWeightGoal.rawValue,
             "description": """
-            Set the user's GOAL WEIGHT (the target she's working toward), in \(unit). Use when \
-            she asks to change her target, e.g. "set my goal to \(unit == "lb" ? "140" : "63")". \
-            \(dir) This changes only the target line on her progress chart — it does NOT change \
-            how much she eats (her calorie target stays computed and safely floored). Must be \
+            Set the user's GOAL WEIGHT (the target they're working toward), in \(unit). Use when \
+            they ask to change their target, e.g. "set my goal to \(unit == "lb" ? "140" : "63")". \
+            \(dir) This changes only the target line on their progress chart — it does NOT change \
+            how much they eat (their calorie target stays computed and safely floored). Must be \
             between \(Int(weightRangeLbs.lowerBound)) and \(Int(weightRangeLbs.upperBound)) \(unit). \
             The app shows a one-tap confirm before it's saved.
             """,
@@ -604,9 +604,9 @@ enum CoachTools {
             "name": Name.setStartWeight.rawValue,
             "description": """
             Correct the user's STARTING weight — the baseline the progress chart's "Start" line \
-            and her total-change number measure from. Use when she says her starting weight was \
+            and their total-change number measure from. Use when they say their starting weight was \
             recorded wrong (e.g. "I actually started at 165, not 158"). This does NOT log a \
-            weigh-in and does NOT change her calorie targets — it only fixes the baseline. \
+            weigh-in and does NOT change their calorie targets — it only fixes the baseline. \
             Must be between \(Int(weightRangeLbs.lowerBound)) and \(Int(weightRangeLbs.upperBound)) \(unit). \
             The app shows a one-tap confirm before it's saved.
             """,
@@ -634,10 +634,10 @@ enum CoachTools {
     private static let setUnitsSchema: [String: Any] = [
         "name": Name.setUnits.rawValue,
         "description": """
-        Set the user's UNIT SYSTEM. Call this whenever she asks to switch units, e.g. "show my \
+        Set the user's UNIT SYSTEM. Call this whenever they ask to switch units, e.g. "show my \
         weight in kg", "switch the app to metric" or "switch me to pounds". Only imperial (lb) \
         works today: for "metric" the app changes nothing and answers that kilograms aren't \
-        supported yet — still make the call, then tell her that plainly. No logged value is \
+        supported yet — still make the call, then tell them that plainly. No logged value is \
         ever altered.
         """,
         "input_schema": [
@@ -659,7 +659,7 @@ enum CoachTools {
         Set the app's APPEARANCE / theme. Two looks: "\(ThemeStyle.cute.rawValue)" \
         (\(ThemeStyle.cute.label) — \(ThemeStyle.cute.blurb.lowercased())) and \
         "\(ThemeStyle.cool.rawValue)" (\(ThemeStyle.cool.label) — \(ThemeStyle.cool.blurb.lowercased())). \
-        Use when she asks to change how the app looks, e.g. "make it dark" → cool, or "give me \
+        Use when they ask to change how the app looks, e.g. "make it dark" → cool, or "give me \
         the soft pastel look" → cute. Same layout either way; only the palette changes.
         """,
         "input_schema": [
@@ -680,7 +680,7 @@ enum CoachTools {
         "description": """
         Set the user's PRIMARY (home) GYM — used to show the right machine photos and personalize \
         workout advice. Options: \(HomeGym.allCases.map { "\"\($0.rawValue)\" (\($0.label))" }.joined(separator: ", ")). \
-        Use when she tells you where she trains, e.g. "I work out at 24 Hour Fitness". This doesn't \
+        Use when they tell you where they train, e.g. "I work out at 24 Hour Fitness". This doesn't \
         change which machines are listed — the catalog stays the same.
         """,
         "input_schema": [
@@ -688,7 +688,7 @@ enum CoachTools {
             "properties": [
                 "gym": [
                     "type": "string",
-                    "description": "Her home gym.",
+                    "description": "Their home gym.",
                     "enum": HomeGym.allCases.map { $0.rawValue },
                 ],
             ],
@@ -696,9 +696,9 @@ enum CoachTools {
         ],
     ]
 
-    /// Goal-direction schema — flips whether she's losing, maintaining, or gaining. The model is
-    /// told her current direction and current weight so it understands the consequence; `parse`
-    /// snaps her pace to a sensible in-direction pace (mirroring Settings' goalDirectionBinding).
+    /// Goal-direction schema — flips whether they're losing, maintaining, or gaining. The model is
+    /// told their current direction and current weight so it understands the consequence; `parse`
+    /// snaps their pace to a sensible in-direction pace (mirroring Settings' goalDirectionBinding).
     private static func setGoalDirectionSchema(for profile: UserProfile) -> [String: Any] {
         let cur: String
         switch profile.pace.direction {
@@ -709,18 +709,18 @@ enum CoachTools {
         return [
             "name": Name.setGoalDirection.rawValue,
             "description": """
-            Set the user's GOAL DIRECTION — whether she's working to lose weight, hold steady \
-            (maintain), or gain (a lean build). She is currently \(cur). Use when she wants to \
-            change what she's aiming for, e.g. "I want to switch to maintaining" or "let's start a \
+            Set the user's GOAL DIRECTION — whether they're working to lose weight, hold steady \
+            (maintain), or gain (a lean build). They are currently \(cur). Use when they want to \
+            change what they're aiming for, e.g. "I want to switch to maintaining" or "let's start a \
             lean bulk". This picks a gentle, sustainable pace in the new direction; it never routes \
-            her to under-eating. The app shows a one-tap confirm before it's saved.
+            them to under-eating. The app shows a one-tap confirm before it's saved.
             """,
             "input_schema": [
                 "type": "object",
                 "properties": [
                     "direction": [
                         "type": "string",
-                        "description": "Which way she's aiming: lose, maintain, or gain.",
+                        "description": "Which way they're aiming: lose, maintain, or gain.",
                         "enum": ["lose", "maintain", "gain"],
                     ],
                 ],
@@ -729,17 +729,17 @@ enum CoachTools {
         ]
     }
 
-    /// Height schema — always in cm internally. The example is phrased in her unit so it reads
+    /// Height schema — always in cm internally. The example is phrased in their unit so it reads
     /// naturally, but the model is told to send cm.
     private static func setHeightSchema(for profile: UserProfile) -> [String: Any] {
         let imperial = profile.unitSystem == .imperial
-        let hint = imperial ? "e.g. she says 5'6\" → send 168" : "e.g. she says 168 cm → send 168"
+        let hint = imperial ? "e.g. they say 5'6\" → send 168" : "e.g. they say 168 cm → send 168"
         return [
             "name": Name.setHeight.rawValue,
             "description": """
-            Set the user's HEIGHT, in CENTIMETRES (this feeds her calorie/BMR math). Always send \
-            `cm` — convert from feet/inches yourself if she gives those (\(hint)). Use when she \
-            tells you or corrects her height. Must be between \(Int(heightCmRange.lowerBound)) and \
+            Set the user's HEIGHT, in CENTIMETRES (this feeds their calorie/BMR math). Always send \
+            `cm` — convert from feet/inches yourself if they give those (\(hint)). Use when they \
+            tell you or corrects their height. Must be between \(Int(heightCmRange.lowerBound)) and \
             \(Int(heightCmRange.upperBound)) cm. The app shows a one-tap confirm before it's saved.
             """,
             "input_schema": [
@@ -747,7 +747,7 @@ enum CoachTools {
                 "properties": [
                     "cm": [
                         "type": "number",
-                        "description": "Her height in centimetres, e.g. 168.",
+                        "description": "Their height in centimetres, e.g. 168.",
                         "minimum": heightCmRange.lowerBound,
                         "maximum": heightCmRange.upperBound,
                     ],
@@ -760,9 +760,9 @@ enum CoachTools {
     private static let setBirthDateSchema: [String: Any] = [
         "name": Name.setBirthDate.rawValue,
         "description": """
-        Set the user's AGE / BIRTH DATE (this feeds her calorie/BMR math). Pass EITHER `age` in \
-        whole years (the usual case — "I'm 29") OR an exact `date` as ISO "yyyy-MM-dd" if she gives \
-        her birthday. Use when she tells you or corrects her age. Age must be between \
+        Set the user's AGE / BIRTH DATE (this feeds their calorie/BMR math). Pass EITHER `age` in \
+        whole years (the usual case — "I'm 29") OR an exact `date` as ISO "yyyy-MM-dd" if they give \
+        their birthday. Use when they tell you or corrects their age. Age must be between \
         \(ageYearsRange.lowerBound) and \(ageYearsRange.upperBound). The app shows a one-tap \
         confirm before it's saved.
         """,
@@ -771,13 +771,13 @@ enum CoachTools {
             "properties": [
                 "age": [
                     "type": "integer",
-                    "description": "Her age in whole years, e.g. 29.",
+                    "description": "Their age in whole years, e.g. 29.",
                     "minimum": ageYearsRange.lowerBound,
                     "maximum": ageYearsRange.upperBound,
                 ],
                 "date": [
                     "type": "string",
-                    "description": "Her birth date as ISO \"yyyy-MM-dd\", if she gave an exact birthday.",
+                    "description": "Their birth date as ISO \"yyyy-MM-dd\", if they gave an exact birthday.",
                 ],
             ],
         ],
@@ -788,14 +788,14 @@ enum CoachTools {
         "description": """
         Set the user's BIOLOGICAL SEX — used only for the BMR/calorie equation. Options: \
         \(BiologicalSex.allCases.map { "\"\($0.rawValue)\" (\($0.label))" }.joined(separator: ", ")). \
-        Use when she tells you or corrects it. The app shows a one-tap confirm before it's saved.
+        Use when they tell you or corrects it. The app shows a one-tap confirm before it's saved.
         """,
         "input_schema": [
             "type": "object",
             "properties": [
                 "sex": [
                     "type": "string",
-                    "description": "Her biological sex (for the BMR equation).",
+                    "description": "Their biological sex (for the BMR equation).",
                     "enum": BiologicalSex.allCases.map { $0.rawValue },
                 ],
             ],
@@ -806,10 +806,10 @@ enum CoachTools {
     private static let setActivityLevelSchema: [String: Any] = [
         "name": Name.setActivityLevel.rawValue,
         "description": """
-        Set the user's ACTIVITY LEVEL — her everyday baseline movement, which feeds her calorie \
+        Set the user's ACTIVITY LEVEL — their everyday baseline movement, which feeds their calorie \
         target (TDEE). Options: \
         \(ActivityLevel.allCases.map { "\"\($0.rawValue)\" (\($0.label) — \($0.detail.lowercased()))" }.joined(separator: "; ")). \
-        Use when she describes how active her days are, e.g. "I'm on my feet all day at work" → \
+        Use when they describe how active their days are, e.g. "I'm on my feet all day at work" → \
         a higher level. The app shows a one-tap confirm before it's saved.
         """,
         "input_schema": [
@@ -817,7 +817,7 @@ enum CoachTools {
             "properties": [
                 "level": [
                     "type": "string",
-                    "description": "Her everyday activity baseline.",
+                    "description": "Their everyday activity baseline.",
                     "enum": ActivityLevel.allCases.map { $0.rawValue },
                 ],
             ],
@@ -828,11 +828,11 @@ enum CoachTools {
     private static let setCompanionSchema: [String: Any] = [
         "name": Name.setCompanion.rawValue,
         "description": """
-        Set the user's little COMPANION — its name and/or its pixel avatar. Provide whichever she \
-        wants to change (at least one). The avatar choices are \
+        Set the user's little COMPANION — its name and/or its pixel avatar. Provide whichever they \
+        want to change (at least one). The avatar choices are \
         \(CompanionAvatar.builtIns.map { "\"\($0.rawValue)\"" }.joined(separator: " or ")). Use when \
-        she says e.g. "rename my buddy to Sprout" (name) or "make my companion Bryan" (avatar). \
-        This is a fun cosmetic change and applies right away (she can undo).
+        they say e.g. "rename my buddy to Sprout" (name) or "make my companion \(CompanionAvatar.builtIns.last?.rawValue.capitalized ?? "the other one")" (avatar). \
+        This is a fun cosmetic change and applies right away (they can undo).
         """,
         "input_schema": [
             "type": "object",
@@ -850,9 +850,9 @@ enum CoachTools {
     private static let setCoachNameSchema: [String: Any] = [
         "name": Name.setCoachName.rawValue,
         "description": """
-        Rename YOU, the coach. Use when she wants to call you something else, e.g. "I'll call you \
+        Rename YOU, the coach. Use when they want to call you something else, e.g. "I'll call you \
         Coach" or "your name is now Mia". This just changes your display name throughout the app — \
-        it applies right away (she can undo).
+        it applies right away (they can undo).
         """,
         "input_schema": [
             "type": "object",
@@ -868,10 +868,10 @@ enum CoachTools {
         "description": """
         Set what "one drink" means for water logging — its size in ounces, and optionally a friendly \
         label ("glass", "bottle", "big bottle"). Common sizes: a glass ≈ 8 oz, a bottle ≈ 17 oz, a \
-        big bottle ≈ 32 oz. Use when she tells you what she usually drinks from, e.g. "I drink from a \
+        big bottle ≈ 32 oz. Use when they tell you what they usually drink from, e.g. "I drink from a \
         32 oz bottle" → oz: 32, label: "big bottle". Size must be between \
         \(Int(waterContainerOzRange.lowerBound)) and \(Int(waterContainerOzRange.upperBound)) oz. The \
-        app shows a one-tap confirm before it's saved (it affects how her water goal is counted).
+        app shows a one-tap confirm before it's saved (it affects how their water goal is counted).
         """,
         "input_schema": [
             "type": "object",
@@ -891,11 +891,11 @@ enum CoachTools {
     private static let setProteinGoalSchema: [String: Any] = [
         "name": Name.setProteinGoal.rawValue,
         "description": """
-        Set the user's DAILY PROTEIN TARGET directly, in grams. Use when she asks to aim for a \
+        Set the user's DAILY PROTEIN TARGET directly, in grams. Use when they ask to aim for a \
         specific protein number, e.g. "I want to hit 140g of protein a day". Higher protein is \
-        healthy and supportive of her goals — encourage it. Must be between \
+        healthy and supportive of their goals — encourage it. Must be between \
         \(Int(proteinGoalRange.lowerBound)) and \(Int(proteinGoalRange.upperBound)) g (send 0 only \
-        if she wants to clear a custom target and go back to the calculated one). The app shows a \
+        if they want to clear a custom target and go back to the calculated one). The app shows a \
         one-tap confirm before it's saved.
         """,
         "input_schema": [
@@ -915,8 +915,8 @@ enum CoachTools {
     private static let toggleStepsInBudgetSchema: [String: Any] = [
         "name": Name.toggleStepsInBudget.rawValue,
         "description": """
-        Turn ON or OFF "let steps add to my budget" — when on, steps she walks above her baseline \
-        add a little to her daily calorie budget. Use when she asks for this, e.g. "let my steps \
+        Turn ON or OFF "let steps add to my budget" — when on, steps they walk above their baseline \
+        add a little to their daily calorie budget. Use when they ask for this, e.g. "let my steps \
         earn me extra calories" → on, or "stop adding steps to my budget" → off. The app shows a \
         one-tap confirm before it's saved.
         """,
@@ -925,7 +925,7 @@ enum CoachTools {
             "properties": [
                 "enabled": [
                     "type": "boolean",
-                    "description": "true to let steps add to her budget, false to turn it off.",
+                    "description": "true to let steps add to their budget, false to turn it off.",
                 ],
             ],
             "required": ["enabled"],
@@ -994,7 +994,7 @@ enum CoachTools {
             switch name {
             case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan, .logWorkout,
                  .forgetFact,
-                 // Cosmetic / personalization preferences with no effect on targets, units, or her
+                 // Cosmetic / personalization preferences with no effect on targets, units, or their
                  // goal — like a rename, these are safely reversible, so auto-apply with Undo.
                  .setTheme, .setHomeGym, .setCompanion, .setCoachName:
                 return false   // quick + reversible → auto-apply with Undo
@@ -1009,7 +1009,7 @@ enum CoachTools {
             case .deleteFood,                                   // destructive
                  .setPace, .setStepGoal, .setWaterGoalContainers, .setWeightGoal, .setStartWeight,
                  // Biometric / unit / goal-direction / target-changing settings — anything that
-                 // moves her numbers (BMR inputs, units, goal, computed budget) → confirm first.
+                 // moves their numbers (BMR inputs, units, goal, computed budget) → confirm first.
                  .setUnits, .setGoalDirection, .setHeight, .setBirthDate, .setSex, .setActivityLevel,
                  .setProteinGoal, .setWaterContainer, .toggleStepsInBudget:
                 return true    // goal-changing / not a casual log → confirm first
@@ -1039,7 +1039,7 @@ enum CoachTools {
     }
 
     /// A plain-value set of edits for `edit_plan`: each nil when unchanged, so `apply` only touches
-    /// the fields she actually asked to change. `changeNote` becomes the plan's changelog line.
+    /// the fields they actually asked to change. `changeNote` becomes the plan's changelog line.
     struct PlanEdit {
         var headline: String?
         var assessment: String?
@@ -1059,7 +1059,7 @@ enum CoachTools {
     /// One machine/move within a logged gym session — the plain-value form `apply` turns into an
     /// `ExerciseEntry`. `machineKey`/`iconName` are pre-resolved by `parse` against `MachineCatalog`
     /// (a known machine → its catalog key + icon; an unknown one → a slugged key + the dumbbell
-    /// fallback) so `apply` never has to touch the catalog. `displayName` is what she actually said.
+    /// fallback) so `apply` never has to touch the catalog. `displayName` is what they actually said.
     struct ExerciseDraft {
         var machineKey: String
         var displayName: String
@@ -1098,7 +1098,7 @@ enum CoachTools {
     /// ambiguous as a friendly `.invalid`). It defaults to `[]` so the settings-only call
     /// sites and existing tests keep their exact signatures.
     ///
-    /// `currentWeightLbs` is where she is now (the smoothed trend), used by `set_weight_goal`
+    /// `currentWeightLbs` is where they are now (the smoothed trend), used by `set_weight_goal`
     /// to check the goal lies on the right side of it. Nil when the caller has no weigh-ins,
     /// in which case the start weight stands in.
     static func parse(name rawName: String,
@@ -1662,8 +1662,8 @@ enum CoachTools {
         }
         let ounces = Int(oz.rounded())
         // Name the container the way the apply-side success message will ("One <label> is now N oz."):
-        // when she's renaming, reference the new name; when it's a size-only change, use her current
-        // word ("drink" only as a last resort if she's never named it) — never the generic "drink".
+        // when they're renaming, reference the new name; when it's a size-only change, use their current
+        // word ("drink" only as a last resort if they're never named it) — never the generic "drink".
         let summary: String
         if let label {
             summary = "set your drink to \(ounces) oz and call it \"\(label)\""
@@ -1930,9 +1930,9 @@ enum CoachTools {
             return .invalid("A goal of \(trimmed(goal)) \(unit) is outside the sensible range "
                           + "(\(Int(weightRangeLbs.lowerBound))–\(Int(weightRangeLbs.upperBound)) \(unit)). Nothing was changed.")
         }
-        // The goal must lie in her goal DIRECTION relative to where she is now (her weight
-        // trend when the caller has it, else her start weight; see `currentWeightLbs`). This is
-        // a target only; her calorie intake stays computed + floored regardless, so there's no
+        // The goal must lie in their goal DIRECTION relative to where they are now (their weight
+        // trend when the caller has it, else their start weight; see `currentWeightLbs`). This is
+        // a target only; their calorie intake stays computed + floored regardless, so there's no
         // eat-less lever here — just a guard against an obviously contradictory target.
         let current = currentWeightLbs ?? Self.currentWeightLbs(profile)
         switch profile.pace.direction {
@@ -1992,7 +1992,7 @@ enum CoachTools {
                 .sorted { $0.date < $1.date }
                 .map { "\($0.mealType.label) at \($0.date.formatted(date: .omitted, time: .shortened))" }
                 .joined(separator: ", ")
-            return .invalid("You have \(exact.count) items called \"\(query)\" today (\(options)) — ask her which one she means, by meal or time.")
+            return .invalid("You have \(exact.count) items called \"\(query)\" today (\(options)) — ask them which one they mean, by meal or time.")
         }
 
         let contains = foods.filter { $0.name.lowercased().contains(needle) }
@@ -2010,7 +2010,7 @@ enum CoachTools {
     /// What `set_units` answers for metric. Goes to the model, which relays it.
     static let metricUnsupportedMessage =
         "Kilograms aren't supported yet, so nothing was changed: weights stay in pounds (lb). "
-        + "Tell her that plainly. If she gives a weight in kg, convert it to pounds yourself "
+        + "Tell them that plainly. If they give a weight in kg, convert it to pounds yourself "
         + "(1 kg = 2.2046 lb) before logging it."
 
     /// The outcome of applying a tool: the model-facing confirmation string, plus an optional
@@ -2028,7 +2028,7 @@ enum CoachTools {
 
     /// The authoritative "today so far" calorie line for a tool result, computed EXACTLY like the
     /// food log (`FoodLogView`): same `basisWeight` (current trend, else start weight, else 150) and
-    /// `dailyCalorieTarget`. Handing this to Vita stops her recomputing "kcal left" in chat and
+    /// `dailyCalorieTarget`. Handing this to Vita stops it recomputing "kcal left" in chat and
     /// getting it wrong. `nil` when there's no usable target. Returns e.g. "Today so far: 1555 of
     /// 1740 kcal (185 left)."
     @MainActor
@@ -2046,11 +2046,11 @@ enum CoachTools {
         let range = profile.calorieGoalRange(weightLbs: basis)
         switch profile.calorieStatus(consumed: consumed, weightLbs: basis) {
         case .under:
-            return "Today so far: \(consumedI) kcal — goal \(goalText) (\(Int((range.low - consumed).rounded())) to reach her range; she has room to eat more)."
+            return "Today so far: \(consumedI) kcal — goal \(goalText) (\(Int((range.low - consumed).rounded())) to reach their range; they have room to eat more)."
         case .inRange:
-            return "Today so far: \(consumedI) kcal — right in her range (\(goalText)). That's the win."
+            return "Today so far: \(consumedI) kcal — right in their range (\(goalText)). That's the win."
         case .over:
-            return "Today so far: \(consumedI) kcal — \(Int((consumed - range.high).rounded())) over her range ceiling (\(goalText)), and that's okay, one day doesn't define the week."
+            return "Today so far: \(consumedI) kcal — \(Int((consumed - range.high).rounded())) over their range ceiling (\(goalText)), and that's okay, one day doesn't define the week."
         }
     }
 
@@ -2126,7 +2126,7 @@ enum CoachTools {
                            undo: { profile.pace = old; Self.saveOrLog(context) })
 
         case .logFood(let draft):
-            // Run a plausibility check; we still log either way (it's her data), but a
+            // Run a plausibility check; we still log either way (it's their data), but a
             // flagged item carries a friendly note both on the entry and back to the model.
             let sanity = NutritionSanity.check(calories: draft.calories,
                                                protein: draft.proteinG,
@@ -2158,9 +2158,9 @@ enum CoachTools {
                 msg += " Also recorded: \(also)."
             }
             if let note { msg += " Note: \(note)." }
-            // Hand Vita the AUTHORITATIVE post-log day total so she states the real "kcal left"
-            // instead of doing her own (error-prone) chat arithmetic — she was getting it wrong
-            // (e.g. saying 80 left when 185 was actually left, double-counting the item she'd just
+            // Hand Vita the AUTHORITATIVE post-log day total so it states the real "kcal left"
+            // instead of doing their own (error-prone) chat arithmetic — they were getting it wrong
+            // (e.g. saying 80 left when 185 was actually left, double-counting the item they'd just
             // logged). Computed exactly like the food log (same basisWeight + target) so the number
             // matches what the user sees on the Nutrients card.
             if let status = calorieStatusLine(profile: profile, context: context) { msg += " " + status }
@@ -2211,7 +2211,7 @@ enum CoachTools {
 
         case .editPlan(let edit):
             guard let plan = CoachPlan.current(in: context) else {
-                return Applied(message: "She doesn't have a plan yet — she can build one on the Progress tab.",
+                return Applied(message: "They doesn't have a plan yet — they can build one on the Progress tab.",
                                undo: nil)
             }
             // Snapshot everything edit_plan can touch so undo restores exactly it.
@@ -2224,7 +2224,7 @@ enum CoachTools {
             if let lo = edit.calorieMin { plan.calorieMin = lo }
             if let hi = edit.calorieMax { plan.calorieMax = hi }
             if let p = edit.proteinTarget { plan.proteinTarget = p }
-            // A number set now is set for the goal direction she has now, so it drives the
+            // A number set now is set for the goal direction they have now, so it drives the
             // targets even if the rest of the plan was written for another direction. The
             // calorie range counts as set when its floor is: the floor is the target.
             if edit.calorieMin != nil { plan.caloriesDirection = profile.pace.direction }
@@ -2338,7 +2338,7 @@ enum CoachTools {
                            undo: { profile.startWeightLbs = old; Self.saveOrLog(context) })
 
         case .rememberFact(let note):
-            // Append the fact to her durable long-term notes (which `CoachContext` re-injects
+            // Append the fact to their durable long-term notes (which `CoachContext` re-injects
             // into every future turn), so Vita actually remembers it — this is the tool that
             // makes "update my profile" real.
             let memory = CoachMemory.fetchOrCreate(in: context, profile: profile)
@@ -2358,10 +2358,10 @@ enum CoachTools {
             })
 
         case .updatePlan(let note):
-            // Append a visible line to her adaptive Plan's changelog so the adaptation is never
-            // silent. No plan yet → nothing to amend (she builds one on Progress first).
+            // Append a visible line to their adaptive Plan's changelog so the adaptation is never
+            // silent. No plan yet → nothing to amend (they build one on Progress first).
             guard let plan = CoachPlan.current(in: context) else {
-                return Applied(message: "She doesn't have a plan yet — she can build one on the Progress tab.",
+                return Applied(message: "They doesn't have a plan yet — they can build one on the Progress tab.",
                                undo: nil)
             }
             let old = plan.changelog
@@ -2418,24 +2418,24 @@ enum CoachTools {
             }
             let paceNote = direction == .maintain ? "" : " (\(newPace.label) pace)"
             // A direction flip leaves two things behind: an adaptive Plan written for the OLD
-            // direction, and a goal weight now on the wrong side of her current weight. The
-            // plan's numbers stop driving her targets here and now (`PlanTargetSync`), and the
+            // direction, and a goal weight now on the wrong side of their current weight. The
+            // plan's numbers stop driving their targets here and now (`PlanTargetSync`), and the
             // model is told what happened so it says so instead of quoting the old numbers.
             var staleNotes: [String] = []
             let activePlan = CoachPlan.current(in: context)
             PlanTargetSync.apply(plan: activePlan, to: profile)
             if let activePlan, activePlan.hasRange || activePlan.proteinTarget > 0 {
                 if PlanTargetSync.isSuspended(plan: activePlan, for: profile) {
-                    staleNotes.append("her adaptive Plan was written for the previous goal, so its calorie and protein numbers are set aside: her targets are the calculated ones until the plan is rebuilt (the Plan card on Progress offers the rebuild) — tell her, and don't quote the plan's old numbers as her targets")
+                    staleNotes.append("their adaptive Plan was written for the previous goal, so its calorie and protein numbers are set aside: their targets are the calculated ones until the plan is rebuilt (the Plan card on Progress offers the rebuild) — tell them, and don't quote the plan's old numbers as their targets")
                 } else {
-                    staleNotes.append("her adaptive Plan's numbers were written for this goal direction and are driving her targets")
+                    staleNotes.append("their adaptive Plan's numbers were written for this goal direction and are driving their targets")
                 }
             }
             let weights = (try? context.fetch(FetchDescriptor<WeightEntry>())) ?? []
             let current = profile.basisWeightLbs(weights: weights)
             if (direction == .lose && profile.goalWeightLbs >= current && profile.goalWeightLbs > 0)
                 || (direction == .gain && profile.goalWeightLbs <= current && profile.goalWeightLbs > 0) {
-                staleNotes.append("her goal weight (\(trimmed(profile.goalWeightLbs))) is now on the wrong side of her current weight — offer to set a new one (set_weight_goal)")
+                staleNotes.append("their goal weight (\(trimmed(profile.goalWeightLbs))) is now on the wrong side of their current weight — offer to set a new one (set_weight_goal)")
             }
             let followUp = staleNotes.isEmpty ? "" : " NOTE: " + staleNotes.joined(separator: "; ") + "."
             return Applied(message: "Your goal is now \(label)\(paceNote).\(followUp)",
@@ -2494,8 +2494,8 @@ enum CoachTools {
                            undo: { profile.coachName = old; Self.saveOrLog(context) })
 
         case .setWaterContainer(let oz, let label):
-            // Capture both size + label so undo restores the pair. Only overwrite the label when she
-            // gave one (otherwise keep her existing label for the new size).
+            // Capture both size + label so undo restores the pair. Only overwrite the label when they
+            // gave one (otherwise keep their existing label for the new size).
             let oldOz = profile.waterContainerOz
             let oldLabel = profile.waterContainerLabel
             profile.waterContainerOz = oz
@@ -2512,7 +2512,7 @@ enum CoachTools {
         case .setProteinGoal(let grams):
             // 0 clears it → back to the calculated target.
             let old = profile.proteinTargetOverride
-            // If she has an active Plan, the protein target LIVES on the plan — `RootView.syncPlanTargets()`
+            // If they have an active Plan, the protein target LIVES on the plan — `RootView.syncPlanTargets()`
             // re-derives `proteinTargetOverride` from it on every launch / plan change. Writing only the
             // override would therefore silently revert on the next sync. So when a plan exists we edit the
             // PLAN (exactly like edit_plan) and mirror the override; with no plan we just set the override
@@ -2521,7 +2521,7 @@ enum CoachTools {
                 let before = (plan.proteinTarget, plan.changelog, plan.updatedAt, old)
                 let anchor = plan.proteinDirection
                 plan.proteinTarget = grams
-                plan.proteinDirection = profile.pace.direction   // chosen for the goal she has now
+                plan.proteinDirection = profile.pace.direction   // chosen for the goal they have now
                 plan.changelog = plan.changelog + [PlanChange(date: .now,
                     summary: grams == 0 ? "Cleared the protein target" : "Set protein target to \(Int(grams.rounded()))g")]
                 plan.updatedAt = .now
@@ -2634,15 +2634,15 @@ enum CoachTools {
         return nil
     }
 
-    /// The size of one logged container in oz (her bottle/glass), same fallback as the UI.
+    /// The size of one logged container in oz (their bottle/glass), same fallback as the UI.
     private static func containerSize(_ profile: UserProfile) -> Double {
         profile.waterContainerOz > 0 ? profile.waterContainerOz : 16.9
     }
 
-    /// Stand-in for her current weight when `parse` was given none: her start weight, falling
-    /// back to the same 150 lb default the rest of the app uses. The caller that has her
+    /// Stand-in for their current weight when `parse` was given none: their start weight, falling
+    /// back to the same 150 lb default the rest of the app uses. The caller that has their
     /// weigh-ins passes the trend instead (`parse(currentWeightLbs:)`), because a start weight
-    /// stops being "where she is now" as soon as she makes progress. This guards only against
+    /// stops being "where they are now" as soon as they make progress. This guards only against
     /// an obviously contradictory target (e.g. a loss user aiming higher); it is not an intake lever.
     private static func currentWeightLbs(_ profile: UserProfile) -> Double {
         profile.startWeightLbs > 0 ? profile.startWeightLbs : 150

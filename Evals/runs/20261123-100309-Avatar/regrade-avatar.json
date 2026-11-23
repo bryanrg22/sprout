@@ -1,0 +1,146 @@
+{
+  "graders" : {
+    "clear_alpha_ceiling" : 8,
+    "colour_bits" : 4,
+    "min_colour_share" : 0.002,
+    "pixel_art_colour_limit" : 58,
+    "solid_alpha_floor" : 250
+  },
+  "images" : [
+    {
+      "candidate" : "gpt-image-2.6-flare@low",
+      "file" : "synthetic-man-30s-beard-8CC120EA.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 29,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 0,
+        "transparent_share" : 0.46288394927978516,
+        "transparent_top_corners" : 1
+      }
+    },
+    {
+      "candidate" : "gpt-image-2.6-flare@low",
+      "file" : "synthetic-man-50s-glasses-249AB71E.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 45,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 0,
+        "transparent_share" : 0.43163108825683594,
+        "transparent_top_corners" : 1
+      }
+    },
+    {
+      "candidate" : "gpt-image-2.6-flare@low",
+      "file" : "synthetic-woman-20s-ponytail-7982BC6A.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 34,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 0,
+        "transparent_share" : 0.34653282165527344,
+        "transparent_top_corners" : 1
+      }
+    },
+    {
+      "candidate" : "gpt-image-2.6-flare@medium",
+      "file" : "synthetic-man-30s-beard-44566F53.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 43,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 0,
+        "transparent_share" : 0.46168708801269531,
+        "transparent_top_corners" : 1
+      }
+    },
+    {
+      "candidate" : "gpt-image-2.6-flare@medium",
+      "file" : "synthetic-man-50s-glasses-4E5D0055.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 44,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 0,
+        "transparent_share" : 0.44975566864013672,
+        "transparent_top_corners" : 1
+      }
+    },
+    {
+      "candidate" : "gpt-image-2.6-flare@medium",
+      "file" : "synthetic-woman-20s-ponytail-4F968F7C.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 34,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 0,
+        "transparent_share" : 0.33555793762207031,
+        "transparent_top_corners" : 1
+      }
+    },
+    {
+      "candidate" : "gpt-image-2.6-sunburst@medium",
+      "file" : "synthetic-man-30s-beard-8C1F67DC.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 28,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 0,
+        "transparent_share" : 0.45544815063476562,
+        "transparent_top_corners" : 1
+      }
+    },
+    {
+      "candidate" : "gpt-image-2.6-sunburst@medium",
+      "file" : "synthetic-man-50s-glasses-F9B136C4.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 32,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 0,
+        "transparent_share" : 0.41961002349853516,
+        "transparent_top_corners" : 1
+      }
+    },
+    {
+      "candidate" : "gpt-image-2.6-sunburst@medium",
+      "file" : "synthetic-woman-20s-ponytail-B454E2B6.png",
+      "pass" : true,
+      "scores" : {
+        "decodable" : 1,
+        "distinct_colours" : 26,
+        "has_alpha" : 1,
+        "is_pixel_art" : 1,
+        "square_1024" : 1,
+        "transparent_corners" : 1,
+        "transparent_share" : 0.37574863433837891,
+        "transparent_top_corners" : 1
+      }
+    }
+  ]
+}
