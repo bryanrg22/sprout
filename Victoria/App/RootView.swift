@@ -217,6 +217,14 @@ struct MainTabView: View {
                 selection = destination.homeTab.rawValue
             }
         }
+        // A passage quoted for the coach from another screen goes to her tab the same way.
+        .onChange(of: askVita.pendingQuote) { _, quote in
+            if quote != nil {
+                let destination = AppMode.destinationForCoach()
+                storedMode = destination.mode.rawValue
+                selection = destination.homeTab.rawValue
+            }
+        }
         // "What's New" once per update — a celebratory rundown of the release. The adaptive-plan
         // invite is intentionally NOT chained here: building a plan is something the user opts into
         // from the "Build my plan" card on Progress, never an auto-popping dialog the instant they
