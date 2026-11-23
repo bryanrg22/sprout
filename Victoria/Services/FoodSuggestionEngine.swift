@@ -271,6 +271,8 @@ enum FoodSuggestionEngine {
         case .maintain: goal = "maintaining and recomposition"
         }
         lines.append("\(who) is working toward \(goal).")
+        // The rule about food for THIS goal direction (never the same sentence for everyone).
+        lines.append("Goal rule: " + GoalFraming.protectiveRule(goalDirection(ctx.direction)))
 
         // What meal we're suggesting for.
         lines.append("Right now it's around \(ctx.mealSlot.label) — suggest things that fit that meal.")
@@ -284,10 +286,10 @@ enum FoodSuggestionEngine {
         // Protein trend flag → directional emphasis.
         switch ctx.underProteinTrend {
         case .some(true):
-            lines.append("She's been landing UNDER her protein target most days lately — "
+            lines.append("Protein has been landing UNDER target most days lately — "
                          + "lean toward protein-forward picks that fix that.")
         case .some(false):
-            lines.append("She's been hitting her protein consistently — keep that momentum; "
+            lines.append("Protein has been on target consistently — keep that momentum; "
                          + "you don't have to force more protein into every pick.")
         case .none:
             break   // not enough data — say nothing rather than guess
@@ -301,9 +303,9 @@ enum FoodSuggestionEngine {
                 let p = Int(f.avgProteinG.rounded())
                 return "\(f.name) (logged \(f.count)×, ~\(p) g protein)"
             }.joined(separator: "; ")
-            lines.append("Foods she logs most: \(list). "
-                         + "Reference these by name where it fits — upgrade or build on what she "
-                         + "already eats rather than inventing unfamiliar meals.")
+            lines.append("Foods logged most: \(list). "
+                         + "Reference these by name where it fits — upgrade or build on what is "
+                         + "already eaten rather than inventing unfamiliar meals.")
         }
 
         // What she's already had TODAY — so a pick never repeats it (the "2nd Muscle Milk"
@@ -314,8 +316,8 @@ enum FoodSuggestionEngine {
                 .filter { seen.insert($0.lowercased()).inserted }
                 .prefix(8)
                 .joined(separator: ", ")
-            lines.append("She has ALREADY eaten these today: \(unique). Do not re-suggest "
-                         + "something she's already had today — build on the day and suggest the "
+            lines.append("ALREADY eaten these today: \(unique). Do not re-suggest "
+                         + "something already eaten today — build on the day and suggest the "
                          + "NEXT useful thing instead.")
         }
 
@@ -328,5 +330,14 @@ enum FoodSuggestionEngine {
         }
 
         return lines.joined(separator: "\n")
+    }
+
+    /// The engine's own direction as the model layer's, for the shared goal rule.
+    static func goalDirection(_ direction: Direction) -> GoalPace.Direction {
+        switch direction {
+        case .lose:     return .lose
+        case .maintain: return .maintain
+        case .gain:     return .gain
+        }
     }
 }

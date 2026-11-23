@@ -56,6 +56,26 @@ final class CoachMemory {
         self.updatedAt = updatedAt
     }
 
+    // MARK: - Labels the app writes into the notes
+
+    /// Prefix of the notes seeded from the onboarding note. Names no one and no gender:
+    /// the notes go into every coach prompt.
+    static let onboardingSeedLabel = "From the user's onboarding note (the user's own words): "
+    /// Prefix of the context folded in from the plan intake (`PlanIntakeView`).
+    static let planIntakeLabel = "From the user's plan intake — "
+
+    /// The labels the app wrote before they were neutral, and what each is now. Only the
+    /// app's own label is replaced; the words the user wrote after it are untouched.
+    static let legacyLabels: [(old: String, new: String)] = [
+        ("From her onboarding note (her own words): ", onboardingSeedLabel),
+        ("From her plan intake — her life + training: ", planIntakeLabel + "life + training: "),
+        ("From her plan intake — ", planIntakeLabel),
+    ]
+
+    static func neutralizingLegacyLabels(_ notes: String) -> String {
+        legacyLabels.reduce(notes) { $0.replacingOccurrences(of: $1.old, with: $1.new) }
+    }
+
     // MARK: - Singleton access
 
     /// Fetch the single `CoachMemory`, creating (and inserting) it if it doesn't exist yet.
@@ -78,6 +98,10 @@ final class CoachMemory {
         )
         descriptor.fetchLimit = 1
         if let existing = try? context.fetch(descriptor).first {
+            // Notes seeded before the labels were made neutral said "her": rewrite the label
+            // (never the user's words after it) so no prompt describes this user as "her".
+            let relabelled = neutralizingLegacyLabels(existing.profileNotes)
+            if relabelled != existing.profileNotes { existing.profileNotes = relabelled }
             return existing
         }
 
@@ -88,8 +112,8 @@ final class CoachMemory {
             notes = ""
         } else {
             // Label the seed so later consolidation passes know its provenance and the model
-            // reads it as durable "about her" context (qualitative, never numeric).
-            notes = "From her onboarding note (her own words): \(seed)"
+            // reads it as durable "about the user" context (qualitative, never numeric).
+            notes = Self.onboardingSeedLabel + seed
         }
         let memory = CoachMemory(profileNotes: notes)
         context.insert(memory)

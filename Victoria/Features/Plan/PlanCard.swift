@@ -135,7 +135,7 @@ struct PlanCard: View {
             VStack(alignment: .leading, spacing: Theme.Space.sm) {
                 Text("Got new details, or want to go deeper?")
                     .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textPrimary)
-                Text("Tell \(coachName) what's changed and she'll do fresh deep research and update your whole plan — your targets adjust everywhere.")
+                Text("Tell \(coachName) what's changed for fresh deep research and an update to your whole plan — your targets adjust everywhere.")
                     .font(.caption).foregroundStyle(Theme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button { showIntake = true } label: {

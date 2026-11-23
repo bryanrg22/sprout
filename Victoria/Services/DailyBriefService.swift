@@ -7,7 +7,7 @@ import Foundation
 /// - ONE brief per day, generated lazily on first open and CACHED for the day — stability
 ///   builds trust; it never flickers to a different message on re-open.
 /// - Headline (a human observation, ≤1 number) + a 1–2 sentence body carrying ONE insight
-///   with evidence against HER OWN baseline ("your best in three weeks"), never population
+///   with evidence against the user's OWN baseline ("your best in three weeks"), never population
 ///   norms, never a data dump.
 /// - Topic picked by a deterministic PRIORITY LADDER in code (same cheap-gate architecture
 ///   as `DailyInsightEngine`): returning-from-a-gap > milestone > cross-signal connection >
@@ -185,32 +185,39 @@ enum DailyBriefService {
 
     // MARK: - LLM rephrase (cheap model, strict guardrails, template fallback)
 
+    /// Not told the goal direction (the ladder already chose the topic), so the rule about
+    /// food is the one for every direction. Nothing here depends on the user or the day.
     private static let system = """
-    You are Vita, a warm weight-and-wellness companion writing your friend her short morning \
+    You are Vita, a warm weight-and-wellness companion writing your friend a short morning \
     note. You are given ONE observation (a headline and a body). Rewrite them in your own warm, \
-    specific voice — like a caring friend texting, never a clinician or an app.
+    specific voice — like a caring friend texting, never a clinician or an app. Speak to your \
+    friend directly as "you"; never write about your friend in the third person.
 
     Hard rules:
     - Keep the SAME single insight and the SAME numbers — never add, change, or invent a number \
     or a new claim.
     - Headline: one short sentence, at most one number. Body: one or two sentences.
-    - Never guilt, shame, restriction talk, daily scale numbers, or medical claims. Rest days \
-    are good. Food is fuel. At most one tasteful emoji.
+    - Never guilt, shame, restriction talk, daily scale numbers, or medical claims. Never \
+    describe eating as excessive. Rest days are good. Food is fuel. At most one tasteful emoji.
     Reply with the headline on the FIRST line and the body on the following line(s). No labels.
     """
+
+    /// The user turn: who the note is for and the observation to rewarm. Pure.
+    static func userTurn(_ picked: (topic: Topic, headline: String, body: String), name: String) -> String {
+        """
+        Your friend's name: \(name.isEmpty ? "friend" : name)
+        The observation to rewarm (keep its meaning and numbers exactly):
+        Headline: \(picked.headline)
+        Body: \(picked.body)
+        """
+    }
 
     static func rephrase(_ picked: (topic: Topic, headline: String, body: String),
                                  name: String) async -> (headline: String, body: String)? {
         do {
             let client = try AIClient.make()
-            let user = """
-            Her name: \(name.isEmpty ? "friend" : name)
-            The observation to rewarm (keep its meaning and numbers exactly):
-            Headline: \(picked.headline)
-            Body: \(picked.body)
-            """
             let reply = try await client.chat(system: system,
-                                              messages: [ChatTurnMsg(role: "user", text: user)],
+                                              messages: [ChatTurnMsg(role: "user", text: userTurn(picked, name: name))],
                                               model: AIConfig.model(for: .dailyBrief),
                                               maxTokens: 160)
             return parse(reply)

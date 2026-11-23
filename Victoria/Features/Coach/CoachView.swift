@@ -826,13 +826,8 @@ struct CoachView: View {
     private func seedWelcomeIfNeeded() {
         guard messages.isEmpty else { return }
         let name = profile.name.isEmpty ? "there" : profile.name
-        // Direction-aware so Bryan (gain) isn't greeted as a "weight-loss buddy".
-        let role: String
-        switch profile.pace.direction {
-        case .lose:     role = "weight-loss buddy"
-        case .gain:     role = "muscle-building buddy"
-        case .maintain: role = "healthy-habits buddy"
-        }
+        // Direction-aware: the same wording the persona uses, from the profile's goal.
+        let role = CoachContext.buddyRole(profile.pace.direction)
         let welcome = """
         Hi \(name)! I'm \(coachName), your \(role) 💚 \
         I'm here to cheer you on, talk through the hard days, and help you make sense of your progress. \
