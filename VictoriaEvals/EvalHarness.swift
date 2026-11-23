@@ -39,6 +39,11 @@ enum EvalEnv {
     static var repeats: Int { max(1, Int(env["SPROUT_EVAL_REPEATS"] ?? "") ?? 1) }
     /// Run only the first N cases of each dataset (a pilot), or all of them.
     static var limit: Int? { Int(env["SPROUT_EVAL_LIMIT"] ?? "") }
+    /// Run only the cases with these ids (comma-separated), for chasing one failure.
+    static var onlyCases: Set<String> {
+        Set((env["SPROUT_EVAL_CASES"] ?? "").split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty })
+    }
     static var concurrency: Int { max(1, Int(env["SPROUT_EVAL_CONCURRENCY"] ?? "") ?? 4) }
     /// The repository's `Evals/` directory on the host (the simulator reads host paths).
     static var root: URL? { env["SPROUT_EVAL_ROOT"].map { URL(fileURLWithPath: $0) } }
@@ -173,6 +178,8 @@ enum EvalRunner {
                                     caseID: @escaping @Sendable (Case) -> String,
                                     attempt: @escaping @Sendable (Case) async -> EvalOutcome) async throws {
         try EvalEnv.requireLive()
+        let only = EvalEnv.onlyCases
+        let cases = only.isEmpty ? cases : cases.filter { only.contains(caseID($0)) }
         let writer = try EvalWriter(task: taskName)
         let repeats = EvalEnv.repeats
 

@@ -1,0 +1,114 @@
+{
+ "run": "20261123-072939-DailyBrief",
+ "tasks": [
+  {
+   "task": "dailyBrief",
+   "dataset": "daily_brief/v1",
+   "cases": 4,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 12,
+     "usable": 12,
+     "passed": 12,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.7574992425007574,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 0.782,
+     "latency_p95_s": 0.922,
+     "mean_uncached_input_tokens": 384.25,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 73.5,
+     "mean_cost_usd": 7.5175e-05,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.4166666666666667,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 1,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-4.1-mini",
+     "attempts": 12,
+     "usable": 12,
+     "passed": 12,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.7574992425007574,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.229,
+     "latency_p95_s": 1.404,
+     "mean_uncached_input_tokens": 250.75,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 44.833333333333336,
+     "mean_cost_usd": 0.00017203333333333333,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.16666666666666666,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 1,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6-luna",
+     "attempts": 12,
+     "usable": 12,
+     "passed": 12,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.7574992425007574,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.467,
+     "latency_p95_s": 1.647,
+     "mean_uncached_input_tokens": 249.75,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 42.166666666666664,
+     "mean_cost_usd": 4.605833333333333e-05,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.8333333333333334,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 1,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

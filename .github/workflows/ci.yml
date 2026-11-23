@@ -81,8 +81,8 @@ jobs:
       - name: Verify unit test counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 560 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 560
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 756 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 756
 
       - name: Coverage by target
         if: ${{ !cancelled() }}
@@ -95,8 +95,8 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       # The evaluation harness's own checks: graders against hand-written outputs and
-      # every dataset row against the app. The three live evaluations skip here
-      # (no key, by design), which is why exactly 3 skips are allowed.
+      # every dataset row against the app. The four live evaluations skip here
+      # (no key, by design), which is why exactly 4 skips are allowed.
       - name: Evaluation harness self-tests (offline)
         run: |
           set -o pipefail
@@ -109,7 +109,7 @@ jobs:
 
       - name: Verify evaluation self-test counts
         if: ${{ !cancelled() }}
-        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 21 --max-skipped 3
+        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 34 --max-skipped 4
 
       - name: Upload result bundles
         if: ${{ !cancelled() }}

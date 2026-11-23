@@ -127,9 +127,15 @@ final class LiveEvals: XCTestCase {
             }
             // nil covers both a failed call and a reply the app's own guardrails rejected;
             // either way the user is shown the template, so both count as "not used".
-            guard let reply = await DailyBriefService.rephrase(picked, name: item.name) else {
-                return EvalOutcome(ok: false, error: "rephrase returned nil (call failed or guardrail rejected it)",
-                                   scores: ["used": 0], pass: false, output: "")
+            // A failed call and a reply the app's own guardrail discards both leave the user
+            // with the template, so both count as "not used"; the record says which, and why.
+            guard let raw = await DailyBriefService.rephraseRaw(picked, name: item.name) else {
+                return EvalOutcome(ok: false, error: "the call failed", scores: ["used": 0], pass: false, output: "")
+            }
+            guard let reply = DailyBriefService.parse(raw) else {
+                let reason = DailyBriefService.rejection(of: raw) ?? "rejected"
+                return EvalOutcome(ok: false, error: "guardrail discarded the rewrite: \(reason)",
+                                   scores: ["used": 0], pass: false, output: String(raw.prefix(500)))
             }
             let graded = Self.gradeBrief(template: (picked.headline, picked.body), reply: reply,
                                          readerIsNotAWoman: item.readerIsNotAWoman)
