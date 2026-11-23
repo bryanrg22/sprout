@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 @testable import Victoria
 
 /// Pure scoring functions. Each is unit-tested in `GraderTests` against hand-written
@@ -213,5 +214,141 @@ enum Graders {
             "acted_when_should_not": (wantsNone && (called != nil || invalid)) ? 1 : 0,
         ]
         return (scores, decisionRight && kindRight && argumentsRight)
+    }
+
+    // MARK: - A generated character image (the `Avatar` evaluation)
+
+    /// What the code can tell about a character image without a person looking at it.
+    /// Likeness, and fit with the two existing characters, are the owner's own rating.
+    struct ImageMetrics: Equatable {
+        var decodable = false
+        var width = 0
+        var height = 0
+        var hasAlpha = false
+        /// Every pixel of the two TOP corner blocks is clear. This is the background check
+        /// that decides a pass: the style is a bust cut off by the bottom edge, so shoulders
+        /// may rightly reach the bottom corners (the second built-in character's do).
+        var transparentTopCorners = false
+        /// Every pixel of all four corner blocks is clear. Recorded, not required.
+        var transparentCorners = false
+        /// Share of pixels with alpha exactly 0.
+        var transparentShare = 0.0
+        /// Distinct colours among the opaque pixels after quantisation (see `distinctColours`).
+        var distinctColours = 0
+
+        var isSquare1024: Bool { width == 1024 && height == 1024 }
+    }
+
+    /// Side of each corner block checked for transparency, as a share of the image side.
+    static let cornerBlockShare = 0.03
+    /// Bits kept per channel when counting colours: 4 bits = 16 levels = 4,096 possible colours.
+    static let colourBits = 4
+    /// A quantised colour counts only if it covers at least this share of the opaque pixels,
+    /// so a handful of stray anti-aliased pixels do not look like extra palette entries.
+    static let minColourShare = 0.002
+    /// At or under this many colours the image is taken to be flat-palette pixel art. The
+    /// prompt asks for 12 to 16; a photograph or a painted illustration quantises to
+    /// hundreds. NOT calibrated on real outputs yet: the first live run should look at the
+    /// distribution of `distinct_colours` before this number is trusted.
+    static let pixelArtColourLimit = 48
+
+    static func imageMetrics(_ data: Data) -> ImageMetrics {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
+              let pixels = AvatarImage.rgba(of: image) else { return ImageMetrics() }
+        var metrics = ImageMetrics()
+        metrics.decodable = true
+        metrics.width = pixels.width
+        metrics.height = pixels.height
+        metrics.hasAlpha = AvatarImage.hasAlphaChannel(image)
+        metrics.transparentShare = pixels.transparentShare
+        metrics.transparentTopCorners = cornersAreTransparent(pixels, topOnly: true)
+        metrics.transparentCorners = cornersAreTransparent(pixels, topOnly: false)
+        metrics.distinctColours = distinctColours(pixels)
+        return metrics
+    }
+
+    static func cornersAreTransparent(_ pixels: AvatarImage.Pixels, topOnly: Bool) -> Bool {
+        let block = max(1, Int((Double(min(pixels.width, pixels.height)) * cornerBlockShare).rounded()))
+        guard pixels.width >= block, pixels.height >= block else { return false }
+        let xs = [0, pixels.width - block]
+        let ys = topOnly ? [0] : [0, pixels.height - block]
+        for x0 in xs {
+            for y0 in ys {
+                for y in y0..<(y0 + block) {
+                    for x in x0..<(x0 + block) where pixels.alpha(x: x, y: y) != 0 { return false }
+                }
+            }
+        }
+        return true
+    }
+
+    /// Colours among the fully opaque pixels, each channel cut to `colourBits` bits, counting
+    /// only colours that cover at least `minColourShare` of them.
+    static func distinctColours(_ pixels: AvatarImage.Pixels, bits: Int = colourBits,
+                                minShare: Double = minColourShare) -> Int {
+        let shift = UInt8(8 - bits)
+        var counts: [UInt32: Int] = [:]
+        var opaque = 0
+        var index = 0
+        while index < pixels.bytes.count {
+            if pixels.bytes[index + 3] == 255 {
+                opaque += 1
+                let r = UInt32(pixels.bytes[index] >> shift)
+                let g = UInt32(pixels.bytes[index + 1] >> shift)
+                let b = UInt32(pixels.bytes[index + 2] >> shift)
+                counts[(r << 16) | (g << 8) | b, default: 0] += 1
+            }
+            index += 4
+        }
+        guard opaque > 0 else { return 0 }
+        let floor = Double(opaque) * minShare
+        return counts.values.filter { Double($0) >= floor }.count
+    }
+
+    /// Scores for one generated character. Pass = the app could show it as a character:
+    /// a square 1024 PNG whose top corners are clear and whose palette is small.
+    static func avatar(_ data: Data) -> (scores: [String: Double], pass: Bool) {
+        let m = imageMetrics(data)
+        let isPixelArt = m.decodable && m.distinctColours > 0 && m.distinctColours <= pixelArtColourLimit
+        let scores: [String: Double] = [
+            "decodable": m.decodable ? 1 : 0,
+            "square_1024": m.isSquare1024 ? 1 : 0,
+            "has_alpha": m.hasAlpha ? 1 : 0,
+            "transparent_top_corners": m.transparentTopCorners ? 1 : 0,
+            "transparent_corners": m.transparentCorners ? 1 : 0,
+            "transparent_share": m.transparentShare,
+            "distinct_colours": Double(m.distinctColours),
+            "is_pixel_art": isPixelArt ? 1 : 0,
+        ]
+        return (scores, m.decodable && m.isSquare1024 && m.transparentTopCorners && isPixelArt)
+    }
+
+    /// USD per million tokens for an image model.
+    struct ImageRates: Equatable {
+        var textInput: Double
+        var imageInput: Double
+        var imageOutput: Double
+    }
+
+    /// Read from each model's own page on 2026-11-22
+    /// (developers.openai.com/api/docs/models/gpt-image-2.6-flare and -sunburst). The pages
+    /// give no per-image price: the cost of an image is its tokens at these rates, which is
+    /// why the evaluation records the usage block. A model missing here gets no cost.
+    static let imageRates: [String: ImageRates] = [
+        "gpt-image-2.6-flare": ImageRates(textInput: 5, imageInput: 8, imageOutput: 30),
+        "gpt-image-2.6-sunburst": ImageRates(textInput: 5, imageInput: 8, imageOutput: 30),
+    ]
+
+    /// The list-price cost of one image call, or nil for a model with no rates on file.
+    /// Input tokens the response does not attribute to text or image are priced as image
+    /// input (the dearer of the two), so an incomplete breakdown never understates the cost.
+    static func imageCostUSD(model: String, usage: AvatarGenerator.Usage,
+                             rates: [String: ImageRates] = imageRates) -> Double? {
+        guard let rate = rates[model] else { return nil }
+        let unattributed = max(0, usage.inputTokens - usage.inputTextTokens - usage.inputImageTokens)
+        let input = Double(usage.inputTextTokens) * rate.textInput
+            + Double(usage.inputImageTokens + unattributed) * rate.imageInput
+        return (input + Double(usage.outputTokens) * rate.imageOutput) / 1_000_000
     }
 }
