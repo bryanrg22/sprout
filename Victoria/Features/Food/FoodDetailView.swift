@@ -28,12 +28,15 @@ struct FoodDetailView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { scroller in
             ScrollView {
                 VStack(spacing: Theme.Space.md) {
                     header
                     heroCard
                     if !photos.isEmpty { photoStrip }
                     macroBreakdown
+                    FoodNutrientDetailCard(entry: entry)
+                        .id(Self.detailCardID)
                     if let notes = entry.notes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         notesCard(notes)
                     }
@@ -44,6 +47,16 @@ struct FoodDetailView: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
+            #if DEBUG
+            // `--demo-scroll-label`: bring the whole "More nutrients" card into view for a
+            // screenshot run, which cannot scroll.
+            .task {
+                guard CommandLine.arguments.contains("--demo-scroll-label") else { return }
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                scroller.scrollTo(Self.detailCardID, anchor: .bottom)
+            }
+            #endif
+            }
             .navigationTitle("Food")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -60,6 +73,8 @@ struct FoodDetailView: View {
             }
         }
     }
+
+    private static let detailCardID = "foodNutrientDetailCard"
 
     // MARK: - Sections
 

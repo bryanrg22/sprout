@@ -32,6 +32,9 @@ struct FoodDraft: Identifiable {
     /// When the coach back-dates a forgotten meal, the day to log it on (nil = today). Only the
     /// Vita `log_food` path reads this; the manual AddFoodSheet sets the entry date itself.
     var loggedDate: Date? = nil
+    /// The label nutrients beyond the macros, per serving. A value the source did not state
+    /// stays nil (not known) all the way to the saved entry; it is never filled with 0.
+    var detail: NutrientDetail = NutrientDetail()
 }
 
 extension FoodDraft {
@@ -55,9 +58,14 @@ extension FoodDraft {
             source: source,
             confidence: hit.isSuspicious ? .low : nil,
             barcode: hit.barcode,
-            notes: hit.sanityNote
+            notes: [hit.sanityNote, hit.sodiumNote].compactMap { $0 }.joined(separator: "\n").nilIfEmpty,
+            detail: hit.detail
         )
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
 /// Reusable editable form for creating a `FoodEntry`.
@@ -86,6 +94,10 @@ struct AddFoodSheet: View {
     @State private var carbsG: String
     @State private var fatG: String
     @State private var notes: String
+    /// One text field per label nutrient. An EMPTY field is "not known" and is saved as nil;
+    /// "0" is a real zero. Never pre-filled with 0.
+    @State private var detailText: [Nutrient: String]
+    @State private var showDetail: Bool
 
     // Carried through from the draft, not directly edited.
     private let caloriesLow: Double?
@@ -102,6 +114,7 @@ struct AddFoodSheet: View {
     private let baseProteinG: Double
     private let baseCarbsG: Double
     private let baseFatG: Double
+    private let baseDetail: NutrientDetail
     @State private var portionScale: Double = 1
 
     /// - Parameters:
@@ -120,6 +133,10 @@ struct AddFoodSheet: View {
         _carbsG = State(initialValue: Self.numberString(draft.carbsG))
         _fatG = State(initialValue: Self.numberString(draft.fatG))
         _notes = State(initialValue: draft.notes ?? "")
+        _detailText = State(initialValue: FoodDetailInput.text(for: draft.detail))
+        // Open when there is something to see; closed for a blank manual add, where the
+        // eleven optional rows would bury the four that matter.
+        _showDetail = State(initialValue: !draft.detail.isEmpty)
         caloriesLow = draft.caloriesLow
         caloriesHigh = draft.caloriesHigh
         source = draft.source
@@ -131,6 +148,7 @@ struct AddFoodSheet: View {
         baseProteinG = draft.proteinG
         baseCarbsG = draft.carbsG
         baseFatG = draft.fatG
+        baseDetail = draft.detail
     }
 
     /// Opens the form pre-filled from a saved entry; Save updates it in place
@@ -157,7 +175,8 @@ struct AddFoodSheet: View {
             barcode: entry.barcode,
             notes: entry.notes,
             photoData: entry.photoData,
-            additionalPhotoData: entry.additionalPhotoData
+            additionalPhotoData: entry.additionalPhotoData,
+            detail: entry.detail
         )
     }
 
@@ -166,10 +185,12 @@ struct AddFoodSheet: View {
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && caloriesValue > 0
+            && !FoodDetailInput.hasInvalid(detailText)
     }
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { scroller in
             Form {
                 if source != .manual {
                     estimateSection
@@ -224,10 +245,22 @@ struct AddFoodSheet: View {
                     }
                 }
 
+                detailSection
+
                 Section("Notes") {
                     TextField("Anything to remember?", text: $notes, axis: .vertical)
                         .lineLimit(1...4)
                 }
+            }
+            #if DEBUG
+            // `--demo-scroll-label`: bring the label rows into view for a screenshot run,
+            // which cannot scroll.
+            .task {
+                guard CommandLine.arguments.contains("--demo-scroll-label") else { return }
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                scroller.scrollTo(Nutrient.potassium.id, anchor: .bottom)
+            }
+            #endif
             }
             .navigationTitle("Add Food")
             .navigationBarTitleDisplayMode(.inline)
@@ -356,6 +389,66 @@ struct AddFoodSheet: View {
         proteinG = Self.numberString((baseProteinG * factor).rounded())
         carbsG = Self.numberString((baseCarbsG * factor).rounded())
         fatG = Self.numberString((baseFatG * factor).rounded())
+        // The label nutrients scale with the portion too; one that was not known stays blank.
+        detailText = FoodDetailInput.text(for: baseDetail.scaled(by: factor))
+    }
+
+    // MARK: - More from the label
+
+    private var knownDetailCount: Int {
+        Nutrient.allCases.filter { FoodDetailInput.value(detailText[$0] ?? "", for: $0) != nil }.count
+    }
+
+    /// Fiber, sugars, sodium and the rest of the Nutrition Facts panel, per serving. Every row
+    /// is optional: a blank row is saved as "not known", never as zero.
+    private var detailSection: some View {
+        Section {
+            DisclosureGroup(isExpanded: $showDetail) {
+                ForEach(Nutrient.allCases) { nutrient in
+                    detailRow(nutrient).id(nutrient.id)
+                }
+            } label: {
+                HStack {
+                    Text("More from the label")
+                    Spacer()
+                    Text(knownDetailCount == 0 ? "Optional" : "\(knownDetailCount) of \(Nutrient.allCases.count)")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+            }
+        } footer: {
+            if FoodDetailInput.hasInvalid(detailText) {
+                Text("The highlighted row isn't an amount that can be saved. Fix it or clear it to save.")
+                    .foregroundStyle(Theme.warning)
+            } else if showDetail {
+                Text(source == .photo
+                     ? "Fiber, sugars, saturated fat and sodium are estimated with the meal. The rest come only from a label. Leave a row blank if you don't know it: blank is saved as not known, not as 0."
+                     : "Per serving. Leave a row blank if you don't know it: blank is saved as not known, not as 0.")
+            }
+        }
+    }
+
+    private func detailRow(_ nutrient: Nutrient) -> some View {
+        let text = Binding<String>(
+            get: { detailText[nutrient] ?? "" },
+            set: { detailText[nutrient] = $0 })
+        let invalid = FoodDetailInput.isInvalid(text.wrappedValue, for: nutrient)
+        return HStack {
+            Text(nutrient.label)
+                // Sub-rows sit under their parent the way the label indents them.
+                .padding(.leading, nutrient.parent == .sugars ? 14 : 0)
+                .foregroundStyle(invalid ? Theme.warning : Theme.textPrimary)
+            Spacer()
+            TextField("not known", text: text)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 96)
+                .accessibilityLabel("\(nutrient.label), \(nutrient.unit.rawValue), optional")
+            Text(nutrient.unit.rawValue)
+                .foregroundStyle(Theme.textSecondary)
+                .font(.caption)
+                .frame(width: 32, alignment: .leading)
+        }
     }
 
     private func nutrientRow(_ label: String, text: Binding<String>, unit: String, color: Color) -> some View {
@@ -380,6 +473,7 @@ struct AddFoodSheet: View {
         let finalQuantity = quantityValue == 0 ? 1 : quantityValue
         let finalName = name.trimmingCharacters(in: .whitespaces)
         let finalServing = servingDescription.trimmingCharacters(in: .whitespaces)
+        let finalDetail = FoodDetailInput.detail(from: detailText)
 
         if let existing {
             // Editing a saved entry: mutate in place, preserving identity/source metadata.
@@ -392,6 +486,7 @@ struct AddFoodSheet: View {
             existing.carbsG = Double(carbsG) ?? 0
             existing.fatG = Double(fatG) ?? 0
             existing.notes = finalNotes
+            existing.detail = finalDetail
         } else {
             let entry = FoodEntry(
                 date: date,
@@ -410,7 +505,8 @@ struct AddFoodSheet: View {
                 notes: finalNotes,
                 barcode: barcode,
                 photoData: photoData,
-                additionalPhotoData: additionalPhotoData
+                additionalPhotoData: additionalPhotoData,
+                detail: finalDetail
             )
             context.insert(entry)
         }

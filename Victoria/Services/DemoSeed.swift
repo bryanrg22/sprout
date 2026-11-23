@@ -105,15 +105,24 @@ enum DemoSeed {
             return calendar.date(bySettingHour: h, minute: m, second: 0, of: day) ?? day
         }
         func food(_ meal: MealType, _ name: String, _ serving: String,
-                  _ kcal: Double, _ pr: Double, _ cb: Double, _ ft: Double) {
+                  _ kcal: Double, _ pr: Double, _ cb: Double, _ ft: Double,
+                  detail: [Nutrient: Double] = [:]) {
             context.insert(FoodEntry(date: mealDate(meal, on: .now), mealType: meal, name: name,
                                      servingDescription: serving,
-                                     calories: kcal, proteinG: pr, carbsG: cb, fatG: ft))
+                                     calories: kcal, proteinG: pr, carbsG: cb, fatG: ft,
+                                     detail: NutrientDetail(detail)))
         }
-        food(.breakfast, "Greek yogurt & berries", "1 bowl", 240, 18, 30, 5)
+        // The label nutrients are seeded unevenly on purpose, the way a real day comes out:
+        // one food with the whole label, two with part of it, one with none. So the day's
+        // "from N of M foods" notes and both ends of the per-food card have something to show.
+        food(.breakfast, "Greek yogurt & berries", "1 bowl", 240, 18, 30, 5,
+             detail: [.saturatedFat: 3, .transFat: 0, .cholesterol: 15, .sodium: 70, .fiber: 3,
+                      .sugars: 19, .addedSugars: 6, .vitaminD: 0, .calcium: 220, .iron: 0.4, .potassium: 310])
         food(.lunch, "Grilled chicken salad", "1 plate", 420, 38, 22, 18)
-        food(.snack, "Apple", "1 medium", 95, 0, 25, 0)
-        food(.dinner, "Salmon & rice", "1 plate", 600, 42, 55, 22)
+        food(.snack, "Apple", "1 medium", 95, 0, 25, 0,
+             detail: [.fiber: 4.4, .sugars: 19, .sodium: 2])
+        food(.dinner, "Salmon & rice", "1 plate", 600, 42, 55, 22,
+             detail: [.saturatedFat: 4.5, .sodium: 520, .fiber: 1.5, .sugars: 1])
 
         // A couple of PAST days of food, so the Nutrients date-stepper has history to browse and
         // past-day macros are visible (the thing Victoria asked for).

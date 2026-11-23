@@ -84,6 +84,110 @@ final class GraderTests: XCTestCase {
         XCTAssertEqual(Graders.absPctError(5, 0), 1)
     }
 
+    // MARK: - Meal grader: the label nutrients
+
+    private func withDetail(_ base: FoodPhotoAnalyzer.Estimate, fiber: Double?, sugars: Double?,
+                            saturatedFat: Double?, sodium: Double?) -> FoodPhotoAnalyzer.Estimate {
+        var out = base
+        out.total_fiber_g = fiber
+        out.total_sugars_g = sugars
+        out.total_saturated_fat_g = saturatedFat
+        out.total_sodium_mg = sodium
+        return out
+    }
+
+    /// A banana with its label nutrients (round numbers for the arithmetic, not USDA's).
+    private var bananaWithDetail: Graders.MealTruth {
+        Graders.MealTruth(id: "b", description: "banana", kcal: 105, protein_g: 1.3, carbs_g: 26.9, fat_g: 0.4,
+                          source: "test", fiber_g: 3.0, sugars_g: 14.0, saturated_fat_g: 0.1, sodium_mg: 1.0)
+    }
+
+    func testDetailErrorIsAbsoluteInEachNutrientsOwnUnit() {
+        let estimate = withDetail(estimate(total: 105, low: 90, high: 120, items: [105]),
+                                  fiber: 2.5, sugars: 17, saturatedFat: 0.1, sodium: 26)
+        let scores = Graders.meal(estimate, truth: bananaWithDetail).scores
+        XCTAssertEqual(scores["fiber_g_abs_error"] ?? -1, 0.5, accuracy: 1e-9)
+        XCTAssertEqual(scores["sugars_g_abs_error"] ?? -1, 3.0, accuracy: 1e-9)
+        XCTAssertEqual(scores["saturated_fat_g_abs_error"] ?? -1, 0.0, accuracy: 1e-9)
+        XCTAssertEqual(scores["sodium_mg_abs_error"] ?? -1, 25.0, accuracy: 1e-9, "milligrams, not grams")
+        for name in ["fiber_g", "sugars_g", "saturated_fat_g", "sodium_mg"] {
+            XCTAssertEqual(scores["\(name)_answered"], 1, name)
+            XCTAssertNil(scores["\(name)_unknown_when_no_basis"], "no case here is labelled no-basis")
+        }
+    }
+
+    func testAnAbstentionIsCountedAsNotAnsweredAndNeverAsAnError() {
+        let estimate = withDetail(estimate(total: 105, low: 90, high: 120, items: [105]),
+                                  fiber: 3, sugars: nil, saturatedFat: nil, sodium: 1)
+        let scores = Graders.meal(estimate, truth: bananaWithDetail).scores
+        XCTAssertEqual(scores["sugars_g_answered"], 0)
+        XCTAssertNil(scores["sugars_g_abs_error"], "not known is not an error of 0 g and not an error of 14 g")
+        XCTAssertEqual(scores["saturated_fat_g_answered"], 0)
+        XCTAssertNil(scores["saturated_fat_g_abs_error"])
+        XCTAssertEqual(scores["fiber_g_answered"], 1)
+        XCTAssertEqual(scores["fiber_g_abs_error"] ?? -1, 0, accuracy: 1e-9)
+    }
+
+    func testANutrientTheTruthDoesNotStateIsNotGraded() {
+        // The v1 rows, and any v3 row where USDA lists nothing for an ingredient.
+        let estimate = withDetail(estimate(total: 105, low: 90, high: 120, items: [105]),
+                                  fiber: 3, sugars: 14, saturatedFat: 0.1, sodium: 1)
+        let scores = Graders.meal(estimate, truth: banana).scores
+        for name in ["fiber_g", "sugars_g", "saturated_fat_g", "sodium_mg"] {
+            XCTAssertNil(scores["\(name)_abs_error"], name)
+            XCTAssertNil(scores["\(name)_answered"], name)
+        }
+        // Partly stated: only what is stated is graded.
+        let partial = Graders.MealTruth(id: "p", description: "x", kcal: 105, protein_g: 1, carbs_g: 27, fat_g: 0.4,
+                                        source: "test", fiber_g: 3.0, sodium_mg: 1.0)
+        let partialScores = Graders.meal(estimate, truth: partial).scores
+        XCTAssertNotNil(partialScores["fiber_g_abs_error"])
+        XCTAssertNotNil(partialScores["sodium_mg_abs_error"])
+        XCTAssertNil(partialScores["sugars_g_abs_error"])
+        XCTAssertNil(partialScores["saturated_fat_g_answered"])
+    }
+
+    func testSayingUnknownWhereThereIsNoBasisIsScored() {
+        // A description that cannot settle sodium (how was it seasoned?), labelled as such.
+        let vague = Graders.MealTruth(id: "v", description: "a bowl of homemade soup", kcal: 200, protein_g: 10,
+                                      carbs_g: 20, fat_g: 8, source: "test", fiber_g: 3.0,
+                                      no_basis: ["sodium_mg"])
+        let abstained = withDetail(estimate(total: 200, low: 150, high: 260, items: [200]),
+                                   fiber: 3, sugars: 4, saturatedFat: 2, sodium: nil)
+        var scores = Graders.meal(abstained, truth: vague).scores
+        XCTAssertEqual(scores["sodium_mg_unknown_when_no_basis"], 1)
+        XCTAssertNil(scores["sodium_mg_answered"], "a no-basis nutrient is scored only for the abstention")
+        XCTAssertNil(scores["sodium_mg_abs_error"])
+        XCTAssertEqual(scores["fiber_g_answered"], 1, "the others are graded as usual")
+
+        let guessed = withDetail(abstained, fiber: 3, sugars: 4, saturatedFat: 2, sodium: 900)
+        scores = Graders.meal(guessed, truth: vague).scores
+        XCTAssertEqual(scores["sodium_mg_unknown_when_no_basis"], 0, "it produced a number it had no basis for")
+    }
+
+    func testTheLabelNutrientsDoNotDecideThePass() {
+        // Calories right, every label nutrient badly wrong: still a pass, by the unchanged rule.
+        let wrong = withDetail(estimate(total: 105, low: 90, high: 120, items: [105]),
+                               fiber: 30, sugars: 0, saturatedFat: 9, sodium: 2_000)
+        XCTAssertTrue(Graders.meal(wrong, truth: bananaWithDetail).pass)
+        // Calories wrong, label nutrients perfect: still a fail.
+        let off = withDetail(estimate(total: 200, low: 180, high: 220, items: [200]),
+                             fiber: 3, sugars: 14, saturatedFat: 0.1, sodium: 1)
+        XCTAssertFalse(Graders.meal(off, truth: bananaWithDetail).pass)
+    }
+
+    func testOnlyTheEstimableNutrientsAreGraded() {
+        let scores = Graders.mealDetail(withDetail(estimate(total: 105, low: 90, high: 120, items: [105]),
+                                                   fiber: 3, sugars: 14, saturatedFat: 0.1, sodium: 1),
+                                        truth: bananaWithDetail)
+        XCTAssertEqual(Set(scores.keys), Set(Nutrient.estimable.flatMap {
+            ["\($0.argumentName)_abs_error", "\($0.argumentName)_answered"]
+        }))
+        for nutrient in Nutrient.allCases where !Nutrient.estimable.contains(nutrient) {
+            XCTAssertNil(bananaWithDetail.truth(for: nutrient), "\(nutrient) is not asked of the estimator")
+        }
+    }
+
     // MARK: - Number preservation
 
     func testNumbersAreNormalized() {
@@ -260,6 +364,107 @@ final class GraderTests: XCTestCase {
             XCTAssertTrue(c.source.contains("FDC "), "\(c.id) must cite its USDA record")
         }
     }
+
+    /// `meal_describe/v3` is v1's cases plus the label nutrients of the same USDA records, built
+    /// by `build_v3.py` from the `detail` blocks `fetch_usda.py` caches. This test holds the
+    /// three files to one another in whichever state they are in:
+    /// - no ingredient has cached detail yet (the USDA demo key was rate-limited): v3 must
+    ///   not exist, because it could only hold made-up or missing columns;
+    /// - the detail is cached: v3 must exist, repeat every v1 row exactly, and each new column
+    ///   must be the arithmetic on the cached per-100 g values, or null where a record does
+    ///   not list the nutrient.
+    func testMealDatasetV3IsV1PlusTheLabelNutrientsOfTheSameRecords() throws {
+        let directory = evalsRoot.appendingPathComponent("datasets/meal_describe")
+        let cacheData = try Data(contentsOf: directory.appendingPathComponent("usda_cache.json"))
+        let cache = try XCTUnwrap(JSONSerialization.jsonObject(with: cacheData) as? [String: [String: Any]])
+        var per100g: [Int: [String: Double]] = [:]
+        for entry in cache.values {
+            guard let detail = entry["detail"] as? [String: Any], let id = detail["fdcId"] as? Int,
+                  let values = detail["per100g"] as? [String: Any] else { continue }
+            per100g[id] = values.compactMapValues { ($0 as? NSNumber)?.doubleValue }
+        }
+
+        func objects(_ name: String) throws -> [[String: Any]] {
+            try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8)
+                .split(separator: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                .map { try XCTUnwrap(JSONSerialization.jsonObject(with: Data($0.utf8)) as? [String: Any]) }
+        }
+        /// [(FDC id, grams)] from "FDC 173944 Bananas, raw x 118 g; FDC … x 32 g".
+        func parts(_ source: String) throws -> [(id: Int, grams: Double)] {
+            try source.components(separatedBy: "; ").map { part in
+                let words = part.split(separator: " ")
+                let id = try XCTUnwrap(words.count > 1 ? Int(words[1]) : nil, part)
+                let grams = try XCTUnwrap(words.count > 2 ? Double(words[words.count - 2]) : nil, part)
+                return (id, grams)
+            }
+        }
+
+        let v1 = try objects("v1.jsonl")
+        let needed = Set(try v1.flatMap { try parts(try XCTUnwrap($0["source"] as? String)).map(\.id) })
+        let v3URL = directory.appendingPathComponent("v3.jsonl")
+        let v3Exists = FileManager.default.fileExists(atPath: v3URL.path)
+
+        guard needed.isSubset(of: Set(per100g.keys)) else {
+            XCTAssertFalse(v3Exists, "v3.jsonl exists but usda_cache.json lacks the label nutrients it must be built from")
+            return
+        }
+        XCTAssertTrue(v3Exists, "the label nutrients are cached: run Evals/datasets/meal_describe/build_v3.py")
+        guard v3Exists else { return }
+
+        let v3 = try objects("v3.jsonl")
+        XCTAssertEqual(v3.count, v1.count)
+        let columns: [(name: String, places: Double)] = [
+            ("saturated_fat_g", 1), ("trans_fat_g", 1), ("cholesterol_mg", 1), ("sodium_mg", 1), ("fiber_g", 1),
+            ("sugars_g", 1), ("added_sugars_g", 1), ("vitamin_d_mcg", 2), ("calcium_mg", 1), ("iron_mg", 1),
+            ("potassium_mg", 1),
+        ]
+        XCTAssertEqual(Set(columns.map(\.name)), Set(Nutrient.allCases.map(\.argumentName)),
+                       "one column per label nutrient, named like the app names it")
+        let withheld = Self.withheldColumns
+        for (old, new) in zip(v1, v3) {
+            let id = (old["id"] as? String) ?? "?"
+            for key in ["id", "description", "source"] {
+                XCTAssertEqual(new[key] as? String, old[key] as? String, "\(id) \(key)")
+            }
+            for key in ["kcal", "protein_g", "carbs_g", "fat_g"] {
+                XCTAssertEqual(new[key] as? Double, old[key] as? Double, "\(id) \(key): v3 repeats v1 exactly")
+            }
+            XCTAssertEqual(Set(new.keys), Set(old.keys).union(columns.map(\.name)), "\(id): v1's keys plus the eleven")
+            let sourceParts = try parts(try XCTUnwrap(old["source"] as? String))
+            for column in columns {
+                var expected: Double? = 0
+                for part in sourceParts {
+                    guard let value = per100g[part.id]?[column.name],
+                          !(withheld[part.id] ?? []).contains(column.name) else { expected = nil; break }
+                    expected = (expected ?? 0) + value * part.grams / 100
+                }
+                if let expected {
+                    let got = try XCTUnwrap(new[column.name] as? Double, "\(id) \(column.name) should be known")
+                    XCTAssertEqual(got, expected, accuracy: 0.5 * pow(10, -column.places) + 1e-9, "\(id) \(column.name)")
+                } else {
+                    XCTAssertTrue(new[column.name] is NSNull,
+                                  "\(id) \(column.name): a record does not list it, so it is null, never 0")
+                }
+            }
+        }
+        // And it decodes as the truth type the live evaluation loads.
+        let typed = try rows("meal_describe/v3.jsonl", as: Graders.MealTruth.self)
+        XCTAssertEqual(typed.map(\.id), try rows("meal_describe/v1.jsonl", as: Graders.MealTruth.self).map(\.id))
+        for truth in typed {
+            if let saturated = truth.saturated_fat_g { XCTAssertLessThanOrEqual(saturated, truth.fat_g + 0.2, truth.id) }
+            if let fiber = truth.fiber_g, let sugars = truth.sugars_g {
+                XCTAssertLessThanOrEqual(fiber + sugars, truth.carbs_g + 0.5, truth.id)
+            }
+            XCTAssertNil(truth.no_basis, "\(truth.id): every v3 portion is a named food in grams")
+        }
+    }
+
+    /// The (record, column) pairs `build_v3.py` withholds, kept in step with its `WITHHELD`
+    /// table: a value that is USDA's but does not describe the food the case names.
+    private static let withheldColumns: [Int: [String]] = [
+        // "Peanut butter, smooth style, without salt": the cases say "smooth peanut butter".
+        172470: ["sodium_mg"],
+    ]
 
     func testCoachDatasetDecodesAndUsesRealActionNames() throws {
         let cases = try rows("coach_tool_choice/v2.jsonl", as: Graders.ToolExpectation.self)
