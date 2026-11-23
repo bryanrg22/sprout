@@ -106,6 +106,13 @@ enum GoalPace: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// The subtitle in a unit: "About 0.5 lb / week" or "About 0.2 kg / week".
+    func subtitle(in units: UnitSystem) -> String {
+        guard units == .metric, weeklyRateLbs != 0 else { return subtitle }
+        let kg = abs(units.display(weeklyRateLbs)).formatted(.number.precision(.fractionLength(1)))
+        return "About \(kg) kg / week"
+    }
+
     var subtitle: String {
         switch self {
         case .relaxed:    return "About 0.5 lb / week"
@@ -121,14 +128,36 @@ enum GoalPace: String, Codable, CaseIterable, Identifiable {
 enum UnitSystem: String, Codable, CaseIterable, Identifiable {
     case imperial, metric
     var id: String { rawValue }
-    /// The unit every weight is stored, entered and shown in. Pounds for BOTH systems: the
-    /// app has no kg conversion, and labelling a stored pound value "kg" is how a weigh-in
-    /// typed in kg came to be stored as pounds (EVAL_REPORT 3, L-B7). Vita's `set_units`
-    /// declines metric for the same reason. `metric` stays a case so a profile that was
-    /// switched before this still decodes. Every weight input and output a real conversion
-    /// has to cover is every reader of `weightUnit` and every "lb" in the views; no list of
-    /// them is kept yet (GOALS G5).
-    var weightUnit: String { "lb" }
+
+    /// Every weight is STORED in pounds, in both systems, as it always was: a change of unit
+    /// converts only what is shown and what is typed, so switching back and forth never
+    /// touches a stored value (EVAL_REPORT 31). Before this, metric was declined because a
+    /// weigh-in typed in kg had once been stored as pounds (EVAL_REPORT 3, L-B7).
+    var weightUnit: String { self == .metric ? "kg" : "lb" }
+
+    /// Exact by definition (the international avoirdupois pound).
+    static let kilogramsPerPound = 0.45359237
+
+    /// A stored pound value in this system's unit.
+    func display(_ pounds: Double) -> Double {
+        self == .metric ? pounds * Self.kilogramsPerPound : pounds
+    }
+
+    /// A value typed in this system's unit, as pounds for storage.
+    func pounds(fromDisplay value: Double) -> Double {
+        self == .metric ? value / Self.kilogramsPerPound : value
+    }
+
+    /// "156.4 lb" or "70.9 kg". `decimals` 0 for whole numbers (goals, starts).
+    func format(_ pounds: Double, decimals: Int = 1) -> String {
+        let value = display(pounds)
+        return "\(value.formatted(.number.precision(.fractionLength(decimals)))) \(weightUnit)"
+    }
+
+    /// A signed weekly rate stored in lb/week, as "0.6 lb/wk" or "0.3 kg/wk" (no sign).
+    func formatRate(_ poundsPerWeek: Double) -> String {
+        "\(abs(display(poundsPerWeek)).formatted(.number.precision(.fractionLength(1)))) \(weightUnit)/wk"
+    }
 }
 
 enum MealType: String, Codable, CaseIterable, Identifiable {

@@ -130,14 +130,14 @@ final class SettingsMatrixTests: XCTestCase {
 
     // MARK: - Preferences
 
-    /// Units change nothing, by decision: every weight is stored and shown in pounds and
-    /// the coach's tool declines metric. A profile already stored as metric (switched before
-    /// this) differs from an imperial one in a single sentence: the example in `set_height`'s
-    /// description is phrased in centimetres. Every weight still reads "lb" (`UnitsSafetyTests`).
+    /// Units change how weights are shown and typed, never what is stored (EVAL_REPORT 31):
+    /// metric moves the widget (it gets kilograms), the coach (it is told and asked kilograms)
+    /// and the checklist (its prompt carries the coach's context, now in kilograms). Nothing
+    /// that depends on a stored value moves (`UnitsSafetyTests` checks the values themselves).
     func testUnits() throws {
-        try row("units → metric", moves: [],
+        try row("units → metric", moves: [.widget, .coach, .checklist],
                 surfaces: [("coach", { w in w.viaCoach("set_units", ["system": "metric"]) })])
-        try row("a profile stored as metric", moves: [.coach],
+        try row("a profile stored as metric", moves: [.widget, .coach, .checklist],
                 surfaces: [("stored value", { w in w.inSettings { $0.unitSystem = .metric } })])
     }
 

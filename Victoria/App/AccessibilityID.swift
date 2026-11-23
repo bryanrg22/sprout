@@ -124,5 +124,7 @@ enum AccessibilityID {
 
     enum Settings {
         static let done = "settings.done"
+        /// The pounds / kilograms picker.
+        static let weightUnit = "settings.weightUnit"
     }
 }

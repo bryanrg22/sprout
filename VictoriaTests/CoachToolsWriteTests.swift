@@ -273,7 +273,7 @@ final class CoachToolsWriteTests: XCTestCase {
         let ctx = try makeContext()
         guard let req = expectOK(.editPlan, ["protein_target": 150, "change_note": "x"], profile: lossProfile()) else { return }
         let applied = CoachTools.applyReturningUndo(req, to: lossProfile(), context: ctx)
-        XCTAssertTrue(applied.message.contains("doesn't have a plan yet"))
+        XCTAssertEqual(applied.message, "There's no plan yet — one can be built on the Progress tab.")
         XCTAssertNil(applied.undo)
     }
 

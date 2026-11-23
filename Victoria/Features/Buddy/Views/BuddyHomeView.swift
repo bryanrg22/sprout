@@ -239,7 +239,7 @@ struct BuddyHomeView: View {
             // Fetched, and there is nothing yet: the buddy has never published.
             BuddyWaitingCard(name: model.buddyFirstNameCapitalized).appearLift(didAppear, index: 1)
         } else if let snap = model.buddySnapshot {
-            BuddyDayCard(snapshot: snap, avatar: theirAvatar).appearLift(didAppear, index: 1)
+            BuddyDayCard(units: profile?.unitSystem ?? .imperial, snapshot: snap, avatar: theirAvatar).appearLift(didAppear, index: 1)
 
             // (c) Playful, FAIR, SAFE activity face-off — both pixel avatars + a per-metric
             // (steps/water/gym) comparison scored as % of each person's OWN goal. An
