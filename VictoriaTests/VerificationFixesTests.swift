@@ -112,6 +112,38 @@ final class VerificationFixesTests: XCTestCase {
         XCTAssertFalse(plan.goalsChangedSinceBuild, "a rebuild keeps the plan id, so the flag must be cleared explicitly")
     }
 
+    // MARK: - No template says what the rewording guardrail bans
+
+    /// The guardrail in `DailyBriefService.parse` throws a reworded brief away if it
+    /// contains a banned phrase. A template that itself uses one (the return-after-a-gap
+    /// note said "nothing to make up", and "make up for" is banned) makes models echo it,
+    /// so the paid rewrite was discarded every time on some models (EVAL_REPORT 10).
+    func testEveryTemplateSurvivesItsOwnGuardrail() {
+        var cases: [DailyBriefService.Signals] = []
+        var s = DailyBriefService.Signals(); s.name = "Alex"; s.daysAway = 5; cases.append(s)
+        s = .init(); s.travelShiftHours = 8; s.travelShiftDaysAgo = 0; cases.append(s)
+        s = .init(); s.travelShiftHours = -3; s.travelShiftDaysAgo = 2; cases.append(s)
+        s = .init(); s.trendEasedDown = true; cases.append(s)
+        s = .init(); s.streak = 14; cases.append(s)
+        s = .init(); s.stepsYesterday = 15420; s.stepsAvg = 8200; s.restingHR = 58; s.restingHRAvg = 59; cases.append(s)
+        s = .init(); s.sleepMinutes = 492; s.sleepAvgMinutes = 410; cases.append(s)
+        s = .init(); s.deepMinutes = 96; cases.append(s)
+        s = .init(); s.stepsYesterday = 2100; s.stepsAvg = 8400; s.restingHR = 57; s.restingHRAvg = 59; cases.append(s)
+        s = .init(); s.stepsYesterday = 1900; s.stepsAvg = 7600; cases.append(s)
+        s = .init(); cases.append(s)
+        var topics = Set<String>()
+        for signals in cases {
+            let picked = DailyBriefService.pick(signals)
+            topics.insert(picked.topic.rawValue)
+            XCTAssertNotNil(DailyBriefService.parse(picked.headline + "\n" + picked.body),
+                            "the \(picked.topic.rawValue) template is rejected by the guardrail: \(picked.body)")
+            // A model that echoes the template with "for" added must also survive.
+            XCTAssertFalse((picked.headline + " " + picked.body).lowercased().contains("make up"),
+                           "\(picked.topic.rawValue) invites the banned phrase \"make up for\"")
+        }
+        XCTAssertEqual(topics.count, 6, "every rung of the ladder was checked")
+    }
+
     // MARK: - Nutrients tab follows today across midnight
 
     private var cal: Calendar {

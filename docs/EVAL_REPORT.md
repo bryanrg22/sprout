@@ -19,6 +19,8 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 7 | Distribution: why the app stopped opening, and the ways to stop that recurring | 2026-11-22 |
 | 8 | Continuous integration | 2026-11-22 |
 | 9 | Test evidence for build 16, and what the tests do not cover | 2026-11-22 |
+| 10 | First live comparison: ten models on three tasks, and four defects it found | 2026-11-22 |
+| 11 | The widget that showed someone else's data | 2026-11-22 |
 
 ---
 
@@ -384,3 +386,123 @@ the level of their unit tests. Nothing in this change was exercised in the runni
 UI, no request was sent to a model provider, nothing was sent to CloudKit, and the CI
 workflow has not run. The first live evaluation doubles as the first real request
 through the changed clients on both providers and should come before an upload.
+
+## 10. First live comparison: ten models on three tasks, and four defects it found (2026-11-22)
+
+Approved by the owner in the session. Ten candidates (the four current defaults and six
+newer models), three repeats of every case, through the app's own code paths.
+**3,636 graded attempts; measured spend $6.23** from the token counts in the records
+and the list prices in `Evals/prices.json` (the estimate in section 6 was "under $10").
+
+| Run (`Evals/runs/`) | Evaluation | Notes |
+|---|---|---|
+| `20261123-052445-MealDescribe` | pilot, 3 models, 2 cases | first live request through the changed clients on all three wire paths |
+| `20261123-052539-MealDescribe` | `meal_describe/v1` | |
+| `20261123-052935-DailyBrief` | `daily_brief/v1` | superseded: grader counted "fourteen" as a dropped number |
+| `20261123-053133-CoachToolChoice` | `coach_tool_choice/v1` | superseded: found the water defect below; one label graded calories without quantity |
+| `20261123-054215-DailyBrief` | `daily_brief/v1` | grader fixed; found the template conflict below |
+| `20261123-054403-CoachToolChoice` | `coach_tool_choice/v2` | after the `strict: false` fix |
+| `20261123-054917-DailyBrief` | `daily_brief/v1` | after the template fix; the run the brief decision rests on |
+
+Two of the first runs are superseded because the *grader* or a *label* was wrong, found by
+reading the failures one by one rather than trusting the pass rate. Both graders now have
+tests for the case that fooled them. The superseded runs are kept.
+
+### Results the decisions rest on
+
+Pass rate with its 95% interval, and measured cost per 1,000 calls. **Bold** is a current default.
+
+| Model | list $ in / out | Meal description (14×3) | $/1k | Coach tool choice (34×3) | $/1k | Daily brief (13×3) | $/1k |
+|---|---|---|---|---|---|---|---|
+| `claude-haiku-5-5` | 0.10 / 0.50 | 100% (92–100) | 0.32 | 100% (96–100) | 0.33 | 100% (91–100) | 0.07 |
+| **`claude-haiku-4-5`** (cheap tier) | 1 / 5 | 81% (67–90), 83% usable | 2.75 | 90% (83–95) | 2.68 | 100% (91–100) | 0.51 |
+| **`claude-sonnet-5`** (strong tier) | 2 / 10 | 98% (88–100) | 6.17 | 100% (96–100) | 6.14 | 97% (87–100) | 1.34 |
+| `claude-sonnet-5-5` | 2 / 10 | **0% usable** | n/a | 100% (96–100) | 5.09 | 97% (87–100) | 1.48 |
+| `gpt-6-luna` | 0.10 / 0.50 | 100% (92–100) | 0.11 | 100% (96–100) | 0.20 | 100% (91–100) | 0.04 |
+| `gpt-5.6-luna` | 0.20 / 1.20 | 98% (88–100) | 0.27 | 99% (95–100) | 0.39 | 100% (91–100) | 0.10 |
+| `gpt-6.1-terra` | 1 / 5 | 100% (92–100) | 1.09 | 97% (92–99) | 1.57 | 100% (91–100) | 0.43 |
+| **`gpt-5.6-terra`** (strong tier) | 2 / 12 | 100% (92–100) | 3.09 | 99% (95–100) | 3.82 | 100% (91–100) | 0.96 |
+| `gpt-6.2-sol` | 2 / 10 | 100% (92–100) | 2.11 | 100% (96–100) | 3.27 | 100% (91–100) | 0.89 |
+| **`gpt-4.1-mini`** (cheap tier, deprecated) | 0.40 / 1.60 | 100% (92–100) | 0.34 | 87% (79–92) | 0.85 | 90% (76–96); 77% and 92% in the two earlier runs | 0.16 |
+
+Latency (p50) was 0.8 to 1.8 s for every model on the coach and brief tasks and 1.6 to
+3.3 s on the meal task; it does not separate the candidates.
+
+### Four defects the comparison found
+
+None of these was known, and none would have been found by reading release notes.
+
+1. **Shipped bug, fixed and re-measured: "log 20 oz of water" logged one bottle on the
+   current OpenAI default.** On the Responses API an omitted `strict` flag makes every tool
+   property required ([OpenAI function calling guide, "Strict mode"](https://developers.openai.com/api/docs/guides/function-calling)),
+   so the model filled the optional `containers` with 1 beside `oz: 20`, and the app's
+   parser prefers the container count: 16.9 oz logged instead of 20. All five Responses
+   models failed the case 3 of 3; `gpt-4.1-mini` (Chat Completions) and every Claude model
+   passed. Fix: the coach's tools are sent with `strict: false`. After the fix all five
+   pass 3 of 3, and `gpt-5.6-terra` went from 94% to 99% overall. The same cause produced
+   an edit that zeroed a food's macros once on `gpt-5.6-luna`; not seen after the fix.
+2. **`claude-sonnet-5-5` cannot run any structured feature.** The API answers
+   `tool_choice: type "tool" and "any" are not supported for this model`. Seven tasks
+   (meal photo and description, food suggestions, progress summary, checklist, coach
+   prompts, plan build and review) force a tool call to get structured output. The newest
+   Sonnet is therefore not a drop-in upgrade for the strong tier, whatever its price.
+   Open: move those calls to the provider's structured-output parameter and measure again.
+3. **The current Anthropic default returns a meal estimate the app cannot read about 1
+   time in 40.** `claude-sonnet-5` once returned `items` as a string; `claude-haiku-4-5`
+   omitted `total_calories` in 7 of 42. The user sees an error and retypes.
+   `claude-haiku-5-5` and every OpenAI model returned a valid estimate 42 of 42.
+4. **App copy defeated its own guardrail, fixed and re-measured.** The "back after a few
+   days" template said "nothing to make up", and the rewording guardrail throws away any
+   rewrite containing "make up for". Models echo the phrase, so that paid rewrite was
+   discarded 3 of 3 times on `claude-haiku-5-5` and `gpt-6.2-sol`. The template no longer
+   uses the phrase, a test now runs every template through the guardrail, and both models
+   went from 92% to 100%.
+
+Also seen, not acted on: `gpt-4.1-mini` set a step goal of 10,000 when the user only
+wondered aloud whether 8,000 was too easy (2 of 3), and did not save a stated injury (3
+of 3); `claude-haiku-4-5` asked a clarifying question instead of acting on "switch from
+losing to gaining" (3 of 3) and on a 45-minute weights session (3 of 3).
+
+### Decisions
+
+| Task | Anthropic | OpenAI | Why |
+|---|---|---|---|
+| `dailyBrief` | `claude-haiku-4-5` → **`claude-haiku-5-5`** | `gpt-4.1-mini` → **`gpt-6-luna`** | Both pass 39 of 39 in the deciding run; the Anthropic choice costs a seventh of the old default, the OpenAI one a quarter, and the old OpenAI default is deprecated, passed 77 to 92% across three runs and invented a number in 9% of one of them. In `AIConfig.measuredDefaults`. |
+| `coachTurn` | unchanged (`claude-sonnet-5`) | unchanged (`gpt-5.6-terra`) | **Not decided.** On choosing the right tool the two cheapest models tie the best at about 1/18 of the cost. But this dataset measures only the first turn's tool decision; it says nothing about the quality of the advice, multi-turn tool chains, or reading a photo, which are most of what the coach is. A default for the coach waits on an evaluation of those. |
+| `mealDescribe` | unchanged | unchanged | **Not decided.** Same pattern (the cheapest models are as accurate at 1/19 and 1/28 of the cost, and more reliable than the Anthropic default), but every case states its portions in grams. The decision waits on cases with household and unstated portions, where a larger model may estimate better. |
+
+What the intervals allow: with 13 to 34 cases, 100% still means "at least about 91 to 96%".
+Differences of a few points between the models at the top are not established.
+
+**Not verified:** the two new brief defaults were measured through the harness, not seen in
+the app's UI. No Anthropic model above Sonnet and no `gpt-6.2-astra` was run (the heavy
+tier's tasks have no dataset yet). Twelve tasks remain unmeasured, including four more
+on the deprecated `gpt-4.1-mini`, which stops working on 2027-01-14.
+
+## 11. The widget that showed someone else's data (2026-11-22)
+
+Reported by the owner: after restarting the phone, his widget sometimes shows "Victoria"
+and corrects itself shortly after.
+
+**Cause, found by reading `Shared/WidgetSnapshot.swift`:** `WidgetSharedStore.load()`
+returned a hardcoded sample profile (that name, the light theme, 153.8 lb, a 28-day
+streak) whenever the snapshot could not be decoded, and the timeline provider drew it as
+real data. After a restart and before the first unlock the app group's files are still
+encrypted, so a timeline requested in that window reads nothing. The widget then kept the
+sample until the next reload. Not reproduced: the simulator has no data protection.
+
+**Changed:**
+
+- A failed read is `nil`. The widget then draws a neutral "Open Sprout to refresh" state
+  with no name and no numbers, and asks again in 5 minutes instead of 30.
+- The sample is used only by the widget gallery and is named "Sample".
+- Only the theme and companion choice (not personal data) are also written without file
+  protection, so the neutral state is drawn in the user's own look.
+- Day totals belong to their day (L-B5): a snapshot written yesterday shows zero eaten,
+  steps and water today, and the timeline carries an entry at midnight so the reset
+  happens then, not when the app is next opened. Targets, trend and streak carry over.
+
+**Verified:** 13 tests in `WidgetSnapshotTests` (unreadable and corrupt data, the neutral
+state carries nothing, retry interval, the midnight entry, a stale snapshot read in the
+morning, a clock moved back). **Not verified:** on a phone. The check is to install the
+build, restart the phone, and look at the widget before and after unlocking.

@@ -51,17 +51,54 @@ enum Graders {
 
     // MARK: - Numbers a rewording must keep
 
-    /// Every number in the text, normalized ("8,400" → 8400, "7.5" → 7.5).
+    /// Every number in the text, normalized ("8,400" → 8400, "7.5" → 7.5), including
+    /// numbers written as words from two to ninety-nine ("fourteen days" → 14,
+    /// "twenty-eight" → 28). "One" is deliberately not counted: in running prose it is
+    /// far more often a pronoun or a determiner ("one day at a time") than a quantity.
     static func numbers(in text: String) -> [Double] {
         let pattern = #"\d[\d,]*(?:\.\d+)?"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(text.startIndex..., in: text)
-        return regex.matches(in: text, range: range).compactMap { match in
+        let digits: [Double] = regex.matches(in: text, range: range).compactMap { match in
             guard let r = Range(match.range, in: text) else { return nil }
             var token = String(text[r]).replacingOccurrences(of: ",", with: "")
             if token.hasSuffix(".") { token.removeLast() }
             return Double(token)
         }
+        return digits + numberWords(in: text)
+    }
+
+    private static let unitWords: [String: Double] = [
+        "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+        "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+        "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19,
+    ]
+    private static let tensWords: [String: Double] = [
+        "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70,
+        "eighty": 80, "ninety": 90,
+    ]
+    private static let onesAfterTens: [String: Double] = [
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+    ]
+
+    static func numberWords(in text: String) -> [Double] {
+        // Words, keeping the hyphen inside "twenty-eight" and "ten-minute" as a separator.
+        let words = text.lowercased().split { !$0.isLetter }.map(String.init)
+        var out: [Double] = []
+        var index = 0
+        while index < words.count {
+            let word = words[index]
+            if let tens = tensWords[word] {
+                if index + 1 < words.count, let ones = onesAfterTens[words[index + 1]] {
+                    out.append(tens + ones); index += 2; continue
+                }
+                out.append(tens)
+            } else if let value = unitWords[word] {
+                out.append(value)
+            }
+            index += 1
+        }
+        return out
     }
 
     /// A rewording keeps the numbers when it states every number of the source and
@@ -103,13 +140,17 @@ enum Graders {
         init(kind: String, text: String) { self.kind = kind; self.text = text }
 
         /// The number following `key:` in the description, or the first number in it.
+        /// `a*b` multiplies the two (a food's calories are per serving, times `quantity`).
         func number(key: String? = nil) -> Double? {
             let body = text.dropFirst(kind.count)
-            if let key {
-                guard let range = body.range(of: "\(key): ") else { return nil }
-                return Graders.signedNumbers(in: String(body[range.upperBound...])).first
+            guard let key else { return Graders.signedNumbers(in: String(body)).first }
+            var product = 1.0
+            for part in key.split(separator: "*") {
+                guard let range = body.range(of: "\(part): "),
+                      let value = Graders.signedNumbers(in: String(body[range.upperBound...])).first else { return nil }
+                product *= value
             }
-            return Graders.signedNumbers(in: String(body)).first
+            return product
         }
     }
 

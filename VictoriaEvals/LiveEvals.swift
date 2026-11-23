@@ -28,8 +28,8 @@ final class LiveEvals: XCTestCase {
 
     func testCoachToolChoice() async throws {
         try EvalEnv.requireLive()
-        let cases = try EvalDataset.load("coach_tool_choice/v1.jsonl", as: Graders.ToolExpectation.self)
-        try await EvalRunner.run(task: .coachTurn, dataset: "coach_tool_choice/v1", cases: cases,
+        let cases = try EvalDataset.load("coach_tool_choice/v2.jsonl", as: Graders.ToolExpectation.self)
+        try await EvalRunner.run(task: .coachTurn, dataset: "coach_tool_choice/v2", cases: cases,
                                  caseID: { $0.id }) { expectation in
             await Self.coachAttempt(expectation)
         }

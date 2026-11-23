@@ -1,0 +1,47 @@
+{
+ "run_id": "20261123-054215-DailyBrief",
+ "eval": "DailyBrief",
+ "models": [
+  "anthropic:claude-haiku-5-5",
+  "anthropic:claude-haiku-4-5-20251001",
+  "anthropic:claude-sonnet-5-5",
+  "anthropic:claude-sonnet-5",
+  "openai:gpt-6-luna",
+  "openai:gpt-5.6-luna",
+  "openai:gpt-6.1-terra",
+  "openai:gpt-5.6-terra",
+  "openai:gpt-6.2-sol",
+  "openai:gpt-4.1-mini"
+ ],
+ "repeats": 3,
+ "limit": null,
+ "started_utc": "2026-11-23T05:42:16+00:00",
+ "commit": "743a53af9ac3fa141153e5277cfbfbe9dfa503ad",
+ "branch": "bryan/verification-reset",
+ "dirty_files": [
+  "M Shared/WidgetSnapshot.swift",
+  " M Victoria.xcodeproj/project.pbxproj",
+  " M Victoria/Features/Debug/WidgetGalleryView.swift",
+  " M Victoria/Services/AI/OpenAIClient.swift",
+  " M VictoriaEvals/GraderTests.swift",
+  " M VictoriaEvals/Graders.swift",
+  " M VictoriaEvals/LiveEvals.swift",
+  " M VictoriaTests/OpenAIModelProfileTests.swift",
+  " M VictoriaWidgets/CalorieBudgetWidget.swift",
+  " M VictoriaWidgets/CompanionWidget.swift",
+  " M VictoriaWidgets/SnapshotProvider.swift",
+  " M VictoriaWidgets/WeightTrendWidget.swift",
+  "?? Evals/datasets/coach_tool_choice/v2.jsonl",
+  "?? Evals/runs/",
+  "?? Shared/WidgetTimelinePlan.swift",
+  "?? VictoriaTests/WidgetSnapshotTests.swift",
+  "?? docs/GOALS.md"
+ ],
+ "xcode": "Xcode 26.4 Build version 17E192",
+ "dataset_sha256": {
+  "Evals/datasets/daily_brief/v1.jsonl": "e1a5238033d797b4dae6fbdc10064548a2d3d3c86811ecedbf82aeb2d734c198",
+  "Evals/datasets/meal_describe/v1.jsonl": "40e5590a2a5e21af53baf5e051d7c68cdc1a5dae49a47a2f4bd522745daf7c27",
+  "Evals/datasets/coach_tool_choice/v1.jsonl": "7e7ae9895e3ed48a0e7612af614501509340415d4bb15f86274749ac1bd0bbb9",
+  "Evals/datasets/coach_tool_choice/v2.jsonl": "eb3868088c58495d8016c84af7435033f6dc7b92d6be72526c9cdcfa8341c148"
+ }
+}

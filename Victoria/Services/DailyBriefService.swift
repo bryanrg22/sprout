@@ -70,7 +70,7 @@ enum DailyBriefService {
         if let away = s.daysAway, (4...6).contains(away) {
             return (.gapReturn,
                     "\(hey) — good to see you.",
-                    "No catch-up owed and nothing to make up. The story just picks up from today — log one thing and we're rolling again.")
+                    "No catch-up owed. The story just picks up from today — log one thing and we're rolling again.")
         }
 
         // 1b) Traveling — the body's on a new clock; reframe the next few days BEFORE

@@ -7,6 +7,16 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **The widget no longer shows someone else's numbers.** When it could not read your
+  data (after a phone restart, before the first unlock) it drew a built-in sample profile
+  as if it were yours. It now shows "Open Sprout to refresh" and retries in five minutes
+  (EVAL_REPORT 11).
+- The widget's calories, steps and water reset at midnight instead of showing yesterday's
+  totals until the app is opened.
+- **On OpenAI's newer models, "log 20 oz of water" logged one bottle instead.** Found by
+  the model comparison, fixed, and re-measured on five models (EVAL_REPORT 10).
+- The "good to see you" note after a few days away is no longer thrown away after being
+  rewritten (its own wording tripped the app's guardrail).
 - **Privacy:** turning off "Share my full stats with your buddy" now actually stops
   your weight, calories, macros and food names from being uploaded. Before, they were
   uploaded and only hidden on your buddy's screen (EVAL_REPORT 3, D-V1).
@@ -17,6 +27,12 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 - OpenAI models from the 6.x families can be used: the client chose the endpoint and
   token parameter by name prefix and would have sent them a request they reject
   (EVAL_REPORT 4).
+
+### Changed
+
+- The daily brief is written by `claude-haiku-5-5` (Anthropic) or `gpt-6-luna` (OpenAI),
+  chosen by measurement: equal or better on every case at a seventh and a quarter of the
+  cost of the models they replace (EVAL_REPORT 10).
 
 ### For developers
 
@@ -29,7 +45,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 490 unit tests, plus 16 offline evaluation self-tests.
+- Tests: 443 → 508 unit tests, plus 18 offline evaluation self-tests.
+- First live model comparison: ten models, three tasks, 3,636 graded attempts, $6.23
+  (EVAL_REPORT 10). `docs/GOALS.md` lists the objectives and the `/goal` condition that
+  works through them.
 
 ### Known and open
 

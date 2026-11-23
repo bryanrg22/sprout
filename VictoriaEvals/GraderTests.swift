@@ -90,6 +90,31 @@ final class GraderTests: XCTestCase {
         XCTAssertEqual(Graders.numbers(in: "no digits here"), [])
     }
 
+    func testNumbersWrittenAsWordsCount() {
+        XCTAssertEqual(Graders.numbers(in: "Alex, fourteen days in a row now!"), [14])
+        XCTAssertEqual(Graders.numbers(in: "Twenty-eight days. Eight hours east."), [28, 8])
+        XCTAssertEqual(Graders.numbers(in: "a ten-minute walk"), [10])
+        XCTAssertEqual(Graders.numbers(in: "ninety"), [90])
+        XCTAssertEqual(Graders.numbers(in: "one steady day at a time; no one is perfect"), [],
+                       "'one' is not counted as a quantity")
+        XCTAssertEqual(Graders.numbers(in: "someone often went eighty-one times"), [81])
+        // The rule the brief is graded on: a number kept in words is still kept.
+        let kept = Graders.numbersPreserved(source: "14 days of showing up in a row.",
+                                            rewrite: "Fourteen days in a row, Alex.")
+        XCTAssertTrue(kept.allKept); XCTAssertTrue(kept.noneInvented)
+        let invented = Graders.numbersPreserved(source: "14 days of showing up in a row.",
+                                                rewrite: "14 days; go for thirty.")
+        XCTAssertFalse(invented.noneInvented)
+    }
+
+    func testFoodValueIsCaloriesTimesQuantity() throws {
+        let view = try view("log_food", ["name": "Egg", "meal": "breakfast", "calories": 72,
+                                         "protein_g": 6, "carbs_g": 0, "fat_g": 5, "quantity": 2])
+        XCTAssertEqual(view.number(key: "calories") ?? 0, 72, accuracy: 0.001)
+        XCTAssertEqual(view.number(key: "calories*quantity") ?? 0, 144, accuracy: 0.001)
+        XCTAssertNil(view.number(key: "calories*nonexistent"))
+    }
+
     func testNumbersPreserved() {
         let source = "15,420 steps, and your resting heart rate is holding at 59."
         var r = Graders.numbersPreserved(source: source, rewrite: "You hit 15420 steps and your heart sat at 59!")
@@ -136,7 +161,7 @@ final class GraderTests: XCTestCase {
     }
 
     private func expectation(_ id: String) throws -> Graders.ToolExpectation {
-        let all = try rows("coach_tool_choice/v1.jsonl", as: Graders.ToolExpectation.self)
+        let all = try rows("coach_tool_choice/v2.jsonl", as: Graders.ToolExpectation.self)
         return try XCTUnwrap(all.first { $0.id == id }, "no case \(id)")
     }
 
@@ -153,6 +178,12 @@ final class GraderTests: XCTestCase {
                                          "protein_g": 1.3, "carbs_g": 27, "fat_g": 0.4]),
             ("food-stated-calories", "log_food", ["name": "Protein shake", "meal": "lunch", "calories": 220,
                                                   "protein_g": 30, "carbs_g": 12, "fat_g": 5]),
+            // Two eggs can be logged as one entry of 155 or as two servings of about 72:
+            // both are the same meal, and both must pass.
+            ("food-eggs", "log_food", ["name": "Two hard-boiled eggs", "meal": "breakfast", "calories": 155,
+                                       "protein_g": 13, "carbs_g": 1, "fat_g": 11]),
+            ("food-eggs", "log_food", ["name": "Hard-boiled egg", "meal": "breakfast", "calories": 72,
+                                       "protein_g": 6.3, "carbs_g": 0.4, "fat_g": 4.8, "quantity": 2]),
             ("workout-run", "log_workout", ["kind": "run", "minutes": 30]),
             ("workout-lift", "log_workout", ["kind": "gym", "minutes": 45]),
             ("food-delete", "delete_food", ["name": "Greek yogurt"]),
@@ -230,7 +261,7 @@ final class GraderTests: XCTestCase {
     }
 
     func testCoachDatasetDecodesAndUsesRealActionNames() throws {
-        let cases = try rows("coach_tool_choice/v1.jsonl", as: Graders.ToolExpectation.self)
+        let cases = try rows("coach_tool_choice/v2.jsonl", as: Graders.ToolExpectation.self)
         XCTAssertEqual(cases.count, 34)
         XCTAssertEqual(Set(cases.map(\.id)).count, cases.count, "ids are unique")
         let known: Set<String> = [

@@ -17,7 +17,7 @@ struct WidgetGalleryView: View {
         var s = WidgetSnapshot.placeholder
         s.themeStyleRaw = ThemeStyle.cute.rawValue
         s.companionAvatarRaw = "victoria"
-        s.name = "Victoria"
+        s.name = "Sam"
         return s
     }
 
@@ -26,7 +26,7 @@ struct WidgetGalleryView: View {
         var s = WidgetSnapshot.placeholder
         s.themeStyleRaw = ThemeStyle.cool.rawValue
         s.companionAvatarRaw = "bryan"
-        s.name = "Bryan"
+        s.name = "Alex"
         s.ratePerWeek = 0.4          // gaining, so the trend arrow/colour flips
         return s
     }

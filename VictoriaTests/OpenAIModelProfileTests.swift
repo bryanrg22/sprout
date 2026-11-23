@@ -151,4 +151,36 @@ final class OpenAIModelProfileTests: XCTestCase {
         XCTAssertEqual(turn.toolUse?.input["containers"] as? Int, 2)
         XCTAssertEqual(transport.requests.first?.url?.path, "/v1/responses")
     }
+
+    /// Left to the API's default, Responses makes every tool property required and the
+    /// model fills the optional ones with placeholders ("20 oz" arrived with a container
+    /// count of 1, and the app logged one bottle). The coach's tools opt out.
+    func testCoachToolsAreSentNonStrictOnResponses() async throws {
+        let transport = ScriptedTransport([.json(200, [
+            "status": "completed",
+            "output": [["type": "function_call", "call_id": "c1", "name": "log_water", "arguments": "{\"oz\": 20}"]],
+        ])])
+        _ = try await AIRuntime.$current.withValue(runtime(transport)) {
+            try await AIClient.makeFull().chatWithTools(
+                system: "v", messages: [AnthropicClient.Msg(role: "user", content: "log 20 oz of water")],
+                tools: [["name": "log_water", "description": "d", "input_schema": ["type": "object"]]],
+                model: "gpt-5.6-terra", maxTokens: 1500, cachedSystemPrefix: "s", forbidToolUse: false)
+        }
+        let tools = try XCTUnwrap(transport.body()["tools"] as? [[String: Any]])
+        XCTAssertEqual(tools.first?["strict"] as? Bool, false)
+    }
+
+    func testForcedStructuredCallKeepsTheDefaultStrictness() async throws {
+        let transport = ScriptedTransport([.json(200, [
+            "status": "completed",
+            "output": [["type": "function_call", "call_id": "c", "name": "t", "arguments": "{}"]],
+        ])])
+        _ = try await AIRuntime.$current.withValue(runtime(transport)) {
+            try await AIClient.makeFull().structured(system: "s", userContent: "u", toolName: "t",
+                                                     toolDescription: "d", schema: ["type": "object"],
+                                                     model: "gpt-5.6-terra", maxTokens: 100)
+        }
+        let tools = try XCTUnwrap(transport.body()["tools"] as? [[String: Any]])
+        XCTAssertNil(tools.first?["strict"], "a forced call with all-required fields is left to normalize")
+    }
 }
