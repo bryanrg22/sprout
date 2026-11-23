@@ -25,6 +25,9 @@ final class StoreVerificationRoundTripTests: XCTestCase {
         let birth = fx.at(1999, 7, 4)
         let created = fx.at(2026, 1, 15, 8, 30, 12).addingTimeInterval(0.25)
         let gag = fx.at(2026, 2, 19, 21, 45, 3)
+        // The custom character: a PNG signature and a few bytes are enough to prove the
+        // externally stored blob comes back byte for byte.
+        let avatarPNG: Data? = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x01, 0x02, 0x03])
         try assertRoundTrip(
             full: { UserProfile() },
             blank: { UserProfile() },
@@ -55,6 +58,7 @@ final class StoreVerificationRoundTripTests: XCTestCase {
                 assigned("shareFullStatsWithBuddy", \.shareFullStatsWithBuddy, false),
                 assigned("companionName", \.companionName, "Pip"),
                 assigned("companionAvatarRaw", \.companionAvatarRaw, "bryan"),
+                assigned("customAvatarPNG", \.customAvatarPNG, avatarPNG),
                 assigned("lastAlejandroGagDate", \.lastAlejandroGagDate, gag),
                 assigned("themeStyleRaw", \.themeStyleRaw, "cool"),
                 assigned("weighInReminderEnabled", \.weighInReminderEnabled, false),
@@ -70,6 +74,9 @@ final class StoreVerificationRoundTripTests: XCTestCase {
                 assigned("aiModelChat", \.aiModelChat, "model-chat-y"),
                 assigned("homeGymRaw", \.homeGymRaw, "twentyFourHour"),
             ],
+            // A profile that never made a character: the optional blob reads back nil.
+            sparse: { UserProfile() },
+            sparseFields: [wrote("customAvatarPNG", \.customAvatarPNG, nil)],
             typed: { profile in
                 XCTAssertEqual(profile.sex, .male)
                 XCTAssertEqual(profile.activityLevel, .veryActive)

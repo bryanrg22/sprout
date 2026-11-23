@@ -292,7 +292,7 @@ struct BuddyHomeView: View {
     }
 
     /// My buddy's pixel character is the OTHER avatar (if I'm Victoria, they're Bryan).
-    private var theirAvatar: CompanionAvatar { myAvatar == .victoria ? .bryan : .victoria }
+    private var theirAvatar: CompanionAvatar { myAvatar.buddyStandIn }
 
     /// A peek at the latest few notes; taps through to the full inbox.
     private var recentNudges: some View {
