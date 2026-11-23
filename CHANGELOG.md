@@ -7,6 +7,11 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **Buddy pairing tells the truth.** A wrong code no longer says "You're connected!", you
+  can unpair, and a buddy who has stopped sharing is shown as such instead of looking
+  current. Nudges for a milestone are sent once (EVAL_REPORT 19).
+- Reminders are set up on the first launch after onboarding, not the second.
+- The 7- and 14-day achievements no longer unlock from imported step counts.
 - **Changing your goal changes your targets.** With a plan, switching between losing and
   gaining left the old plan's calories in force. The plan's numbers now apply only to the
   direction they were written for, and Settings says what a change does (EVAL_REPORT 16).
@@ -71,7 +76,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 891 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- Tests: 443 → 984 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
 - UI smoke flows: 15 end-to-end flows against a scripted model (EVAL_REPORT 17).
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).
