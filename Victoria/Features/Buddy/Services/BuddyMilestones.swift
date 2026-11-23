@@ -1,9 +1,12 @@
 import Foundation
 
-/// Detects the moment someone crosses a daily goal, so their buddy can be auto-cheered
-/// ("🎉 Victoria just hit her calorie goal!"). Pure + deterministic; the actual ping
-/// reuses the proven nudge push. Each milestone celebrates **at most once per day**
-/// (guarded in UserDefaults) so a buddy is pinged on the *crossing*, not on every refresh.
+/// Detects the moment someone crosses a goal, so their buddy can be auto-cheered
+/// ("🎉 Alex just hit their calorie goal today!"). The ping itself is an ordinary nudge.
+///
+/// A daily goal (calories, protein, steps, water) is celebrated at most once per day. A
+/// streak tier (3, 7, 14, 30 days) is celebrated once per streak: day four of a streak is
+/// not another "3-day streak". A milestone counts as celebrated only once its nudge was
+/// actually sent (`pending` then `markSent`), so one that failed to send is tried again.
 enum BuddyMilestone: String, CaseIterable {
     case calories, protein, steps, water
     case streak3, streak7, streak14, streak30
@@ -21,6 +24,25 @@ enum BuddyMilestone: String, CaseIterable {
         case .streak14: return "🔥 \(name) is on a 14-day streak. Amazing."
         case .streak30: return "🏆 \(name) just hit a 30-DAY streak!"
         }
+    }
+
+    /// The number of days a streak tier stands for; nil for a daily goal.
+    var streakThreshold: Int? {
+        switch self {
+        case .streak3:  return 3
+        case .streak7:  return 7
+        case .streak14: return 14
+        case .streak30: return 30
+        case .calories, .protein, .steps, .water: return nil
+        }
+    }
+
+    /// The message for a milestone reached at `dayStreak`. A streak tier that is sent late
+    /// (paired on day five, or the send on day three failed) says the real number rather
+    /// than the tier's.
+    func message(name: String, dayStreak: Int) -> String {
+        guard let threshold = streakThreshold, dayStreak > threshold else { return message(name: name) }
+        return "🔥 \(name) is on a \(dayStreak)-day logging streak!"
     }
 }
 
@@ -82,32 +104,57 @@ enum BuddyMilestones {
         met(i).subtracting(alreadyCelebrated)
     }
 
-    // MARK: Per-day, per-user persistence guard
+    // MARK: What has been sent (UserDefaults, per user)
 
-    private static func key(_ m: BuddyMilestone, myUserID: String, dayKey: String) -> String {
-        "buddy.milestone.\(myUserID).\(m.rawValue).\(dayKey)"
+    /// The key under which `m` is recorded as sent. A daily goal is keyed by the day; a
+    /// streak tier by the day its streak started, so it is sent once per streak.
+    private static func key(_ m: BuddyMilestone, input i: BuddyMilestoneInput, myUserID: String,
+                            day: Date, calendar: Calendar) -> String {
+        guard m.streakThreshold != nil else {
+            return "buddy.milestone.\(myUserID).\(m.rawValue).\(dayKey(day, calendar: calendar))"
+        }
+        let today = calendar.startOfDay(for: day)
+        let start = calendar.date(byAdding: .day, value: -(max(i.dayStreak, 1) - 1), to: today) ?? today
+        return "buddy.milestone.\(myUserID).\(m.rawValue).from.\(dayKey(start, calendar: calendar))"
     }
 
-    private static func dayKey(_ day: Date) -> String {
+    private static func dayKey(_ day: Date, calendar: Calendar) -> String {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
         f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = calendar.timeZone
         f.dateFormat = "yyyy-MM-dd"
         return f.string(from: day)
     }
 
-    /// Returns milestones reached for the FIRST time today AND records them as celebrated,
-    /// so each fires a single ping per day. Call once per publish.
+    /// Milestones the stats meet now that have not been sent. Reads only; nothing is
+    /// recorded until `markSent`.
+    static func pending(_ i: BuddyMilestoneInput,
+                        myUserID: String,
+                        day: Date,
+                        calendar: Calendar = .current,
+                        defaults: UserDefaults = .standard) -> Set<BuddyMilestone> {
+        met(i).filter { !defaults.bool(forKey: key($0, input: i, myUserID: myUserID, day: day, calendar: calendar)) }
+    }
+
+    /// Record that `m`'s nudge was sent. Call after the send succeeded, not before.
+    static func markSent(_ m: BuddyMilestone,
+                         input i: BuddyMilestoneInput,
+                         myUserID: String,
+                         day: Date,
+                         calendar: Calendar = .current,
+                         defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: key(m, input: i, myUserID: myUserID, day: day, calendar: calendar))
+    }
+
+    /// `pending` and `markSent` in one step, for a caller with no send that can fail.
     static func consumeNewlyReached(_ i: BuddyMilestoneInput,
                                     myUserID: String,
                                     day: Date = .now,
+                                    calendar: Calendar = .current,
                                     defaults: UserDefaults = .standard) -> Set<BuddyMilestone> {
-        let dk = dayKey(day)
-        let already = Set(BuddyMilestone.allCases.filter {
-            defaults.bool(forKey: key($0, myUserID: myUserID, dayKey: dk))
-        })
-        let fresh = newlyReached(i, alreadyCelebrated: already)
-        for m in fresh { defaults.set(true, forKey: key(m, myUserID: myUserID, dayKey: dk)) }
+        let fresh = pending(i, myUserID: myUserID, day: day, calendar: calendar, defaults: defaults)
+        for m in fresh { markSent(m, input: i, myUserID: myUserID, day: day, calendar: calendar, defaults: defaults) }
         return fresh
     }
 }

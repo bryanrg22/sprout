@@ -59,7 +59,13 @@ At <https://icloud.developer.apple.com> → your container:
    then Dashboard → **Deploy Schema Changes to Production**.
    If buddy data ever looks frozen: on the STALE person's phone, Settings → tap the version
    line 7× → **Run buddy sync check** — it prints the exact CloudKit error.
-4. Both you and Victoria must be **signed into iCloud** on your devices.
+4. **Security roles** (Schema → Security Roles, in Production): the signed-in role
+   (`_icloud`) needs **Write** on `BuddyPairing` and `Nudge`. Claiming a code, unpairing
+   as the one who typed it, and marking a nudge read each write to a record the OTHER
+   iCloud user created; with the default roles only the creator may. Not verified from the
+   code, and two devices on one Apple ID hide it. Symptoms and the full list:
+   `docs/buddy-sync.md`, section 10.
+5. Both of you must be **signed into iCloud** on your devices.
 
 ## 4. Archive + upload
 1. In Xcode: set the run destination to **Any iOS Device (arm64)**.

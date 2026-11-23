@@ -222,14 +222,14 @@ enum BuddyChallenges {
                     myStepFraction: 0.9, theirStepFraction: 0.5,
                     myWorkedOut: false, theirWorkedOut: true,
                     myLoggedToday: true, theirLoggedToday: false,
-                    buddyName: "Bryan")) { p in
+                    buddyName: "Sam")) { p in
                         BuddyChallengeCard(prompt: p) { _, _ in }
                 }
                 ForEach(BuddyChallenges.prompts(
                     myStepFraction: 0.4, theirStepFraction: 0.4,
                     myWorkedOut: true, theirWorkedOut: true,
                     myLoggedToday: true, theirLoggedToday: true,
-                    buddyName: "Victoria")) { p in
+                    buddyName: "Alex")) { p in
                         BuddyChallengeCard(prompt: p) { _, _ in }
                 }
             }

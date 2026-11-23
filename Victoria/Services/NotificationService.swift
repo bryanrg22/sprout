@@ -72,12 +72,7 @@ enum NotificationService {
         // A screenshot run cannot tap the system prompt away, and the prompt covers the screen.
         if CommandLine.arguments.contains("--demo-no-notification-prompt") { return false }
         #endif
-        do {
-            return try await UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .sound, .badge])
-        } catch {
-            return false
-        }
+        return await SystemReminderCenter().requestAuthorization()
     }
 
     /// The current authorization status, e.g. to decide whether to show an
@@ -94,9 +89,8 @@ enum NotificationService {
     /// after onboarding so the schedule reflects the latest settings. Because we
     /// `removeAllPendingNotificationRequests()` first, disabled categories
     /// simply aren't re-added — there's nothing to "turn off" separately.
-    static func rescheduleAll(for profile: UserProfile) {
-        let center = UNUserNotificationCenter.current()
-        center.removeAllPendingNotificationRequests()
+    static func rescheduleAll(for profile: UserProfile, center: any ReminderCenter = SystemReminderCenter()) {
+        center.removeAllPending()
 
         // Weigh-in — a calm morning trend check.
         if profile.weighInReminderEnabled {
@@ -163,27 +157,27 @@ enum NotificationService {
     }
 
     /// Remove every pending Victoria reminder (and clear any delivered ones).
-    static func cancelAll() {
-        let center = UNUserNotificationCenter.current()
-        center.removeAllPendingNotificationRequests()
-        center.removeAllDeliveredNotifications()
+    static func cancelAll(center: any ReminderCenter = SystemReminderCenter()) {
+        center.removeAllPending()
+        center.removeAllDelivered()
     }
 
-    /// Convenience for app launch / post-onboarding: ask for permission (a no-op
-    /// prompt if already decided) and (re)build the schedule in one call.
-    /// Honors the user's choice — if permission is denied, nothing is scheduled.
-    ///
-    /// Integrator: call this from `VictoriaApp` once at launch (e.g. in `.task`
-    /// on the root view) and right after onboarding completes.
-    static func refreshOnLaunch(for profile: UserProfile) async {
+    /// Ask for permission (a no-op prompt if already decided) and (re)build the schedule
+    /// in one call. Honors the user's choice — if permission is denied, nothing is scheduled.
+    /// Called by `ReminderBootstrap` the first time there is an onboarded profile.
+    static func refreshOnLaunch(for profile: UserProfile, center: any ReminderCenter = SystemReminderCenter()) async {
         // UI smoke flows: leave this device's real reminder schedule alone.
         guard !UITestHooks.isActive else { return }
-        let granted = await requestAuthorization()
+        #if DEBUG
+        // A screenshot run cannot tap the system prompt away, and the prompt covers the screen.
+        if CommandLine.arguments.contains("--demo-no-notification-prompt") { return }
+        #endif
+        let granted = await center.requestAuthorization()
         guard granted else {
-            cancelAll()
+            cancelAll(center: center)
             return
         }
-        rescheduleAll(for: profile)
+        rescheduleAll(for: profile, center: center)
     }
 
     // MARK: Helpers
@@ -219,7 +213,7 @@ enum NotificationService {
         body: String,
         hour: Int,
         weekday: Int? = nil,
-        on center: UNUserNotificationCenter
+        on center: any ReminderCenter
     ) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -234,5 +228,65 @@ enum NotificationService {
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
         center.add(request)
+    }
+}
+
+// MARK: - The notification centre, as the reminders use it
+
+/// What the app asks of the system notification centre. A protocol so the schedule can be
+/// tested without the system prompt (`SystemReminderCenter` is the app's).
+protocol ReminderCenter: Sendable {
+    /// Ask to show alerts, play sounds and set the badge. iOS prompts only the first time.
+    func requestAuthorization() async -> Bool
+    func removeAllPending()
+    func removeAllDelivered()
+    func add(_ request: UNNotificationRequest)
+    /// Set the number on the app icon; 0 removes it.
+    func setBadgeCount(_ count: Int)
+}
+
+struct SystemReminderCenter: ReminderCenter {
+    private var center: UNUserNotificationCenter { .current() }
+
+    func requestAuthorization() async -> Bool {
+        (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+    }
+    func removeAllPending() { center.removeAllPendingNotificationRequests() }
+    func removeAllDelivered() { center.removeAllDeliveredNotifications() }
+    func add(_ request: UNNotificationRequest) { center.add(request) }
+    func setBadgeCount(_ count: Int) { center.setBadgeCount(max(count, 0)) }
+}
+
+// MARK: - When the reminders are first scheduled
+
+/// Decides when the permission prompt and the first schedule happen: the first time
+/// there is an onboarded profile. That can be at launch, at the end of onboarding, or
+/// when a profile arrives from iCloud after a reinstall; `RootView` reports the profile
+/// whenever "there is an onboarded profile" changes, and this asks once per appearance.
+///
+/// It used to be decided once, in the root view's launch task: a profile that became
+/// onboarded after that got no prompt and no reminders until the next cold launch.
+@MainActor
+final class ReminderBootstrap {
+    static let shared = ReminderBootstrap()
+
+    /// True once the reminders were scheduled for the profile now on screen.
+    private var scheduled = false
+
+    init() {}
+
+    func profileChanged(_ profile: UserProfile?, center: any ReminderCenter = SystemReminderCenter()) async {
+        guard let profile, profile.onboardingComplete else {
+            scheduled = false   // nobody to remind (yet, or any more)
+            return
+        }
+        guard !scheduled else { return }   // the root view was rebuilt; nothing changed
+        scheduled = true
+        #if DEBUG
+        // DEBUG: `--no-reminder-prompt` keeps the system permission alert off the screen
+        // for a screenshot run, where nothing can tap it away.
+        if CommandLine.arguments.contains("--no-reminder-prompt") { return }
+        #endif
+        await NotificationService.refreshOnLaunch(for: profile, center: center)
     }
 }

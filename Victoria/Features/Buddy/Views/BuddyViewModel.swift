@@ -1,17 +1,16 @@
 import SwiftUI
 import Observation
 
-/// Drives every Buddy screen. Owns the `BuddySyncService` and translates its async,
-/// throwing calls into simple, observable UI state — always degrading to *kind* inline
-/// messages (never crashes, never scary alerts).
+/// Drives every Buddy screen. Owns the `BuddySyncService` and turns its async, throwing
+/// calls into observable state and plain sentences (never a crash, never an alert).
 ///
-/// **Identity.** A stable per-install user id is persisted in `UserDefaults` under
-/// `"buddyMyUserID"` (minted once) and handed to `BuddySync.makeDefault(myUserID:)`.
+/// **Identity.** A per-install user id is minted once into `UserDefaults` under
+/// `"buddyMyUserID"`. It does not survive deleting the app: see `docs/buddy-identity.md`.
 ///
-/// **Linked state.** The mock's `link(usingCode:)` only records a code; the buddy's
-/// name + presence arrive via `fetchBuddySnapshot()`. So we treat "linked" as
-/// "`fetchBuddySnapshot()` returned a snapshot" — and remember it across the session.
-/// On first appear we probe the snapshot to recover linked state after a relaunch.
+/// **Linked state.** `isLinked` mirrors the service's persisted link
+/// (`service.linkedBuddyID`), which the service writes only once a pairing is real. It is
+/// re-read at every trigger (`refreshLinkState`), because more than one model exists per
+/// phone: the Buddy screen's and the always-on `BuddyAutoPublisher`'s.
 @MainActor
 @Observable
 final class BuddyViewModel {
@@ -33,10 +32,10 @@ final class BuddyViewModel {
 
     private static func pairingCodeKey(_ myUserID: String) -> String { "buddy.myPairingCode.\(myUserID)" }
 
-    /// The user's pairing code — generated ONCE and reused forever. Previously it was
-    /// regenerated on every launch, so the code-OWNER's published record kept changing and
-    /// they could never discover that their buddy had accepted the OLD code. Persisting it
-    /// keeps "show your code → they enter it → you both connect" working across relaunches.
+    /// The user's pairing code: generated once and kept, so the record the owner announced
+    /// is the one a buddy claims however many times the app is relaunched. It changes in
+    /// two cases only: unpairing retires it, and a code found to belong to someone else is
+    /// replaced (`rotateMyPairingCode`).
     static func resolveMyPairingCode(myUserID: String,
                                      service: any BuddySyncService,
                                      defaults: UserDefaults = .standard) -> String {
@@ -51,23 +50,41 @@ final class BuddyViewModel {
 
     let myUserID: String
     private let service: any BuddySyncService
+    /// Where this model keeps what must survive a relaunch (my code, last publish, which
+    /// milestones were sent). Injected so a test never touches the app's own defaults.
+    private let defaults: UserDefaults
+    /// The clock. Injected: nothing below reads the wall clock directly.
+    private let now: @MainActor () -> Date
+    private let calendar: Calendar
+    /// Serialises publishes for this user across models, and holds their shared health.
+    private let publishing: BuddyPublishCoordinator
+    /// One line to the field Diagnostics log. A test replaces it to read what is written.
+    var log: (String) -> Void = { Diagnostics.shared.log($0, .sync) }
+    /// Sets the app-icon badge. A test replaces it to read what was set.
+    var setBadge: (Int) -> Void = { SystemReminderCenter().setBadgeCount($0) }
+    /// Keeps a failure that repeats on every poll from being written every time.
+    private var logFilter = RepeatedLineFilter()
 
     // MARK: Observable state
 
-    /// Whether we're connected to a buddy. Seeded from a snapshot probe on appear and
-    /// flipped on a successful `link` / `unlink`.
+    /// Whether this phone is paired. Mirrors the service's persisted link.
     private(set) var isLinked = false
-    /// The buddy's latest low-stakes snapshot (name, streak, mood, presence). Never
-    /// carries weight/calorie numbers — see `BuddySnapshot`.
+    /// The buddy's latest published day. Its full-stats fields are blank unless the buddy
+    /// opted in to sharing them.
     private(set) var buddySnapshot: BuddySnapshotPayload?
     /// Received nudges, most-recent first.
     private(set) var inbox: [Nudge] = []
 
-    /// My pairing code to share. Generated lazily so it's stable for the screen's life.
+    /// My pairing code to share.
     private(set) var myPairingCode: String = ""
 
-    /// A kind, transient banner message (errors *and* small successes). Cleared by the UI.
+    /// A kind, transient banner message (small successes, soft failures). Cleared by the UI.
     var banner: BuddyBanner?
+
+    /// Why the last attempt to connect failed, in words for the pairing screen. Stays until
+    /// the next attempt or until the code is edited (a banner is gone in three seconds;
+    /// this has to be read and acted on).
+    private(set) var linkError: String?
 
     /// True while a link attempt is in flight (disables the button, shows progress).
     private(set) var isLinking = false
@@ -76,6 +93,17 @@ final class BuddyViewModel {
     /// connection" diagnostic path instead of letting the user blame their typing forever.
     private(set) var linkFailureCount = 0
 
+    /// True while an unpair is in flight.
+    private(set) var isUnpairing = false
+
+    /// Set while this device has no usable iCloud account: the sentence that says so and
+    /// what to do. Shown where it matters (the pairing screen, the hub's footer) for as long
+    /// as it is true, because nothing here works until the user signs in.
+    private(set) var accountProblem: String?
+    /// True while the backend cannot be reached, so "can't reach iCloud" is said once per
+    /// outage instead of at every poll.
+    private var unreachable = false
+
     /// Bumped to fire a celebratory `ConfettiBurst` when a nudge is sent.
     private(set) var sendConfetti = 0
     /// The kind most recently sent — lets the UI pop a tiny confirmation chip.
@@ -83,13 +111,11 @@ final class BuddyViewModel {
 
     // MARK: Sync health (what makes silent failures visible)
 
-    /// When MY snapshot last reached CloudKit successfully. Persisted so the hub can show
-    /// "shared 2h ago" across relaunches — and, crucially, an honest "hasn't gone through
-    /// since Tuesday" when publishes are quietly failing.
-    private(set) var lastPublishAt: Date?
+    /// When MY snapshot last reached the backend, from any model on this phone.
+    var lastPublishAt: Date? { publishing.lastPublishAt }
     /// True when the most recent publish attempt failed (cleared by the next success). The
     /// auto-publisher uses it to retry on foreground; the hub uses it to show a soft warning.
-    private(set) var lastPublishFailed = false
+    var lastPublishFailed: Bool { publishing.lastPublishFailed }
     /// When the buddy's snapshot was last fetched successfully (even if unchanged) — lets the
     /// UI distinguish "their data is old" from "I can't reach CloudKit at all".
     private(set) var lastBuddyFetchAt: Date?
@@ -98,53 +124,90 @@ final class BuddyViewModel {
 
     // MARK: Init
 
-    /// - Parameter observePushes: subscribe to remote-change pushes and auto-refresh. The Buddy hub
-    ///   wants this; the always-on `BuddyAutoPublisher` (which only publishes, never displays) passes
-    ///   `false` so we don't run a second redundant refresh loop.
-    init(defaults: UserDefaults = .standard, observePushes: Bool = true) {
-        self.myUserID = Self.resolveMyUserID(defaults: defaults)
-        self.service = BuddySync.makeDefault(myUserID: myUserID)
-        self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service, defaults: defaults)
-        // Restore the paired state at launch from the service's persisted link, so we don't
-        // flash the pairing screen (and lose the pairing) every time the app reopens.
-        self.isLinked = (service.linkedBuddyID != nil)
-        self.lastPublishAt = defaults.object(forKey: Self.lastPublishKey(myUserID)) as? Date
-        if observePushes { observeRemotePushes() }
-        // Publish the pairing code EAGERLY, not lazily on the first refresh: the #1 real-world
-        // pairing failure was "B typed A's code seconds after seeing it, but A's phone hadn't
-        // uploaded it yet" → a confusing 'code didn't match'. Publishing at init closes that gap.
+    /// - Parameter observePushes: refresh when a CloudKit push arrives. The Buddy hub wants
+    ///   this; the always-on `BuddyAutoPublisher` (which only publishes, never displays)
+    ///   passes `false`.
+    convenience init(defaults: UserDefaults = .standard, observePushes: Bool = true) {
+        let myUserID = Self.resolveMyUserID(defaults: defaults)
+        self.init(service: BuddySync.makeDefault(myUserID: myUserID),
+                  myUserID: myUserID,
+                  defaults: defaults,
+                  observePushes: observePushes,
+                  publishing: .shared)
+        // Publish the pairing code EAGERLY, not lazily on the first refresh: otherwise a
+        // buddy who types it seconds after seeing it finds nothing there yet.
         if !isLinked {
             Task { await self.announceMyCode() }
         }
     }
 
-    /// Test / preview seam: inject a specific service + id.
-    init(service: any BuddySyncService, myUserID: String) {
+    /// The designated init, and the seam for tests and previews: a specific service and id,
+    /// and for a test its own defaults, clock and publish coordinator.
+    init(service: any BuddySyncService,
+         myUserID: String,
+         defaults: UserDefaults = .standard,
+         observePushes: Bool = true,
+         now: @escaping @MainActor () -> Date = { .now },
+         calendar: Calendar = .current,
+         publishing: BuddyPublishCoordinator? = nil) {
+        self.defaults = defaults
+        self.now = now
+        self.calendar = calendar
+        self.publishing = publishing ?? BuddyPublishCoordinator()
         self.myUserID = myUserID
         self.service = service
-        self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service)
+        self.myPairingCode = Self.resolveMyPairingCode(myUserID: myUserID, service: service, defaults: defaults)
+        // Restore the paired state at launch from the service's persisted link, so the
+        // pairing screen does not flash every time the app reopens.
         self.isLinked = (service.linkedBuddyID != nil)
-        observeRemotePushes()
+        if self.publishing.lastPublishAt == nil {
+            self.publishing.lastPublishAt = defaults.object(forKey: Self.lastPublishKey(myUserID)) as? Date
+        }
+        let observerID = UUID()
+        self.pushObserver = observePushes ? observerID : nil
+        if observePushes { observeRemotePushes(as: observerID) }
     }
 
-    // `nonisolated(unsafe)` so `deinit` (which is nonisolated) can remove the observer. Safe: it's
-    // assigned once in init and only read in deinit — no concurrent access.
-    nonisolated(unsafe) private var pushObserver: NSObjectProtocol?
-
     /// Refresh the buddy data when a CloudKit push says it may have changed (the snapshot
-    /// subscription fires a silent wake-up the moment the buddy logs).
-    private func observeRemotePushes() {
-        pushObserver = NotificationCenter.default.addObserver(
-            forName: .buddyRemoteChange, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in
-                guard let self, self.isLinked else { return }
-                await self.refresh()
-            }
+    /// subscription fires a silent wake-up the moment the buddy logs). The handler holds
+    /// this model weakly and reports `false` once it is gone, which unregisters it.
+    private func observeRemotePushes(as id: UUID) {
+        BuddyRemoteChangeCenter.shared.addObserver(id: id) { [weak self] in
+            guard let self else { return false }
+            if self.refreshLinkState() { await self.refresh() }
+            return true
         }
     }
 
+    /// This model's registration with `BuddyRemoteChangeCenter`, or nil when it does not
+    /// listen for pushes. A constant, so `deinit` (which is nonisolated) can read it.
+    private let pushObserver: UUID?
+
     deinit {
-        if let pushObserver { NotificationCenter.default.removeObserver(pushObserver) }
+        // SwiftUI makes and drops a model each time it re-creates the view that owns one;
+        // without this every dropped model would leave its observer behind until the next push.
+        if let pushObserver {
+            Task { @MainActor in BuddyRemoteChangeCenter.shared.removeObserver(pushObserver) }
+        }
+    }
+
+    /// Bring `isLinked` in line with the service's persisted link, and return it. Called at
+    /// every trigger rather than trusted from init: the pairing (or unpairing) may have been
+    /// done by another model on this phone since.
+    @discardableResult
+    func refreshLinkState() -> Bool {
+        let linked = service.linkedBuddyID != nil
+        if linked != isLinked {
+            isLinked = linked
+            if !linked { clearBuddyState() }
+        }
+        return linked
+    }
+
+    private func clearBuddyState() {
+        buddySnapshot = nil
+        inbox = []
+        lastBuddyFetchAt = nil
     }
 
     // MARK: - Derived UI values
@@ -181,51 +244,125 @@ final class BuddyViewModel {
         }
     }
 
+    /// How old the buddy's last published day is, by this model's clock.
+    var buddyFreshness: BuddyFreshness {
+        BuddyFreshness.evaluate(lastPublished: buddySnapshot?.lastActive, now: now(), calendar: calendar)
+    }
+
+    /// The buddy's first name, or "your buddy" before they have published one.
+    var buddyFirstName: String {
+        let name = buddySnapshot?.displayName ?? ""
+        let first = name.split(separator: " ").first.map(String.init) ?? ""
+        return (first.isEmpty || name == "Your buddy") ? "your buddy" : first
+    }
+
+    /// The same, to begin a sentence with: "Sam" or "Your buddy".
+    var buddyFirstNameCapitalized: String {
+        let name = buddyFirstName
+        return name.prefix(1).uppercased() + name.dropFirst()
+    }
+
     /// Count of unread nudges, for a small inbox badge.
     var unreadCount: Int { inbox.filter { !$0.isRead }.count }
 
-    // MARK: - Actions (all swallow BuddySyncError into kind banners)
+    // MARK: - Actions (every BuddySyncError becomes a sentence)
 
     /// Recover linked state + load data when a screen appears. Safe to call repeatedly.
     func refresh() async {
-        if !isLinked { await announceMyCode() }   // owner side: publish my code so a buddy can claim it
+        let wasLinked = refreshLinkState()
+        if !wasLinked { await announceMyCode() }   // owner side: put my code where a buddy can claim it
         await loadSnapshot()
         await loadInbox()
-        // If the backend now knows our buddy — because `announceMyCode` just discovered that
-        // someone accepted our code, or it was restored from persistence — we're linked, even
-        // before their snapshot arrives. Without this the code-OWNER could stay stuck on the
-        // pairing screen after a buddy accepted.
-        if !isLinked, service.linkedBuddyID != nil {
-            isLinked = true
-            // The code-OWNER's "it worked!" moment — the claimant gets an instant banner, and
-            // without this the owner's screen just silently dismissed a few seconds later.
+        // The owner's "it worked" moment: the service found a claimant on my code. The one
+        // who typed got "You're connected!" at once; without this the owner's screen would
+        // just change.
+        if !wasLinked, refreshLinkState() {
             banner = .init(text: "They got your code — you're connected! 💚", tone: .success)
         }
     }
 
     /// Announce my pairing code so a buddy who types it can find + claim me (the
-    /// code-generator side of the handshake). Idempotent; a no-op on the mock.
+    /// code-generator side of the handshake). Idempotent.
     func announceMyCode() async {
         guard !myPairingCode.isEmpty else { return }
-        do { try await service.publishMyPairingCode(myPairingCode) }
-        catch { handleSilently(error, "announce code") }
+        do {
+            try await service.publishMyPairingCode(myPairingCode)
+            noteReached()
+        } catch BuddySyncError.pairingCodeTaken {
+            // The record under my code is someone else's. Take a new code and announce that.
+            logQuietly(BuddySyncError.pairingCodeTaken, "announce code")
+            rotateMyPairingCode()
+            do { try await service.publishMyPairingCode(myPairingCode) }
+            catch { logQuietly(error, "announce code") }
+        } catch {
+            noteFailure(error)
+            logQuietly(error, "announce code")
+        }
     }
 
-    /// Probe the buddy snapshot; a non-nil result means we're linked.
+    /// A call reached the backend: whatever stood in the way is gone.
+    private func noteReached() {
+        accountProblem = nil
+        unreachable = false
+    }
+
+    /// A background call failed. Says so once per outage; a missing iCloud account also
+    /// stays on screen (`accountProblem`) until a call gets through.
+    private func noteFailure(_ error: Error) {
+        guard let error = error as? BuddySyncError else { return }
+        switch error {
+        case .iCloudAccountMissing:
+            accountProblem = Self.message(for: .iCloudAccountMissing)
+        case .cloudKitUnavailable, .backendFailure:
+            if !unreachable {
+                banner = .init(text: "Can't reach iCloud right now. What you see here may be out of date; it will catch up on its own.",
+                               tone: .info)
+            }
+            unreachable = true
+        default:
+            break
+        }
+    }
+
+    /// Replace my pairing code with a new one (the old one turned out to belong to
+    /// someone else, or was retired by unpairing).
+    private func rotateMyPairingCode() {
+        var fresh = service.generatePairingCode()
+        while fresh == myPairingCode { fresh = service.generatePairingCode() }
+        myPairingCode = fresh
+        defaults.set(fresh, forKey: Self.pairingCodeKey(myUserID))
+    }
+
+    /// Fetch the buddy's snapshot, and learn from the answer whether we are still paired.
     func loadSnapshot() async {
         do {
             let snap = try await service.fetchBuddySnapshot()
             buddySnapshot = snap
-            lastBuddyFetchAt = .now
-            if snap != nil { isLinked = true }
+            lastBuddyFetchAt = now()
+            noteReached()
+            refreshLinkState()
+        } catch BuddySyncError.unpairedByBuddy {
+            // The pairing record shows the buddy ended it; the service has cleared the link.
+            let name = buddyFirstNameCapitalized
+            isLinked = false
+            clearBuddyState()
+            setBadge(0)
+            banner = .init(text: "\(name) ended the pairing. You can pair again whenever you both like.",
+                           tone: .info)
+            log("buddy: the buddy ended the pairing")
+        } catch BuddySyncError.notLinked {
+            // No buddy: the expected state on the pairing screen, not a failure to record.
+            refreshLinkState()
         } catch {
-            // A snapshot failure is a soft state — keep whatever we had, stay quiet here
-            // (the home screen's empty state already covers "not connected").
-            handleSilently(error, "snapshot fetch")
+            // Keep whatever we had; the footer and the stale state say how old it is.
+            noteFailure(error)
+            logQuietly(error, "snapshot fetch")
         }
     }
 
-    /// Connect using a buddy's code. Trims input, shows kind errors, celebrates success.
+    /// Connect using a buddy's code. Connected means the service saved the claim and
+    /// persisted the link; every other outcome leaves the user unpaired, says why in
+    /// `linkError`, and can be retried.
     func link(usingCode code: String) async {
         let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -233,22 +370,56 @@ final class BuddyViewModel {
             return
         }
         isLinking = true
+        linkError = nil
         defer { isLinking = false }
         do {
             try await service.link(usingCode: trimmed)
-            isLinked = true
+            guard refreshLinkState() else {
+                // The service returned without a link: treat it as the failure it is.
+                linkFailureCount += 1
+                linkError = Self.message(for: .backendFailure("no link"))
+                return
+            }
             linkFailureCount = 0
             banner = .init(text: "You're connected! 💚", tone: .success)
-            // Publish a first snapshot so the loop is warmed up, then pull state.
-            await publishMine(loggedToday: true, dayStreak: 0)
+            // The screen publishes my real day next (`PairingView.onLinked`); pull theirs.
             await refresh()
         } catch let err as BuddySyncError {
             linkFailureCount += 1
-            banner = .init(text: kindMessage(for: err), tone: .info)
+            linkError = Self.message(for: err)
         } catch {
             linkFailureCount += 1
-            banner = .init(text: "That didn't go through — let's try again in a moment.", tone: .info)
+            linkError = Self.message(for: .backendFailure("unexpected"))
         }
+    }
+
+    /// The pairing screen clears the last failure when the code is edited.
+    func clearLinkError() {
+        linkError = nil
+    }
+
+    /// End the pairing from this phone. The link is forgotten here whether or not the
+    /// backend can be reached; when it can, the other side finds out at its next refresh.
+    /// The code that was shared is retired and a new one announced, unless a different
+    /// buddy has already typed it, in which case they are who I am paired with next.
+    func unpair() async {
+        guard refreshLinkState(), !isUnpairing else { return }
+        isUnpairing = true
+        defer { isUnpairing = false }
+        let name = buddyFirstName
+        do { try await service.unlink() }
+        catch { logQuietly(error, "unlink") }
+        log("buddy: unpaired from this phone")
+        // The service retires my code unless someone else is already waiting on it.
+        if defaults.string(forKey: Self.pairingCodeKey(myUserID)) != myPairingCode {
+            rotateMyPairingCode()
+        }
+        isLinked = false
+        clearBuddyState()
+        setBadge(0)
+        banner = .init(text: "You're no longer paired with \(name).", tone: .info)
+        // Announce my code, and if someone was waiting on it, this is where we pair.
+        await refresh()
     }
 
     #if DEBUG
@@ -279,9 +450,15 @@ final class BuddyViewModel {
         return await ck.diagnose()
     }
 
+    /// Who a nudge goes to: the buddy this phone is paired with. Known from the link, so a
+    /// buddy who has not published anything yet can still be cheered.
+    private var nudgeRecipient: String? {
+        buddySnapshot?.ownerUserID ?? service.linkedBuddyID
+    }
+
     /// Send a one-tap nudge (uses the kind's friendly default copy). Fires confetti.
     func send(_ kind: NudgeKind) async {
-        guard let buddyID = buddySnapshot?.ownerUserID else {
+        guard let buddyID = nudgeRecipient else {
             // Not linked yet — nudge the user gently toward pairing instead of erroring.
             banner = .init(text: "Pair with a buddy first, then cheer them on 💛", tone: .info)
             return
@@ -293,7 +470,7 @@ final class BuddyViewModel {
             sendConfetti &+= 1
             banner = .init(text: "Sent \(kind.label.lowercased()) 💛", tone: .success)
         } catch let err as BuddySyncError {
-            banner = .init(text: kindMessage(for: err), tone: .info)
+            banner = .init(text: Self.message(for: err), tone: .info)
         } catch {
             banner = .init(text: "Couldn't send that just now — try again in a bit.", tone: .info)
         }
@@ -310,7 +487,7 @@ final class BuddyViewModel {
     /// confirmation as the preset chips. `kind` stays a health-POSITIVE intent (default
     /// `.cheer`) so the note carries a warm icon/label in the buddy's inbox.
     func send(text: String, kind: NudgeKind = .cheer) async {
-        guard let buddyID = buddySnapshot?.ownerUserID else {
+        guard let buddyID = nudgeRecipient else {
             banner = .init(text: "Pair with a buddy first, then cheer them on 💛", tone: .info)
             return
         }
@@ -325,35 +502,32 @@ final class BuddyViewModel {
             sendConfetti &+= 1
             banner = .init(text: "Your note's on its way 💛", tone: .success)
         } catch let err as BuddySyncError {
-            banner = .init(text: kindMessage(for: err), tone: .info)
+            banner = .init(text: Self.message(for: err), tone: .info)
         } catch {
             banner = .init(text: "Couldn't send that just now — try again in a bit.", tone: .info)
         }
     }
 
-    /// Auto-send a warm celebration nudge for each freshly-reached milestone, so the buddy
-    /// is pinged ("🎉 Bryan just hit their calorie goal!") via the SAME proven nudge push —
-    /// even with their app closed. Silent on failure: a missed cheer must never nag.
-    func celebrate(_ milestones: Set<BuddyMilestone>, myName: String) async {
-        guard !milestones.isEmpty,
-              let buddyID = buddySnapshot?.ownerUserID ?? service.linkedBuddyID else { return }
-        for m in milestones {
-            Diagnostics.shared.log("buddy: auto-celebrate \(m.rawValue)", .sync)
-            let nudge = Nudge(fromUserID: myUserID, toUserID: buddyID, kind: .flex, text: m.message(name: myName))
-            try? await service.sendNudge(nudge)
-        }
-    }
-
-    /// Load received nudges (most-recent first).
+    /// Load received nudges (most-recent first), and set the app-icon badge to how many are
+    /// unread. A fetch that fails leaves the inbox and the badge as they were.
     func loadInbox() async {
+        // Notes are between me and my buddy: with no buddy there is no inbox to show, and
+        // nothing that should put a number on the app icon.
+        guard refreshLinkState() else {
+            inbox = []
+            return
+        }
         do {
             inbox = try await service.fetchInbox()
-        } catch let err as BuddySyncError {
-            // `.notLinked` is expected before pairing — stay quiet, leave inbox empty.
-            if err != .notLinked { banner = .init(text: kindMessage(for: err), tone: .info) }
+            noteReached()
+            setBadge(unreadCount)
+        } catch BuddySyncError.notLinked {
+            // Expected before pairing — stay quiet, leave the inbox empty.
             inbox = []
         } catch {
-            inbox = []
+            // The notes already on screen are still the notes: keep them, and the badge.
+            noteFailure(error)
+            logQuietly(error, "inbox fetch")
         }
     }
 
@@ -365,11 +539,12 @@ final class BuddyViewModel {
             inbox[i].isRead = true
             let snapshot = inbox
             inbox = snapshot
+            setBadge(unreadCount)
         }
         do {
             try await service.markRead(id)
         } catch {
-            handleSilently(error) // a read-receipt failure should never bother the user
+            logQuietly(error, "mark read") // a read-receipt failure should never bother the user
         }
     }
 
@@ -379,112 +554,116 @@ final class BuddyViewModel {
         for id in unread { await markRead(id) }
     }
 
-    /// Publish my own low-stakes snapshot so my buddy can feel my presence — and, for the
-    /// FAIR face-off, my SAFE daily activity (steps / water / movement) alongside MY OWN
-    /// goals. Mood still mirrors the local-companion tiers.
+    // MARK: - Publishing my day
+
+    /// Publish my day, then cheer the buddy for any goal just crossed. The one entry point
+    /// for both publishers (the hub and the always-on `BuddyAutoPublisher`).
     ///
-    /// **Full data (opt-in).** When the user has chosen to share everything with their
-    /// buddy (`UserProfile.shareFullStatsWithBuddy`), the caller also passes the FULL daily
-    /// picture — weight trend, calorie + protein progress, today's food names — via the
-    /// `sharesFullData` + full-data parameters below, and we forward it on the snapshot.
-    /// These all default to "not sharing / no data", so existing callers (e.g. the
-    /// just-linked warm-up publish) keep compiling and simply omit the full data — and when
-    /// `sharesFullData` is false those fields stay 0/"" and never leave the device with
-    /// meaning. This is ADDITIVE; the activity-only contract is unchanged.
-    /// - Parameters:
-    ///   - stepsToday/stepGoal:  my step total + my own step goal (scored as % of mine).
-    ///   - waterToday/waterGoal: my water (oz) + my own water goal (scored as % of mine).
-    ///   - workedOutToday:       whether I got movement in today (a simple "showed up").
-    ///   - sharesFullData:       did I opt in to sharing the full picture below?
-    ///   - trendWeightLbs:       my smoothed weight trend (lbs).
-    ///   - goalWeightLbs:        my goal weight (lbs).
-    ///   - weeklyRateLbs:        my weekly rate of change (lbs), SIGNED (negative = losing).
-    ///   - caloriesEaten/calorieTarget: today's calories eaten + my daily target.
-    ///   - proteinEaten/proteinTarget:  today's protein (g) eaten + my daily target.
-    ///   - todayFoods:           comma-joined names of what I logged today.
-    func publishMine(loggedToday: Bool,
-                     dayStreak: Int,
-                     stepsToday: Int = 0,
-                     stepGoal: Int = 0,
-                     waterToday: Double = 0,
-                     waterGoal: Double = 0,
-                     workedOutToday: Bool = false,
-                     workoutSummary: String = "",
-                     sharesFullData: Bool = false,
-                     trendWeightLbs: Double = 0,
-                     goalWeightLbs: Double = 0,
-                     weeklyRateLbs: Double = 0,
-                     caloriesEaten: Double = 0,
-                     calorieTarget: Double = 0,
-                     proteinEaten: Double = 0,
-                     proteinTarget: Double = 0,
-                     carbsEaten: Double = 0,
-                     carbTarget: Double = 0,
-                     fatEaten: Double = 0,
-                     fatTarget: Double = 0,
-                     todayFoods: String = "",
-                     displayName: String = "Your buddy") async {
-        let mood: BuddyCharacterMood = dayStreak >= 7 ? .thriving : (loggedToday ? .happy : .sleepy)
-        let payload = BuddySnapshotPayload(
-            ownerUserID: myUserID,
-            // The name my BUDDY sees for me — my real name, not the literal "You".
-            displayName: displayName,
-            dayStreak: max(dayStreak, 0),
-            characterMood: mood,
-            loggedToday: loggedToday,
-            lastActive: .now,
-            stepsToday: max(stepsToday, 0),
-            stepGoal: max(stepGoal, 0),
-            waterToday: Self.fin(waterToday),
-            waterGoal: Self.fin(waterGoal),
-            workedOutToday: workedOutToday,
-            workoutSummary: workoutSummary,
-            sharesFullData: sharesFullData,
-            trendWeightLbs: Self.fin(trendWeightLbs),
-            goalWeightLbs: Self.fin(goalWeightLbs),
-            weeklyRateLbs: Self.finSigned(weeklyRateLbs),   // SIGNED — keep sign, strip ∞/NaN
-            caloriesEaten: Self.fin(caloriesEaten),
-            calorieTarget: Self.fin(calorieTarget),
-            proteinEaten: Self.fin(proteinEaten),
-            proteinTarget: Self.fin(proteinTarget),
-            carbsEaten: Self.fin(carbsEaten),
-            carbTarget: Self.fin(carbTarget),
-            fatEaten: Self.fin(fatEaten),
-            fatTarget: Self.fin(fatTarget),
-            todayFoods: todayFoods
-        )
-        await publishSerialized(payload)
+    /// Does nothing while unpaired, and asks the service, not a flag set at init: the
+    /// pairing may have been made by another model a moment ago. Runs through the shared
+    /// coordinator, so two models never publish at once and a milestone is sent by one of them.
+    func publishIfLinked(_ s: MyBuddyState) async {
+        guard refreshLinkState() else { return }
+        await publishing.submit { [self] in await self.publishAndCelebrate(s) }
     }
 
-    /// True while a publish is in flight; a newer payload arriving meanwhile is parked in
-    /// `queuedPayload` instead of racing the CloudKit fetch-modify-save (two interleaved
-    /// publishes can clobber each other's server change tag — the save then fails and, before
-    /// this guard, was silently dropped).
-    private var isPublishing = false
-    private var queuedPayload: BuddySnapshotPayload?
+    /// A successful publish older than this is repeated when the app comes back to the front.
+    static let republishAfter: TimeInterval = 6 * 3600
 
-    private func publishSerialized(_ payload: BuddySnapshotPayload) async {
-        guard !isPublishing else {
-            queuedPayload = payload   // latest wins — snapshots are whole-state, not deltas
-            return
-        }
-        isPublishing = true
-        defer {
-            isPublishing = false
-            if let next = queuedPayload {
-                queuedPayload = nil
-                Task { await self.publishSerialized(next) }
+    /// Whether coming back to the app should publish again: paired, and either the last
+    /// attempt failed (it used to be lost for good) or the last success is old enough that
+    /// the buddy would be looking at an earlier me.
+    func needsPublishOnForeground() -> Bool {
+        guard refreshLinkState() else { return false }
+        if lastPublishFailed { return true }
+        guard let last = lastPublishAt else { return true }
+        return now().timeIntervalSince(last) > Self.republishAfter
+    }
+
+    private func publishAndCelebrate(_ s: MyBuddyState) async {
+        guard refreshLinkState() else { return }   // unpaired while this waited its turn
+        await publish(makePayload(s))
+
+        let input = BuddyMilestoneInput(
+            caloriesEaten: s.caloriesEaten, calorieTarget: s.calorieTarget,
+            proteinEaten: s.proteinEaten, proteinTarget: s.proteinTarget,
+            steps: s.stepsToday, stepGoal: s.stepGoal,
+            waterOz: s.waterToday, waterGoal: s.waterGoal,
+            dayStreak: s.dayStreak)
+        let day = now()
+        let pending = BuddyMilestones.pending(input, myUserID: myUserID, day: day,
+                                              calendar: calendar, defaults: defaults)
+        for milestone in pending.sorted(by: { $0.rawValue < $1.rawValue }) {
+            let text = milestone.message(name: s.displayName, dayStreak: s.dayStreak)
+            // Marked sent only once it was: one that fails here is tried at the next publish.
+            if await sendCelebration(milestone, text: text) {
+                BuddyMilestones.markSent(milestone, input: input, myUserID: myUserID, day: day,
+                                         calendar: calendar, defaults: defaults)
             }
         }
+    }
+
+    /// Send the cheer for one milestone. Silent on failure for the user (a missed cheer
+    /// must never nag); the failure is in the log and the caller retries later.
+    private func sendCelebration(_ milestone: BuddyMilestone, text: String) async -> Bool {
+        guard let buddyID = nudgeRecipient else { return false }
+        let nudge = Nudge(fromUserID: myUserID, toUserID: buddyID, kind: .flex, text: text)
+        do {
+            try await service.sendNudge(nudge)
+            log("buddy: auto-celebrate \(milestone.rawValue)")
+            return true
+        } catch {
+            logQuietly(error, "auto-celebrate \(milestone.rawValue)")
+            return false
+        }
+    }
+
+    /// My snapshot as it leaves the device. Built through `BuddySnapshotPayload.init`, which
+    /// blanks every full-stats field unless I opted in to sharing them; the numbers are
+    /// cleaned of anything non-finite first.
+    func makePayload(_ s: MyBuddyState) -> BuddySnapshotPayload {
+        let mood: BuddyCharacterMood = s.dayStreak >= 7 ? .thriving : (s.loggedToday ? .happy : .sleepy)
+        return BuddySnapshotPayload(
+            ownerUserID: myUserID,
+            // The name my BUDDY sees for me — my real name, not the literal "You".
+            displayName: s.displayName,
+            dayStreak: max(s.dayStreak, 0),
+            characterMood: mood,
+            loggedToday: s.loggedToday,
+            lastActive: now(),
+            stepsToday: max(s.stepsToday, 0),
+            stepGoal: max(s.stepGoal, 0),
+            waterToday: Self.fin(s.waterToday),
+            waterGoal: Self.fin(s.waterGoal),
+            workedOutToday: s.workedOutToday,
+            workoutSummary: s.workoutSummary,
+            sharesFullData: s.sharesFullData,
+            trendWeightLbs: Self.fin(s.trendWeightLbs),
+            goalWeightLbs: Self.fin(s.goalWeightLbs),
+            weeklyRateLbs: Self.finSigned(s.weeklyRateLbs),   // SIGNED — keep sign, strip ∞/NaN
+            caloriesEaten: Self.fin(s.caloriesEaten),
+            calorieTarget: Self.fin(s.calorieTarget),
+            proteinEaten: Self.fin(s.proteinEaten),
+            proteinTarget: Self.fin(s.proteinTarget),
+            carbsEaten: Self.fin(s.carbsEaten),
+            carbTarget: Self.fin(s.carbTarget),
+            fatEaten: Self.fin(s.fatEaten),
+            fatTarget: Self.fin(s.fatTarget),
+            todayFoods: s.todayFoods
+        )
+    }
+
+    private func publish(_ payload: BuddySnapshotPayload) async {
         do {
             try await service.publish(mySnapshot: payload)
-            lastPublishAt = .now
-            lastPublishFailed = false
-            UserDefaults.standard.set(Date.now, forKey: Self.lastPublishKey(myUserID))
-            Diagnostics.shared.log("buddy: snapshot published OK", .sync)
+            let at = now()
+            publishing.lastPublishAt = at
+            publishing.lastPublishFailed = false
+            defaults.set(at, forKey: Self.lastPublishKey(myUserID))
+            log("buddy: snapshot published OK")
         } catch {
-            lastPublishFailed = true
-            handleSilently(error, "snapshot publish")
+            publishing.lastPublishFailed = true
+            logQuietly(error, "snapshot publish")
         }
     }
 
@@ -494,29 +673,45 @@ final class BuddyViewModel {
     /// Finite but sign-preserving (weekly rate can be negative = losing).
     private static func finSigned(_ v: Double) -> Double { v.isFinite ? v : 0 }
 
-    // MARK: - Error → kind copy
+    // MARK: - Error → words
 
-    /// Map a sync error to warm, non-shaming language. (The errors already have decent
-    /// `errorDescription`s; we lean on those but keep `.notLinked` extra-gentle.)
-    private func kindMessage(for error: BuddySyncError) -> String {
+    /// What the user reads for each failure. One sentence each, saying what happened and
+    /// what to do; no two failures share one.
+    static func message(for error: BuddySyncError) -> String {
         switch error {
         case .notLinked:
             return "Pair with a buddy first, then you two can cheer each other on 💛"
+        case .malformedPairingCode:
+            return "That doesn't look like a pairing code. A code is VITA- and four more characters, like VITA-7F3K; codes never use 0, O, 1, I or L."
         case .invalidPairingCode:
-            return "Hmm, that code didn't match. Double-check the letters — and if they JUST showed it to you, give it ~10 seconds (their phone may still be uploading it) and try again 💛"
+            return "Nobody has shared that code. Check the letters with your buddy. If they opened their pairing screen only a moment ago, their phone may still be uploading it: wait a few seconds and try again."
+        case .ownPairingCode:
+            return "That's your own code. Share it with your buddy, and type theirs here."
+        case .pairingCodeAlreadyClaimed:
+            return "That code is already paired with someone else. If your buddy was paired before, ask them to tap Unpair on their Buddy screen, then use the new code they see."
+        case .pairingCodeTaken:
+            return "That code is in use. Open this screen again for a new one."
+        case .unpairedByBuddy:
+            return "Your buddy ended the pairing. You can pair again whenever you both like."
+        case .iCloudAccountMissing:
+            return "Buddy needs iCloud. Sign in to iCloud in the Settings app (your name at the top), then come back and try again."
         case .cloudKitUnavailable:
-            return "Buddy sync will catch up once you're back online — nothing lost 💛"
+            return "Couldn't reach iCloud just now. Nothing was changed; check your connection and try again."
         case .backendFailure:
-            return "That didn't go through just now. Let's try again in a moment 💛"
+            return "That didn't go through just now. Nothing was changed; try again in a moment."
         }
     }
 
     /// For failures the user shouldn't be bothered by (read-receipts, background probes).
-    /// "Silent" means no banner — NOT no trace: every swallowed error is written to the
-    /// field Diagnostics log, because invisible sync failures are exactly how a buddy's
-    /// snapshot froze for a month with nobody able to say why.
-    private func handleSilently(_ error: Error, _ op: String = "op") {
-        Diagnostics.shared.log("buddy: \(op) failed quietly — \(error.localizedDescription)", .sync)
+    /// "Quiet" means no banner — NOT no trace: the failure is written to the field
+    /// Diagnostics log, because invisible sync failures are exactly how a buddy's snapshot
+    /// froze for a month with nobody able to say why. Two things are kept out of it: not
+    /// being paired, which is a state and not a failure, and the same line again within
+    /// five minutes, which is counted instead (`RepeatedLineFilter`).
+    private func logQuietly(_ error: Error, _ op: String) {
+        if (error as? BuddySyncError) == .notLinked { return }
+        let line = "buddy: \(op) failed quietly — \(error.localizedDescription)"
+        if let out = logFilter.admit(line, at: now()) { log(out) }
     }
 }
 
