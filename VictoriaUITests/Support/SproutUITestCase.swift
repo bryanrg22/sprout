@@ -149,17 +149,48 @@ class SproutUITestCase: XCTestCase {
         guard appears(element) else {
             return XCTFail("\(identifier) does not exist", file: file, line: line)
         }
+        settle(element)
         element.tap()
     }
 
-    /// Wait for the field with this identifier, give it focus and type into it.
+    /// Give an element that exists a moment to finish appearing (a menu, a sheet, a page
+    /// sliding in) before it is tapped. On a slow CI runner a tap the instant an element
+    /// exists can land mid-animation and be lost (seen twice on 2026-11-23). An element that
+    /// is off screen in a scroll view is never hittable until scrolled to, so this waits at
+    /// most `timeout` and then lets the tap scroll it into view as usual.
+    func settle(_ element: XCUIElement, timeout: TimeInterval = 3) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !element.isHittable, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
+    }
+
+    /// Whether a field holds the keyboard focus (XCUIElement exposes it only by key).
+    private func hasKeyboardFocus(_ field: XCUIElement) -> Bool {
+        (field.value(forKey: "hasKeyboardFocus") as? Bool) ?? false
+    }
+
+    /// Wait for the field with this identifier, give it focus and type into it. The tap is
+    /// repeated (up to three times) until the field really has the keyboard: typing into a
+    /// field that has not taken focus yet fails on a slow runner ("Neither element nor any
+    /// descendant has keyboard focus", PR #4, 2026-11-23).
     func type(_ text: String, into identifier: String,
               file: StaticString = #filePath, line: UInt = #line) {
         let field = app.textFields.matching(identifier: identifier).firstMatch
         guard appears(field) else {
             return XCTFail("\(identifier) does not exist", file: file, line: line)
         }
-        field.tap()
+        settle(field)
+        for _ in 0..<3 where !hasKeyboardFocus(field) {
+            field.tap()
+            let deadline = Date().addingTimeInterval(3)
+            while !hasKeyboardFocus(field), Date() < deadline {
+                RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+            }
+        }
+        guard hasKeyboardFocus(field) else {
+            return XCTFail("\(identifier) never took the keyboard focus", file: file, line: line)
+        }
         field.typeText(text)
     }
 

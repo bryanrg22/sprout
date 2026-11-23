@@ -274,7 +274,28 @@ final class LocalMockSyncService: BuddySyncService {
                                     calorieTarget: 1741,
                                     proteinEaten: 98,
                                     proteinTarget: 126,
-                                    todayFoods: "Greek yogurt & berries, Grilled chicken salad, Trail mix")
+                                    todayFoods: "Greek yogurt & berries, Grilled chicken salad, Trail mix",
+                                    competitionWeeks: Self.sampleCompetition(now: lastActive).encoded)
+    }
+
+    /// A fixed, believable competition record for the simulated buddy: last week finished with
+    /// 20 points, this week has a day each so far scored 3, 4, 2, 5, 1, 4 and 3 (as many days as
+    /// have passed). Fixed, not random, so a flow can assert what it shows.
+    static func sampleCompetition(now: Date, calendar: Calendar = .current) -> CompetitionRecord {
+        let cal = CompetitionWeek.calendar(calendar)
+        let thisWeek = CompetitionWeek.start(of: now, calendar: calendar)
+        let lastWeek = cal.date(byAdding: .day, value: -7, to: thisWeek) ?? thisWeek
+        let last: [CompetitionHits] = [[.calories, .protein, .water], [.calories, .steps, .active, .water],
+                                       [.water], [.calories, .protein, .water, .steps, .active],
+                                       [.calories, .active], [], [.protein, .water, .steps, .active, .calories]]
+        let pattern: [CompetitionHits] = [[.calories, .water, .active], [.calories, .protein, .water, .active],
+                                          [.water, .steps], [.calories, .protein, .water, .steps, .active],
+                                          [.active], [.calories, .protein, .water, .steps], [.water, .steps, .active]]
+        let daysSoFar = (cal.dateComponents([.day], from: thisWeek, to: cal.startOfDay(for: now)).day ?? 0) + 1
+        return CompetitionRecord(weeks: [
+            CompetitionRecord.dayKey(lastWeek, calendar: cal): last,
+            CompetitionRecord.dayKey(thisWeek, calendar: cal): Array(pattern.prefix(min(max(daysSoFar, 1), 7))),
+        ])
     }
 
     // MARK: - Linked-state helpers

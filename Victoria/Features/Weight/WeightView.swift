@@ -104,6 +104,7 @@ struct WeightView: View {
                     onSave: save(weight:)
                 )
             }
+            .surfaceContent()   // Home | Gym: hidden from VoiceOver when not showing (U-1)
         }
     }
 

@@ -213,12 +213,12 @@ struct MainTabView: View {
             }
             .opacity(mode == .home ? 1 : 0)
             .allowsHitTesting(mode == .home)
-            .accessibilityHidden(mode != .home)
+            .hiddenFromAssistiveTechnology(mode != .home)
 
             WorkoutsView()
                 .opacity(mode == .gym ? 1 : 0)
                 .allowsHitTesting(mode == .gym)
-                .accessibilityHidden(mode != .gym)
+                .hiddenFromAssistiveTechnology(mode != .gym)
         }
         .onAppear {
             // A demo launch can ask for Gym; otherwise the stored choice stands.
@@ -274,5 +274,41 @@ struct MainTabView: View {
     /// falls back to the computed defaults. See `PlanTargetSync`.
     private func syncPlanTargets() {
         PlanTargetSync.apply(plan: coachPlans.first, to: profile)
+    }
+}
+
+
+private struct SurfaceHiddenKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True inside the surface (Home or Gym) that the switch is not showing.
+    var surfaceHidden: Bool {
+        get { self[SurfaceHiddenKey.self] }
+        set { self[SurfaceHiddenKey.self] = newValue }
+    }
+}
+
+/// The content of a navigation stack inside a surface under the Home | Gym switch. A flag set
+/// on the surface does not cross into a `NavigationStack` or a `TabView` (UIKit underneath),
+/// so the stack's own content reads it and hides itself, and the tab bar with it.
+private struct SurfaceContent: ViewModifier {
+    @Environment(\.surfaceHidden) private var hidden
+    func body(content: Content) -> some View {
+        content
+            .accessibilityHidden(hidden)
+            .toolbar(hidden ? .hidden : .automatic, for: .tabBar)
+    }
+}
+
+extension View {
+    /// Apply to the root content of each navigation stack under the Home | Gym switch (U-1).
+    func surfaceContent() -> some View { modifier(SurfaceContent()) }
+
+    /// Marks a whole surface as hidden or showing for what is inside it.
+    func hiddenFromAssistiveTechnology(_ hidden: Bool) -> some View {
+        accessibilityHidden(hidden)
+            .environment(\.surfaceHidden, hidden)
     }
 }

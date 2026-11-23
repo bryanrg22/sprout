@@ -199,6 +199,7 @@ struct DashboardView: View {
                 maybeAlejandroGag()
             }
             .onChange(of: reachedFuel) { _, _ in maybeAlejandroGag() }
+            .surfaceContent()   // Home | Gym: hidden from VoiceOver when not showing (U-1)
         }
             // Alejandro's rival gag — a transient FULL-SCREEN celebration on a goal-hit, placed
             // as a sibling in the top-level ZStack so it gets the full screen size (an .overlay
