@@ -144,6 +144,46 @@ final class VerificationFixesTests: XCTestCase {
         XCTAssertEqual(topics.count, 6, "every rung of the ladder was checked")
     }
 
+    /// The reason a rewrite is discarded is nameable, and agrees with `parse` in both directions.
+    func testRejectionReasonAgreesWithParse() {
+        let kept = "Fourteen days in a row.\nThat steadiness is the whole thing."
+        XCTAssertNil(DailyBriefService.rejection(of: kept))
+        XCTAssertNotNil(DailyBriefService.parse(kept))
+        let cases: [(String, String)] = [
+            ("", "empty"),
+            ("Only a headline", "no body"),
+            ("Only a headline with an emoji. 🌿", "no body"),
+            ("Nice.\nNo crash diets needed.", "crash diet"),
+            ("Nice.\nNothing to make up for.", "make up for"),
+            (String(repeating: "a", count: 501), "longer than 500"),
+        ]
+        for (raw, expected) in cases {
+            let reason = DailyBriefService.rejection(of: raw)
+            XCTAssertTrue(reason?.contains(expected) ?? false, "\(raw.prefix(30)) → \(reason ?? "nil")")
+            XCTAssertNil(DailyBriefService.parse(raw), "parse must discard what rejection names")
+        }
+    }
+
+    /// A model that forgets the line break still gets its rewrite used: one line with two
+    /// or more sentences is split at the first sentence (seen 3 of 3 on one model).
+    func testOneLineReplyIsSplitAtTheFirstSentence() throws {
+        let oneLine = "Sam, your trend eased down this week, and that's real progress. Whatever you've been doing is working, so keep doing exactly that. 🌿"
+        let parsed = try XCTUnwrap(DailyBriefService.parse(oneLine))
+        XCTAssertEqual(parsed.headline, "Sam, your trend eased down this week, and that's real progress.")
+        XCTAssertEqual(parsed.body, "Whatever you've been doing is working, so keep doing exactly that. 🌿")
+        XCTAssertNil(DailyBriefService.rejection(of: oneLine))
+        // Two lines still split by line, exactly as before.
+        let twoLines = try XCTUnwrap(DailyBriefService.parse("Day 3 on the new clock.\nIt settles. Give it a few days."))
+        XCTAssertEqual(twoLines.headline, "Day 3 on the new clock.")
+        XCTAssertEqual(twoLines.body, "It settles. Give it a few days.")
+        // One sentence is still not a brief, and a banned phrase is still rejected on one line.
+        XCTAssertNil(DailyBriefService.parse("Just a single sentence with nothing after it."))
+        XCTAssertNil(DailyBriefService.parse("Nice week. Nothing to make up for."))
+        // A decimal or an abbreviation inside the first sentence does not end it early.
+        let decimal = try XCTUnwrap(DailyBriefService.parse("You slept 7.5 hours last night. That helps the whole day."))
+        XCTAssertEqual(decimal.headline, "You slept 7.5 hours last night.")
+    }
+
     // MARK: - Nutrients tab follows today across midnight
 
     private var cal: Calendar {

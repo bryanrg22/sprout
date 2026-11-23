@@ -10,6 +10,7 @@
 #              the cases are the photos in Evals/datasets/avatar/photos/, see its README)
 #   repeats   how many times each case runs per model (default 1; use 3 to see variance)
 #   limit     only the first N cases (a cheap pilot); omit for the whole dataset
+#   SPROUT_EVAL_CASES=id1,id2 in the environment runs only those cases (to chase one failure)
 #
 # THIS SPENDS MONEY on the keys in the environment (ANTHROPIC_API_KEY, OPENAI_API_KEY).
 # The keys are read from the environment only; they are never written to a record.
@@ -61,6 +62,7 @@ set +e
 TEST_RUNNER_SPROUT_EVAL_MODELS="$MODELS" \
 TEST_RUNNER_SPROUT_EVAL_REPEATS="$REPEATS" \
 TEST_RUNNER_SPROUT_EVAL_LIMIT="$LIMIT" \
+TEST_RUNNER_SPROUT_EVAL_CASES="${SPROUT_EVAL_CASES:-}" \
 TEST_RUNNER_SPROUT_EVAL_ROOT="$ROOT/Evals" \
 TEST_RUNNER_SPROUT_EVAL_OUT="$OUT" \
 TEST_RUNNER_SPROUT_EVAL_CONCURRENCY="${SPROUT_EVAL_CONCURRENCY:-4}" \

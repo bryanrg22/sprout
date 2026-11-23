@@ -214,33 +214,76 @@ enum DailyBriefService {
 
     static func rephrase(_ picked: (topic: Topic, headline: String, body: String),
                                  name: String) async -> (headline: String, body: String)? {
+        guard let reply = await rephraseRaw(picked, name: name) else { return nil }
+        if let reason = rejection(of: reply) {
+            // The template is already on screen, so this is silent to the user; the trace is
+            // what makes "why is the brief never rewritten" answerable from a device.
+            Diagnostics.shared.log("daily brief rewrite discarded (\(picked.topic.rawValue)): \(reason)", .ai)
+        }
+        return parse(reply)
+    }
+
+    /// The model's reply as it came back, before the guardrail; nil when the call failed.
+    static func rephraseRaw(_ picked: (topic: Topic, headline: String, body: String),
+                            name: String) async -> String? {
         do {
             let client = try AIClient.make()
-            let reply = try await client.chat(system: system,
-                                              messages: [ChatTurnMsg(role: "user", text: userTurn(picked, name: name))],
-                                              model: AIConfig.model(for: .dailyBrief),
-                                              maxTokens: 160)
-            return parse(reply)
+            return try await client.chat(system: system,
+                                         messages: [ChatTurnMsg(role: "user", text: userTurn(picked, name: name))],
+                                         model: AIConfig.model(for: .dailyBrief),
+                                         maxTokens: 160)
         } catch {
             return nil   // template already shipped — silent fallback
         }
     }
 
+    static let bannedPhrases = ["eat less", "eat fewer", "barely eat", "stop eating", "skip a meal",
+                                "skip meals", "starve", "crash diet", "guilt", "guilty", "ashamed",
+                                "make up for", "burn off", "cheat"]
+
+    /// Why `parse` would throw this reply away, or nil if it would keep it.
+    static func rejection(of raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return "empty" }
+        if trimmed.count > 500 { return "longer than 500 characters" }
+        let lower = trimmed.lowercased()
+        if let phrase = bannedPhrases.first(where: lower.contains) { return "contains \"\(phrase)\"" }
+        if headlineAndBody(trimmed).body.isEmpty { return "no body after the headline" }
+        return nil
+    }
+
     /// First line → headline, remainder → body; rejects harmful phrasing or runaway length.
+    ///
+    /// Models do not always put the line break in. A reply on ONE line with two or more
+    /// sentences is split at the end of its first sentence rather than thrown away: that
+    /// one formatting slip was discarding a paid, otherwise good rewrite (EVAL_REPORT 14).
     static func parse(_ raw: String) -> (headline: String, body: String)? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, trimmed.count <= 500 else { return nil }
-        let lower = trimmed.lowercased()
-        let banned = ["eat less", "eat fewer", "barely eat", "stop eating", "skip a meal",
-                      "skip meals", "starve", "crash diet", "guilt", "guilty", "ashamed",
-                      "make up for", "burn off", "cheat"]
-        guard !banned.contains(where: lower.contains) else { return nil }
+        guard rejection(of: trimmed) == nil else { return nil }
+        let parts = headlineAndBody(trimmed)
+        return parts.body.isEmpty ? nil : parts
+    }
 
+    /// Splits a reply into its headline and body: by line when there is more than one line,
+    /// otherwise at the end of the first sentence. The body is empty when there is none.
+    static func headlineAndBody(_ trimmed: String) -> (headline: String, body: String) {
         let lines = trimmed.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
-        guard let first = lines.first else { return nil }
+        guard let first = lines.first else { return ("", "") }
         let rest = lines.dropFirst().joined(separator: " ").trimmingCharacters(in: .whitespaces)
-        guard !rest.isEmpty else { return nil }   // need both a headline and a body
-        return (first.trimmingCharacters(in: .whitespaces), rest)
+        if !rest.isEmpty { return (first.trimmingCharacters(in: .whitespaces), rest) }
+
+        // One line: the first sentence is the headline.
+        var firstSentenceEnd: String.Index?
+        first.enumerateSubstrings(in: first.startIndex..., options: .bySentences) { _, range, _, stop in
+            firstSentenceEnd = range.upperBound
+            stop = true
+        }
+        guard let end = firstSentenceEnd, end < first.endIndex else { return (first, "") }
+        let headline = first[..<end].trimmingCharacters(in: .whitespaces)
+        let body = first[end...].trimmingCharacters(in: .whitespaces)
+        // A "body" with no letters (a trailing emoji) is not a body.
+        guard body.contains(where: \.isLetter) else { return (first, "") }
+        return (headline, body)
     }
 
     // MARK: - Helpers
