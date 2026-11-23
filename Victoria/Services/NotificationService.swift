@@ -66,12 +66,7 @@ enum NotificationService {
     /// - Returns: `true` if notifications are allowed (or already authorized).
     @discardableResult
     static func requestAuthorization() async -> Bool {
-        do {
-            return try await UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .sound, .badge])
-        } catch {
-            return false
-        }
+        await SystemReminderCenter().requestAuthorization()
     }
 
     /// The current authorization status, e.g. to decide whether to show an
@@ -88,9 +83,8 @@ enum NotificationService {
     /// after onboarding so the schedule reflects the latest settings. Because we
     /// `removeAllPendingNotificationRequests()` first, disabled categories
     /// simply aren't re-added — there's nothing to "turn off" separately.
-    static func rescheduleAll(for profile: UserProfile) {
-        let center = UNUserNotificationCenter.current()
-        center.removeAllPendingNotificationRequests()
+    static func rescheduleAll(for profile: UserProfile, center: any ReminderCenter = SystemReminderCenter()) {
+        center.removeAllPending()
 
         // Weigh-in — a calm morning trend check.
         if profile.weighInReminderEnabled {
@@ -157,10 +151,9 @@ enum NotificationService {
     }
 
     /// Remove every pending Victoria reminder (and clear any delivered ones).
-    static func cancelAll() {
-        let center = UNUserNotificationCenter.current()
-        center.removeAllPendingNotificationRequests()
-        center.removeAllDeliveredNotifications()
+    static func cancelAll(center: any ReminderCenter = SystemReminderCenter()) {
+        center.removeAllPending()
+        center.removeAllDelivered()
     }
 
     /// Convenience for app launch / post-onboarding: ask for permission (a no-op
@@ -169,13 +162,13 @@ enum NotificationService {
     ///
     /// Integrator: call this from `VictoriaApp` once at launch (e.g. in `.task`
     /// on the root view) and right after onboarding completes.
-    static func refreshOnLaunch(for profile: UserProfile) async {
-        let granted = await requestAuthorization()
+    static func refreshOnLaunch(for profile: UserProfile, center: any ReminderCenter = SystemReminderCenter()) async {
+        let granted = await center.requestAuthorization()
         guard granted else {
-            cancelAll()
+            cancelAll(center: center)
             return
         }
-        rescheduleAll(for: profile)
+        rescheduleAll(for: profile, center: center)
     }
 
     // MARK: Helpers
@@ -211,7 +204,7 @@ enum NotificationService {
         body: String,
         hour: Int,
         weekday: Int? = nil,
-        on center: UNUserNotificationCenter
+        on center: any ReminderCenter
     ) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -226,5 +219,49 @@ enum NotificationService {
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
         center.add(request)
+    }
+}
+
+// MARK: - The notification centre, as the reminders use it
+
+/// The four things reminders ask of the system notification centre. A protocol so the
+/// schedule can be tested without the system prompt (`SystemReminderCenter` is the app's).
+protocol ReminderCenter: Sendable {
+    /// Ask to show alerts, play sounds and set the badge. iOS prompts only the first time.
+    func requestAuthorization() async -> Bool
+    func removeAllPending()
+    func removeAllDelivered()
+    func add(_ request: UNNotificationRequest)
+}
+
+struct SystemReminderCenter: ReminderCenter {
+    private var center: UNUserNotificationCenter { .current() }
+
+    func requestAuthorization() async -> Bool {
+        (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+    }
+    func removeAllPending() { center.removeAllPendingNotificationRequests() }
+    func removeAllDelivered() { center.removeAllDeliveredNotifications() }
+    func add(_ request: UNNotificationRequest) { center.add(request) }
+}
+
+// MARK: - When the reminders are first scheduled
+
+/// Decides when the permission prompt and the first schedule happen. `RootView` reports
+/// the profile to it whenever "there is an onboarded profile" changes.
+@MainActor
+final class ReminderBootstrap {
+    static let shared = ReminderBootstrap()
+
+    private var sawLaunch = false
+
+    init() {}
+
+    func profileChanged(_ profile: UserProfile?, center: any ReminderCenter = SystemReminderCenter()) async {
+        guard !sawLaunch else { return }
+        sawLaunch = true
+        if let profile, profile.onboardingComplete {
+            await NotificationService.refreshOnLaunch(for: profile, center: center)
+        }
     }
 }

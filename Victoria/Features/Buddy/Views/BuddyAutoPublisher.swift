@@ -190,7 +190,7 @@ struct BuddyAutoPublisher: View {
             .onChange(of: scenePhase) { _, phase in
                 switch phase {
                 case .background:
-                    if model.isLinked { Task { await publish() } }
+                    Task { await publish() }
                 case .active:
                     // Self-heal: a publish that failed (bad network at the moment of logging,
                     // CloudKit hiccup, …) used to be LOST FOREVER — the buddy just saw an
@@ -210,16 +210,7 @@ struct BuddyAutoPublisher: View {
     private func publish() async {
         let s = BuddyStateComposer.compose(profile: profile, foods: foods, water: water,
                                            steps: steps, sessions: sessions, weights: weights)
-        await model.publishMine(s)
-        // If I just crossed a goal, auto-cheer my buddy (deduped once-per-goal-per-day by
-        // `BuddyMilestones`, so this is safe to call from here AND the hub).
-        let input = BuddyMilestoneInput(
-            caloriesEaten: s.caloriesEaten, calorieTarget: s.calorieTarget,
-            proteinEaten: s.proteinEaten, proteinTarget: s.proteinTarget,
-            steps: s.stepsToday, stepGoal: s.stepGoal,
-            waterOz: s.waterToday, waterGoal: s.waterGoal,
-            dayStreak: s.dayStreak)
-        let fresh = BuddyMilestones.consumeNewlyReached(input, myUserID: model.myUserID)
-        await model.celebrate(fresh, myName: s.displayName)
+        // Publishes only while linked, then cheers the buddy for any goal just crossed.
+        await model.publishIfLinked(s)
     }
 }

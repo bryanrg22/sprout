@@ -113,9 +113,7 @@ struct BuddyHomeView: View {
         .task {
             await model.refresh()
             // Keep my published presence + activity fresh whenever the hub opens.
-            if model.isLinked {
-                await publishMyState()
-            }
+            await publishMyState()
             withAnimation { didAppear = true }
         }
         .refreshable { await model.refresh() }
@@ -148,7 +146,7 @@ struct BuddyHomeView: View {
             case .background:
                 // Leaving: publish my latest AND auto-cheer any goal I just crossed — so the
                 // ping fires when I set the phone down, not only when I open the Buddy tab.
-                if model.isLinked { Task { await publishMyState() } }
+                Task { await publishMyState() }
             default:
                 break
             }
@@ -170,23 +168,8 @@ struct BuddyHomeView: View {
         // One source of truth for the snapshot (shared with the always-on `BuddyAutoPublisher`).
         let s = BuddyStateComposer.compose(profile: profile, foods: allFood, water: water,
                                            steps: steps, sessions: workouts, weights: weights)
-        await model.publishMine(s)
-
-        // Live buddy: if I just crossed a goal today, auto-cheer my buddy (once per goal per
-        // day) — they get the existing nudge push, "🎉 Bryan just hit their calorie goal!"
-        let milestoneInput = BuddyMilestoneInput(
-            caloriesEaten: s.caloriesEaten,
-            calorieTarget: s.calorieTarget,
-            proteinEaten: s.proteinEaten,
-            proteinTarget: s.proteinTarget,
-            steps: s.stepsToday,
-            stepGoal: s.stepGoal,
-            waterOz: s.waterToday,
-            waterGoal: s.waterGoal,
-            dayStreak: s.dayStreak
-        )
-        let fresh = BuddyMilestones.consumeNewlyReached(milestoneInput, myUserID: model.myUserID)
-        await model.celebrate(fresh, myName: s.displayName)
+        // Publishes only while linked, then cheers the buddy for any goal just crossed.
+        await model.publishIfLinked(s)
     }
 
     // MARK: - Linked content

@@ -162,9 +162,10 @@ enum AchievementCatalog {
         steps: [StepsEntry],
         workouts: [WorkoutSession],
         profile: UserProfile,
-        alreadyUnlocked: Set<String>
+        alreadyUnlocked: Set<String>,
+        now: Date = .now,
+        calendar cal: Calendar = .current
     ) -> [Achievement] {
-        let cal = Calendar.current
 
         // Weight to base targets on — mirror the dashboard: smoothed trend, then
         // start weight, then a neutral 150 fallback. (Used ONLY to know what
@@ -194,7 +195,7 @@ enum AchievementCatalog {
         let proteinHitToday: Bool = {
             guard proteinTarget > 0 else { return false }
             let todayProtein = foods
-                .filter { cal.isDateInToday($0.date) }
+                .filter { cal.isDate($0.date, inSameDayAs: now) }
                 .reduce(0) { $0 + $1.totalProteinG }
             return todayProtein >= proteinTarget
         }()
@@ -207,7 +208,7 @@ enum AchievementCatalog {
         .union(weights.map { cal.startOfDay(for: $0.date) })
         .union(steps.map { cal.startOfDay(for: $0.date) })
 
-        let currentStreak = consecutiveDayStreak(loggedDays, calendar: cal)
+        let currentStreak = consecutiveDayStreak(loggedDays, calendar: cal, now: now)
 
         // --- Hydration: did any single day reach the water goal? ---
         let waterByDay = Dictionary(grouping: water) { cal.startOfDay(for: $0.date) }
@@ -271,9 +272,9 @@ enum AchievementCatalog {
 
     /// Length of the run of consecutive days (ending today) present in `days`.
     /// Same definition the dashboard uses for its streak pill.
-    static func consecutiveDayStreak(_ days: Set<Date>, calendar cal: Calendar) -> Int {
+    static func consecutiveDayStreak(_ days: Set<Date>, calendar cal: Calendar, now: Date = .now) -> Int {
         var streak = 0
-        var cursor = cal.startOfDay(for: .now)
+        var cursor = cal.startOfDay(for: now)
         while days.contains(cursor) {
             streak += 1
             guard let prev = cal.date(byAdding: .day, value: -1, to: cursor) else { break }

@@ -96,10 +96,10 @@ struct RootView: View {
             // `importTodaySteps` alone left behind (it only ever captured "today so far").
             await refreshTrackerData(stepsDays: 30, days: 14)
             WidgetDataWriter.refresh(context: context, profile: profile)
-            // Ask for notification permission + (re)build gentle reminders once on launch.
-            if let profile, profile.onboardingComplete {
-                await NotificationService.refreshOnLaunch(for: profile)
-            }
+        }
+        // Notification permission and the reminder schedule follow the profile, not the launch.
+        .task(id: profile?.onboardingComplete == true) {
+            await ReminderBootstrap.shared.profileChanged(profile)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
