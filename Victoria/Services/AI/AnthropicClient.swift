@@ -60,6 +60,32 @@ struct AnthropicClient {
         /// The assistant turn's `content` blocks, verbatim — pass back as the assistant
         /// message (via `assistantMessage`) when continuing after a tool_result.
         let assistantContent: [[String: Any]]
+        /// Why the model stopped, when it was not a normal end of turn. Both providers
+        /// report these with an HTTP 200, so nothing is thrown: the caller has to look.
+        var finish: Finish = .complete
+
+        enum Finish: Equatable {
+            /// A normal end of turn, or a tool call.
+            case complete
+            /// The output cap ended the reply (`max_tokens` / `length` / `max_output_tokens`).
+            /// `text` is partial, and a tool call that was being written has been dropped.
+            case cutOff
+            /// The model or a safety filter declined (`refusal` / `content_filter`).
+            case refusal
+            /// The conversation no longer fits the model (`model_context_window_exceeded`).
+            case contextOverflow
+        }
+    }
+
+    /// Anthropic `stop_reason` → `ChatTurn.Finish`. Every value not named here (`end_turn`,
+    /// `tool_use`, `stop_sequence`, `pause_turn`, a value added later) is `.complete`.
+    static func finish(stopReason: String?) -> ChatTurn.Finish {
+        switch stopReason {
+        case "max_tokens": return .cutOff
+        case "refusal": return .refusal
+        case "model_context_window_exceeded": return .contextOverflow
+        default: return .complete
+        }
     }
 
     /// One turn of a tool-enabled conversation. `tools` is an array of Anthropic tool
@@ -133,7 +159,8 @@ struct AnthropicClient {
             assistantContent = content.filter { ($0["type"] as? String) != "tool_use" }
         }
 
-        return ChatTurn(text: text, toolUse: toolUse, assistantContent: assistantContent)
+        return ChatTurn(text: text, toolUse: toolUse, assistantContent: assistantContent,
+                        finish: Self.finish(stopReason: json["stop_reason"] as? String))
     }
 
     /// Build the `assistant` message that echoes a prior turn's content back into history.
@@ -306,13 +333,18 @@ struct AnthropicClient {
                 return json
             }
 
-            let msg = ((json["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"
+            let failure = AIHTTPFailure(provider: .anthropic, response: http, json: json)
+            let msg = failure.message
             Diagnostics.shared.log("anthropic HTTP \(http.statusCode): \(msg)", .ai)
 
-            if [429, 503, 529].contains(http.statusCode), attempt == 0 {
-                try? await Task.sleep(for: .milliseconds(700))
+            // A `retry-after` short enough to sit out is honoured; a longer one, and an
+            // account that is out of credit, are not retried: the caller is told instead.
+            if attempt == 0,
+               let delay = failure.automaticRetryDelay(retryableStatuses: [429, 503, 529]) {
+                try? await Task.sleep(for: .milliseconds(Int((delay * 1000).rounded())))
                 continue
             }
+            AIFailureRecorder.report(failure)
             throw AIConfig.AIError.badResponse(msg)
         }
         throw AIConfig.AIError.badResponse("request failed after a retry")
