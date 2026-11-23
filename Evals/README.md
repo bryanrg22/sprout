@@ -24,10 +24,46 @@ dataset on every candidate model, and the numbers decide. Results are written up
 | `MealDescribe` | `mealDescribe` | `FoodPhotoAnalyzer.analyze(description:)` on `meal_describe/v3` | total calories within 20% of the USDA total (the US labelling tolerance) |
 | `CoachToolChoice` | `coachTurn` | `CoachContext.systemParts` + `CoachTools.schemas` + `chatWithTools`, then `CoachTools.parse` | the right decision (act or answer), the right action, the right value, as the app itself resolves the call |
 | `DailyBrief` | `dailyBrief` | `DailyBriefService.pick` + `rephrase` | every number kept, none invented, and no wrong-person pronoun |
+| `InsightLine` | `insightLine` | `DailyInsightEngine.bestInsight` + `InsightPhraser.rephrase` on `insight_line/v1` (19 cases) | the line is used (the sanitiser kept it), every number of the template is kept, none is added beyond the template and the observation, and no wrong-person pronoun |
+| `WeeklyReflection` | `weeklyReflection` | `WeeklyReflection.written` on `weekly_reflection/v1` (16) | the note is used, it states no number it was not given (the day counts, and the person's own note), and no wrong-person pronoun |
+| `OnboardingNote` | `onboardingNote` | `OnboardingCoachMessage.written` on `onboarding_note/v1` (15) | the note is used, it states no number that is not in the person's own note, no wrong-person pronoun, and no phrase that names a goal other than the one it was told |
+| `MemoryFold` | `memoryFold` | `CoachMemoryService.consolidate` on `memory_fold/v1` (12), the reply graded as `CoachMemoryService.parse` stores it | the reply parses, all four planted facts are in the notes, the fact the user took back is not still stated, the notes passed in are kept, and both blocks are within the service's budgets |
+| `ProgressSummary` | `progressSummary` | `ProgressSummaryService.summary(snapshot:)` on `progress_summary/v1` (15) | the recap decodes, it has 2 to 4 highlights and none blank, no number that is not in the snapshot, no wrong-person pronoun, and none of the prompt's banned phrases |
+| `FoodSuggestions` | `foodSuggestions` | `FoodSuggestionService.suggestions(for:)` on `food_suggestions/v1` (18) | the reply decodes, 2 to 3 suggestions are shown and no emoji is blank, a "nearby" pick only when a place was offered and at most one, no wrong-person pronoun, and none of the prompt's banned phrases |
+| `CoachPrompts` | `coachPrompts` | `CoachPromptService.generate` on `coach_prompts/v1` (16) | the reply decodes, 2 to 3 chips are left after the app's own cleaning, no number that is not in what the model was given, and no wrong-person pronoun |
+| `ChecklistPlan` | `checklistPlan` | `ChecklistPlanService.make` on `checklist_plan/v1` (16) | the reply decodes, 3 to 5 tasks and 4 to 8 chips are left after the app's own cleaning, and no wrong-person pronoun |
 
 Each also records scores that do not decide the pass (macro error in grams, whether
 the model's own calorie range contained the truth, whether a tool call was valid,
 sentence counts, and so on); `summary.md` lists them all.
+
+### The eight wording and structure evaluations
+
+The last eight rows were added on 2026-11-23 and **have not been run against a model**. Their
+graders and datasets pass their offline tests (`GraderTests`); no pass rate exists yet.
+
+Every rule comes from the feature's own prompt, schema or sanitiser, and each grader states
+its rule beside it in `Graders.swift`. Three things hold for all eight:
+
+- **A discarded reply is not usable, and is kept.** The three notes fall back to a template
+  when their sanitiser rejects a reply (a banned phrase, a digit, too long), and the structured
+  features throw when a reply does not decode. The evaluation calls the app's own function
+  under a recording transport (`EvalRunner.recording`), so the record holds what the model
+  wrote together with the reason it was not used.
+- **What the app would show is what is graded.** `CoachPromptService` and `ChecklistPlanService`
+  drop banned titles, cut long ones and cap the count before anything is shown; the pass rule
+  reads what is left, and scores (`none_dropped_by_the_app`, `none_cut_short`,
+  `model_count_within_schema`, `icons_known_share`) say what the cleaning had to do.
+- **`claude-sonnet-5-5` scores 0% usable on the four structured tasks**, because each forces a
+  tool call and that model rejects a forced tool choice (EVAL_REPORT 10, defect 2).
+
+The cases use the two fixture users (Alex, a man who is gaining; Sam, a woman who is losing).
+A few give one of them a goal of holding steady, because the features word that goal
+differently. `memory_fold/v1` plants, in each transcript, an allergy, an injury, a food
+preference and a schedule constraint, one plan the user states and later takes back, some
+chit-chat, and one number the app owns; in two cases the fact taken back was already in the
+notes. `coach_prompts/v1` and `checklist_plan/v1` hold the same sixteen situations, because
+both features read the same inputs.
 
 ### The label nutrients in `MealDescribe`
 
@@ -98,3 +134,32 @@ effort (`openai:gpt-6.1-terra@none`). Keys are read from `ANTHROPIC_API_KEY` and
   multi-turn tool chains, no confirm/decline follow-ups, no photos.
 - The labels were written by reading the tool descriptions. They are the intended
   behaviour as understood on 2026-11-22 and should be reviewed by the owner.
+- The eight wording and structure evaluations are code-graded checks of format and
+  faithfulness: was the reply used, are the numbers the given ones, are the counts within the
+  schema, is it about the right person, does it avoid the phrases the feature itself bans.
+  **None of them measures whether the advice is good or the tone is right**: not whether a
+  weekly note is warm, a recap honest, a suggestion sensible for the meal, a chip personal, a
+  checklist useful, or a memory summary accurate. No model and no person judges an output.
+- Their number rule is strict in ways a reader must know before trusting a failure. A figure
+  the model worked out itself ("down 3.6 lb", from two weights in the snapshot) or rounded
+  counts as not given. A number word used for something else ("the two of us") fails a weekly
+  or an onboarding note. "One" is never read as a number, so a count of one cannot be checked.
+- The pronoun rule is word-based. A third person from the user's own note, spoken of with the
+  pronoun the reader does not use ("my brother ... he", in a note of Sam's), is read as a
+  wrong-person pronoun. Such a failure has to be read before it is counted.
+- `memory_fold/v1` finds a fact by keyword. A fact kept in other words is counted as lost, and
+  a note is read as recording a retraction when the clause holds a word such as "not",
+  "cancelled" or "pulled out" (`Graders.stillStates`), which a clause can hold for another
+  reason. Neither the summary's accuracy nor anything the notes add is checked.
+- `FoodSuggestionEngine.Context` has no field for a diet or an allergy, so the feature is never
+  told one and no pass rule can hold it to one. Four cases log only vegetarian or only vegan
+  foods and record `avoided_foods_absent` as a score. The amounts a suggestion states are not
+  checked (the prompt asks for them), nor is whether a pick suits the meal.
+- `progress_summary/v1` writes its snapshots through a copy of the wording of
+  `ProgressSummaryCard.buildSnapshot`, which is a private method of the view. A test holds
+  every label to the view's source; the numbers in the cases are written by hand, not computed
+  by `TrendCalculator`.
+- `coach_prompts/v1` and `checklist_plan/v1` build the fixture user's logs relative to the day
+  of the run, so the data summary (weekday names, "Today", "Yesterday") differs from one day
+  to the next. A session is given as "days ago", never as a date.
+- 12 to 19 cases each resolve only large differences, and every case is a single first call.
