@@ -252,7 +252,7 @@ enum ChecklistPlanService {
             toolName: "plan_checklist",
             toolDescription: "Return today's personalized checklist: a few warm tasks plus quick-add chips of activities she actually does.",
             schema: schema,
-            model: AIConfig.coachModel,
+            model: AIConfig.model(for: .checklistPlan),
             maxTokens: 700          // bounded: a handful of short tasks + chips is well under this
         )
 

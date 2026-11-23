@@ -55,6 +55,14 @@ enum AIProvider: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// Heavy model for the rare plan build / review pass.
+    var defaultPlanModel: String {
+        switch self {
+        case .anthropic: return "claude-opus-4-8"
+        case .openai:    return "gpt-5.6-sol"
+        }
+    }
+
     /// Cheap/fast model for short routine phrasing (the daily insight line).
     var defaultInsightModel: String {
         switch self {
@@ -89,6 +97,7 @@ enum AIConfig {
     /// installs / first launch. Writes through to `UserDefaults`.
     static var provider: AIProvider {
         get {
+            if let scoped = AIRuntime.current?.provider { return scoped }
             guard let raw = UserDefaults.standard.string(forKey: providerKey),
                   let p = AIProvider(rawValue: raw) else { return .anthropic }
             return p
@@ -121,7 +130,7 @@ enum AIConfig {
         else { UserDefaults.standard.set(trimmed, forKey: key) }
     }
 
-    enum ModelTier: String { case coach, insight }
+    enum ModelTier: String { case coach, insight, plan }
 
     /// The resolved model name for a tier on a given provider (override → default).
     static func model(for provider: AIProvider, tier: ModelTier) -> String {
@@ -129,13 +138,17 @@ enum AIConfig {
         switch tier {
         case .coach:   return provider.defaultCoachModel
         case .insight: return provider.defaultInsightModel
+        case .plan:    return provider.defaultPlanModel
         }
     }
 
     /// Whether the ACTIVE provider has an API key stored — the gate every optional AI
     /// feature should use (checking only the Anthropic slot would wrongly disable
     /// features for an OpenAI user, and vice versa).
-    static var hasActiveKey: Bool { KeychainStore.hasAPIKey(for: provider) }
+    static var hasActiveKey: Bool {
+        if let scoped = AIRuntime.current?.apiKey { return !scoped.isEmpty }
+        return KeychainStore.hasAPIKey(for: provider)
+    }
 
     /// Strong coach/food model for the ACTIVE provider (override-aware).
     static var coachModel: String { model(for: provider, tier: .coach) }
@@ -152,12 +165,7 @@ enum AIConfig {
     /// gpt-5.5, a generation newer). Fable 5 was evaluated and rejected — 2× the price
     /// for a benchmark edge that doesn't transfer to authoring a structured plan from a
     /// small, well-curated context. See docs/MODEL_CHOICES.md.
-    static var planModel: String {
-        switch provider {
-        case .anthropic: return "claude-opus-4-8"
-        case .openai:    return "gpt-5.6-sol"
-        }
-    }
+    static var planModel: String { model(for: provider, tier: .plan) }
 
     enum AIError: LocalizedError {
         case missingKey, badResponse(String), decoding(String)
@@ -200,33 +208,6 @@ protocol ToolCapableClient: LLMClient {
                     schema: [String: Any],
                     model: String,
                     maxTokens: Int) async throws -> [String: Any]
-}
-
-// Protocol requirements can't carry default arguments — these overloads restore the
-// call shapes the app already uses (model defaults to the active provider's tier).
-extension ToolCapableClient {
-    func chatWithTools(system: String,
-                       messages: [AnthropicClient.Msg],
-                       tools: [[String: Any]],
-                       maxTokens: Int = 1500,
-                       cachedSystemPrefix: String? = nil,
-                       forbidToolUse: Bool = false) async throws -> AnthropicClient.ChatTurn {
-        try await chatWithTools(system: system, messages: messages, tools: tools,
-                                model: AIConfig.chatModel, maxTokens: maxTokens,
-                                cachedSystemPrefix: cachedSystemPrefix,
-                                forbidToolUse: forbidToolUse)
-    }
-
-    func structured(system: String,
-                    userContent: Any,
-                    toolName: String,
-                    toolDescription: String,
-                    schema: [String: Any],
-                    maxTokens: Int = 1300) async throws -> [String: Any] {
-        try await structured(system: system, userContent: userContent, toolName: toolName,
-                             toolDescription: toolDescription, schema: schema,
-                             model: AIConfig.foodModel, maxTokens: maxTokens)
-    }
 }
 
 /// Factory for "the active provider's client," so switching providers in Settings

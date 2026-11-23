@@ -1,5 +1,54 @@
 import Foundation
 
+/// What the client must know about an OpenAI model to build a request it will accept.
+///
+/// One place, decided from the model's family and version, instead of prefix checks
+/// scattered through the request builders: a model released after this table was
+/// written still resolves by its version number.
+struct OpenAIModelProfile: Equatable {
+    /// Thinks before answering: takes `max_completion_tokens`, and its hidden reasoning
+    /// tokens are billed as output and count against the output cap.
+    var isReasoning: Bool
+    /// Runs on `/v1/responses`. From gpt-5.6 on, function tools with a reasoning effort
+    /// and explicit prompt-cache breakpoints exist only there, and several 6.x models
+    /// do not accept function calling on Chat Completions at all.
+    var usesResponsesAPI: Bool
+    /// Accepts `effort: "none"`. The Sol and Astra models of the 6.x line reject it.
+    var acceptsEffortNone: Bool
+
+    static let chatCompletionsPlain = OpenAIModelProfile(isReasoning: false, usesResponsesAPI: false,
+                                                         acceptsEffortNone: false)
+
+    static func resolve(_ model: String) -> OpenAIModelProfile {
+        let m = model.lowercased()
+        if ["o1", "o3", "o4", "o5"].contains(where: { m.hasPrefix($0) }) {
+            return OpenAIModelProfile(isReasoning: true, usesResponsesAPI: false, acceptsEffortNone: false)
+        }
+        guard let version = gptVersion(m) else { return .chatCompletionsPlain }
+        if version.major < 5 { return .chatCompletionsPlain }
+        let fromFivePointSix = version.major > 5 || version.minor >= 6
+        guard fromFivePointSix else {
+            return OpenAIModelProfile(isReasoning: true, usesResponsesAPI: false, acceptsEffortNone: false)
+        }
+        let rejectsNone = version.major >= 6 && (m.contains("sol") || m.contains("astra"))
+        return OpenAIModelProfile(isReasoning: true, usesResponsesAPI: true, acceptsEffortNone: !rejectsNone)
+    }
+
+    /// `gpt-5.6-terra` → (5, 6); `gpt-6-luna` → (6, 0); `gpt-4o-mini` → (4, 0); not a gpt model → nil.
+    static func gptVersion(_ lowercased: String) -> (major: Int, minor: Int)? {
+        guard lowercased.hasPrefix("gpt-") else { return nil }
+        let rest = lowercased.dropFirst(4)
+        let majorDigits = rest.prefix { $0.isNumber }
+        guard let major = Int(majorDigits) else { return nil }
+        var minor = 0
+        let afterMajor = rest.dropFirst(majorDigits.count)
+        if afterMajor.first == "." {
+            minor = Int(afterMajor.dropFirst().prefix { $0.isNumber }) ?? 0
+        }
+        return (major, minor)
+    }
+}
+
 /// Thin async client for the OpenAI Chat Completions API, conforming to `LLMClient`.
 /// Mirrors `AnthropicClient`'s shape: key pulled from the Keychain at init, a single
 /// private `send`, `JSONSerialization` bodies, and graceful (never-crashing) error
@@ -29,9 +78,9 @@ struct OpenAIClient: LLMClient {
     private let key: String
 
     init() throws {
-        guard let k = KeychainStore.apiKey(for: .openai), !k.isEmpty else {
-            throw AIConfig.AIError.missingKey
-        }
+        // A scoped override (tests / evals) supplies its own key; the app reads the Keychain.
+        let k = AIRuntime.current?.apiKey ?? KeychainStore.apiKey(for: .openai)
+        guard let k, !k.isEmpty else { throw AIConfig.AIError.missingKey }
         key = k
     }
 
@@ -44,6 +93,22 @@ struct OpenAIClient: LLMClient {
               messages: [ChatTurnMsg],
               model: String,
               maxTokens: Int) async throws -> String {
+        let model = AIRuntime.resolve(model: model)
+        if Self.usesResponsesAPI(model) {
+            let history = messages.map { AnthropicClient.Msg(role: $0.role, content: $0.text) }
+            var body = Self.responsesBody(model: model, maxTokens: maxTokens, cacheKey: "plain-chat",
+                                          input: Self.responsesInputItems(system: system, cachedPrefix: nil,
+                                                                          messages: history))
+            body["reasoning"] = ["effort": Self.plainChatEffort(for: model)]
+            let json = try await send(body, to: Self.responsesEndpoint)
+            let text = Self.parseResponsesOutput(json).text
+            guard !text.isEmpty else {
+                // A reply cut off by the output cap arrives as status "incomplete" with no text.
+                let status = (json["status"] as? String) ?? "unknown"
+                throw AIConfig.AIError.decoding("empty text (response status: \(status))")
+            }
+            return text
+        }
         var wire: [[String: Any]] = []
         if !system.isEmpty {
             wire.append(["role": "system", "content": system])
@@ -96,9 +161,7 @@ struct OpenAIClient: LLMClient {
     /// `max_tokens`. Matched on prefixes so "gpt-4o" (which DOES take max_tokens) is
     /// excluded, while a user-typed override like "gpt-5.5" is handled correctly.
     static func tokenParam(for model: String) -> String {
-        let m = model.lowercased()
-        let isReasoning = ["o1", "o3", "o4", "o5", "gpt-5"].contains { m.hasPrefix($0) }
-        return isReasoning ? "max_completion_tokens" : "max_tokens"
+        OpenAIModelProfile.resolve(model).isReasoning ? "max_completion_tokens" : "max_tokens"
     }
 
     /// Reasoning effort for gpt-5-family models on Chat Completions, nil for
@@ -114,9 +177,12 @@ struct OpenAIClient: LLMClient {
     /// deliberate, and the pass that deserves reasoning (plan research) runs on the
     /// Responses API where reasoning + tools coexist.
     static func reasoningEffort(for model: String, withTools: Bool = false) -> String? {
-        let m = model.lowercased()
-        guard m.hasPrefix("gpt-5") else { return nil }
-        if withTools && m.hasPrefix("gpt-5.6") { return "none" }
+        let profile = OpenAIModelProfile.resolve(model)
+        // Only the gpt reasoning families take the parameter here; the o-series is left alone.
+        guard profile.isReasoning, model.lowercased().hasPrefix("gpt-") else { return nil }
+        // A scoped override (evals measuring effort levels) wins over the built-in choice.
+        if let forced = AIRuntime.current?.reasoningEffort { return forced }
+        if withTools && profile.usesResponsesAPI { return "none" }
         return "low"
     }
 
@@ -128,6 +194,7 @@ struct OpenAIClient: LLMClient {
                   userContent: String,
                   model: String = OpenAIClient.researchModel,
                   maxTokens: Int = 1800) async throws -> (text: String, usedSearch: Bool) {
+        let model = AIRuntime.resolve(model: model)
         let body: [String: Any] = [
             "model": model,
             "instructions": system,
@@ -169,6 +236,8 @@ struct OpenAIClient: LLMClient {
 
         // Mirror AnthropicClient: retry ONCE on a transient overload (429/503) with a short
         // backoff, and log token usage to the field diagnostics so cost stays answerable.
+        let transport = AIRuntime.transport
+        let started = Date()
         for attempt in 0..<2 {
             var req = URLRequest(url: url)
             req.httpMethod = "POST"
@@ -177,7 +246,7 @@ struct OpenAIClient: LLMClient {
             req.httpBody = httpBody
             req.timeoutInterval = 60
 
-            let (data, response) = try await URLSession.shared.data(for: req)
+            let (data, response) = try await transport.data(for: req)
             guard let http = response as? HTTPURLResponse else {
                 throw AIConfig.AIError.badResponse("no response")
             }
@@ -191,6 +260,16 @@ struct OpenAIClient: LLMClient {
                     let cached = ((usage["prompt_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int)
                         ?? ((usage["input_tokens_details"] as? [String: Any])?["cached_tokens"] as? Int) ?? 0
                     Diagnostics.shared.log("openai usage: in \(input) out \(output) cached \(cached)", .ai)
+                    // OpenAI's input count INCLUDES the cached part; it has no separate
+                    // cache-write charge.
+                    AIRuntime.report(AIUsage(
+                        provider: .openai,
+                        model: (json["model"] as? String) ?? (body["model"] as? String) ?? "",
+                        endpoint: url.path,
+                        uncachedInputTokens: max(0, input - cached), cacheReadTokens: cached,
+                        cacheWriteTokens: 0, outputTokens: output,
+                        latencyMs: Int(Date().timeIntervalSince(started) * 1000),
+                        attempts: attempt + 1))
                 }
                 return json
             }
@@ -238,7 +317,15 @@ extension OpenAIClient: ToolCapableClient {
     /// on that combo for 5.6 — caught live). Older models stay on Chat Completions,
     /// which is well-proven for them.
     static func usesResponsesAPI(_ model: String) -> Bool {
-        model.lowercased().hasPrefix("gpt-5.6")
+        OpenAIModelProfile.resolve(model).usesResponsesAPI
+    }
+
+    /// Effort for a plain-text turn on the Responses API. These are the rewording tasks
+    /// with output caps of 80–420 tokens, and reasoning tokens count against the cap, so
+    /// the default is no reasoning wherever the model allows that.
+    static func plainChatEffort(for model: String) -> String {
+        if let forced = AIRuntime.current?.reasoningEffort { return forced }
+        return OpenAIModelProfile.resolve(model).acceptsEffortNone ? "none" : "low"
     }
 
     func chatWithTools(system: String,
@@ -248,6 +335,7 @@ extension OpenAIClient: ToolCapableClient {
                        maxTokens: Int,
                        cachedSystemPrefix: String?,
                        forbidToolUse: Bool) async throws -> AnthropicClient.ChatTurn {
+        let model = AIRuntime.resolve(model: model)
         if Self.usesResponsesAPI(model) {
             var body = Self.responsesBody(model: model, maxTokens: maxTokens,
                                           cacheKey: "vita-coach",
@@ -290,6 +378,7 @@ extension OpenAIClient: ToolCapableClient {
                     schema: [String: Any],
                     model: String,
                     maxTokens: Int) async throws -> [String: Any] {
+        let model = AIRuntime.resolve(model: model)
         if Self.usesResponsesAPI(model) {
             // System + schema are byte-stable per feature → breakpoint the system so
             // repeat calls (meal photos, checklist mornings) read it from cache.
@@ -497,7 +586,7 @@ extension OpenAIClient: ToolCapableClient {
             "max_output_tokens": maxTokens,
             "prompt_cache_key": cacheKey,
             "prompt_cache_options": ["mode": "explicit", "ttl": "30m"],
-            "reasoning": ["effort": "low"],
+            "reasoning": ["effort": AIRuntime.current?.reasoningEffort ?? "low"],
         ]
     }
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import SwiftData
 
 /// Today's food, grouped by meal with subtotals, plus a "＋" menu that opens the
@@ -41,6 +42,10 @@ struct FoodLogView: View {
     /// The day currently being viewed (start of day). Defaults to today; the
     /// chevron header lets her browse backward through her history.
     @State private var selectedDay: Date = Calendar.current.startOfDay(for: .now)
+    /// Start of "today" as of the last check, so a day change while the app sat in the
+    /// background can be told apart from the user browsing to another day.
+    @State private var lastKnownToday: Date = Calendar.current.startOfDay(for: .now)
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showDatePicker = false
 
     private enum FoodSheet: Identifiable {
@@ -191,8 +196,23 @@ struct FoodLogView: View {
                 // a day that already has food doesn't fire the first-log confetti.
                 lastDayCount = dayEntries.count
             }
-            .onAppear { if lastDayCount == nil { lastDayCount = dayEntries.count } }
+            .onAppear {
+                if lastDayCount == nil { lastDayCount = dayEntries.count }
+                followTodayIfTheDayChanged()
+            }
+            // The tab can stay alive across midnight (in the background, or simply left open).
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { followTodayIfTheDayChanged() }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)
+                .receive(on: DispatchQueue.main)) { _ in followTodayIfTheDayChanged() }
         }
+    }
+
+    private func followTodayIfTheDayChanged() {
+        let next = FoodLogDay.rolledForward(selected: selectedDay, lastKnownToday: lastKnownToday, now: .now)
+        lastKnownToday = next.today
+        if next.selected != selectedDay { selectedDay = next.selected }
     }
 
     // MARK: Day navigation
