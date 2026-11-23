@@ -144,7 +144,10 @@ final class UserProfile {
         set { homeGymRaw = newValue?.rawValue ?? "" }
     }
 
-    var ageYears: Int {
-        Calendar.current.dateComponents([.year], from: birthDate, to: .now).year ?? 25
+    var ageYears: Int { age(on: .now) }
+
+    /// Whole years from the birth date to `date`. The BMR formula takes this.
+    func age(on date: Date, calendar: Calendar = .current) -> Int {
+        calendar.dateComponents([.year], from: birthDate, to: date).year ?? 25
     }
 }

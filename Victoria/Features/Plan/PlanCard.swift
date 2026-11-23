@@ -95,7 +95,8 @@ struct PlanCard: View {
                     .font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary)
             }
 
-            // Targets — the RANGE + protein (the live numbers driving the whole app).
+            // Targets — the RANGE + protein. They drive the whole app, unless they were written for
+            // another goal direction; then the banner below says they are set aside.
             if plan.hasRange || plan.proteinTarget > 0 {
                 HStack(spacing: Theme.Space.lg) {
                     if plan.hasRange {
@@ -108,15 +109,15 @@ struct PlanCard: View {
                 .padding(.top, 2)
             }
 
-            // Goals changed since this plan was authored → its premises (not just its
-            // numbers) are stale. Offer the FULL rebuild with fresh research, loudly.
+            // A goal or a detail the plan was built around changed since it was authored → its
+            // premises (not just its numbers) are stale. Offer the FULL rebuild, loudly.
             if plan.goalsChangedSinceBuild {
                 VStack(alignment: .leading, spacing: Theme.Space.sm) {
-                    Label("Your goals changed since this plan was built",
+                    Label(PlanGoalsCopy.bannerTitle,
                           systemImage: "exclamationmark.triangle.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.warning)
-                    Text("These targets were researched for your old goal. A fresh build re-does the research around the new one.")
+                    Text(PlanGoalsCopy.bannerBody(suspended: PlanTargetSync.isSuspended(plan: plan, for: profile)))
                         .font(.caption).foregroundStyle(Theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Button { showIntake = true } label: {
