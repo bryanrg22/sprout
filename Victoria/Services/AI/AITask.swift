@@ -64,7 +64,14 @@ extension AIConfig {
     /// tier's default, which was chosen by price and release notes rather than measured
     /// (`docs/MODEL_CHOICES.md`); add a row only together with the EVAL_REPORT section
     /// that justifies it, and `AITaskModelTests` pins every resolved value.
-    static let measuredDefaults: [AITask: [AIProvider: AITaskDefault]] = [:]
+    static let measuredDefaults: [AITask: [AIProvider: AITaskDefault]] = [
+        // 13 cases x 3 repeats, three runs: both pass every case at a fraction of the price of
+        // the tier default (gpt-4.1-mini passed 77-92% and is deprecated; haiku-4-5 costs 7x).
+        .dailyBrief: [
+            .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 10"),
+            .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 10"),
+        ],
+    ]
 
     /// Rows of a defaults table that do not say which EVAL_REPORT section measured them.
     /// The rule is a function of the table so it can be tested on a table that breaks it.

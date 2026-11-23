@@ -342,7 +342,7 @@ extension OpenAIClient: ToolCapableClient {
                                           input: Self.responsesInputItems(system: system,
                                                                           cachedPrefix: cachedSystemPrefix,
                                                                           messages: messages))
-            if !tools.isEmpty { body["tools"] = Self.responsesTools(tools) }
+            if !tools.isEmpty { body["tools"] = Self.responsesTools(tools, strict: false) }
             if forbidToolUse { body["tool_choice"] = "none" }   // depth cap — finalize in prose
             let json = try await send(body, to: Self.responsesEndpoint)
             return try Self.parseResponsesToolTurn(json)
@@ -661,12 +661,19 @@ extension OpenAIClient: ToolCapableClient {
 
     /// Anthropic tool schemas → Responses function tools (FLAT — no nested
     /// "function" object like Chat Completions).
-    static func responsesTools(_ tools: [[String: Any]]) -> [[String: Any]] {
+    /// `strict`: nil leaves the API's default, which on Responses is to normalize the schema
+    /// into strict mode, where EVERY property becomes required. That suits a forced call
+    /// whose fields are all required anyway (`structured`). For the coach's tools it is
+    /// wrong: their optional arguments then arrive filled with placeholders (a container
+    /// count of 1 beside "20 oz", an empty date, zeroed macros on an edit), and the app
+    /// acts on the placeholder. `false` keeps optional arguments optional (EVAL_REPORT 10).
+    static func responsesTools(_ tools: [[String: Any]], strict: Bool? = nil) -> [[String: Any]] {
         tools.compactMap { tool in
             guard let name = tool["name"] as? String else { return nil }
             var out: [String: Any] = ["type": "function", "name": name]
             if let description = tool["description"] as? String { out["description"] = description }
             if let schema = tool["input_schema"] { out["parameters"] = schema }
+            if let strict { out["strict"] = strict }
             return out
         }
     }

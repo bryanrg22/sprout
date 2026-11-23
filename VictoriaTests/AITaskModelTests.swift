@@ -42,7 +42,7 @@ final class AITaskModelTests: XCTestCase {
         .planBuild:        ("claude-opus-4-8", "gpt-5.6-sol"),
         .planReview:       ("claude-opus-4-8", "gpt-5.6-sol"),
         .planResearch:     ("claude-opus-4-8", "gpt-5.6-sol"),
-        .dailyBrief:       ("claude-haiku-4-5-20251001", "gpt-4.1-mini"),
+        .dailyBrief:       ("claude-haiku-5-5", "gpt-6-luna"),            // EVAL_REPORT 10
         .insightLine:      ("claude-haiku-4-5-20251001", "gpt-4.1-mini"),
         .weeklyReflection: ("claude-haiku-4-5-20251001", "gpt-4.1-mini"),
         .onboardingNote:   ("claude-haiku-4-5-20251001", "gpt-4.1-mini"),
@@ -82,10 +82,17 @@ final class AITaskModelTests: XCTestCase {
         AIConfig.setModelOverride("my-own-model", for: .openai, tier: .coach)
         XCTAssertEqual(AIConfig.model(for: .coachTurn, provider: .openai), "my-own-model")
         XCTAssertEqual(AIConfig.model(for: .mealPhoto, provider: .openai), "my-own-model")
-        XCTAssertEqual(AIConfig.model(for: .dailyBrief, provider: .openai), "gpt-4.1-mini",
+        XCTAssertEqual(AIConfig.model(for: .insightLine, provider: .openai), "gpt-4.1-mini",
                        "an override of one tier leaves the others alone")
         XCTAssertEqual(AIConfig.model(for: .coachTurn, provider: .anthropic), "claude-sonnet-5",
                        "an override is per provider")
+    }
+
+    func testSettingsOverrideBeatsAMeasuredDefault() {
+        XCTAssertEqual(AIConfig.model(for: .dailyBrief, provider: .openai), "gpt-6-luna")
+        AIConfig.setModelOverride("my-own-model", for: .openai, tier: .insight)
+        XCTAssertEqual(AIConfig.model(for: .dailyBrief, provider: .openai), "my-own-model",
+                       "what the user typed in Settings wins over a measured default")
     }
 
     func testBlankOverrideFallsBackToTheDefault() {
