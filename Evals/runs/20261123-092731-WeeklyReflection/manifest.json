@@ -1,0 +1,39 @@
+{
+ "run_id": "20261123-092731-WeeklyReflection",
+ "eval": "WeeklyReflection",
+ "models": [
+  "anthropic:claude-haiku-5-5",
+  "anthropic:claude-haiku-4-5-20251001",
+  "anthropic:claude-sonnet-5-5",
+  "anthropic:claude-sonnet-5",
+  "openai:gpt-6-luna",
+  "openai:gpt-5.6-luna",
+  "openai:gpt-6.1-terra",
+  "openai:gpt-5.6-terra",
+  "openai:gpt-6.2-sol",
+  "openai:gpt-4.1-mini"
+ ],
+ "repeats": 3,
+ "limit": null,
+ "started_utc": "2026-11-23T09:27:31+00:00",
+ "commit": "88243da1e8fcae79b61546a6edd021cd777afc3f",
+ "branch": "HEAD",
+ "dirty_files": [
+  "?? Evals/runs/20261123-092510-InsightLine/"
+ ],
+ "xcode": "Xcode 26.4 Build version 17E192",
+ "dataset_sha256": {
+  "Evals/datasets/memory_fold/v1.jsonl": "4d0c660c76e844358048f348b78a2880849421e2288f7cac9c4ad35e70d99855",
+  "Evals/datasets/daily_brief/v1.jsonl": "e1a5238033d797b4dae6fbdc10064548a2d3d3c86811ecedbf82aeb2d734c198",
+  "Evals/datasets/checklist_plan/v1.jsonl": "7c78d4a5bf67a58b4f10bd3a23f1a0c911c96dd89d6432a680c9371e62272c01",
+  "Evals/datasets/coach_prompts/v1.jsonl": "7c78d4a5bf67a58b4f10bd3a23f1a0c911c96dd89d6432a680c9371e62272c01",
+  "Evals/datasets/meal_describe/v1.jsonl": "40e5590a2a5e21af53baf5e051d7c68cdc1a5dae49a47a2f4bd522745daf7c27",
+  "Evals/datasets/progress_summary/v1.jsonl": "14ebeb478d87c0289a84bf9415c79d5897569deee1714e743e9a5a9404cc33c0",
+  "Evals/datasets/food_suggestions/v1.jsonl": "aa31eca9270a12ff6c81bb76d8a942ad94103f6a1a4f0e1c17df8be95961fd7e",
+  "Evals/datasets/coach_tool_choice/v1.jsonl": "7e7ae9895e3ed48a0e7612af614501509340415d4bb15f86274749ac1bd0bbb9",
+  "Evals/datasets/coach_tool_choice/v2.jsonl": "eb3868088c58495d8016c84af7435033f6dc7b92d6be72526c9cdcfa8341c148",
+  "Evals/datasets/onboarding_note/v1.jsonl": "72803b6af26ee4502855fa4e2f7648d64189e0ace53470d661c826a4dac6c560",
+  "Evals/datasets/insight_line/v1.jsonl": "6bd6d93d6f561d8a75f9acae64601594ba93abbd4dcff884c97fae6b9be31c8a",
+  "Evals/datasets/weekly_reflection/v1.jsonl": "f9cc35f5648bb0e8645d5d8aaf9d89406442c5de8920a84ca324048dbe52bf20"
+ }
+}

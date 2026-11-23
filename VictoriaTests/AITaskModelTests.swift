@@ -43,10 +43,10 @@ final class AITaskModelTests: XCTestCase {
         .planReview:       ("claude-opus-4-8", "gpt-5.6-sol"),
         .planResearch:     ("claude-opus-4-8", "gpt-5.6-sol"),
         .dailyBrief:       ("claude-haiku-5-5", "gpt-6-luna"),            // EVAL_REPORT 10
-        .insightLine:      ("claude-haiku-4-5-20251001", "gpt-4.1-mini"),
-        .weeklyReflection: ("claude-haiku-4-5-20251001", "gpt-4.1-mini"),
-        .onboardingNote:   ("claude-haiku-4-5-20251001", "gpt-4.1-mini"),
-        .memoryFold:       ("claude-haiku-4-5-20251001", "gpt-4.1-mini"),
+        .insightLine:      ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // EVAL_REPORT 22
+        .weeklyReflection: ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // EVAL_REPORT 22
+        .onboardingNote:   ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // EVAL_REPORT 22
+        .memoryFold:       ("claude-haiku-4-5-20251001", "gpt-5.6-luna"),  // EVAL_REPORT 22
     ]
 
     func testEveryTaskHasAPinnedDefault() {
@@ -59,6 +59,13 @@ final class AITaskModelTests: XCTestCase {
             guard let want = expected[task] else { continue }
             XCTAssertEqual(AIConfig.model(for: task, provider: .anthropic), want.anthropic, "\(task) on Anthropic")
             XCTAssertEqual(AIConfig.model(for: task, provider: .openai), want.openai, "\(task) on OpenAI")
+        }
+    }
+
+    /// gpt-4.1-mini is deprecated and stops answering on 2027-01-14 (EVAL_REPORT 6).
+    func testNoTaskDefaultsToTheDeprecatedMini() {
+        for task in AITask.allCases {
+            XCTAssertNotEqual(AIConfig.model(for: task, provider: .openai), "gpt-4.1-mini", "\(task)")
         }
     }
 
@@ -82,7 +89,7 @@ final class AITaskModelTests: XCTestCase {
         AIConfig.setModelOverride("my-own-model", for: .openai, tier: .coach)
         XCTAssertEqual(AIConfig.model(for: .coachTurn, provider: .openai), "my-own-model")
         XCTAssertEqual(AIConfig.model(for: .mealPhoto, provider: .openai), "my-own-model")
-        XCTAssertEqual(AIConfig.model(for: .insightLine, provider: .openai), "gpt-4.1-mini",
+        XCTAssertEqual(AIConfig.model(for: .insightLine, provider: .openai), "gpt-6-luna",
                        "an override of one tier leaves the others alone")
         XCTAssertEqual(AIConfig.model(for: .coachTurn, provider: .anthropic), "claude-sonnet-5",
                        "an override is per provider")

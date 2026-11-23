@@ -401,7 +401,7 @@ extension OpenAIClient: ToolCapableClient {
             guard let input = try Self.parseResponsesToolTurn(json).toolUse?.input else {
                 throw AIConfig.AIError.decoding("no tool call in response")
             }
-            return input
+            return StructuredOutputRepair.repair(input, schema: schema)
         }
 
         var wire: [[String: Any]] = []
@@ -430,7 +430,7 @@ extension OpenAIClient: ToolCapableClient {
         guard let input = try Self.parseToolTurn(json).toolUse?.input else {
             throw AIConfig.AIError.decoding("no tool call in response")
         }
-        return input
+        return StructuredOutputRepair.repair(input, schema: schema)
     }
 
     // MARK: - Translation (pure + unit-tested)

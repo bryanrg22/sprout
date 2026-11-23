@@ -211,7 +211,9 @@ struct AnthropicClient {
             throw AIConfig.AIError.decoding("missing content")
         }
         for block in content where (block["type"] as? String) == "tool_use" {
-            if let input = block["input"] as? [String: Any] { return input }
+            if let input = block["input"] as? [String: Any] {
+                return StructuredOutputRepair.repair(input, schema: schema)
+            }
         }
         throw AIConfig.AIError.decoding("no tool_use block")
     }
