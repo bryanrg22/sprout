@@ -155,6 +155,10 @@ enum AchievementCatalog {
     /// water, movement, consistency, a treat). None reward eating little or a
     /// weight number. Weight entries contribute only to "you logged a check-in"
     /// signals (streak / distinct days), never to a goal comparison.
+    ///
+    /// It only ever reports badges to ADD: a badge in `alreadyUnlocked` is never returned
+    /// and nothing here takes one away, so a badge unlocked under an earlier rule stays.
+    /// `now` and `calendar` say what "today" is; a test passes its own.
     static func newlyEarned(
         foods: [FoodEntry],
         weights: [WeightEntry],
@@ -200,15 +204,13 @@ enum AchievementCatalog {
             return todayProtein >= proteinTarget
         }()
 
-        // --- Distinct "I showed up and logged" days (any signal) ---
-        // Mirrors the dashboard streak's definition: food OR weight OR steps.
-        let loggedDays: Set<Date> = Set(
-            foods.map { cal.startOfDay(for: $0.date) }
-        )
-        .union(weights.map { cal.startOfDay(for: $0.date) })
-        .union(steps.map { cal.startOfDay(for: $0.date) })
-
-        let currentStreak = consecutiveDayStreak(loggedDays, calendar: cal, now: now)
+        // --- Days in a row the user logged something, ending today ---
+        // `StreakCalculator`'s definition, the one behind the header streak: food, water
+        // or a weigh-in entered by hand. Steps imported from Apple Health (a month of them
+        // is backfilled at first launch) and scale-synced weights are not logging; counting
+        // them unlocked the 7- and 14-day badges on day one.
+        let currentStreak = StreakCalculator.loggingStreak(foods: foods, waters: water, weights: weights,
+                                                           calendar: cal, now: now)
 
         // --- Hydration: did any single day reach the water goal? ---
         let waterByDay = Dictionary(grouping: water) { cal.startOfDay(for: $0.date) }
@@ -269,19 +271,6 @@ enum AchievementCatalog {
     }
 
     // MARK: Helpers
-
-    /// Length of the run of consecutive days (ending today) present in `days`.
-    /// Same definition the dashboard uses for its streak pill.
-    static func consecutiveDayStreak(_ days: Set<Date>, calendar cal: Calendar, now: Date = .now) -> Int {
-        var streak = 0
-        var cursor = cal.startOfDay(for: now)
-        while days.contains(cursor) {
-            streak += 1
-            guard let prev = cal.date(byAdding: .day, value: -1, to: cursor) else { break }
-            cursor = prev
-        }
-        return streak
-    }
 
     /// Treats/desserts she can log guilt-free. Matches common dessert/treat words
     /// in the entry name, or a snack entry that reads like one. Case-insensitive.
