@@ -1,0 +1,328 @@
+# Evaluation report
+
+The ledger of what was measured and what was found, one numbered section per piece of
+work, newest last. A default in the code cites the section that chose it; a section is
+never rewritten after the fact, and a later result gets a new section that says what
+it supersedes.
+
+Every section says what was **verified** (run, with the output in hand), what was only
+**read** (the code path was traced but not run), and what is still **open**.
+
+| # | Section | Date |
+|---|---|---|
+| 1 | Baseline: what the app is and what passed before any change | 2026-11-22 |
+| 2 | Why builds froze: the repository lived in an iCloud-synced folder | 2026-11-22 |
+| 3 | Verification pass: defects found, what was fixed, what is open | 2026-11-22 |
+| 4 | The AI layer becomes testable: a runtime seam, a model per task, one model profile | 2026-11-22 |
+| 5 | The evaluation harness and its first three datasets | 2026-11-22 |
+| 6 | The model line-up on 2026-11-22, and what it does to the current defaults | 2026-11-22 |
+| 7 | Distribution: why the app stopped opening, and the ways to stop that recurring | 2026-11-22 |
+| 8 | Continuous integration | 2026-11-22 |
+
+---
+
+## 1. Baseline: what the app is and what passed before any change (2026-11-22)
+
+Commit `3fc5c6c` ("Bump to Sprout 2.1 (build 15)"), the code of the last TestFlight
+upload. Xcode 26.4 (17E192), iPhone 17 Pro simulator on iOS 26.4 (23E244).
+
+**Verified by running:**
+
+- `xcodebuild test -scheme Victoria`: **443 passed, 0 failed, 0 skipped**, 81 s wall clock.
+- 179 tracked Swift files, 45,058 lines. 30 test files.
+- A brand-new install opens its persistent store. The launch log shows
+  `addPersistentStore… NSCocoaErrorDomain 512` and "Failed to stat path …/Application
+  Support" on first launch; Core Data then creates the directory and retries. Afterwards
+  `default.store` exists in the app-group container and the app's own
+  "CRITICAL: … running IN-MEMORY" line was not logged. So the noise is benign.
+- 19 compiler warnings in app code, among them Swift 6 concurrency warnings in
+  `Features/Buddy/Services/LocalMockSyncService.swift` that become errors in Swift 6 mode.
+
+**What did not exist:** any CI workflow, any UI test, any test that calls a model
+client, any record of why a model was chosen other than argument
+(`docs/MODEL_CHOICES.md`), any versioned schema or migration plan for the store.
+
+**Read, not run:** `VictoriaApp.init` falls back to an in-memory store if the real one
+fails to open. The user would be shown onboarding again and lose everything typed on the
+next launch, with only a diagnostics line as trace. With no `VersionedSchema`, any future
+model change that lightweight migration cannot handle takes that path. Open (section 3, L-S3).
+
+## 2. Why builds froze: the repository lived in an iCloud-synced folder (2026-11-22)
+
+The first test run of the day produced 562 bytes of log in eleven minutes, `git grep`
+did not return in two, and five background agents stalled together.
+
+**Verified:** `sample` of the stuck `xcodebuild` showed it blocked in
+`-[NSFileCoordinator coordinateReadingItemAtURL:options:error:byAccessor:]` under
+`Xcode3Project initWithFilePath:`. `~/Documents` carries the
+`com.apple.file-provider-domain-id` attribute (iCloud Desktop & Documents), and
+`fileproviderd`, `cloudd` and `mds` were the top three processes by CPU. The same
+checkout cloned to `~/dev/GitHub/sprout` ran the full suite in 81 seconds.
+
+This is also the most likely source of two older problems recorded in the project
+notes, both of which are things iCloud does to a folder it manages: the
+"resource fork, Finder information, or similar detritus" code-signing failures (hence
+the `xattr -cr` build phase in `project.yml`), and the stray `Victoria 2.xcodeproj`
+(an iCloud conflict copy; `.gitignore` already had a rule for it). That link is
+inferred, not tested.
+
+**Done:** all work from this section on is in `~/dev/GitHub/sprout`. The old folder is
+untouched. `git fetch` from it brought over one commit that had never been pushed
+(`3fc5c6c`, the 2.1 bump).
+
+## 3. Verification pass: defects found, what was fixed, what is open (2026-11-22)
+
+Three independent read-throughs of the code (onboarding and lifecycle; data in and out;
+the AI layer). The two long reports are kept whole in `docs/audits/2026-11-22/`. Every
+item below was found by **reading**; none was reproduced on a device. The four marked
+fixed were re-read by a second pass before the fix and have a regression test.
+
+### Fixed in this change
+
+| ID | Defect | Fix | Test |
+|---|---|---|---|
+| D-V1 | **Privacy.** With "Share my full stats with your buddy" off, weight trend, goal weight, calories, macros and today's food names were still written to the CloudKit **public** database; only the buddy's screen hid them. Three layers each had a comment saying the caller blanks them, and none did (`BuddyAutoPublisher.swift:60-99`, `BuddySyncService.swift` init, `CloudKitSyncService.swift:543-559`). | `BuddySnapshotPayload.init` blanks every opt-in field when `sharesFullData` is false, and `CloudKitSyncService.publish` strips again at the upload. | `VerificationFixesTests` (4 tests) |
+| L-B1 | The Nutrients tab kept the day it was opened on. Left in the background overnight, it read "Yesterday" and saved a new meal to the previous day (`FoodLogView.swift:43`). | `FoodLogDay.rolledForward`: on becoming active and on `NSCalendarDayChanged`, a view that was showing today moves to the new today; a day the user browsed to is left alone. | 6 tests, including a clock moved back and the 25-hour DST day |
+| L-B3 | "Your goals changed since this plan was built" never cleared: the flag is keyed by plan id, and a rebuild updates the row in place with the same id. | `CoachPlan.clearGoalsChanged()`, called by `PlanService.generate` on success. | 1 test |
+| L-B4 | A protein target set through Vita with no plan was reset to the computed value at the next launch (`RootView.syncPlanTargets` wrote the plan's value, 0 without a plan). | `PlanTargetSync.overrides`: with no plan the protein override is left as the user set it. | 4 tests |
+
+The buddy fix is verified at the level of the payload that is uploaded. It has **not**
+been observed against CloudKit, and records already in the public database keep whatever
+they held until that user's next publish overwrites them.
+
+### Open, ranked. Lifecycle (`audit-lifecycle.md`)
+
+| ID | Defect | Severity |
+|---|---|---|
+| L-B2 | With an adaptive plan, changing goal direction, pace, activity level or weight does not move calories or protein until the plan is rebuilt, and the Settings footer says the opposite. Pace and activity changes raise no notice. | high |
+| L-B7 | Vita's `set_units` relabels every weight as kg without converting, then stores a typed "72" as 72 lb. The trend collapses and, with no plan, the calorie target follows it down. There is no kg support elsewhere. | high (data) |
+| L-B9 | Delete and reinstall as an OpenAI user: the provider choice (UserDefaults) resets to Anthropic while the key (Keychain) survives. The onboarding and Today paste fields then store an OpenAI key in the Anthropic slot. | high for reinstall |
+| L-B10 | Reinstall with Google Health connected: shows connected (tokens in Keychain) but cannot refresh (client ID was in UserDefaults). | medium |
+| L-B11 | Reinstall mints a new buddy identity and strands the partner on a frozen snapshot. | medium |
+| L-B5 | Widgets show yesterday's totals as today's until the app is opened; the trend widget colours and "to go" are loss-only; a widget added before onboarding shows sample data under the name "Victoria". | medium |
+| L-B6 | The 7- and 14-day consistency achievements count auto-imported Apple Health steps as logged days, so they unlock on day one. | medium |
+| L-B8 | Entries added from the Nutrients tab are stamped at local midnight, so flying west moves food history a day earlier. | medium |
+| L-B12 | After onboarding, reminders are not scheduled and the permission prompt does not appear until the next cold launch. | medium |
+| L-B13 | Apple Health: `saveWeight` has no caller and import is a manual button, while the usage strings and onboarding copy promise two-way sync. The app requests a write permission it never uses. | medium (also an App Review risk) |
+| L-B14…B24 | Onboarding note is always the template on first install; stale setup card; travel check only on cold launch; Vita's streak differs from the header; height display for cm values; recap cache rolls at UTC midnight; water reset shows one number and applies another; weigh-ins cannot be edited or deleted; start weight used as current weight in two places; reaching the goal weight changes nothing. | low to medium |
+| L-S1 | *Suspected:* a second `UserProfile` and an extra weigh-in if onboarding finishes before the iCloud import lands. Nothing de-duplicates. | check on a device |
+| L-S3 | *Suspected:* the in-memory fallback uses `try!` and would crash if the failure came from CloudKit configuration. No versioned schema. | check; design |
+
+### Open, ranked. Data in and out (`audit-data-sync.md`)
+
+| ID | Defect | Severity |
+|---|---|---|
+| D-V2 | Pairing: a mistyped or not-yet-uploaded code returns "You're connected!". | high |
+| D-V3 | The link is persisted before the claim is saved. | medium |
+| D-V4 | `unlink()` has no caller; identity lives only in UserDefaults (same root as L-B11). | medium |
+| D-V7 | HealthKit sleep is bucketed by each sample's end date, splitting a night at midnight. | medium |
+| D-V8 | HealthKit and Google Health rewrite the same rows on every refresh; offline, nights regress to HealthKit values and the HealthKit pass can zero half of a vitals row. | medium |
+| D-V9 | The auto-publisher reads `isLinked` once at init, so it stays off after pairing until relaunch. | medium |
+| D-V10/11 | Streak nudges re-fire daily; a milestone is consumed before a failed send. | low |
+| D-V14 | The silent-push handler returns before its work runs. | low |
+| D-misc | Food search does not escape `&`; backup is export-only and lossy; HealthKit weight import inserts inline instead of through the shared merge functions. | low |
+| D-S | *Suspected, needs the CloudKit Dashboard:* the Production schema may not include the `CD_*` record types of the newer models; public-database security roles (claiming a code and marking a nudge read both write to another user's record). | check |
+
+### Found while building the evaluations (verified by reading the prompts)
+
+| ID | Defect |
+|---|---|
+| A-1 | Prompts are written for one specific person. `InsightPhraser` ("a warm, upbeat weight-loss buddy texting … her day … She tends to under-eat"), `DailyBriefService` ("writing your friend her short morning note", "Her name:"), `FoodSuggestionService` ("Here is her current data"), `CoachPromptService` ("in her voice"), `ChecklistPlanService` ("she actually does"). For a man on a gain goal the framing and the pronoun are wrong, and the project's own rule says no hardcoded names or goal-direction copy. The `dailyBrief` evaluation scores wrong-person pronouns in the output, so the effect will be measured, not assumed. |
+| A-2 | The coach exposes one tool call per turn (`ChatTurn.toolUse` is the first block; the rest are dropped). "Log a banana and two waters" does one of them. By design per the comment, but untested and not told to the user. |
+| A-3 | `UserProfile.aiModelFood` / `aiModelChat` default to `claude-sonnet-4-6` and are read by nothing. |
+| A-4 | `DemoSeed` uses `Int.random`, so the demo profile is different every time; fine for a demo, unusable as a test fixture (the evaluations use fixed fixtures in `EvalFixtures.swift`). |
+| A-5 | Hosted unit tests launch the real app against the real on-disk store with CloudKit mirroring attempts in the log. They pass, but they are not isolated from the store. |
+
+### Not a defect, checked
+
+- No expiry or time-bomb logic exists in the app (searched for hardcoded dates, expiry
+  and receipt checks). The app stopped opening because of TestFlight, section 7.
+- All 20 `@Model` types meet CloudKit's rules (defaulted attributes, no unique
+  constraints, no required relationships).
+- A fresh install opens its store (section 1).
+- The secret scan over all 85 commits finds no secret. Its one hit is the line in
+  `DailyBriefService` that names the UserDefaults entry for the cached brief, recorded
+  in `.gitleaksignore` with that reason.
+
+## 4. The AI layer becomes testable: a runtime seam, a model per task, one model profile (2026-11-22)
+
+**Before:** both clients read their key from the Keychain in `init`, called
+`URLSession.shared` directly, and logged token usage as a string. No test could run a
+client, and no harness could run one against a chosen model without changing global
+state. The model was chosen per *tier* (cheap, strong, heavy), so there was nowhere to
+record that task X runs on model Y because a measurement said so. The OpenAI client
+decided endpoint, token parameter and reasoning effort by string prefix (`gpt-5`,
+`gpt-5.6`).
+
+**Changed:**
+
+- `AIRuntime` (task-local): a scoped provider, key, model, reasoning effort, transport
+  and usage sink. Nil in the shipped app, where behaviour is unchanged.
+- `AIUsage`: token accounting normalized across providers (Anthropic's input count
+  excludes cached tokens, OpenAI's includes them), with latency and attempts.
+- `AITask`: fifteen tasks, one per distinct prompt and output contract. Every call site
+  names its task and asks `AIConfig.model(for:)`. The model-less client overloads were
+  deleted, so a call that does not name a model does not compile.
+- `AIConfig.measuredDefaults`: the per-task table, empty today. A row goes in only with
+  the section that measured it; a test refuses a row without that citation.
+- `OpenAIModelProfile.resolve`: endpoint, reasoning and effort rules decided from the
+  model's family and version in one place. From gpt-5.6 on, every call (plain chat
+  included) goes to `/v1/responses`. A `gpt-6.x` model previously resolved to Chat
+  Completions with `max_tokens`, which those models reject.
+
+**Verified:** every task resolves to the same model as before the change
+(`AITaskModelTests` pins all 30 task-provider pairs to the literal strings in the
+previous code). 32 new tests, most of which run the real clients against scripted provider responses:
+headers, model override, usage arithmetic for all three wire formats, the single retry
+on 429/529, no retry on 401, empty and truncated replies, and a whole meal estimate end
+to end. Suite after this section's change: **475 passed, 0 failed, 0 skipped**; with the
+section 3 fixes and their 15 tests, **490**.
+
+**Not verified:** no request built by the new Responses plain-chat path has been sent
+to OpenAI. It is tested against the documented response shape only. The first live
+evaluation is its first real call.
+
+## 5. The evaluation harness and its first three datasets (2026-11-22)
+
+The method, from the practice surveyed in `docs/audits/2026-11-22/research-standards.md`
+section D: a labelled dataset per task, graded by code wherever a rule can decide,
+every candidate on the identical cases with repeats, accuracy with an interval beside
+cost, tokens and latency, and the cheapest candidate within noise of the best as the
+default. The evaluations run the app's own code (`FoodPhotoAnalyzer.analyze`,
+`CoachContext.systemParts` + `CoachTools.schemas` + `CoachTools.parse`,
+`DailyBriefService.pick` + `rephrase`) under a scoped runtime, so the prompt, the wire
+translation and the parser under test are the ones that ship.
+
+| Dataset | Cases | Ground truth | Pass rule |
+|---|---|---|---|
+| `meal_describe/v1` | 14 | USDA FoodData Central SR Legacy per-100 g values, fetched 2026-11-22, times the grams stated in the description. Each row cites its FDC ids. | total calories within 20% |
+| `coach_tool_choice/v1` | 34 (25 should act, 9 should answer in prose) | The action the app resolves the call to, with its value. Written by reading the tool descriptions. | right decision, right action, right value |
+| `daily_brief/v1` | 13, covering all six rungs of the template ladder | The template's own numbers. | every number kept, none invented, no wrong-person pronoun |
+
+**Verified offline (19 tests, 16 run and pass, 3 are the live evaluations and skip without a key):**
+
+- The graders, against hand-written outputs, including the tolerance edges
+  (126 kcal passes against 105, 127 does not).
+- Every dataset row decodes. The meal truths satisfy a 4/4/9 check within 12%. The
+  ladder picks the topic each brief case claims.
+- For 24 of the 25 "should act" coach cases, a hand-written correct tool call is
+  accepted by the app's own parser **and** passes the case's label (the one without
+  such a check is `food-eggs`). This caught a wrong assumption of the author's
+  (`log_workout` takes `kind: "run"`, not `"cardio"`) before any money was spent on it.
+
+**Limits, stated so the numbers are not over-read:**
+
+- 14 to 34 cases resolve only large differences. At an 80% pass rate, n = 30 gives a
+  95% interval of about ±14 points.
+- `meal_describe/v1` states every portion in grams. It measures food knowledge and
+  arithmetic, not portion estimation. The USDA demo key rate-limited the fetch at 9 of
+  24 planned ingredients; `fetch_usda.py` resumes from its cache.
+- No meal-photo dataset yet. Nutrition5k (CC BY 4.0, 5,006 plates) is the public ground
+  truth, and published per-dish calorie error for general vision models on it is 30 to
+  45% (Mu, Sun and He, ACM BCB 2025). Downloading a subset is a decision for the owner.
+- The coach labels are one person's reading of intended behaviour and need the owner's
+  review. First turn only.
+- Twelve of the fifteen tasks have no evaluation yet.
+
+**No live run has been made.** No model has been compared and no default has changed.
+Section 6 gives the candidates and the cost of the first run.
+
+## 6. The model line-up on 2026-11-22, and what it does to the current defaults (2026-11-22)
+
+Read from the vendors' own model, pricing and deprecation pages on 2026-11-22
+(`research-standards.md` section E has every source). Prices are USD per million
+tokens, input / output.
+
+| Tier | Current default | Its status today | Newer candidates |
+|---|---|---|---|
+| Cheap, OpenAI | `gpt-4.1-mini` 0.40 / 1.60 | **Deprecated. Shuts down 2027-01-14.** OpenAI's listed replacement is `gpt-6-luna`. | `gpt-6-luna` 0.10 / 0.50; `gpt-5.6-luna` 0.20 / 1.20 |
+| Cheap, Anthropic | `claude-haiku-4-5` 1 / 5 | Active; its "not retired before" date (2026-10-15) has passed, so a 60-day notice can come at any time. | `claude-haiku-5-5` 0.10 / 0.50 |
+| Strong, OpenAI | `gpt-5.6-terra` 2 / 12 | Active. | `gpt-6.1-terra` 1 / 5; `gpt-6.2-sol` 2 / 10 |
+| Strong, Anthropic | `claude-sonnet-5` 2 / 10 | Active until at least 2027-06-30. | `claude-sonnet-5-5` 2 / 10 with a cheaper cache read; `claude-haiku-5-5` |
+| Heavy, OpenAI | `gpt-5.6-sol` 4 / 20 | Active; **promotional price ends 2026-11-30**, later price not published. | `gpt-6.2-sol` 2 / 10; `gpt-6.2-astra` 8 / 40 |
+| Heavy, Anthropic | `claude-opus-4-8` 5 / 25 | Active until at least 2027-05-28. | `claude-opus-5-5` 4 / 20 |
+
+What follows from that, before any measurement:
+
+- One default has a shutdown date seven weeks out. That replacement has to be chosen
+  and shipped whether or not anything else changes.
+- On both providers the newest cheap model costs a tenth of the current cheap default.
+  Whether it is good enough for the strong-tier tasks is exactly the question the
+  evaluations exist to answer; nothing here assumes it.
+- Every OpenAI candidate is a reasoning model. Reasoning tokens are billed as output
+  and count against the output cap, and the rewording tasks have caps of 80 to 420
+  tokens. "Usable" is therefore the first column to read for those tasks.
+- Things known only from documentation and not yet from a live call: whether forced
+  tool choice is accepted by the always-thinking Anthropic models; whether
+  `prompt_cache_options` is accepted by the 6.x family; the per-image price of
+  OpenAI's current image models (the vendor publishes a calculator, not a table).
+- `docs/MODEL_CHOICES.md` (2026-07-12) argued each default from price and release
+  notes. It stays as the record of that reasoning; it is no longer how a default is
+  chosen.
+
+**The first run, when approved:** the three evaluations on eight candidates (the four
+current defaults that are still candidates plus `claude-haiku-5-5`, `claude-sonnet-5-5`,
+`gpt-6-luna`, `gpt-6.1-terra`), three repeats. The coach evaluation dominates the cost:
+34 cases × 3 repeats × about 7,000 input tokens is roughly 0.7 M input tokens per model,
+about $1.50 on a $2 model before caching and under 10 cents on the two $0.10 models.
+The other two are a few cents per model. **Estimated total: under $10.** That figure is
+an estimate from token counts, not a measurement; the run's own `summary.md` will carry
+the measured cost.
+
+## 7. Distribution: why the app stopped opening, and the ways to stop that recurring (2026-11-22)
+
+**Verified:** the last Sprout archive on this Mac is dated 2026-07-13 (2.1, build 15).
+Apple: "Each build is available to test for up to 90 days, starting from the day the
+developer uploads their build", after which "you'll no longer be able to open the beta
+build." Ninety days from 2026-07-13 is 2026-10-11. Nothing in the app expires
+(section 3). `main` is still that commit, and an Apple Distribution certificate is now
+in the keychain, which was the blocker in July.
+
+**To get it open again:** upload a new build. Installing over the expired one is an
+in-place update of the same bundle id, which is expected to keep the app's data, and
+the store is also mirrored to each user's private iCloud database. Apple's pages do not
+state that data survives, so that is **unconfirmed** until seen on one phone. What does
+destroy local data is deleting the app first; nobody should do that.
+
+**Ways to not expire** (Apple sources in `research-standards.md` section A):
+
+| Option | Review | Expires | Fit |
+|---|---|---|---|
+| TestFlight with a scheduled re-upload | none for internal testers | 90 days per build, renewed by the schedule | Works today. Xcode Cloud can archive and upload on a schedule with Apple-managed signing (25 free hours a month). A GitHub Actions schedule needs an App Store Connect API key as a repository secret, and scheduled workflows in a public repository are disabled after 60 days without repository activity. |
+| App Store, unlisted | full App Review once per version, plus a request form | never | The only route with no expiry and no discoverability: installable by anyone with the link, absent from search. Apple's examples are organizational; whether a personal app is approved is unknown. |
+| App Store, public | full App Review | never | Makes the app public. |
+| Ad hoc | none | about a year (profile), 100 registered devices | Manual yearly reinstall, no auto-update. |
+
+**What App Review would raise** (guideline numbers in the research file): 5.1.3(ii)
+says apps "may not store personal health information in iCloud", and this app mirrors
+weight and food logs to CloudKit; 5.1.2(i) requires explicit consent before personal
+data goes to a third-party AI; 2.1 means the reviewer needs a working key or a demo
+mode; and L-B13 above (a HealthKit write permission that is requested and never used).
+None of these apply to internal TestFlight.
+
+**Adding a third person** is a TestFlight invitation today. The photo-to-pixel-avatar
+idea needs an OpenAI key regardless of the user's chat provider (Anthropic's models do
+not generate images), and A-1 above (prompts written for one person) has to be fixed
+first or the new user is addressed as someone else.
+
+## 8. Continuous integration (2026-11-22)
+
+`.github/workflows/ci.yml`, four jobs on every pull request and every push to `main`:
+
+| Job | Runs on | What it proves |
+|---|---|---|
+| `test` | `macos-26`, Xcode 26.4 | The project regenerates from `project.yml`; the unit suite passes; the count is read from the result bundle and must be at least 490 (so "no tests found" cannot read as green); coverage by target in the job summary; the evaluation harness's offline self-tests pass with exactly the three live evaluations skipped. |
+| `release-build` | `macos-26` | The Release configuration compiles. |
+| `secrets-scan` | `ubuntu-latest` | gitleaks over the full history. |
+| `tooling` | `ubuntu-latest` | The Python and shell tooling parses, and `meal_describe/v1.jsonl` is byte-for-byte what its build script produces. |
+
+No job uses a secret, a key or a signing identity; the paid evaluations never run in
+CI. Actions are pinned to commit SHAs with Dependabot proposing updates. Standard
+macOS runners are free for a public repository.
+
+**Verified locally:** `tooling/check_xcresult.py` returns 0 on the passing bundle and 1
+when the minimum is not met; gitleaks is clean over 85 commits; the scripts parse.
+
+**Not verified:** the workflow has never run on GitHub. The simulator-creation step,
+the runner's Xcode 26.4.1 against a project developed on 26.4, and the unsigned Release
+build are each untested until the branch is pushed. Expect the first run to need a fix.
