@@ -156,12 +156,9 @@ enum NotificationService {
         center.removeAllDelivered()
     }
 
-    /// Convenience for app launch / post-onboarding: ask for permission (a no-op
-    /// prompt if already decided) and (re)build the schedule in one call.
-    /// Honors the user's choice — if permission is denied, nothing is scheduled.
-    ///
-    /// Integrator: call this from `VictoriaApp` once at launch (e.g. in `.task`
-    /// on the root view) and right after onboarding completes.
+    /// Ask for permission (a no-op prompt if already decided) and (re)build the schedule
+    /// in one call. Honors the user's choice — if permission is denied, nothing is scheduled.
+    /// Called by `ReminderBootstrap` the first time there is an onboarded profile.
     static func refreshOnLaunch(for profile: UserProfile, center: any ReminderCenter = SystemReminderCenter()) async {
         let granted = await center.requestAuthorization()
         guard granted else {
@@ -224,14 +221,16 @@ enum NotificationService {
 
 // MARK: - The notification centre, as the reminders use it
 
-/// The four things reminders ask of the system notification centre. A protocol so the
-/// schedule can be tested without the system prompt (`SystemReminderCenter` is the app's).
+/// What the app asks of the system notification centre. A protocol so the schedule can be
+/// tested without the system prompt (`SystemReminderCenter` is the app's).
 protocol ReminderCenter: Sendable {
     /// Ask to show alerts, play sounds and set the badge. iOS prompts only the first time.
     func requestAuthorization() async -> Bool
     func removeAllPending()
     func removeAllDelivered()
     func add(_ request: UNNotificationRequest)
+    /// Set the number on the app icon; 0 removes it.
+    func setBadgeCount(_ count: Int)
 }
 
 struct SystemReminderCenter: ReminderCenter {
@@ -243,25 +242,34 @@ struct SystemReminderCenter: ReminderCenter {
     func removeAllPending() { center.removeAllPendingNotificationRequests() }
     func removeAllDelivered() { center.removeAllDeliveredNotifications() }
     func add(_ request: UNNotificationRequest) { center.add(request) }
+    func setBadgeCount(_ count: Int) { center.setBadgeCount(max(count, 0)) }
 }
 
 // MARK: - When the reminders are first scheduled
 
-/// Decides when the permission prompt and the first schedule happen. `RootView` reports
-/// the profile to it whenever "there is an onboarded profile" changes.
+/// Decides when the permission prompt and the first schedule happen: the first time
+/// there is an onboarded profile. That can be at launch, at the end of onboarding, or
+/// when a profile arrives from iCloud after a reinstall; `RootView` reports the profile
+/// whenever "there is an onboarded profile" changes, and this asks once per appearance.
+///
+/// It used to be decided once, in the root view's launch task: a profile that became
+/// onboarded after that got no prompt and no reminders until the next cold launch.
 @MainActor
 final class ReminderBootstrap {
     static let shared = ReminderBootstrap()
 
-    private var sawLaunch = false
+    /// True once the reminders were scheduled for the profile now on screen.
+    private var scheduled = false
 
     init() {}
 
     func profileChanged(_ profile: UserProfile?, center: any ReminderCenter = SystemReminderCenter()) async {
-        guard !sawLaunch else { return }
-        sawLaunch = true
-        if let profile, profile.onboardingComplete {
-            await NotificationService.refreshOnLaunch(for: profile, center: center)
+        guard let profile, profile.onboardingComplete else {
+            scheduled = false   // nobody to remind (yet, or any more)
+            return
         }
+        guard !scheduled else { return }   // the root view was rebuilt; nothing changed
+        scheduled = true
+        await NotificationService.refreshOnLaunch(for: profile, center: center)
     }
 }
