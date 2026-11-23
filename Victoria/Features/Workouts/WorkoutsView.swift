@@ -15,6 +15,9 @@ struct WorkoutsView: View {
     /// filtering today's items client-side.)
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query private var exercises: [ExerciseEntry]
+    /// Workouts Apple Health or the tracker detected: they make a day active and are listed
+    /// on that day's page, read-only.
+    @Query(sort: \DetectedWorkout.date) private var detectedWorkouts: [DetectedWorkout]
     @Query private var profiles: [UserProfile]
     @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
 
@@ -44,8 +47,9 @@ struct WorkoutsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: Theme.Space.md) {
-                    // "This week" sits at the very top — right under the title, above the day stepper.
-                    weeklyStatsCard
+                    // The week of the day being viewed, at the very top: how many of its days were
+                    // active, and each day tappable to open it below.
+                    weekCard
                     dayNav
                     // Logging lives on the "today" view; past days are read-only history.
                     if isViewingToday {
@@ -94,8 +98,13 @@ struct WorkoutsView: View {
     private var startOfToday: Date { cal.startOfDay(for: .now) }
     private var isViewingToday: Bool { cal.isDateInToday(selectedDay) }
     private var canGoForward: Bool { selectedDay < startOfToday }
-    /// The day the account began — no data exists before it, so don't browse earlier (mirrors Nutrients).
-    private var accountStart: Date { min(cal.startOfDay(for: UserProfile.primary(of: profiles)?.createdAt ?? startOfToday), startOfToday) }
+    /// The earliest day there can be anything to see: the day the profile was made, or an
+    /// older workout (one imported from Apple Health or the tracker, or logged for a past day).
+    private var accountStart: Date {
+        let earliest = [UserProfile.primary(of: profiles)?.createdAt, sessions.last?.date, detectedWorkouts.first?.date]
+            .compactMap { $0 }.min() ?? startOfToday
+        return min(cal.startOfDay(for: earliest), startOfToday)
+    }
     private var canGoBack: Bool { selectedDay > accountStart }
 
     private var dayLabel: String {
@@ -194,13 +203,19 @@ struct WorkoutsView: View {
 
     // MARK: Day content (the selected day's sessions, or an empty state)
 
+    /// Workouts the tracker detected on the selected day.
+    private var dayDetected: [DetectedWorkout] {
+        detectedWorkouts.filter { cal.isDate($0.date, inSameDayAs: selectedDay) }
+    }
+
     @ViewBuilder
     private var dayContent: some View {
-        if daySessions.isEmpty && isViewingToday {
+        if daySessions.isEmpty && dayDetected.isEmpty && isViewingToday {
             todayEmptyState
-        } else if daySessions.isEmpty {
+        } else if daySessions.isEmpty && dayDetected.isEmpty {
             pastDayEmptyState
         } else {
+            ForEach(dayDetected) { workout in DetectedWorkoutRow(workout: workout) }
             ForEach(daySessions) { session in
                 NavigationLink {
                     WorkoutDayDetail(session: session)
@@ -217,88 +232,40 @@ struct WorkoutsView: View {
         }
     }
 
-    // MARK: Weekly stats
+    // MARK: The week
 
-    /// A compact "this week" card — workouts · volume · minutes — the at-a-glance stats the bare
-    /// list was missing. Sums the trailing 7 days; only shown once there's at least one session
-    /// this week (the empty state has its own hero).
-    @ViewBuilder
-    private var weeklyStatsCard: some View {
-        let cal = Calendar.current
-        let weekStart = cal.date(byAdding: .day, value: -6, to: cal.startOfDay(for: .now)) ?? .now
-        let weekSessions = sessions.filter { $0.date >= weekStart }
-        let totalVolume = weekSessions.reduce(0.0) { $0 + WorkoutStats(session: $1, exercises: exercises(for: $1)).volumeLbs }
-        let totalMinutes = weekSessions.reduce(0) { $0 + $1.durationMinutes }
-        if !weekSessions.isEmpty {
-            VStack(alignment: .leading, spacing: Theme.Space.sm) {
-                Text("This week")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Theme.textSecondary)
-                HStack(spacing: 0) {
-                    statColumn("\(weekSessions.count)", weekSessions.count == 1 ? "workout" : "workouts")
-                    statDivider
-                    statColumn(totalVolume > 0 ? WorkoutStats.grouped(totalVolume) : "—", "lb lifted")
-                    statDivider
-                    statColumn("\(totalMinutes)", "min")
+    private var activityWeek: ActivityWeek {
+        ActivityWeek.containing(selectedDay,
+                                logged: sessions.map { .init(date: $0.date, minutes: $0.durationMinutes) },
+                                detected: detectedWorkouts.map { .init(date: $0.date, minutes: $0.durationMinutes) })
+    }
+
+    private var weekCard: some View {
+        let week = activityWeek
+        let weekEnd = cal.date(byAdding: .day, value: 7, to: week.start) ?? week.start
+        return ActivityWeekCard(
+            week: week, selectedDay: selectedDay, summary: weekSummary(from: week.start, to: weekEnd),
+            canGoBack: week.start > accountStart, canGoForward: weekEnd <= startOfToday,
+            onPreviousWeek: { step(-7) }, onNextWeek: { step(7) },
+            onSelect: { day in
+                navTick += 1
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
+                    selectedDay = min(max(cal.startOfDay(for: day), accountStart), startOfToday)
                 }
-                Divider().background(Theme.divider)
-                weekBars
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .cardElevated()
-        }
+            })
     }
 
-    /// A 7-day mini bar chart of training minutes — the week's rhythm at a glance (today's label
-    /// highlighted, rest days a faint stub). Gives the page a real metric/visual, not dead space.
-    private var weekBars: some View {
-        let days = weekDays
-        let maxMin = max(1, days.map(\.minutes).max() ?? 1)
-        return HStack(alignment: .bottom, spacing: 6) {
-            ForEach(days, id: \.date) { day in
-                VStack(spacing: 5) {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(day.minutes > 0 ? AnyShapeStyle(Theme.brandGradient) : AnyShapeStyle(Theme.divider))
-                        .frame(height: max(5, CGFloat(Double(day.minutes) / Double(maxMin)) * 44))
-                    Text(dayInitial(day.date))
-                        .font(.system(size: 9, weight: cal.isDateInToday(day.date) ? .bold : .regular))
-                        .foregroundStyle(cal.isDateInToday(day.date) ? Theme.brand : Theme.textSecondary)
-                }
-                .frame(maxWidth: .infinity)
-            }
-        }
-        .frame(height: 60, alignment: .bottom)
-        .padding(.top, 2)
-    }
-
-    /// Trailing 7 days (oldest → today) with each day's total training minutes.
-    private var weekDays: [(date: Date, minutes: Int)] {
-        let today = cal.startOfDay(for: .now)
-        return (0..<7).reversed().map { offset in
-            let day = cal.date(byAdding: .day, value: -offset, to: today) ?? today
-            let mins = sessions.filter { cal.isDate($0.date, inSameDayAs: day) }.reduce(0) { $0 + $1.durationMinutes }
-            return (date: day, minutes: mins)
-        }
-    }
-
-    private func dayInitial(_ date: Date) -> String {
-        date.formatted(.dateTime.weekday(.narrow))
-    }
-
-    private func statColumn(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.title3.weight(.bold)).monospacedDigit()
-                .foregroundStyle(Theme.textPrimary)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(Theme.textSecondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var statDivider: some View {
-        Rectangle().fill(Theme.divider).frame(width: 1, height: 28)
+    /// "3 logged · 135 min · 12,400 lb lifted" for the workouts logged in the app that week;
+    /// nil when there are none (the days above already say what the tracker saw).
+    private func weekSummary(from start: Date, to end: Date) -> String? {
+        let logged = sessions.filter { $0.date >= start && $0.date < end }
+        guard !logged.isEmpty else { return nil }
+        let minutes = logged.reduce(0) { $0 + $1.durationMinutes }
+        let volume = logged.reduce(0.0) { $0 + WorkoutStats(session: $1, exercises: exercises(for: $1)).volumeLbs }
+        var parts = [logged.count == 1 ? "1 logged" : "\(logged.count) logged"]
+        if minutes > 0 { parts.append("\(minutes) min") }
+        if volume > 0 { parts.append("\(WorkoutStats.grouped(volume)) lb lifted") }
+        return parts.joined(separator: " · ")
     }
 
     /// The big, filled brand-gradient "Log a workout" pill — the primary action in both states.
@@ -427,6 +394,42 @@ struct WorkoutsView: View {
 
 /// A single recent-session row: the kind's icon, a title ("Gym · Legs" / "Run"), a friendly date,
 /// and a compact summary footing ("45 min · 3 machines"). Tapping opens the day detail.
+/// A workout Apple Health or the tracker detected: read-only, with where it came from.
+private struct DetectedWorkoutRow: View {
+    let workout: DetectedWorkout
+
+    var body: some View {
+        HStack(spacing: Theme.Space.md) {
+            Image(systemName: "applewatch.radiowaves.left.and.right")
+                .font(.title3)
+                .foregroundStyle(Theme.brand)
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(Theme.brandSoft))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(workout.activity.isEmpty ? "Workout" : workout.activity)
+                    .font(.headline)
+                    .foregroundStyle(Theme.textPrimary)
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(AccessibilityID.Workouts.detectedRow)
+    }
+
+    private var detail: String {
+        var parts: [String] = [workout.date.formatted(date: .omitted, time: .shortened)]
+        if workout.durationMinutes > 0 { parts.append("\(workout.durationMinutes) min") }
+        if workout.caloriesBurned > 0 { parts.append("\(Int(workout.caloriesBurned.rounded())) kcal") }
+        parts.append(workout.sourceName.isEmpty ? "Tracked" : "from \(workout.sourceName)")
+        return parts.joined(separator: " · ")
+    }
+}
+
 private struct SessionRow: View {
     let session: WorkoutSession
     let exercises: [ExerciseEntry]

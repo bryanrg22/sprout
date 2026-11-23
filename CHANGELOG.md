@@ -62,6 +62,11 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **Your week on Workouts:** how many of its 7 days you were active (anything logged, or a
+  workout Apple Health or your tracker saw), each day tappable to see what you did, and
+  arrows back through past weeks. Workouts your tracker detected now show on each day
+  (EVAL_REPORT 28).
+
 - **A chat that holds up.** Select text in Vita's replies and ask about just that part;
   copy, share or quote any message; long conversations open fast and load earlier
   messages as you scroll up; and when something fails Vita says what (offline, a rejected
@@ -105,8 +110,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,154 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 22 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+- Tests: 443 → 1,162 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- UI smoke flows: 23 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
   through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

@@ -22,13 +22,13 @@ Last updated: 2026-11-22.
 | G3 | A widget never shows anyone else's data, or yesterday's as today's | blocked: the owner restarts his phone on a build and looks at the widget before unlocking |
 | G4 | The store returns what was put in | in progress: schema, round trips, merges, queries and the SQL script are done; entry points, on-disk and UI comparison remain |
 | G5 | Changing a setting changes everything that depends on it | in progress: three defects fixed and 95 matrix tests (EVAL_REPORT 16); the dependency table and kilograms remain |
-| G6 | No step breaks when done out of order, repeated, or skipped | in progress: 22 UI flows pass, six through onboarding; an update never re-onboards (measured from build 15) and a store that does not open is never mistaken for a new person (EVAL_REPORT 17, 26, 27); open: onboarding with values typed in, skip combinations as a set, finishing twice, a reinstall on a phone signed in to iCloud, pairing on the local mock |
+| G6 | No step breaks when done out of order, repeated, or skipped | in progress: 23 UI flows pass, six through onboarding; an update never re-onboards (measured from build 15) and a store that does not open is never mistaken for a new person (EVAL_REPORT 17, 26, 27); open: onboarding with values typed in, skip combinations as a set, finishing twice, a reinstall on a phone signed in to iCloud, pairing on the local mock |
 | G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); the coach's 28 tool descriptions reworded, scanned by a test and re-measured (EVAL_REPORT 24); open: the built-in characters' names, onboarding copy, Settings, buddy, widgets and the demo seed |
 | G8 | A new person gets their own pixel character from a photo | in progress: built (EVAL_REPORT 15), measured on generated faces and the default chosen by the owner's rule: `sunburst` at low, $0.035 each (EVAL_REPORT 23, 27); open: a real photo, the flow in the app with a live image, and the CloudKit schema |
 | G9 | Home and Gym as two modes, switched at the top | in progress: built, tapped by a UI test both ways with state kept (EVAL_REPORT 12, 17); open: VoiceOver reaches the hidden surface (U-1), the light theme, and the owner's look at the screenshots |
 | G10 | Nutrition is as specific as it can honestly be | in progress: built and tested from every source (EVAL_REPORT 18); the estimator's accuracy on the new fields is unmeasured, and the owner deploys the CloudKit schema |
 | G11 | The open defects are closed | in progress: the high-severity lifecycle defects and nine buddy groups are fixed (EVAL_REPORT 16, 19); open: kilograms, widgets' gain framing, travel day keys, HealthKit sync, U-1 to U-3, S-1, S-2 and the accessibility findings |
-| G12 | Competitions | todo (spec needed) |
+| G12 | Competitions | proposal written: days in your own ranges, 5 points a day, a week, the two buddies; waiting for the owner's yes |
 | G13 | The app is back on the phones and does not expire again | blocked: the owner deploys the CloudKit schema to Production (EVAL_REPORT 21) and uploads the build; an expired build must be updated in place, never deleted, because iCloud holds almost none of the data |
 | G14 | The chat holds up: long histories, selection and copy, "ask about this", real error handling | in progress: built, tested and seen running (EVAL_REPORT 20); open: the view still jumps on some "load earlier" loads, nothing was run against a real provider or on a phone, and regenerate, edit-and-resend and streaming are not built |
 
@@ -214,12 +214,33 @@ Prerequisite for G8 and for inviting a third person.
 
 ## G12. Competitions
 
-*"A new tab, competition, where people can have competitions with each other… I want to specify more about what that means."*
+*"A new tab, competition, where people can have competitions with each other… I want to specify more about what that means."* Then (2026-11-23): *"the competition page doesn't just have to be about a person eating correct, but being in their ranges."*
 
-- **Status:** todo (spec needed). Not to be built until the owner writes down what a
-  competition is. Notes from the request so far: one against one, or against two; each
-  side can have a different target (one person reaching a protein goal or gaining, another
-  staying under a range or a baseline).
+- **Proposal (2026-11-23), not built, waiting for the owner's yes or changes:**
+  - **Who and how long:** the two paired buddies, one calendar week at a time.
+  - **Scoring, fair across different goals:** each person is scored against their OWN
+    targets, so someone losing and someone gaining compete on equal terms. Each day earns
+    up to 5 points, one for each target hit:
+    1. calories inside their own range (the plan's range when there is one, else the
+       computed target plus or minus 10%; over AND under both miss);
+    2. protein at or above their target;
+    3. water at or above their goal;
+    4. steps at or above their goal;
+    5. an active day (a workout logged, or one the tracker detected: the same rule as the
+       Workouts week card, EVAL_REPORT 28).
+    A day with nothing logged scores 0: logging is part of it. Most points in the week wins;
+    a tie is a tie.
+  - **What each side sees:** both totals, a row of 7 days per person with the points of
+    each, and on a tap which targets were hit. Never the other person's food or weights
+    (unless they already share full data with their buddy).
+  - **The stake:** an optional line of text the two agree on ("loser buys the flight").
+  - **What it needs that does not exist:** the buddy snapshot carries today only. It has to
+    carry the week's points per day and per target, which is a new field on the
+    `BuddySnapshot` record: a CloudKit schema change that the owner deploys to Production
+    (as for section 21).
+- **Questions for the owner:** the five targets and one point each, or different weights;
+  calorie range as above; one week, or a custom length; is "logged nothing = 0" right.
+- **Status:** proposal written, not built.
 
 ## G13. The app is back on the phones and does not expire again
 

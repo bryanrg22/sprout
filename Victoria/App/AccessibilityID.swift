@@ -1,3 +1,5 @@
+import Foundation
+
 /// The accessibility identifiers the UI smoke flows (`VictoriaUITests`) find controls by.
 ///
 /// This file is compiled into the app AND into the UI test bundle (see `project.yml`),
@@ -88,6 +90,19 @@ enum AccessibilityID {
         static let log = "workouts.log"
         /// One logged session; its label carries the title and the summary.
         static let sessionRow = "workouts.session.row"
+        /// One workout Apple Health or the tracker detected, on the day's page.
+        static let detectedRow = "workouts.detected.row"
+        /// The week card: its "N of 7 days active", the arrows, the summary line, and one cell per day.
+        static let week = "workouts.week"
+        static let weekActiveDays = "workouts.week.activeDays"
+        static let weekPrevious = "workouts.week.previous"
+        static let weekNext = "workouts.week.next"
+        static let weekSummary = "workouts.week.summary"
+        /// `workouts.week.day.<yyyy-MM-dd>` in the device's calendar.
+        static func weekDay(_ date: Date, calendar: Calendar = .current) -> String {
+            let c = calendar.dateComponents([.year, .month, .day], from: date)
+            return String(format: "workouts.week.day.%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+        }
     }
 
     enum WorkoutLog {
