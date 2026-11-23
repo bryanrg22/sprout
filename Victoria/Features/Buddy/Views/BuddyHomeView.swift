@@ -71,7 +71,7 @@ struct BuddyHomeView: View {
         workouts.contains { Calendar.current.isDateInToday($0.date) }
     }
     /// The single profile, the way RootView resolves it.
-    private var profile: UserProfile? { profiles.first }
+    private var profile: UserProfile? { UserProfile.primary(of: profiles) }
     /// My own daily step goal (0 when there's no profile yet → face-off skips that bar).
     private var myStepGoal: Int { max(profile?.dailyStepGoal ?? 0, 0) }
     /// My own daily water goal in oz (0 when there's no profile yet).

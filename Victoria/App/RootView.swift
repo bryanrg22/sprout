@@ -20,7 +20,18 @@ struct RootView: View {
     /// The second caller just skips; the next foreground catches anything missed.
     @State private var trackerRefreshInFlight = false
 
-    private var profile: UserProfile? { profiles.first }
+    private var profile: UserProfile? { UserProfile.primary(of: profiles) }
+
+    /// iCloud's chance to bring a profile back on a launch that has none (`LaunchGate`).
+    /// Not in play for a `--ui-testing` launch (CloudKit off) or a store that did not open.
+    @State private var restoreWatch = ICloudRestoreWatch(applicable: StoreStatus.opened && !UITestHooks.isActive)
+
+    private var route: LaunchRoute {
+        LaunchRoute.decide(storeOpened: StoreStatus.opened,
+                           hasFinishedProfile: profile?.onboardingComplete == true,
+                           hasAnyProfile: profile != nil,
+                           restoreSettled: restoreWatch.settled)
+    }
 
     /// Runs before any view reads the provider or asks whether a key is stored: after a
     /// reinstall the provider choice is gone but the keys are not (`AIKeyRouting`).
@@ -71,8 +82,14 @@ struct RootView: View {
 
     private var content: some View {
         Group {
-            if WidgetGalleryView.isRequested {
+            if route == .storeUnavailable {
+                StoreUnavailableView(detail: StoreStatus.openError ?? "")
+            } else if WidgetGalleryView.isRequested {
                 WidgetGalleryView()                       // DEBUG: preview widgets for screenshots
+            } else if route == .restoringFromICloud {
+                RestoringFromICloudView(watch: restoreWatch)
+                    .transition(.opacity)
+                    .task { restoreWatch.start() }
             } else if let profile, profile.onboardingComplete, let screen = demoScreenArg {
                 demoScreen(screen, profile: profile)      // DEBUG: deep-link to a quick-link screen
                     .transition(.opacity)
@@ -84,8 +101,14 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut, value: profile?.onboardingComplete)
+        .animation(.easeInOut, value: route)
         .task {
+            // With no store there is nothing to seed, import or show on the widget: the
+            // in-memory stand-in must not be written anywhere (see `StoreUnavailableView`).
+            guard StoreStatus.opened else {
+                Diagnostics.shared.log("app launched with NO STORE: \(StoreStatus.openError ?? "")", .error)
+                return
+            }
             DemoSeed.seedIfNeeded(context, hasProfile: profile != nil)
             #if DEBUG
             ChatDebug.seedLongChatIfRequested(context)   // `--demo-long-chat <n>`
@@ -108,6 +131,7 @@ struct RootView: View {
             switch phase {
             case .active:
                 Diagnostics.shared.log("app active", .app)
+                guard StoreStatus.opened else { return }
                 // Re-pull steps on every foreground, then refresh the widget with fresh data.
                 Task {
                     // Re-pull the last 7 days (not just today) so yesterday gets finalized to
@@ -119,6 +143,7 @@ struct RootView: View {
                 }
             case .background:
                 Diagnostics.shared.log("app background", .app)
+                guard StoreStatus.opened else { return }
                 // Refresh on leave too, so the widget reflects what she just logged.
                 WidgetDataWriter.refresh(context: context, profile: profile)
             default:

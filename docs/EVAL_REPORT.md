@@ -1395,3 +1395,84 @@ the same 1,711 as its goal and 1,711 to go.
 - Finishing twice (a double tap on the last button) is not tested; reading the code, a
   second call could insert a second weigh-in.
 - No accessibility audit was run on the onboarding pages.
+
+## 27. Never onboard someone who already has data; three owner decisions applied (2026-11-23)
+
+The owner: when Victoria gets the next build "I want the app not to onboard her anymore.
+She just continues on like normal, even if she has to redownload something."
+
+### The update path, measured
+
+Her phone has build 15, expired. A new TestFlight build installs over it as an update.
+Apple documents no guarantee about data on that path (the developer forums have reports
+both ways), so it was reproduced: build 15 (`3fc5c6c`, checked out on its own) was
+installed on a simulator, given a profile and a month of data on disk, and the current
+build was installed over it without removing anything, as an update does.
+
+- It opened on Today with the same profile and streak. No onboarding.
+- The store was compared table by table, before and after, by SQL: 20 tables, the same
+  92 rows, and every value of every column the two builds share identical. The only
+  change was 12 new empty columns (the 11 label nutrients and the custom character).
+- `tooling/verify_store.py` gave the same report for both.
+
+So **tapping Update in TestFlight keeps everything and skips onboarding.** Deleting the app
+first does not: it removes the store on the phone.
+
+### What could still send her through onboarding, and what was done
+
+1. **An update whose store does not open.** The app fell back to an empty store in
+   memory, which has no profile, so it showed onboarding, and anything entered there was
+   gone at the next launch. Now it shows "Sprout couldn't open your data": the data is
+   still on the phone, nothing is written while that screen is up, and it says not to
+   delete the app and how to send a report. A UI flow checks this with a simulated
+   failure (`--ui-test-store-failure`).
+2. **A reinstall.** iCloud brings a profile back some seconds after launch, if it does
+   (only `UserProfile` and `WeightEntry` exist in the Production schema today, section 21).
+   Onboarding showed at once and could be finished first. Now a launch with no profile
+   waits: "Looking for your data in iCloud", until iCloud is found unavailable, an
+   import operation ends, a profile appears, or 20 seconds pass; after 4 seconds the
+   person can choose to start fresh. There is no API that says the first import is
+   complete (Apple developer forums, threads 776219 and 763876), so these are the
+   signals there are.
+3. **Two profiles.** Views took `profiles.first`, which is in no defined order. Every view
+   now takes the oldest finished profile, so a profile restored from iCloud wins over one
+   an onboarding made before it arrived.
+
+Checked live on the simulator (Debug build, no iCloud account): the update path still goes
+straight to Today; a fresh install logs "waiting for iCloud", then "ended (noAccount)" in
+the same second, and shows onboarding. **Not checked: a phone signed in to iCloud.** The
+waiting screen, the import signal and a profile arriving were not seen, because the
+simulator has no iCloud account and signing one in is the owner's to do. 16 unit tests
+cover the route for every combination, the profile choice (including profiles read back
+from a store), and the wait's timing, skip and account paths; the import-ended path
+cannot be driven from a test because Core Data's event has no public initialiser.
+
+### The owner's three decisions
+
+- **The personal note is only for Victoria.** Its text left the source: it is
+  `Private/PersonalNote.json` on the owner's machine (git-ignored), copied into the app by
+  a build phase only when the file is there; a build without it removes any old copy. The
+  page now comes after the step where the name is typed, and appears only for that name
+  (case, accents and spacing ignored; "Vic" is not "Victoria"). Seen in the simulator: 12
+  steps before the name, 13 after typing "victoria ", and the note with its signature
+  from the file. The 22 UI flows were run with the file moved aside, as CI builds, and the
+  app had no note. The text is still in the public history of the repository.
+- **Sex is a required choice.** Nothing is selected at first (the US Digital Service
+  pattern for this field: do not pre-select, say why it is asked). Next on that step asks
+  for a choice; finishing after swiping past it goes back to it and asks. Two UI flows
+  cover both. The prompt was first drawn in the warning yellow, which was hard to read on
+  the light card (seen), and now uses the primary text color with a warning icon. Not
+  offered: "prefer not to say", which would need a third value in the stored model and in
+  the calorie formula.
+- **The character model is `gpt-image-2.6-sunburst` at low quality.** Asked for: "the
+  cheapest, but looking like the style we want". A third run, `sunburst` at low on the
+  same three faces (`Evals/runs/20261123-125337-Avatar`, 6 of 6 usable, $0.21): $0.035 a
+  character, the same as the cheapest candidate, with the coarse, flat pixels of `sunburst`
+  at medium (24 to 41 colours counted), closest to the built-in characters
+  (`build/av/contact-sheet-2.png` locally; the images are not committed). Its cost is
+  time: 15 to 19 seconds against about 7 for `flare` at low. The waiting text now says "usually
+  under half a minute" instead of "a minute or two".
+- **The built-in characters keep their names.** The owner's answer: new people type their
+  own name and make their own character.
+
+**Spend:** $0.21. **Spend to date across every run: $21.85 over 10,926 attempts.**

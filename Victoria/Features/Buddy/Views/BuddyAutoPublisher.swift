@@ -142,7 +142,7 @@ struct BuddyAutoPublisher: View {
     // publish coordinator with the hub's model, so the two never publish at once.
     @State private var model = BuddyViewModel(observePushes: false)
 
-    private var profile: UserProfile? { profiles.first }
+    private var profile: UserProfile? { UserProfile.primary(of: profiles) }
 
     /// Drives the debounced `.task(id:)` so rapid logs coalesce into one upload.
     private var dataSignature: String {

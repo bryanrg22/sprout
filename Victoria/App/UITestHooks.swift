@@ -24,6 +24,13 @@ enum UITestHooks {
     /// had been cached by an earlier, seeded launch on the same simulator. A flow passes it
     /// on its first launch and not when it relaunches to see what was kept.
     static let freshDefaultsArgument = "--ui-test-fresh-defaults"
+    /// With `--ui-testing`: behave as if the on-disk store had failed to open, so a flow can
+    /// check that such a launch shows `StoreUnavailableView` and never onboarding.
+    static let storeFailureArgument = "--ui-test-store-failure"
+
+    struct SimulatedStoreFailure: Error, CustomStringConvertible {
+        var description: String { "simulated by --ui-test-store-failure" }
+    }
 
     /// What one launch's arguments ask for.
     struct Plan: Equatable, Sendable {
@@ -33,6 +40,8 @@ enum UITestHooks {
         var scriptedAI: String?
         /// `--ui-test-fresh-defaults` was passed as well: clear the app's defaults first.
         var freshDefaults = false
+        /// `--ui-test-store-failure` was passed as well.
+        var simulateStoreFailure = false
 
         static let inert = Plan()
     }
@@ -44,7 +53,8 @@ enum UITestHooks {
         let name = arguments.first { $0.hasPrefix(scriptedAIPrefix) }
             .map { String($0.dropFirst(scriptedAIPrefix.count)) }
         return Plan(isActive: true, scriptedAI: name,
-                    freshDefaults: arguments.contains(freshDefaultsArgument))
+                    freshDefaults: arguments.contains(freshDefaultsArgument),
+                    simulateStoreFailure: arguments.contains(storeFailureArgument))
     }
 
     static var isDebugBuild: Bool {

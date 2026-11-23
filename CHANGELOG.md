@@ -7,6 +7,14 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **Updating never starts you over.** An update installed over the old app keeps
+  everything and goes straight to Today (measured from build 15). If an update cannot
+  open your data, the app now says so instead of showing onboarding on an empty app; a
+  reinstall first looks for your profile in iCloud; and if two profiles exist the older
+  one is used (EVAL_REPORT 27).
+- Onboarding no longer chooses "Female" for you: the sex used for the calorie estimate
+  is a required choice with nothing pre-selected.
+
 - **Today's checklist was silently falling back to the generic one about three times in
   ten on Claude.** The model's answer came back in a shape the app could not read; the
   app now reads it (EVAL_REPORT 22).
@@ -74,6 +82,11 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Changed
 
+- New characters are drawn by `gpt-image-2.6-sunburst` at low quality: $0.035 each and
+  closest to the built-in style, about 17 seconds (EVAL_REPORT 27).
+- The personal note in onboarding is no longer in the source and is shown only to the
+  person it is written for.
+
 - On OpenAI, the insight line, weekly reflection, onboarding note and memory now run on
   current models chosen by measurement; nothing defaults to the deprecated
   `gpt-4.1-mini` any more (EVAL_REPORT 22).
@@ -92,8 +105,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,131 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 20 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+- Tests: 443 → 1,154 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- UI smoke flows: 22 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
   through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

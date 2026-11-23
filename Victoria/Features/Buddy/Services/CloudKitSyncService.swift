@@ -43,7 +43,7 @@ final class CloudKitSyncService: BuddySyncService {
     // entitlements / `project.yml` (`com.apple.developer.icloud-container-identifiers`),
     // which is "iCloud." + the bundle id `com.bryanram.victoria`. Keep these in sync if
     // the bundle id ever changes.
-    private static let containerIdentifier = "iCloud.com.bryanram.victoria"
+    static let containerIdentifier = "iCloud.com.bryanram.victoria"
 
     // CloudKit record types. These get auto-created in the Development environment on
     // first save; remember to add the queryable/sortable indexes (header, step 1).
