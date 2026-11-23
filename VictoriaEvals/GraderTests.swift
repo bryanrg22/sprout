@@ -1291,7 +1291,13 @@ final class GraderTests: XCTestCase {
             let shown = await withNoKey { await OnboardingCoachMessage.make(inputs) }
             XCTAssertEqual(shown.result, template, c.id)
             XCTAssertEqual(shown.requests, 0, c.id)
-            XCTAssertTrue(template.hasPrefix(c.name == "" ? "friend," : inputs.name + ","), c.id)
+            if (c.name ?? "").isEmpty {
+                // With no name the note starts with its own sentence, never a stand-in name (EVAL_REPORT 26).
+                XCTAssertEqual(template.first?.isUppercase, true, c.id)
+                XCTAssertFalse(template.lowercased().contains("friend"), c.id)
+            } else {
+                XCTAssertTrue(template.hasPrefix(inputs.name + ","), c.id)
+            }
             XCTAssertEqual(OnboardingCoachMessage.sanitize(template), template, "\(c.id): the template passes the app's sanitiser")
             XCTAssertTrue(Graders.onboardingNote(given: OnboardingCoachMessage.userPrompt(inputs), name: inputs.name,
                                                  mustNotSay: c.mustNotSay, text: template, reader: c.reader).pass,
