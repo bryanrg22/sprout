@@ -134,7 +134,34 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  # UI smoke flows (XCUITest): the main paths end to end against an in-memory store and a
+  # scripted model (`--ui-testing`, see VictoriaUITests/README.md). Its own scheme, so
+  # `-scheme Victoria` never runs it. `AccessibilityID.swift` is compiled into both the app
+  # and this bundle so the identifiers cannot drift apart.
+  VictoriaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: VictoriaUITests
+      - path: Victoria/App/AccessibilityID.swift
+    dependencies:
+      - target: Victoria
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Victoria
+
 schemes:
+  VictoriaUITests:
+    build:
+      targets:
+        Victoria: all
+        VictoriaUITests: [test]
+    test:
+      targets:
+        - VictoriaUITests
   VictoriaEvals:
     build:
       targets:
