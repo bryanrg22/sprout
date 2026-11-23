@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// The steps of "make my character", shared by onboarding and Settings → Appearance.
+/// The steps of "make my character", shared by onboarding and Settings → You.
 ///
 /// The rules it holds (the owner's decisions, tested in `AvatarCreationModelTests`):
 /// - Nothing is sent until the person has picked a photo AND ticked the consent that says

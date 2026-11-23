@@ -1579,7 +1579,7 @@ enum CoachTools {
         var avatar: CompanionAvatar?
         if let a = (input["avatar"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), !a.isEmpty {
             // Only the built-in characters: a custom one needs an image, which is made in
-            // Settings → Appearance, not by a tool call.
+            // Settings → You, not by a tool call.
             guard let parsed = CompanionAvatar(rawValue: a.lowercased()), parsed.isBuiltIn else {
                 let names = CompanionAvatar.builtIns.map { "\"\($0.rawValue)\"" }.joined(separator: " or ")
                 return .invalid("\"\(a)\" isn't an avatar I have — pick \(names). Nothing was changed.")

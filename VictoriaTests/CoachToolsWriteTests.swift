@@ -232,9 +232,10 @@ final class CoachToolsWriteTests: XCTestCase {
         applied.undo?()
         let reverted = try XCTUnwrap(CoachPlan.current(in: ctx))
         XCTAssertEqual(reverted.proteinTarget, 120, "undo restores the plan's protein target")
-        // The override reverts to its pre-apply value (0 here — RootView.syncPlanTargets, which would
-        // have mirrored the plan's 120 onto it for a real plan-user, doesn't run in a unit test).
-        XCTAssertEqual(profile.proteinTargetOverride, 0)
+        // Undo now re-mirrors the plan onto the profile (PlanTargetSync.apply), so the override
+        // ends at the plan's restored 120: the state the running app is in. It used to read 0
+        // here only because nothing synced in a unit test (changed with the settings matrix).
+        XCTAssertEqual(profile.proteinTargetOverride, 120)
     }
 
     func testSetProteinGoalWithNoPlanWritesOverrideDirectly() throws {
