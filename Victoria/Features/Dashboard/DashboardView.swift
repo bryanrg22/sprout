@@ -83,7 +83,8 @@ struct DashboardView: View {
             workoutToday: workoutToday,
             hourOfDay: Calendar.current.component(.hour, from: .now),
             daysAwayBeforeToday: StreakCalculator.daysSinceLastLog(foods: allFood, waters: water,
-                                                                   weights: weights) ?? 1
+                                                                   weights: weights) ?? 1,
+            goalDirection: profile.pace.direction
         )
     }
 
@@ -160,7 +161,7 @@ struct DashboardView: View {
                                 name: "Steps & activity",
                                 icon: "figure.walk",
                                 value: "\(todaySteps.formatted()) of \(stepGoal.formatted()) steps",
-                                question: "How do my steps actually affect my weight-loss progress — and what's the real impact if I don't hit my step goal on some days?")
+                                question: "How do my steps actually affect my progress toward my goal — and what's the real impact if I don't hit my step goal on some days?")
                         }
                         .appearLift(didAppear, index: 6)
                     macrosCard.appearLift(didAppear, index: 7)
