@@ -66,6 +66,8 @@ enum NotificationService {
     /// - Returns: `true` if notifications are allowed (or already authorized).
     @discardableResult
     static func requestAuthorization() async -> Bool {
+        // UI smoke flows: no system alert over the screen under test (reads as "not granted").
+        guard !UITestHooks.isActive else { return false }
         do {
             return try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .sound, .badge])
@@ -170,6 +172,8 @@ enum NotificationService {
     /// Integrator: call this from `VictoriaApp` once at launch (e.g. in `.task`
     /// on the root view) and right after onboarding completes.
     static func refreshOnLaunch(for profile: UserProfile) async {
+        // UI smoke flows: leave this device's real reminder schedule alone.
+        guard !UITestHooks.isActive else { return }
         let granted = await requestAuthorization()
         guard granted else {
             cancelAll()

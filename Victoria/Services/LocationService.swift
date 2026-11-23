@@ -105,6 +105,8 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     /// re-prompt anyway, so we don't bother and instead leave it to the user to
     /// change their mind in Settings. Safe to call repeatedly / on every appear.
     func requestWhenInUse() {
+        // UI smoke flows: no system permission alert over the screen under test.
+        guard !UITestHooks.isActive else { return }
         guard status == .notDetermined else { return }
         manager.requestWhenInUseAuthorization()
     }

@@ -97,7 +97,7 @@ enum AIConfig {
     /// installs / first launch. Writes through to `UserDefaults`.
     static var provider: AIProvider {
         get {
-            if let scoped = AIRuntime.current?.provider { return scoped }
+            if let scoped = AIRuntime.effective?.provider { return scoped }
             guard let raw = UserDefaults.standard.string(forKey: providerKey),
                   let p = AIProvider(rawValue: raw) else { return .anthropic }
             return p
@@ -146,7 +146,7 @@ enum AIConfig {
     /// feature should use (checking only the Anthropic slot would wrongly disable
     /// features for an OpenAI user, and vice versa).
     static var hasActiveKey: Bool {
-        if let scoped = AIRuntime.current?.apiKey { return !scoped.isEmpty }
+        if let scoped = AIRuntime.effective?.apiKey { return !scoped.isEmpty }
         return KeychainStore.hasAPIKey(for: provider)
     }
 

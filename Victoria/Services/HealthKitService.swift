@@ -74,6 +74,8 @@ final class HealthKitService {
     /// reasons, so we can't reliably "check" read access — we just request and
     /// let individual operations succeed or come back empty.
     func requestAuthorization() async throws {
+        // UI smoke flows: no system permission sheet over the screen under test.
+        guard !UITestHooks.isActive else { return }
         guard Self.isAvailable else { throw HealthKitError.unavailable }
         guard let bodyMassType else { throw HealthKitError.bodyMassTypeUnavailable }
 
