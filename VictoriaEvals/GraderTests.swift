@@ -611,6 +611,77 @@ final class GraderTests: XCTestCase {
         XCTAssertFalse(Graders.avatar(empty).pass, "an empty picture is not a character")
     }
 
+    // The image models do not return exact 0 and exact 255 (measured, EVAL_REPORT 23).
+
+    func testACharacterAsTheImageModelsReturnItIsGradedAsOne() throws {
+        let png = TestImages.characterPNGAsReturnedByAModel()
+        let pixels = try XCTUnwrap(AvatarImage.rgba(ofImageData: png))
+        XCTAssertEqual(pixels.alpha(x: 512, y: 300), 253, "the helper really writes a not-quite-solid pixel")
+        XCTAssertFalse(pixels.bytes.enumerated().contains { $0.offset % 4 == 3 && $0.element == 255 },
+                       "no pixel of it is at alpha 255")
+
+        let m = Graders.imageMetrics(png)
+        XCTAssertEqual(m.distinctColours, 5, "hair, skin, eyes, mouth, top: counted although none is at 255")
+        XCTAssertTrue(m.transparentTopCorners, "a trace of alpha 1 or 2 in a corner cannot be seen")
+        XCTAssertFalse(m.transparentCorners, "the shoulders still reach the bottom corners")
+        XCTAssertLessThan(m.transparentShare, 24.0 / 64.0, "the app's own share counts exact 0 only")
+        XCTAssertGreaterThan(m.transparentShare, 0.36)
+        XCTAssertTrue(Graders.avatar(png).pass)
+        XCTAssertNoThrow(try AvatarImage.validateCharacterPNG(png), "and the app accepts it")
+    }
+
+    func testTheAlphaTolerancesStopExactlyWhereTheySay() throws {
+        func image(corner: UInt8, body: UInt8) -> Data {
+            TestImages.png(width: 200, height: 200) { x, y in
+                if x < 3, y < 3 { return (10, 10, 10, corner) }
+                if (60..<140).contains(x), (60..<140).contains(y) { return (0x38, 0x78, 0xB8, body) }
+                return (0, 0, 0, 0)
+            }
+        }
+        XCTAssertTrue(Graders.imageMetrics(image(corner: Graders.clearAlphaCeiling, body: 255)).transparentTopCorners)
+        XCTAssertFalse(Graders.imageMetrics(image(corner: Graders.clearAlphaCeiling + 1, body: 255)).transparentTopCorners,
+                       "a mark that can be seen in a top corner still fails")
+        XCTAssertEqual(Graders.imageMetrics(image(corner: 0, body: Graders.solidAlphaFloor)).distinctColours, 1)
+        XCTAssertEqual(Graders.imageMetrics(image(corner: 0, body: Graders.solidAlphaFloor - 1)).distinctColours, 0,
+                       "a see-through shape is not a solid colour, and an image of only that is not pixel art")
+        XCTAssertFalse(Graders.avatar(image(corner: 0, body: 128)).pass)
+    }
+
+    func testThePixelArtLimitSitsInTheMeasuredGap() {
+        // EVAL_REPORT 23: ten pixel characters counted 24 to 45, three photographs 72 to 81.
+        XCTAssertGreaterThan(Graders.pixelArtColourLimit, 45)
+        XCTAssertLessThan(Graders.pixelArtColourLimit, 72)
+    }
+
+    func testRegradeGradesEverySavedCharacterAndWritesOneRecord() throws {
+        let run = FileManager.default.temporaryDirectory.appendingPathComponent("regrade-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: run) }
+        let low = run.appendingPathComponent("avatars/gpt-image-2.6-flare@low")
+        let medium = run.appendingPathComponent("avatars/gpt-image-2.6-flare@medium")
+        try FileManager.default.createDirectory(at: low, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: medium, withIntermediateDirectories: true)
+        try TestImages.characterPNGAsReturnedByAModel().write(to: low.appendingPathComponent("b-AAAA.png"))
+        try TestImages.characterPNG(side: 512).write(to: low.appendingPathComponent("a-BBBB.png"))
+        try Data("not a png".utf8).write(to: medium.appendingPathComponent("c-CCCC.png"))
+        try Data([1]).write(to: medium.appendingPathComponent(".DS_Store"))
+
+        let images = try LiveEvals.regradeAvatars(in: run)
+        XCTAssertEqual(images.map(\.file), ["a-BBBB.png", "b-AAAA.png", "c-CCCC.png"])
+        XCTAssertEqual(images.map(\.candidate), ["gpt-image-2.6-flare@low", "gpt-image-2.6-flare@low",
+                                                 "gpt-image-2.6-flare@medium"])
+        XCTAssertEqual(images.map(\.pass), [false, true, false], "wrong size, good, not an image")
+        XCTAssertEqual(images[1].scores["distinct_colours"], 5)
+
+        let written = try JSONSerialization.jsonObject(with:
+            Data(contentsOf: run.appendingPathComponent("regrade-avatar.json"))) as? [String: Any]
+        let graders = try XCTUnwrap(written?["graders"] as? [String: Any])
+        XCTAssertEqual(graders["pixel_art_colour_limit"] as? Int, Graders.pixelArtColourLimit)
+        XCTAssertEqual(graders["solid_alpha_floor"] as? Int, Int(Graders.solidAlphaFloor))
+        XCTAssertEqual((written?["images"] as? [[String: Any]])?.count, 3)
+
+        XCTAssertTrue(try LiveEvals.regradeAvatars(in: run.appendingPathComponent("missing")).isEmpty)
+    }
+
     func testImageCostUsesTheThreeRatesAndNeverGuessesAModel() throws {
         let usage = AvatarGenerator.Usage(inputTokens: 1_210, inputTextTokens: 310, inputImageTokens: 900,
                                           outputTokens: 4_160, totalTokens: 5_370)

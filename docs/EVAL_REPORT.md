@@ -1036,4 +1036,115 @@ Seven of fifteen tasks have a default chosen by measurement on at least one prov
 
 **Not verified:** none of the new defaults has been seen in the app's UI. The full
 ten-model runs were not repeated after the repair, only the affected model on the
-affected task. The image comparison for the character feature has not been run.
+affected task. The image comparison for the character feature had not been run when this
+was written; it is section 23.
+
+## 23. The character call, made for real: eighteen images, and a grader that could not see them (2026-11-23)
+
+Objective G8. Approved by the owner in the session, on generated faces only. Section 15
+ended with "no image has been generated". This is the first time the request was sent.
+
+**The photos.** Three portraits of people who do not exist, generated for this purpose
+(a man in his thirties with curly hair and a beard, a woman in her twenties with a
+ponytail and earrings, a man in his fifties with grey hair and glasses). They are in
+`Evals/datasets/avatar/photos/` on the machine that ran this and, like every photo and
+every character, are not committed.
+
+**The runs.** `Evals/run.sh Avatar` with three candidates, twice
+(`Evals/runs/20261123-100309-Avatar`, `…-101043-Avatar`): 18 calls of
+`AvatarGenerator.generate`, the call the app makes. Cost is the response's own token
+counts at the published rates, not a figure from an invoice.
+
+| Candidate | Usable | Passed | Colours counted | Seconds (p50, per run) | Output tokens | Cost per character |
+|---|---|---|---|---|---|---|
+| `gpt-image-2.6-flare`, low | 6 of 6 | 6 of 6 | 29 to 45 | 7.4, 7.6 | 824 | $0.035 |
+| `gpt-image-2.6-flare`, medium (the default) | 6 of 6 | 6 of 6 | 34 to 44 | 8.8, 10.0 | 1,449 | $0.054 |
+| `gpt-image-2.6-sunburst`, medium | 6 of 6 | 6 of 6 | 26 to 32 | 20.1, 19.6 | 1,449 | $0.054 |
+
+Every request carried 1,454 input tokens (430 of text, 1,024 for the photo). Six images
+per candidate is far too few to rank them on a pass rate: all this table can say is that
+none of the three failed.
+
+### Confirmed by the live call (these were open in section 15)
+
+- **A transparent background works on the 2.6 models.** All 18 images are 1024 × 1024 PNGs
+  with an alpha channel, and between 34% and 46% of each is fully clear.
+- **The multipart request is accepted as built.** 18 of 18 answered, none retried.
+- **The `usage` block is where the code reads it**, with text and image input counted
+  separately, so the cost above needs no guess.
+- **The app's own acceptance check passes real images.** `validateCharacterPNG` accepted
+  all 18.
+
+### A grader that scored every character as having no colours
+
+The first run reported 0 of 9 passed. The images were plainly pixel characters, so the
+score was wrong, and the records showed why: `distinct_colours` was 0 for every one.
+
+Measured on the files with a second tool: **the image models never return a fully solid
+pixel.** The body of each character is at alpha 253 or 254, none at 255, and the cleared
+background carries a scatter of alpha 1 and 2. Neither can be seen. The grader counted
+colours only among pixels at exactly 255, and called a corner clear only at exactly 0 (one
+`sunburst` image failed its top-corner check on a single pixel at alpha 1). It had been
+tested only on images drawn in code, which are exact.
+
+**Fixed:** a pixel at or under alpha 8 is graded clear and one at or over 250 solid. Tests
+now use an image built the way the models return one, and check the two limits at their
+exact edges. **Re-measured without paying again:** `Evals/regrade-avatars.sh <run>` grades
+a past run's saved characters with the graders as they now are and writes
+`regrade-avatar.json` beside the untouched records. The first run regrades to 9 of 9, and
+its nine colour counts equal, image for image, the nine obtained independently from the
+files.
+
+**The "is it pixel art" limit, calibrated for the first time.** It was 48, a guess that
+section 15 flagged. On thirteen images: ten pixel characters (the nine of the first run
+and one built-in character) counted 24 to 45, and the three photographs they came from
+counted 72 to 81. The limit is now 58, the middle of that gap. The second run was made
+after the limit was set, so its nine images are the only ones the limit was not fitted
+to: they counted 27 to 43 and all passed. **This is a weak calibration:** thirteen images,
+photographs with plain backgrounds, and no example of the thing most likely to fool it (a
+smooth cartoon that is not pixel art). A count between 46 and 71 has never been seen.
+
+**The app is not changed by this.** It keeps the image as returned; a body at 99% opacity
+looks solid on any background the app draws it on.
+
+### What the code cannot grade, and one opinion about it
+
+Likeness and fit with the existing characters are the owner's rating (G8, check a). The
+18 images were looked at beside their photos during this work. This paragraph is that
+reader's opinion, not a measurement, and not the owner's:
+
+- All 18 are recognisably the person in the photo, and keep what the prompt has to keep:
+  hair shape and colour, the beard, the glasses, the earrings, the colour and collar of
+  the clothing. None drew a background, a second person or text.
+- `flare` at low and at medium could not be told apart at the size the app shows a
+  character.
+- `sunburst` draws larger pixels and fewer colours (26 to 32 against 29 to 45, the one
+  difference here that is measured). That is nearer to the built-in characters, which are
+  coarse and flat. It costs the same as `flare` at medium and takes about twice as long.
+
+### Decisions
+
+- **The default stays `gpt-image-2.6-flare` at medium until the owner has looked.** On
+  everything the code checks the three are equal, and by this project's rule the cheapest
+  of equals (`flare`, low: a third cheaper and no slower) would be the default. But the
+  thing that matters here is how the character looks, which no check measures, and a
+  character is made once per person, so the difference is two cents. The owner picks from
+  the saved images; changing it is one line in `AIConfig.avatarImage`.
+- The grader limits and the regrade script are kept.
+
+### Not verified
+
+- **No real photograph has been used.** Generated portraits are easier than a real
+  selfie: one face, centred, evenly lit, a plain wall. A busy background, a hat, a face at
+  the edge, two people in frame, a child, a poor camera: all untested.
+- **A refusal has not been seen**, so the HTTP status of one and the path that handles it
+  have still only run against scripted replies.
+- **The flow in the app has not made a live image.** The evaluation calls the same
+  function, but the consent screen, the preview and the save were last seen with a
+  stand-in (section 15). Doing it for real needs a key typed into the app, which is the
+  owner's to do.
+- The camera path, the widget process drawing a real character, and iCloud sync of the
+  image (blocked on the Production schema, section 21) are unchanged from section 15.
+
+**Spend:** $0.86 for the two runs and about $0.08 to generate the three portraits.
+**Spend to date across every run: $17.61 over 9,261 attempts.**

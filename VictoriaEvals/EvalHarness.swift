@@ -50,6 +50,12 @@ enum EvalEnv {
     /// Where this run's records are written.
     static var out: URL? { env["SPROUT_EVAL_OUT"].map { URL(fileURLWithPath: $0) } }
 
+    /// A past run's directory whose saved characters are to be graded again (no model call).
+    static var regradeRun: URL? {
+        guard let path = env["SPROUT_EVAL_REGRADE"], !path.isEmpty else { return nil }
+        return URL(fileURLWithPath: path)
+    }
+
     static func key(for provider: AIProvider) -> String? {
         let name = provider == .anthropic ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY"
         guard let value = env[name], !value.isEmpty else { return nil }

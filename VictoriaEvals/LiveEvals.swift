@@ -251,6 +251,48 @@ final class LiveEvals: XCTestCase {
                            output: "\(character.model) \(character.quality) \(character.promptVersion) \(saved)")
     }
 
+    /// One saved character graded again.
+    struct RegradedAvatar: Equatable {
+        let candidate: String
+        let file: String
+        let pass: Bool
+        let scores: [String: Double]
+    }
+
+    /// Grades again the characters a past run saved under `<run>/avatars/`, with the graders
+    /// as they are now, and writes the scores to `<run>/regrade-avatar.json` beside the
+    /// grader settings that made them. The run's own records are left as they were written.
+    @discardableResult
+    static func regradeAvatars(in run: URL) throws -> [RegradedAvatar] {
+        let files = FileManager.default
+        let root = run.appendingPathComponent("avatars")
+        let candidates = ((try? files.contentsOfDirectory(atPath: root.path)) ?? []).sorted()
+        var images: [RegradedAvatar] = []
+        for candidate in candidates {
+            let folder = root.appendingPathComponent(candidate)
+            let names = ((try? files.contentsOfDirectory(atPath: folder.path)) ?? [])
+                .filter { $0.lowercased().hasSuffix(".png") }.sorted()
+            for name in names {
+                let graded = Graders.avatar((try? Data(contentsOf: folder.appendingPathComponent(name))) ?? Data())
+                images.append(RegradedAvatar(candidate: candidate, file: name, pass: graded.pass, scores: graded.scores))
+            }
+        }
+        guard !images.isEmpty else { return [] }
+        let record: [String: Any] = [
+            "graders": [
+                "clear_alpha_ceiling": Int(Graders.clearAlphaCeiling),
+                "solid_alpha_floor": Int(Graders.solidAlphaFloor),
+                "colour_bits": Graders.colourBits,
+                "min_colour_share": Graders.minColourShare,
+                "pixel_art_colour_limit": Graders.pixelArtColourLimit,
+            ],
+            "images": images.map { ["candidate": $0.candidate, "file": $0.file, "pass": $0.pass, "scores": $0.scores] },
+        ]
+        let data = try JSONSerialization.data(withJSONObject: record, options: [.prettyPrinted, .sortedKeys])
+        try data.write(to: run.appendingPathComponent("regrade-avatar.json"))
+        return images
+    }
+
     // MARK: - insightLine: rewarm the one line the insight engine already chose
 
     /// One day as the insight engine sees it (`DailyInsightEngine.Input`).
@@ -848,5 +890,18 @@ final class LiveEvals: XCTestCase {
             return EvalOutcome(ok: true, error: nil, scores: graded.scores, pass: graded.pass,
                                output: String((tap.raw ?? shown).prefix(EvalRunner.outputLimit)))
         }
+    }
+}
+
+/// `Evals/regrade-avatars.sh Evals/runs/<run>`: no model is called and nothing is spent, so a
+/// grader that was wrong can be corrected against the very images it misjudged. Its own
+/// class because it is not a live evaluation: `run.sh <Name>` runs `LiveEvals/test<Name>`.
+final class AvatarRegrade: XCTestCase {
+    func testAvatarRegrade() throws {
+        guard let run = EvalEnv.regradeRun else {
+            throw XCTSkip("no run to regrade (use Evals/regrade-avatars.sh)")
+        }
+        let images = try LiveEvals.regradeAvatars(in: run)
+        XCTAssertFalse(images.isEmpty, "no saved characters under \(run.path)/avatars")
     }
 }

@@ -24,7 +24,7 @@ Last updated: 2026-11-22.
 | G5 | Changing a setting changes everything that depends on it | in progress: three defects fixed and 95 matrix tests (EVAL_REPORT 16); the dependency table and kilograms remain |
 | G6 | No step breaks when done out of order, repeated, or skipped | in progress: 15 UI flows pass (EVAL_REPORT 17); the onboarding flow and its skip combinations remain |
 | G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); tool descriptions, onboarding copy and the demo seed remain |
-| G8 | A new person gets their own pixel character from a photo | blocked: built and seen in the simulator (EVAL_REPORT 15); the owner supplies photos and approves the image runs, and deploys the CloudKit schema |
+| G8 | A new person gets their own pixel character from a photo | in progress: built (EVAL_REPORT 15) and the call made for real on generated faces, 18 of 18 usable (EVAL_REPORT 23); open: the owner's rating of the images and choice of model, a real photo, the flow in the app with a live image, and the CloudKit schema |
 | G9 | Home and Gym as two modes, switched at the top | in progress: built, tapped by a UI test both ways with state kept (EVAL_REPORT 12, 17); open: VoiceOver reaches the hidden surface (U-1), the light theme, and the owner's look at the screenshots |
 | G10 | Nutrition is as specific as it can honestly be | in progress: built and tested from every source (EVAL_REPORT 18); the estimator's accuracy on the new fields is unmeasured, and the owner deploys the CloudKit schema |
 | G11 | The open defects are closed | in progress: the high-severity lifecycle defects and nine buddy groups are fixed (EVAL_REPORT 16, 19); open: kilograms, widgets' gain framing, travel day keys, HealthKit sync, U-1 to U-3, S-1, S-2 and the accessibility findings |
@@ -162,8 +162,11 @@ Prerequisite for G8 and for inviting a third person.
   with a preset character; (e) the character appears everywhere the two existing ones do
   (Today, the buddy screens, the widgets); (f) request building and response handling are
   tested through `AIRuntime` with a scripted transport.
-- **Status:** open. **Needs the owner:** a decision on one image or a set of mood frames
-  (cost multiplies), and sample photos for the evaluation.
+- **Status:** in progress. (b) to (f) are built and tested (EVAL_REPORT 15). (a) was run
+  on three generated faces, twice: every image usable, $0.035 to $0.054 each (EVAL_REPORT
+  23). **Needs the owner:** his rating of the 18 saved images and the choice between the
+  three candidates; one run of the flow in the app with his key; and, if he wants it
+  measured on real photos, consented ones.
 
 ## G9. Home and Gym as two modes, switched at the top
 

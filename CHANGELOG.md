@@ -93,6 +93,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 - First live model comparison: ten models, three tasks, 3,636 graded attempts, $6.23
   (EVAL_REPORT 10). `docs/GOALS.md` lists the objectives and the `/goal` condition that
   works through them.
+- The character call was made for real: 18 images from three generated faces, all usable,
+  $0.035 to $0.054 each. The image grader could not see them (the models return "solid"
+  at alpha 253, not 255); it is fixed, calibrated, and a past run can be graded again for
+  free with `Evals/regrade-avatars.sh` (EVAL_REPORT 23).
 
 ### Known and open
 
