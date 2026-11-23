@@ -13,6 +13,17 @@ final class AskVitaCenter {
     var pendingTopic: AskVitaTopic?
 
     func ask(_ topic: AskVitaTopic) { pendingTopic = topic }
+
+    /// A passage the user wants to ask about ("Ask about this" on selected text or on a whole
+    /// message). Unlike a topic it is not sent for them: the Coach puts it above the message
+    /// field as a quoted reference, and it travels with whatever they type next.
+    var pendingQuote: String?
+
+    func quote(_ passage: String) {
+        let trimmed = passage.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        pendingQuote = trimmed
+    }
 }
 
 /// A snapshot of the component the user tapped — enough for Vita to explain it AND to render

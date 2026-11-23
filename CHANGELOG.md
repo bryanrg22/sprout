@@ -7,6 +7,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **Today's checklist was silently falling back to the generic one about three times in
+  ten on Claude.** The model's answer came back in a shape the app could not read; the
+  app now reads it (EVAL_REPORT 22).
 - **Buddy pairing tells the truth.** A wrong code no longer says "You're connected!", you
   can unpair, and a buddy who has stopped sharing is shown as such instead of looking
   current. Nudges for a milestone are sent once (EVAL_REPORT 19).
@@ -19,6 +22,12 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   are not supported yet, and Vita now says so instead of relabelling pounds.
 - A key pasted after a reinstall is saved for the right provider.
 - Prompts no longer assume who you are: no "her", no weight-loss framing for someone gaining.
+- Vita's tools no longer describe every user as "she" (EVAL_REPORT 24).
+- The closing note of onboarding no longer starts with a lower-case "friend," when no name was given.
+- **A short note is no longer lost when a newer Claude model is selected.** Those models
+  could spend a note's whole length limit thinking and return nothing; the app showed its
+  built-in wording and said nothing. They are now asked not to think for these one-line
+  rewrites, and a reply lost this way is logged by name (EVAL_REPORT 25).
 - The daily brief is no longer thrown away when the model forgets a line break.
 - The food lookup no longer sends a personal email address with each request.
 
@@ -45,6 +54,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **A chat that holds up.** Select text in Vita's replies and ask about just that part;
+  copy, share or quote any message; long conversations open fast and load earlier
+  messages as you scroll up; and when something fails Vita says what (offline, a rejected
+  key, a rate limit with a countdown) and lets you retry without retyping (EVAL_REPORT 20).
 - **More of the label.** Fiber, sugars and added sugars, saturated and trans fat, sodium,
   cholesterol, potassium, calcium, iron and vitamin D, per food and per day, from
   barcodes, label scans, photos, descriptions, Vita and manual entry. A value nobody knows
@@ -61,6 +74,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Changed
 
+- On OpenAI, the insight line, weekly reflection, onboarding note and memory now run on
+  current models chosen by measurement; nothing defaults to the deprecated
+  `gpt-4.1-mini` any more (EVAL_REPORT 22).
 - The daily brief is written by `claude-haiku-5-5` (Anthropic) or `gpt-6-luna` (OpenAI),
   chosen by measurement: equal or better on every case at a seventh and a quarter of the
   cost of the models they replace (EVAL_REPORT 10).
@@ -76,13 +92,18 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 984 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 15 end-to-end flows against a scripted model (EVAL_REPORT 17).
+- Tests: 443 → 1,131 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- UI smoke flows: 20 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+  through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).
 - First live model comparison: ten models, three tasks, 3,636 graded attempts, $6.23
   (EVAL_REPORT 10). `docs/GOALS.md` lists the objectives and the `/goal` condition that
   works through them.
+- The character call was made for real: 18 images from three generated faces, all usable,
+  $0.035 to $0.054 each. The image grader could not see them (the models return "solid"
+  at alpha 253, not 255); it is fixed, calibrated, and a past run can be graded again for
+  free with `Evals/regrade-avatars.sh` (EVAL_REPORT 23).
 
 ### Known and open
 

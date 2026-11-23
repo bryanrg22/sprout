@@ -1,0 +1,381 @@
+{
+ "run": "20261123-094135-FoodSuggestions",
+ "tasks": [
+  {
+   "task": "foodSuggestions",
+   "dataset": "food_suggestions/v1",
+   "cases": 18,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-4-5-20251001",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 4.351,
+     "latency_p95_s": 6.001,
+     "mean_uncached_input_tokens": 1753.5555555555557,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 294.25925925925924,
+     "mean_cost_usd": 0.003224851851851852,
+     "scores": {
+      "avoided_foods_absent": 0.3333333333333333,
+      "details_one_sentence": 0.8703703703703703,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9444444444444444,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 0.9444444444444444,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 0.8888888888888888,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.977,
+     "latency_p95_s": 2.196,
+     "mean_uncached_input_tokens": 2055.5,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 331.68518518518516,
+     "mean_cost_usd": 0.00037139259259259263,
+     "scores": {
+      "avoided_foods_absent": 0.5833333333333334,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9814814814814815,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 0.9444444444444444,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 0.7592592592592593,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 3.892,
+     "latency_p95_s": 5.638,
+     "mean_uncached_input_tokens": 2121.5,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 285.31481481481484,
+     "mean_cost_usd": 0.007096148148148148,
+     "scores": {
+      "avoided_foods_absent": 0.9166666666666666,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9444444444444444,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 0.9629629629629629,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 0.9629629629629629,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5-5",
+     "attempts": 54,
+     "usable": 0,
+     "passed": 0,
+     "pass_rate": 0.0,
+     "ci95": [
+      6.938893903907228e-18,
+      0.06641586678100189
+     ],
+     "per_repeat_pass": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "latency_p50_s": 0,
+     "latency_p95_s": 0,
+     "mean_uncached_input_tokens": 0,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 0,
+     "mean_cost_usd": 0.0,
+     "scores": {},
+     "errors": [
+      "badResponse(\"tool_choice: type \\\"tool\\\" and \\\"any\\\" are not supported for this model.\")"
+     ]
+    },
+    {
+     "candidate": "openai:gpt-4.1-mini",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 4.504,
+     "latency_p95_s": 5.149,
+     "mean_uncached_input_tokens": 1010,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 124.66666666666667,
+     "mean_cost_usd": 0.0006034666666666667,
+     "scores": {
+      "avoided_foods_absent": 0.4166666666666667,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.6851851851851852,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 1,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 0.9074074074074074,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-5.6-luna",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.529,
+     "latency_p95_s": 2.879,
+     "mean_uncached_input_tokens": 1002,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 161.88888888888889,
+     "mean_cost_usd": 0.00039466666666666665,
+     "scores": {
+      "avoided_foods_absent": 0.5833333333333334,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9629629629629629,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 0.9629629629629629,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-5.6-terra",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 3.702,
+     "latency_p95_s": 5.217,
+     "mean_uncached_input_tokens": 1002,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 230.40740740740742,
+     "mean_cost_usd": 0.0047688888888888885,
+     "scores": {
+      "avoided_foods_absent": 1,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9444444444444444,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 1,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6-luna",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.271,
+     "latency_p95_s": 2.632,
+     "mean_uncached_input_tokens": 1002,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 148.72222222222223,
+     "mean_cost_usd": 0.00017456111111111111,
+     "scores": {
+      "avoided_foods_absent": 0.5,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9444444444444444,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 0.9814814814814815,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.1-terra",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 3.371,
+     "latency_p95_s": 4.337,
+     "mean_uncached_input_tokens": 1002,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 133.05555555555554,
+     "mean_cost_usd": 0.0016672777777777777,
+     "scores": {
+      "avoided_foods_absent": 1,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9444444444444444,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 1,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 3.319,
+     "latency_p95_s": 3.877,
+     "mean_uncached_input_tokens": 1023,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 130.5185185185185,
+     "mean_cost_usd": 0.0033511851851851853,
+     "scores": {
+      "avoided_foods_absent": 1,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9444444444444444,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 1,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

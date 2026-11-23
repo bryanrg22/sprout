@@ -209,8 +209,16 @@ enum AIConfig {
 
     enum AIError: LocalizedError {
         case missingKey, badResponse(String), decoding(String)
+        /// The model reached `max_tokens` before it wrote anything the caller can use.
+        /// On the Claude models that think by default this is the thinking using the whole
+        /// cap (EVAL_REPORT 25); `thinkingTokens` is nil when the provider did not say.
+        case cutOffBeforeOutput(model: String, cap: Int, thinkingTokens: Int?)
         var errorDescription: String? {
             switch self {
+            case .cutOffBeforeOutput(let model, let cap, let thinking):
+                let spent = thinking.map { ", \($0) of them spent thinking" } ?? ""
+                return "The AI ran out of room before answering (\(model) stopped at \(cap) tokens\(spent))."
+
             case .missingKey:
                 return "No API key set. Add your \(provider.label) key in More → AI Provider."
             case .badResponse(let s): return "The AI service returned an error: \(s)"

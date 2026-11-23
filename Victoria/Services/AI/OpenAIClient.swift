@@ -276,13 +276,18 @@ struct OpenAIClient: LLMClient {
 
             // OpenAI errors come back as { "error": { "message": ... } }, same shape we
             // surface for Anthropic.
-            let msg = ((json["error"] as? [String: Any])?["message"] as? String) ?? "HTTP \(http.statusCode)"
+            let failure = AIHTTPFailure(provider: .openai, response: http, json: json)
+            let msg = failure.message
             Diagnostics.shared.log("openai HTTP \(http.statusCode): \(msg)", .ai)
 
-            if [429, 503].contains(http.statusCode), attempt == 0 {
-                try? await Task.sleep(for: .milliseconds(700))
+            // Same rule as AnthropicClient: sit out a short `retry-after`, hand a long one
+            // (and a quota or billing 429, which waiting cannot fix) to the caller.
+            if attempt == 0,
+               let delay = failure.automaticRetryDelay(retryableStatuses: [429, 503]) {
+                try? await Task.sleep(for: .milliseconds(Int((delay * 1000).rounded())))
                 continue
             }
+            AIFailureRecorder.report(failure)
             throw AIConfig.AIError.badResponse(msg)
         }
         throw AIConfig.AIError.badResponse("request failed after a retry")
@@ -396,7 +401,7 @@ extension OpenAIClient: ToolCapableClient {
             guard let input = try Self.parseResponsesToolTurn(json).toolUse?.input else {
                 throw AIConfig.AIError.decoding("no tool call in response")
             }
-            return input
+            return StructuredOutputRepair.repair(input, schema: schema)
         }
 
         var wire: [[String: Any]] = []
@@ -425,7 +430,7 @@ extension OpenAIClient: ToolCapableClient {
         guard let input = try Self.parseToolTurn(json).toolUse?.input else {
             throw AIConfig.AIError.decoding("no tool call in response")
         }
-        return input
+        return StructuredOutputRepair.repair(input, schema: schema)
     }
 
     // MARK: - Translation (pure + unit-tested)
@@ -531,8 +536,18 @@ extension OpenAIClient: ToolCapableClient {
               let message = first["message"] as? [String: Any] else {
             throw AIConfig.AIError.decoding("missing choices[0].message")
         }
-        let text = ((message["content"] as? String) ?? "")
+        var text = ((message["content"] as? String) ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        // A refusal arrives in its own field with `content` null. It is what the model
+        // said, so it is the turn's text.
+        let refusal = ((message["refusal"] as? String) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.isEmpty, !refusal.isEmpty { text = refusal }
+        let finishReason = first["finish_reason"] as? String
+        let finish: AnthropicClient.ChatTurn.Finish =
+            finishReason == "length" ? .cutOff
+            : (finishReason == "content_filter" || !refusal.isEmpty) ? .refusal
+            : .complete
 
         var toolUse: AnthropicClient.ToolUse?
         if let calls = message["tool_calls"] as? [[String: Any]],
@@ -559,7 +574,7 @@ extension OpenAIClient: ToolCapableClient {
                                      "name": toolUse.name, "input": toolUse.input])
         }
         return AnthropicClient.ChatTurn(text: text, toolUse: toolUse,
-                                        assistantContent: assistantContent)
+                                        assistantContent: assistantContent, finish: finish)
     }
 
     // MARK: - Responses API translation (gpt-5.6 path; pure + unit-tested)
@@ -685,12 +700,25 @@ extension OpenAIClient: ToolCapableClient {
         guard let output = json["output"] as? [[String: Any]] else {
             throw AIConfig.AIError.decoding("missing output")
         }
-        let text = output
+        let parts = output
             .filter { ($0["type"] as? String) == "message" }
             .flatMap { ($0["content"] as? [[String: Any]]) ?? [] }
+        var text = parts
             .compactMap { ($0["type"] as? String) == "output_text" ? $0["text"] as? String : nil }
             .joined()
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        // A refusal is a content part of its own type; it is what the model said.
+        let refusal = parts
+            .compactMap { ($0["type"] as? String) == "refusal" ? $0["refusal"] as? String : nil }
+            .joined()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.isEmpty, !refusal.isEmpty { text = refusal }
+        let incompleteReason = (json["status"] as? String) == "incomplete"
+            ? ((json["incomplete_details"] as? [String: Any])?["reason"] as? String) : nil
+        let finish: AnthropicClient.ChatTurn.Finish =
+            incompleteReason == "max_output_tokens" ? .cutOff
+            : (incompleteReason == "content_filter" || !refusal.isEmpty) ? .refusal
+            : .complete
 
         var toolUse: AnthropicClient.ToolUse?
         if let call = output.first(where: { ($0["type"] as? String) == "function_call" }),
@@ -715,6 +743,6 @@ extension OpenAIClient: ToolCapableClient {
                                      "name": toolUse.name, "input": toolUse.input])
         }
         return AnthropicClient.ChatTurn(text: text, toolUse: toolUse,
-                                        assistantContent: assistantContent)
+                                        assistantContent: assistantContent, finish: finish)
     }
 }

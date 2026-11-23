@@ -11,38 +11,16 @@ import UIKit
 struct CoachView: View {
     @Bindable var profile: UserProfile
     @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
 
-    // Full conversation, oldest first.
-    @Query(sort: \ChatMessage.createdAt) private var messages: [ChatMessage]
-    // Context the coach reasons over. Sort doesn't matter for aggregation.
-    @Query private var foods: [FoodEntry]
-    @Query private var weights: [WeightEntry]
-    // So Vita's context can see her training + hydration too, not just food + weight.
-    @Query private var workouts: [WorkoutEntry]
-    @Query private var water: [WaterEntry]
-    @Query private var steps: [StepsEntry]
-    // The rich Workouts-tab data (sessions + their per-machine exercises), so Vita can see exactly
-    // what she trained — not just the legacy `WorkoutEntry` checklist log.
-    @Query private var sessions: [WorkoutSession]
-    @Query private var exerciseEntries: [ExerciseEntry]
-    // Passive tracker data (Fitbit etc. via Apple Health) — sleep, detected workouts, vitals.
-    @Query private var sleepEntries: [SleepEntry]
-    @Query private var detectedWorkouts: [DetectedWorkout]
-    @Query private var vitalsEntries: [VitalsEntry]
+    /// The turn logic: sending, the model calls, tools, confirm, undo, failures, memory.
+    /// This view reads its state and forwards taps (see `CoachTurnEngine`).
+    @State private var engine = CoachTurnEngine()
+    /// The loaded part of the conversation: the newest page, plus earlier pages as the
+    /// reader scrolls up (see `ChatTranscript`). There is no `@Query` over every message.
+    @State private var transcript = ChatTranscript()
 
     @State private var draft: String = ""
-    @State private var isSending = false
-    @State private var showMissingKeyBanner = false
-    @State private var errorBanner: String?
-    @State private var sendTrigger = 0
-    @State private var confettiTrigger = 0
-    /// An in-flight tool request the coach proposed, awaiting the user's one-tap confirm.
-    /// Held in transient @State (not SwiftData) because it carries the raw assistant
-    /// `content` blocks needed to continue the API turn, and only matters mid-interaction.
-    @State private var pendingTool: PendingTool?
-    /// A transient "X done · Undo" banner shown after an auto-applied quick log.
-    @State private var undoToast: UndoToast?
-    @State private var undoTask: Task<Void, Never>?
     /// A photo the user has attached to the next message (downscaled). Shows as a preview
     /// over the input until sent; Vita receives it as an image block so she can SEE it.
     @State private var attachedImage: UIImage?
@@ -50,9 +28,17 @@ struct CoachView: View {
     @State private var showCamera = false
     @State private var showLibrary = false
     @FocusState private var inputFocused: Bool
-    /// The id of the assistant message currently "typing out" (typewriter reveal). Only the
-    /// freshest reply animates; everything in history renders instantly. Cleared when it finishes.
-    @State private var streamingMessageID: UUID?
+    /// A passage picked with "Ask about this", shown above the field and sent with the next message.
+    @State private var quote: String?
+    /// The reply whose action row was revealed by a tap (the newest reply always shows its row).
+    @State private var actionsRevealedFor: UUID?
+    /// The message a Delete was asked for, until the user confirms.
+    @State private var pendingDelete: UUID?
+    @State private var showDeleteDialog = false
+    @State private var showAISettings = false
+    @State private var scrollPosition = ScrollPosition(idType: UUID.self)
+    /// Scroll offsets, kept out of view state so reading them never re-renders the chat.
+    @State private var scrollBox = ChatScrollBox()
 
     /// "Ask Vita about this": set when the user long-pressed a component on another screen.
     @Environment(AskVitaCenter.self) private var askVita: AskVitaCenter?
@@ -70,39 +56,24 @@ struct CoachView: View {
     /// bucket rolling over), so the chips reload — served from cache or regenerated — with no timer.
     private var promptPeriodKey: String { CoachPromptService.periodKey(userId: profile.id) }
 
-    /// Sliding-window cap on how many recent messages we send to the model verbatim per turn,
-    /// so a long-running chat can never overflow the context window or balloon cost. The FULL
-    /// transcript still lives on-device (she keeps her scroll-back), and her bio + live stats
-    /// are injected separately by `CoachContext`, so trimming old chatter never loses who she
-    /// is. Older messages that scroll past this window are NOT forgotten: they're folded into
-    /// `CoachMemory` (durable notes + a rolling summary) by `CoachMemoryService` in the
-    /// background, and that memory is re-injected into every turn — so continuity survives.
-    /// Because that long-term layer now backs us, the verbatim window can be tighter (16) than
-    /// the old 24, keeping cost/latency down without losing the thread.
-    private static let maxHistoryMessages = 16
-    /// Max chained tool round-trips per user message (auto-apply + invalid retries). Past this
-    /// we stop advertising tools so the model must finalize — bounds cost/latency/runaway.
-    private static let maxToolDepth = 5
-
     private var coachName: String { profile.coachName.isEmpty ? "Vita" : profile.coachName }
 
+    init(profile: UserProfile) {
+        self.profile = profile
+        #if DEBUG
+        ChatLoadProbe.markViewInit()
+        #endif
+    }
+
     var body: some View {
+        #if DEBUG
+        let _ = ChatLoadProbe.markFirstBody()
+        #endif
         NavigationStack {
             ZStack {
                 Theme.background.ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    if showMissingKeyBanner {
-                        missingKeyBanner
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    } else if let errorBanner {
-                        inlineBanner(text: errorBanner,
-                                     tint: Theme.warning,
-                                     systemImage: "exclamationmark.bubble.fill")
-                            .accessibilityIdentifier(AccessibilityID.Coach.errorBanner)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
                     // The little "About this" mini-card when the user asked about a component.
                     if let aboutTopic {
                         AskVitaContextCard(topic: aboutTopic) {
@@ -123,8 +94,8 @@ struct CoachView: View {
                 // log: `coach send` → 17s → process relaunch, no reply, no error = a hang.)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     VStack(spacing: 0) {
-                        if let toast = undoToast {
-                            UndoBanner(summary: toast.summary, onUndo: performUndo)
+                        if let toast = engine.undoToast {
+                            UndoBanner(summary: toast.summary, onUndo: engine.performUndo)
                                 .padding(.horizontal, Theme.Space.md)
                                 .padding(.bottom, Theme.Space.xs)
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -134,7 +105,7 @@ struct CoachView: View {
                 }
 
                 // Celebrate a confirmed positive change (a kind little reward).
-                ConfettiBurst(trigger: confettiTrigger)
+                ConfettiBurst(trigger: engine.confettiTick)
                     .allowsHitTesting(false)
             }
             .navigationTitle(coachName)
@@ -144,21 +115,77 @@ struct CoachView: View {
             }
         }
         .tint(Theme.brand)
-        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: showMissingKeyBanner)
-        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: errorBanner)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: aboutTopic)
-        .onAppear(perform: seedWelcomeIfNeeded)
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: engine.undoToast?.id)
         // Pick up an "Ask Vita about this" request — on appear (if set before we showed) and
         // whenever it changes (the common case: a long-press flips us to this tab).
-        .onAppear { if let t = askVita?.pendingTopic { handleAskVita(t) } }
+        .onAppear {
+            start()
+            if let t = askVita?.pendingTopic { handleAskVita(t) }
+            takePendingQuote()
+        }
         .onChange(of: askVita?.pendingTopic) { _, topic in
             if let topic { handleAskVita(topic) }
+        }
+        // A topic that arrived while a reply was on its way is asked once that turn settles.
+        .onChange(of: engine.isSending) { _, sending in
+            if !sending, let topic = askVita?.pendingTopic { handleAskVita(topic) }
+        }
+        // "Ask about this" on a passage or a whole message: the quote goes above the field.
+        .onChange(of: askVita?.pendingQuote) { _, _ in takePendingQuote() }
+        // Another device may have added messages while the app was away.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active, engine.isAttached, !engine.isSending { transcript.reload() }
         }
         // Swap the fixed starter chips for a personalized set, refreshed every few days. Keyed on
         // user + the cache bucket so it re-runs when the bucket rolls over (served from cache, or
         // one cheap call to regenerate). Never empties the row: on no-key / any failure the service
         // returns the same fixed list `quickPrompts` already holds, so this only ever improves it.
         .task(id: promptPeriodKey) { await loadQuickPrompts() }
+        .sheet(isPresented: $showAISettings) {
+            NavigationStack {
+                AIProviderSettingsView()
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showAISettings = false }
+                        }
+                    }
+            }
+            .tint(Theme.brand)
+        }
+        // The id travels with the dialog (`presenting:`), so the button still has it after
+        // the dialog has dismissed itself.
+        .confirmationDialog("Delete this message?", isPresented: $showDeleteDialog,
+                            titleVisibility: .visible, presenting: pendingDelete) { id in
+            Button("Delete", role: .destructive) { engine.delete(messageID: id) }
+            Button("Cancel", role: .cancel) {}
+        } message: { _ in
+            Text("It is removed from this conversation for good.")
+        }
+    }
+
+    /// Wire the engine and the transcript to the store (the model context comes from the
+    /// environment, so this cannot happen in `init`), seed the welcome into an empty
+    /// conversation, and say so if the newest message never got its reply.
+    private func start() {
+        guard !engine.isAttached else { return }
+        engine.attach(context: context, profile: profile)
+        #if DEBUG
+        ChatDebug.configure(engine)
+        #endif
+        transcript.attach(context: context)
+        engine.onTranscriptChange = { [transcript] change in
+            switch change {
+            case .added: transcript.appendNewer()
+            case .removed(let ids): transcript.remove(ids: ids)
+            }
+        }
+        engine.seedWelcomeIfNeeded()
+        engine.noteUnansweredMessageIfAny()
+        #if DEBUG
+        ChatDebug.runScript(engine: engine, transcript: transcript, center: askVita,
+                            scrollToTop: { scrollPosition.scrollTo(edge: .top) })
+        #endif
     }
 
     /// Load the personalized quick-prompt chips (constants + a personalized set, refreshed every
@@ -166,9 +193,11 @@ struct CoachView: View {
     /// failures internally — it always returns a non-empty list — so this just assigns the result.
     @MainActor
     private func loadQuickPrompts() async {
+        let data = CoachDataSnapshot.fetch(from: context)
         let prompts = await CoachPromptService.prompts(
-            profile: profile, foods: foods, weights: weights,
-            sessions: sessions, water: water, memory: coachMemory()
+            profile: profile, foods: data.foods, weights: data.weights,
+            sessions: data.sessions, water: data.water,
+            memory: CoachMemory.fetchOrCreate(in: context, profile: profile)
         )
         // Only animate/replace if something actually changed (the common cache-hit re-run returns
         // the same list), so the row doesn't flicker on every appear.
@@ -178,12 +207,34 @@ struct CoachView: View {
     }
 
     /// Consume an "Ask Vita about this" topic: show its mini-card atop the chat, then ask the
-    /// (self-contained) question on the user's behalf so Vita explains it right away.
+    /// (self-contained) question on the user's behalf so Vita explains it right away. While a
+    /// reply is on its way the topic waits (it is asked when that turn settles) instead of
+    /// being dropped with its card left on screen.
     private func handleAskVita(_ topic: AskVitaTopic) {
+        guard engine.isAttached, !engine.isSending else { return }
         withAnimation { aboutTopic = topic }
         askVita?.pendingTopic = nil
-        guard !isSending else { return }
         send(text: topic.question)
+    }
+
+    /// Move a quoted passage from the bus into the composer and bring the keyboard up.
+    private func takePendingQuote() {
+        guard let passage = askVita?.pendingQuote else { return }
+        askVita?.pendingQuote = nil
+        setQuote(passage)
+    }
+
+    /// "Ask about this" on a selection or a whole message. It goes through the same bus a
+    /// long-press on a card elsewhere in the app uses, so there is one way into the composer.
+    private func ask(about passage: String) {
+        if let askVita { askVita.quote(passage) } else { setQuote(passage) }
+    }
+
+    private func setQuote(_ passage: String) {
+        let normalized = ChatQuote.normalized(passage)
+        guard !normalized.isEmpty else { return }
+        withAnimation(.easeOut(duration: 0.2)) { quote = normalized }
+        inputFocused = true
     }
 
     // MARK: - Nav title (avatar + name)
@@ -202,85 +253,185 @@ struct CoachView: View {
     // MARK: - Conversation list
 
     private var conversation: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: Theme.Space.xs) {
-                    ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
-                        MessageRow(message: message,
-                                   coachName: coachName,
-                                   showsTimestamp: showsTimestamp(at: index),
-                                   isStreaming: message.id == streamingMessageID,
-                                   onStreamComplete: {
-                                       if streamingMessageID == message.id { streamingMessageID = nil }
-                                       scrollToBottom(proxy)
-                                   })
-                            .id(message.id)
-                    }
-                    if isSending {
-                        TypingIndicator(coachName: coachName)
-                            .id(Self.typingID)
-                            .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    }
-
-                    // The one-tap confirm card sits inline at the bottom of the chat,
-                    // beside the coach avatar, like a proposal from Vita herself.
-                    if let pending = pendingTool {
-                        ToolConfirmCard(coachName: coachName,
-                                        summary: pending.request.confirmSummary,
-                                        onYes: confirmPendingTool,
-                                        onNo: declinePendingTool)
-                            .id(Self.confirmID)
-                            .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: Theme.Space.xs) {
+                if transcript.window.hasEarlier {
+                    LoadEarlierRow(isLoading: transcript.window.isLoadingEarlier, action: loadEarlier)
+                        .id(Self.earlierID)
+                } else if transcript.rows.count > transcript.window.pageSize {
+                    ConversationStartRow()
                 }
-                .padding(.horizontal, Theme.Space.md)
-                .padding(.top, Theme.Space.md)
-                .padding(.bottom, Theme.Space.sm)
+                ForEach(Array(transcript.rows.enumerated()), id: \.element.id) { index, message in
+                    MessageRow(message: message,
+                               coachName: coachName,
+                               showsTimestamp: transcript.window.showsTimestamp(at: index),
+                               isStreaming: message.id == engine.streamingMessageID,
+                               showsActions: showsActions(for: message),
+                               onStreamComplete: {
+                                   if engine.streamingMessageID == message.id { engine.streamingMessageID = nil }
+                                   if transcript.window.isAtBottom { scrollToBottom() }
+                               },
+                               onTap: { toggleActions(for: message) },
+                               onCopy: { UIPasteboard.general.string = message.content },
+                               onAsk: { passage in ask(about: passage ?? message.content) },
+                               onDelete: {
+                                   pendingDelete = message.id
+                                   showDeleteDialog = true
+                               })
+                        .id(message.id)
+                        #if DEBUG
+                        .chatProbeFrame(message.id)
+                        .onAppear {
+                            if message.id == transcript.rows.last?.id {
+                                ChatLoadProbe.markNewestRowAppeared(rowsInStore: transcript.storedCount(),
+                                                                    rowsLoaded: transcript.rows.count)
+                            }
+                        }
+                        #endif
+                }
+                if engine.isSending {
+                    TypingIndicator(coachName: coachName)
+                        .id(Self.typingID)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+
+                // The one-tap confirm card sits inline at the bottom of the chat,
+                // beside the coach avatar, like a proposal from Vita herself.
+                if let pending = engine.pendingTool {
+                    ToolConfirmCard(coachName: coachName,
+                                    summary: pending.request.confirmSummary,
+                                    onYes: { engine.confirmPendingTool() },
+                                    onNo: { engine.declinePendingTool() })
+                        .id(Self.confirmID)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+
+                // Why the last message has no reply, and what to do about it, right under it.
+                if let failure = engine.failure, !engine.isSending {
+                    TurnFailureRow(failure: failure,
+                                   onRetry: { engine.retry() },
+                                   onOpenSettings: { showAISettings = true })
+                        .id(Self.failureID)
+                        .transition(.opacity)
+                }
             }
-            .scrollDismissesKeyboard(.interactively)
-            // NOTE: broad `.animation(_:value:)` on the ScrollView was removed — it animated
-            // EVERY change in the scroll view (including the keyboard-avoidance inset) and,
-            // combined with the auto-scroll on send, drove a non-converging view-graph update
-            // (the watchdog freeze). Insert/transition animations are handled locally instead.
-            .onChange(of: messages.count) { scrollToBottom(proxy) }
-            .onChange(of: isSending) { scrollToBottom(proxy) }
-            .onChange(of: pendingTool != nil) { scrollToBottom(proxy) }
-            .onAppear { scrollToBottom(proxy, animated: false) }
+            // The rows are scroll targets, so the scroll position can follow the row at the
+            // top by identity and keep it in place when a page is prepended above it.
+            .scrollTargetLayout()
+            .padding(.horizontal, Theme.Space.md)
+            .padding(.top, Theme.Space.md)
+            .padding(.bottom, Theme.Space.sm)
         }
+        // Open at the newest message, and stay there while content grows (a reply typing
+        // itself out, the keyboard), without a programmatic scroll on appear.
+        .defaultScrollAnchor(.bottom)
+        .scrollPosition($scrollPosition)
+        .scrollDismissesKeyboard(.interactively)
+        // NOTE: broad `.animation(_:value:)` on the ScrollView was removed — it animated
+        // EVERY change in the scroll view (including the keyboard-avoidance inset) and,
+        // combined with the auto-scroll on send, drove a non-converging view-graph update
+        // (the watchdog freeze). Insert/transition animations are handled locally instead.
+        .onScrollGeometryChange(for: CGFloat.self, of: ChatScrollBox.distanceFromBottom) { _, distance in
+            // Written to a box, not to state: this runs on every frame of a scroll.
+            scrollBox.distanceFromBottom = distance
+        }
+        .onScrollPhaseChange { _, phase in
+            // A new drag while the reader is still at the top of what is loaded (the last
+            // page left them there, so "reached the top" will not fire again): load the next.
+            if phase == .interacting, scrollBox.isNearTop, !ChatScrollBox.autoLoadDisabled { loadEarlier() }
+        }
+        .onScrollGeometryChange(for: Bool.self, of: ChatScrollBox.isNearBottom) { _, atBottom in
+            transcript.setAtBottom(atBottom)
+        }
+        .onScrollGeometryChange(for: Bool.self, of: ChatScrollBox.isNearTop) { _, nearTop in
+            // Reaching the top of what is loaded loads the page before it.
+            scrollBox.isNearTop = nearTop
+            if nearTop, !ChatScrollBox.autoLoadDisabled { loadEarlier() }
+        }
+        .onChange(of: transcript.scrollToLatestTick) { scrollToBottom() }
+        .onChange(of: engine.isSending) { if transcript.window.isAtBottom { scrollToBottom() } }
+        .onChange(of: engine.pendingTool != nil) { if transcript.window.isAtBottom { scrollToBottom() } }
+        .onChange(of: engine.failure?.id) { if transcript.window.isAtBottom { scrollToBottom() } }
+        .onChange(of: engine.streamingMessageID) { _, id in announceReply(id) }
+        .overlay(alignment: .bottomTrailing) {
+            if transcript.window.showsJumpToLatest {
+                JumpToLatestButton(unseenCount: transcript.window.unseenCount) { transcript.jumpToLatest() }
+                    .padding(.trailing, Theme.Space.md)
+                    .padding(.bottom, Theme.Space.sm)
+                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: transcript.window.showsJumpToLatest)
     }
 
     private static let typingID = "typing-indicator"
     private static let confirmID = "tool-confirm-card"
+    private static let failureID = "turn-failure"
+    private static let earlierID = "load-earlier"
 
-    /// Show a timestamp above the first message and whenever there's a meaningful gap
-    /// (>5 min) from the previous message — classic native messaging grouping.
-    private func showsTimestamp(at index: Int) -> Bool {
-        guard index > 0 else { return true }
-        let current = messages[index].createdAt
-        let previous = messages[index - 1].createdAt
-        return current.timeIntervalSince(previous) > 5 * 60
+    /// The newest reply always shows its actions; an older one after a tap on it.
+    private func showsActions(for message: ChatRow) -> Bool {
+        guard !message.isUser, !message.isDecision, !message.content.isEmpty,
+              message.id != engine.streamingMessageID else { return false }
+        if message.id == actionsRevealedFor { return true }
+        return message.id == transcript.rows.last(where: { !$0.isUser && !$0.isDecision })?.id
     }
 
-    private func scrollToBottom(_ proxy: ScrollViewProxy, animated: Bool = true) {
-        let target: AnyHashable
-        if pendingTool != nil {
-            target = AnyHashable(Self.confirmID)
-        } else if isSending {
-            target = AnyHashable(Self.typingID)
-        } else {
-            target = messages.last.map { AnyHashable($0.id) } ?? AnyHashable(Self.typingID)
+    private func toggleActions(for message: ChatRow) {
+        withAnimation(.easeOut(duration: 0.18)) {
+            actionsRevealedFor = actionsRevealedFor == message.id ? nil : message.id
         }
+    }
+
+    /// Prepend the previous page.
+    ///
+    /// A `ScrollView` keeps its offset when content is inserted above the visible rows, which
+    /// would push everything on screen down by the height of the page. The scroll position is
+    /// bound by identity (`ScrollPosition(idType:)` over a `scrollTargetLayout`), and SwiftUI
+    /// keeps the row at the top in place by itself. It is close, not exact: a lazy stack
+    /// only estimates the height of the page it has not laid out yet (measured at rest: the
+    /// top bubble moved 0 to 173 pt). Five ways of correcting it were tried and each made it
+    /// worse; they and their numbers are in `docs/chat-standards.md`, section 1.
+    private func loadEarlier() {
+        guard transcript.window.hasEarlier, !transcript.window.isLoadingEarlier else { return }
+        #if DEBUG
+        let anchor = transcript.rows.first?.id
+        ChatDebug.notePrepend(anchor: anchor, phase: "before")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            ChatDebug.notePrepend(anchor: anchor, phase: "after", loaded: transcript.rows.count)
+        }
+        #endif
+        transcript.loadEarlier()
+    }
+
+    private func scrollToBottom(animated: Bool = true) {
         // Defer to the next runloop tick so the scroll never runs *inside* the in-progress
         // SwiftUI transaction (the message insert + keyboard dismiss that fire together on
         // send). Scrolling mid-transaction recurses the view-graph update and pins the main
         // thread at 100% CPU → the watchdog kill (0x8BADF00D) the user hit on send.
         DispatchQueue.main.async {
             if animated {
-                withAnimation(.easeOut(duration: 0.25)) { proxy.scrollTo(target, anchor: .bottom) }
+                withAnimation(.easeOut(duration: 0.25)) { scrollPosition.scrollTo(edge: .bottom) }
             } else {
-                proxy.scrollTo(target, anchor: .bottom)
+                scrollPosition.scrollTo(edge: .bottom)
+            }
+            // A lazy stack estimates the height of rows it has not laid out, so a long jump
+            // can land a little short of the end. Once those rows exist, finish the job,
+            // unless the reader has scrolled away in the meantime.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                if transcript.window.isAtBottom, scrollBox.distanceFromBottom > 1 {
+                    scrollPosition.scrollTo(edge: .bottom)
+                }
             }
         }
+    }
+
+    /// VoiceOver does not notice a row that is inserted while its focus is elsewhere, so a
+    /// new reply is announced.
+    private func announceReply(_ id: UUID?) {
+        guard let id, UIAccessibility.isVoiceOverRunning,
+              let reply = transcript.rows.last(where: { $0.id == id }) else { return }
+        AccessibilityNotification.Announcement("\(coachName) replied: \(reply.content)").post()
     }
 
     // MARK: - Input area (quick chips + text field + send)
@@ -294,8 +445,8 @@ struct CoachView: View {
                     HStack(spacing: Theme.Space.xs) {
                         ForEach(quickPrompts, id: \.self) { prompt in
                             QuickPromptChip(text: prompt) { send(text: prompt) }
-                                .disabled(isSending || pendingTool != nil)
-                                .opacity(isSending || pendingTool != nil ? 0.5 : 1)
+                                .disabled(engine.isSending || engine.pendingTool != nil)
+                                .opacity(engine.isSending || engine.pendingTool != nil ? 0.5 : 1)
                         }
                     }
                     .padding(.horizontal, Theme.Space.md)
@@ -308,6 +459,13 @@ struct CoachView: View {
                 attachmentPreview(img)
             }
 
+            // The passage being asked about ("Ask about this"), until it is sent or removed.
+            if let quote {
+                ComposerQuoteCard(quote: quote) {
+                    withAnimation(.easeOut(duration: 0.15)) { self.quote = nil }
+                }
+            }
+
             HStack(alignment: .bottom, spacing: Theme.Space.sm) {
                 Button { showPhotoOptions = true } label: {
                     Image(systemName: "camera.fill")
@@ -317,8 +475,8 @@ struct CoachView: View {
                         .background(Circle().fill(Theme.cardRaised))
                 }
                 .buttonStyle(.plain)
-                .disabled(isSending || pendingTool != nil)
-                .opacity(isSending || pendingTool != nil ? 0.5 : 1)
+                .disabled(engine.isSending || engine.pendingTool != nil)
+                .opacity(engine.isSending || engine.pendingTool != nil ? 0.5 : 1)
                 .accessibilityLabel("Attach a photo")
 
                 TextField("Message \(coachName)…", text: $draft, axis: .vertical)
@@ -347,40 +505,58 @@ struct CoachView: View {
                             )
                     )
                     .submitLabel(.send)
-                    .onSubmit { send(text: draft) }
+                    .onSubmit { sendDraft() }
                     .animation(.easeOut(duration: 0.2), value: inputFocused)
 
-                Button {
-                    send(text: draft)
-                } label: {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(canSend ? Theme.background : Theme.textSecondary)
-                        .frame(width: 40, height: 40)
-                        .background(
-                            Group {
-                                if canSend {
-                                    Circle().fill(Theme.brandGradient)
-                                } else {
-                                    Circle().fill(Theme.cardRaised)
+                if engine.isSending {
+                    // While a reply is on its way the send button is a stop button.
+                    Button {
+                        engine.stop()
+                    } label: {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.textPrimary)
+                            .frame(width: 40, height: 40)
+                            .background(Circle().fill(Theme.cardRaised))
+                            .overlay(Circle().strokeBorder(Theme.brand.opacity(0.45), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Stop")
+                    .accessibilityHint("Stops \(coachName)'s reply")
+                } else {
+                    Button {
+                        sendDraft()
+                    } label: {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(canSend ? Theme.background : Theme.textSecondary)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                Group {
+                                    if canSend {
+                                        Circle().fill(Theme.brandGradient)
+                                    } else {
+                                        Circle().fill(Theme.cardRaised)
+                                    }
                                 }
-                            }
-                        )
-                        .shadow(color: canSend ? Theme.brand.opacity(0.35) : .clear,
-                                radius: 8, x: 0, y: 3)
+                            )
+                            .shadow(color: canSend ? Theme.brand.opacity(0.35) : .clear,
+                                    radius: 8, x: 0, y: 3)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canSend)
+                    .scaleEffect(canSend ? 1 : 0.92)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: canSend)
+                    .accessibilityLabel("Send message")
+                    .accessibilityIdentifier(AccessibilityID.Coach.send)
                 }
-                .buttonStyle(.plain)
-                .disabled(!canSend)
-                .scaleEffect(canSend ? 1 : 0.92)
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: canSend)
-                .accessibilityLabel("Send message")
-                .accessibilityIdentifier(AccessibilityID.Coach.send)
             }
             .padding(.horizontal, Theme.Space.md)
             .padding(.bottom, Theme.Space.sm)
         }
         .padding(.top, Theme.Space.sm)
         .animation(.easeInOut(duration: 0.2), value: draft.isEmpty)   // fade the chips in/out smoothly
+        .animation(.easeOut(duration: 0.2), value: quote)
         .background(
             ZStack(alignment: .top) {
                 Rectangle()
@@ -390,7 +566,7 @@ struct CoachView: View {
             }
             .ignoresSafeArea(edges: .bottom)
         )
-        .sensoryFeedback(.impact(weight: .light), trigger: sendTrigger)
+        .sensoryFeedback(.impact(weight: .light), trigger: engine.hapticTick)
         .confirmationDialog("Add a photo", isPresented: $showPhotoOptions, titleVisibility: .visible) {
             if ImagePicker.cameraAvailable {
                 Button("Take Photo") { showCamera = true }
@@ -434,8 +610,9 @@ struct CoachView: View {
     }
 
     private var canSend: Bool {
-        !isSending
-            && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || attachedImage != nil)
+        !engine.isSending
+            && (!draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                || attachedImage != nil || quote != nil)
     }
 
     /// Store a picked photo (downscaled) as the pending attachment shown over the input.
@@ -445,440 +622,32 @@ struct CoachView: View {
 
     // MARK: - Sending
 
+    /// Send what is in the field, with the quoted passage (if any) in front of it.
+    private func sendDraft() {
+        guard canSend else { return }
+        send(text: ChatQuote.compose(quote: quote, question: draft))
+    }
+
+    /// Hand a message to the engine. It saves the message, starts the turn, and ignores the
+    /// call while a turn is in flight; this only clears what the message consumed.
     private func send(text rawText: String) {
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         // JPEG of any attached (already-downscaled) photo. A message may be image-only.
         let imageData = attachedImage?.jpegData(compressionQuality: 0.6)
-        guard (!text.isEmpty || imageData != nil), !isSending else { return }
+        guard engine.send(text: text, imageData: imageData) != nil else { return }
 
-        // Fire haptic feedback for the primary action.
-        sendTrigger += 1
-
-        // Clear any stale error/banner and the draft. Resetting the missing-key banner
-        // here is essential: a fresh send re-creates the provider client, which re-reads
-        // the Keychain — so if the user has since saved a key in Settings, this attempt
-        // should try again rather than stay stuck on the old "add your key" state.
-        errorBanner = nil
-        showMissingKeyBanner = false
-        // A brand-new message supersedes any unanswered tool proposal.
-        pendingTool = nil
-        streamingMessageID = nil   // snap any in-progress reveal to full before the next turn
-        if text == draft.trimmingCharacters(in: .whitespacesAndNewlines) { draft = "" }
         // Keep the keyboard up after send (chat-standard, like Messages). Dismissing it here —
         // while the message inserts AND the list auto-scrolls — was the freeze trigger: the
         // keyboard-avoidance safe-area animation fought the scroll/relayout into a runaway
         // view-graph update (watchdog 0x8BADF00D). The quick-prompt + Ask-Vita paths never
         // raise the keyboard, which is exactly why ONLY typing-then-send froze.
-
-        // Insert the user's message and persist immediately so it shows even if the
-        // network call fails.
-        let userMessage = ChatMessage(role: "user", content: text, imageData: imageData)
-        context.insert(userMessage)
-        try? context.save()
+        let typed = ChatQuote.compose(quote: quote, question: draft)
+        if text == typed || text == draft.trimmingCharacters(in: .whitespacesAndNewlines) {
+            draft = ""
+            quote = nil
+        }
         attachedImage = nil   // consumed into the message
-
-        // Build the history from everything *except* the canned welcome seed. We map to
-        // the client's `Msg` (content is a plain String here).
-        // Recent sliding window only (full transcript stays on-device for scroll-back).
-        var recent = Array(messages.filter { !$0.isSystemSeed && !$0.isDecision }.suffix(Self.maxHistoryMessages))
-        // The Messages API requires the conversation to start on a user turn.
-        while let first = recent.first, first.roleRaw != "user" { recent.removeFirst() }
-        // A message with a photo becomes a multimodal content array (image + optional text)
-        // so Vita can actually SEE it; text-only messages stay plain strings.
-        let history: [AnthropicClient.Msg] = recent.map { m in
-            if let data = m.imageData {
-                var blocks: [[String: Any]] = [AnthropicClient.imageBlock(data)]
-                if !m.content.isEmpty { blocks.append(AnthropicClient.textBlock(m.content)) }
-                return AnthropicClient.Msg(role: m.roleRaw, content: blocks)
-            }
-            return AnthropicClient.Msg(role: m.roleRaw, content: m.content)
-        }
-
-        // Snapshot the system prompt + tool schemas now (on the main actor, off SwiftData).
-        // `coachMemory()` reads/creates the single memory row; `CoachContext.system` folds its
-        // strings into the prompt synchronously here, so the @Model never crosses to the Task.
-        let systemParts = CoachContext.systemParts(profile: profile, foods: foods, weights: weights,
-                                                   workouts: workouts, water: water, steps: steps,
-                                                   sessions: sessions, exercises: exerciseEntries,
-                                                   sleep: sleepEntries, detected: detectedWorkouts,
-                                                   vitals: vitalsEntries,
-                                                   memory: coachMemory(), plan: CoachPlan.current(in: context))
-        let tools = CoachTools.schemas(for: profile)
-
-        Diagnostics.shared.log("coach send: \(text.count) chars, \(history.count) history msgs", .coach)
-        isSending = true
-        Task {
-            do {
-                let client = try AIClient.makeFull()
-                let turn = try await client.chatWithTools(system: systemParts.volatile,
-                                                          messages: history, tools: tools,
-                                                          model: AIConfig.model(for: .coachTurn),
-                                                          maxTokens: 1500,
-                                                          cachedSystemPrefix: systemParts.stable,
-                                                          forbidToolUse: false)
-                Diagnostics.shared.log("coach reply ok: \(turn.text.count) chars, tool=\(turn.toolUse?.name ?? "none")", .coach)
-                await MainActor.run { handle(turn: turn, history: history) }
-            } catch AIConfig.AIError.missingKey {
-                await MainActor.run {
-                    Diagnostics.shared.log("coach: missing API key", .coach)
-                    showMissingKeyBanner = true
-                    isSending = false
-                }
-            } catch {
-                await MainActor.run {
-                    Diagnostics.shared.log("coach error: \(error)", .error)
-                    errorBanner = friendlyError(error)
-                    isSending = false
-                }
-            }
-        }
-    }
-
-    // MARK: - Tool-use handling
-
-    /// Process an assistant turn that may include text and/or a tool request.
-    @MainActor
-    private func handle(turn: AnthropicClient.ChatTurn, history: [AnthropicClient.Msg], depth: Int = 0) {
-        Diagnostics.shared.log("coach: rendering reply (\(turn.text.count) chars, tool=\(turn.toolUse != nil))", .coach)
-        // Persist any prose the assistant included so the conversation reads naturally,
-        // whether or not a tool was also requested.
-        let trimmed = turn.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
-            let reply = ChatMessage(role: "assistant", content: trimmed)
-            context.insert(reply)
-            try? context.save()
-            streamingMessageID = reply.id   // type this freshest reply out, word by word
-        }
-
-        guard let toolUse = turn.toolUse else {
-            // Plain conversational reply. If there was somehow no text either, show a
-            // gentle fallback rather than leaving the turn empty.
-            if trimmed.isEmpty {
-                context.insert(ChatMessage(role: "assistant", content: "I'm here 💚"))
-                try? context.save()
-            }
-            isSending = false
-            // The user's reply is already on screen. Now, off their turn, fold any messages
-            // that have scrolled past the verbatim window into long-term memory. Every final
-            // reply (plain, post-confirm, post-decline, and invalid-recovery) lands here, so
-            // this one call site covers them all.
-            consolidateMemoryIfNeeded()
-            return
-        }
-
-        // Validate the request against the profile *before* offering it. An invalid
-        // request (out-of-range, bad pace) is bounced straight back to the model as a
-        // tool_result error so it can recover in-conversation — the user never sees a
-        // confirm for something we can't safely do.
-        // `todaysFoods` lets the edit/delete tools resolve "the latte" to a specific row;
-        // it's harmless for the settings tools (which ignore it).
-        switch CoachTools.parse(name: toolUse.name, input: toolUse.input, profile: profile,
-                                todaysFoods: CoachContext.todaysFoods(foods),
-                                currentWeightLbs: TrendCalculator.currentTrend(weights)) {
-        case .invalid(let reason):
-            continueTurn(history: history,
-                         assistantContent: turn.assistantContent,
-                         toolUseId: toolUse.id,
-                         resultText: reason,
-                         isError: true,
-                         depth: depth + 1)
-
-        case .ok(let request) where request.requiresConfirm:
-            // Destructive or goal-changing → DO NOT apply yet. Surface a one-tap confirm.
-            pendingTool = PendingTool(request: request,
-                                      toolUseId: toolUse.id,
-                                      assistantContent: turn.assistantContent,
-                                      history: history)
-            isSending = false
-
-        case .ok(let request):
-            // A quick, reversible log → apply immediately and offer an Undo, then tell the
-            // model so it replies warmly. The depth cap bounds a chain ("log my breakfast").
-            let applied = CoachTools.applyReturningUndo(request, to: profile, context: context)
-            if let undo = applied.undo {
-                showUndoToast(summary: request.confirmSummary, undo: undo)
-            }
-            continueTurn(history: history,
-                         assistantContent: turn.assistantContent,
-                         toolUseId: toolUse.id,
-                         resultText: applied.resultText,
-                         isError: !applied.changed,   // a declined tool (kg) is not a success
-                         depth: depth + 1)
-        }
-    }
-
-    /// User tapped "Yes": apply the change, then tell the coach so it can reply warmly.
-    @MainActor
-    private func confirmPendingTool() {
-        guard let pending = pendingTool else { return }
-        pendingTool = nil
-        sendTrigger += 1
-
-        let resultText = CoachTools.apply(pending.request, to: profile, context: context)
-        confettiTrigger += 1   // a small celebration for taking a positive step
-
-        // Leave the decision in the transcript (grayed card, "Yes" highlighted) before the reply.
-        recordDecision(summary: pending.request.confirmSummary, accepted: true)
-
-        continueTurn(history: pending.history,
-                     assistantContent: pending.assistantContent,
-                     toolUseId: pending.toolUseId,
-                     resultText: "Applied. \(resultText)",
-                     isError: false,
-                     depth: 0)
-    }
-
-    /// User tapped "Not now": tell the coach the change was declined so it bows out kindly.
-    @MainActor
-    private func declinePendingTool() {
-        guard let pending = pendingTool else { return }
-        pendingTool = nil
-        sendTrigger += 1
-
-        // Leave the decision in the transcript (grayed card, "Not now" highlighted).
-        recordDecision(summary: pending.request.confirmSummary, accepted: false)
-
-        continueTurn(history: pending.history,
-                     assistantContent: pending.assistantContent,
-                     toolUseId: pending.toolUseId,
-                     resultText: "The user decided not to make this change right now. "
-                               + "Nothing was changed. Respond warmly and without any pressure.",
-                     isError: false,
-                     depth: 0)
-    }
-
-    /// Persist a settled tool-confirm decision as a transcript row, so the confirm card stays in
-    /// history (grayed, with the chosen option highlighted) instead of vanishing on tap. It's a
-    /// UI-only marker: excluded from the API history we send and from long-term memory folding.
-    @MainActor
-    private func recordDecision(summary: String, accepted: Bool) {
-        let marker = ChatMessage(role: "assistant", content: "",
-                                 decisionSummary: summary, decisionAccepted: accepted)
-        context.insert(marker)
-        try? context.save()
-    }
-
-    /// Show the "done · Undo" banner for a just-applied quick log, auto-dismissing after a few
-    /// seconds. A new toast replaces any prior one (we keep only the most recent action).
-    @MainActor
-    private func showUndoToast(summary: String, undo: @escaping @MainActor () -> Void) {
-        undoTask?.cancel()
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-            undoToast = UndoToast(summary: summary, undo: undo)
-        }
-        undoTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(5))
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: 0.25)) { undoToast = nil }
-        }
-    }
-
-    /// Reverse the last auto-applied change and dismiss the banner.
-    @MainActor
-    private func performUndo() {
-        undoTask?.cancel()
-        undoToast?.undo()
-        sendTrigger += 1   // a little haptic for the revert
-        withAnimation(.easeOut(duration: 0.2)) { undoToast = nil }
-    }
-
-    /// Send the assistant turn + a tool_result back to continue the conversation, then
-    /// persist the coach's follow-up reply. Used for confirm, decline, and invalid paths.
-    @MainActor
-    private func continueTurn(history: [AnthropicClient.Msg],
-                              assistantContent: [[String: Any]],
-                              toolUseId: String,
-                              resultText: String,
-                              isError: Bool,
-                              depth: Int) {
-        // history already ends with the user's triggering message; append the assistant's
-        // tool_use turn, then our tool_result, exactly as the Messages API requires.
-        let continued = history
-            + [AnthropicClient.assistantMessage(content: assistantContent),
-               AnthropicClient.toolResultMessage(toolUseId: toolUseId,
-                                                  resultText: resultText,
-                                                  isError: isError)]
-
-        let systemParts = CoachContext.systemParts(profile: profile, foods: foods, weights: weights,
-                                                   workouts: workouts, water: water, steps: steps,
-                                                   sessions: sessions, exercises: exerciseEntries,
-                                                   sleep: sleepEntries, detected: detectedWorkouts,
-                                                   vitals: vitalsEntries,
-                                                   memory: coachMemory(), plan: CoachPlan.current(in: context))
-        // Once we've chained enough tools, forbid further calls so the model must finalize.
-        // The schemas STAY in the request — history contains tool blocks, and the API
-        // requires the tools parameter whenever they appear — but tool_choice "none"
-        // stops another call.
-        let tools = CoachTools.schemas(for: profile)
-        let forbidToolUse = depth >= Self.maxToolDepth
-
-        isSending = true
-        Task {
-            do {
-                let client = try AIClient.makeFull()
-                // Keep tools available so a follow-up tool call is still possible, but the
-                // common case is a plain warm reply.
-                let turn = try await client.chatWithTools(system: systemParts.volatile,
-                                                          messages: continued, tools: tools,
-                                                          model: AIConfig.model(for: .coachTurn),
-                                                          maxTokens: 1500,
-                                                          cachedSystemPrefix: systemParts.stable,
-                                                          forbidToolUse: forbidToolUse)
-                await MainActor.run { handle(turn: turn, history: continued, depth: depth) }
-            } catch AIConfig.AIError.missingKey {
-                await MainActor.run {
-                    showMissingKeyBanner = true
-                    isSending = false
-                }
-            } catch {
-                await MainActor.run {
-                    errorBanner = friendlyError(error)
-                    isSending = false
-                }
-            }
-        }
-    }
-
-    private func friendlyError(_ error: Error) -> String {
-        // Network / API hiccups shouldn't read like a stack trace.
-        if let urlError = error as? URLError, urlError.code == .notConnectedToInternet {
-            return "I can't reach the internet right now — mind checking your connection? 💚"
-        }
-        return "Something went wrong on my end. Let's try that again in a moment 💚"
-    }
-
-    // MARK: - Long-term memory
-
-    /// The single `CoachMemory` row, fetched-or-created (seeded from her onboarding note on
-    /// first creation). Cheap and idempotent — fetches an existing row, only inserting one if
-    /// none exists yet — so it's safe to call on every turn.
-    private func coachMemory() -> CoachMemory {
-        CoachMemory.fetchOrCreate(in: context, profile: profile)
-    }
-
-    /// If any non-seed messages have scrolled past the verbatim window AND haven't been folded
-    /// into memory yet, consolidate them in the BACKGROUND (one cheap LLM call), then persist
-    /// the updated notes/summary and advance the high-water mark.
-    ///
-    /// This is strictly off the user's turn: it runs only after the visible reply has already
-    /// landed and `isSending` is back to false, and the network call happens inside a detached
-    /// `Task` so it never blocks or delays anything the user sees. On any failure (no key,
-    /// network, bad output) `consolidate` returns nil and we leave memory — and the high-water
-    /// mark — untouched, so the same batch is simply retried after the next reply.
-    @MainActor
-    private func consolidateMemoryIfNeeded() {
-        let memory = coachMemory()
-
-        // Pure selection: which older, not-yet-folded messages should we summarize?
-        let toFold = CoachMemoryService.messagesToConsolidate(
-            messages: messages.filter { !$0.isDecision },   // UI-only decision rows never fold
-            windowSize: Self.maxHistoryMessages,
-            summarizedThrough: memory.summarizedThroughDate
-        )
-        guard !toFold.isEmpty else { return }
-
-        // Snapshot everything the background call needs OFF SwiftData, on the main actor, so no
-        // @Model object crosses an actor boundary.
-        let snapshots = toFold.map {
-            CoachMemoryService.MessageSnapshot(role: $0.roleRaw,
-                                               content: $0.content,
-                                               createdAt: $0.createdAt)
-        }
-        guard let newHighWater = toFold.map(\.createdAt).max() else { return }
-        let currentNotes = memory.profileNotes
-        let currentSummary = memory.conversationSummary
-        let profileName = profile.name
-        let memoryID = memory.id   // re-fetch by id on completion to avoid capturing the @Model
-
-        Task { @MainActor in
-            guard let result = await CoachMemoryService.consolidate(
-                currentNotes: currentNotes,
-                currentSummary: currentSummary,
-                olderMessages: snapshots,
-                profileName: profileName
-            ) else { return }   // no-op on failure / no key — high-water mark stays put
-
-            // Re-fetch the row fresh (we're back on the main actor after an await) and write.
-            let target = (try? context.fetch(
-                FetchDescriptor<CoachMemory>(predicate: #Predicate { $0.id == memoryID })
-            ).first) ?? coachMemory()
-            // Lost-update guard: the consolidation reasoned over a SNAPSHOT of the notes. If
-            // something else wrote notes while it ran (a remember_about_user tool call, a
-            // Settings edit), overwriting would silently discard that newer fact — keep the
-            // newer notes and only fold the summary + high-water mark this round; the notes
-            // fold will simply pick up the fresh state on the next consolidation.
-            if target.profileNotes == currentNotes {
-                target.profileNotes = result.profileNotes
-            } else {
-                Diagnostics.shared.log("memory consolidation: notes changed mid-flight — keeping newer notes", .coach)
-            }
-            target.conversationSummary = result.conversationSummary
-            // Only advance the high-water mark forward, never backward (a concurrent earlier
-            // pass could in principle have folded further already).
-            if let existing = target.summarizedThroughDate {
-                target.summarizedThroughDate = max(existing, newHighWater)
-            } else {
-                target.summarizedThroughDate = newHighWater
-            }
-            target.updatedAt = .now
-            try? context.save()
-        }
-    }
-
-    // MARK: - Welcome seed
-
-    private func seedWelcomeIfNeeded() {
-        guard messages.isEmpty else { return }
-        let name = profile.name.isEmpty ? "there" : profile.name
-        // Direction-aware: the same wording the persona uses, from the profile's goal.
-        let role = CoachContext.buddyRole(profile.pace.direction)
-        let welcome = """
-        Hi \(name)! I'm \(coachName), your \(role) 💚 \
-        I'm here to cheer you on, talk through the hard days, and help you make sense of your progress. \
-        Ask me anything, or tap a prompt below to get started.
-        """
-        let seed = ChatMessage(role: "assistant", content: welcome, isSystemSeed: true)
-        context.insert(seed)
-        try? context.save()
-    }
-
-    // MARK: - Banners
-
-    private var missingKeyBanner: some View {
-        inlineBanner(text: missingKeyMessage,
-                     tint: Theme.brand,
-                     systemImage: "key.fill")
-    }
-
-    /// Vita follows the provider picked in Settings (both vendors support her tools now).
-    /// If the OTHER vendor has a key saved, the fix is one tap away — say so.
-    private var missingKeyMessage: String {
-        let active = AIConfig.provider
-        let other: AIProvider = active == .anthropic ? .openai : .anthropic
-        if KeychainStore.hasAPIKey(for: other) {
-            return "You're set to \(active.label) but only have a \(other.label) key — switch provider or add a \(active.label) key in More → AI 💚"
-        }
-        return "I'm ready to chat once you add your \(active.label) key in More → AI 💚"
-    }
-
-    private func inlineBanner(text: String, tint: Color, systemImage: String) -> some View {
-        HStack(alignment: .top, spacing: Theme.Space.sm) {
-            Image(systemName: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(tint)
-            Text(text)
-                .font(.subheadline)
-                .foregroundStyle(Theme.textPrimary)
-            Spacer(minLength: 0)
-        }
-        .padding(Theme.Space.md)
-        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous)
-                .strokeBorder(tint.opacity(0.25), lineWidth: 1)
-        )
-        .padding(.horizontal, Theme.Space.md)
-        .padding(.top, Theme.Space.sm)
+        actionsRevealedFor = nil
     }
 }
 
@@ -897,12 +666,20 @@ private struct CoachAvatar: View {
 // MARK: - Message row (avatar + bubble + grouped timestamp)
 
 private struct MessageRow: View {
-    let message: ChatMessage
+    let message: ChatRow
     let coachName: String
     let showsTimestamp: Bool
     /// True only for the freshest assistant reply, which types itself out; history renders instantly.
     var isStreaming: Bool = false
+    /// Whether the copy / ask / share row sits under this reply.
+    var showsActions: Bool = false
     var onStreamComplete: () -> Void = {}
+    /// A tap on a reply (not on a link, not one that dismisses a selection).
+    var onTap: () -> Void = {}
+    var onCopy: () -> Void = {}
+    /// "Ask about this": a selected passage, or nil for the whole message.
+    var onAsk: (String?) -> Void = { _ in }
+    var onDelete: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Space.xs) {
@@ -932,6 +709,12 @@ private struct MessageRow: View {
                         Spacer(minLength: 44)
                     }
                 }
+                if showsActions {
+                    MessageActionRow(text: message.content, onCopy: onCopy,
+                                     onAsk: { onAsk(nil) }, onDelete: onDelete)
+                        .padding(.leading, 28 + Theme.Space.xs)   // under the bubble, past the avatar
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -948,10 +731,15 @@ private struct MessageRow: View {
             if !message.content.isEmpty {
                 Group {
                     if message.isUser {
-                        // Her own text — plain, on the brand gradient. Inline markup only.
-                        Text(Self.styled(message.content))
-                            .font(.body)
-                            .foregroundStyle(Theme.background)
+                        // Her own text — plain, on the brand gradient. Inline markup only. A
+                        // message that opens with a quoted passage shows it as a reference.
+                        let parts = ChatQuote.split(message.content)
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let quote = parts.quote { BubbleQuote(quote: quote) }
+                            Text(Self.styled(parts.body))
+                                .font(.body)
+                                .foregroundStyle(Theme.background)
+                        }
                     } else if isStreaming {
                         // The freshest reply types itself out word by word, then settles into the
                         // same markdown rendering as the rest.
@@ -960,8 +748,10 @@ private struct MessageRow: View {
                                            onComplete: onStreamComplete)
                     } else {
                         // Vita's replies render real markdown blocks (lists, headings, rules)
-                        // instead of leaking literal `- ` / `##` / `---`.
-                        MarkdownMessage(message.content, color: Theme.textPrimary)
+                        // instead of leaking literal `- ` / `##` / `---`, in a text view so a
+                        // passage can be selected by range (SwiftUI `Text` selects all or nothing).
+                        SelectableMarkdownText(markdown: message.content, color: Theme.textPrimary,
+                                               onAsk: { onAsk($0) }, onTap: onTap)
                     }
                 }
                 .padding(.horizontal, Theme.Space.md)
@@ -977,11 +767,30 @@ private struct MessageRow: View {
         )
         .shadow(color: Color.black.opacity(message.isUser ? 0.2 : 0.25),
                 radius: 6, x: 0, y: 3)
-        .textSelection(.enabled)
+        // Her own messages: a long press opens the message menu. A reply has no context menu,
+        // because a long press on its text starts a selection (one or the other, never both).
+        .contentShape(.contextMenuPreview, BubbleShape(isUser: message.isUser))
+        .contextMenu {
+            if message.isUser, !message.content.isEmpty {
+                Button { onCopy() } label: { Label("Copy", systemImage: "doc.on.doc") }
+                Button { onAsk(nil) } label: { Label("Ask about this", systemImage: "sparkles") }
+                ShareLink(item: message.content) { Label("Share…", systemImage: "square.and.arrow.up") }
+                Divider()
+                Button(role: .destructive) { onDelete() } label: { Label("Delete message", systemImage: "trash") }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        // A message is read-only text. Saying so keeps it a static-text element now that a
+        // reply is drawn by a text view (for selection) rather than by `Text`; VoiceOver and
+        // the UI flows both find messages as static text.
+        .accessibilityAddTraits(.isStaticText)
         .accessibilityLabel(message.isUser ? "You said" : "\(coachName) said")
         .accessibilityValue(message.imageData != nil ? "\(message.content) (photo attached)" : message.content)
         .accessibilityIdentifier(message.isUser ? AccessibilityID.Coach.userMessage
                                                 : AccessibilityID.Coach.assistantMessage)
+        .accessibilityAction(named: "Copy message") { onCopy() }
+        .accessibilityAction(named: "Ask about this") { onAsk(nil) }
+        .accessibilityAction(named: "Delete message") { onDelete() }
     }
 
     @ViewBuilder private var bubbleBackground: some View {

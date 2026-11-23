@@ -28,3 +28,7 @@ Evals/runs/*/xcodebuild*.log
 Evals/datasets/avatar/photos/*
 !Evals/datasets/avatar/photos/README.md
 Evals/runs/*/avatars/
+
+# Python bytecode
+__pycache__/
+*.pyc

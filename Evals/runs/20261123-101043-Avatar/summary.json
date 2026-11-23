@@ -1,0 +1,129 @@
+{
+ "run": "20261123-101043-Avatar",
+ "tasks": [
+  {
+   "task": "avatar",
+   "dataset": "avatar/photos",
+   "cases": 3,
+   "candidates": [
+    {
+     "candidate": "openai:gpt-image-2.6-flare@low",
+     "attempts": 3,
+     "usable": 3,
+     "passed": 3,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.43849391955098227,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 7.633,
+     "latency_p95_s": 8.125,
+     "mean_uncached_input_tokens": 1454,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 824,
+     "mean_cost_usd": null,
+     "scores": {
+      "cost_usd": 0.035062,
+      "decodable": 1,
+      "distinct_colours": 38.666666666666664,
+      "generation_latency_ms": 7481.333333333333,
+      "generator_accepted": 1,
+      "has_alpha": 1,
+      "input_image_tokens": 1024,
+      "input_text_tokens": 430,
+      "input_tokens": 1454,
+      "is_pixel_art": 1,
+      "output_tokens": 824,
+      "square_1024": 1,
+      "transparent_corners": 0,
+      "transparent_share": 0.4049968719482422,
+      "transparent_top_corners": 1
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-image-2.6-flare@medium",
+     "attempts": 3,
+     "usable": 3,
+     "passed": 3,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.43849391955098227,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 9.96,
+     "latency_p95_s": 12.711,
+     "mean_uncached_input_tokens": 1454,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 1449,
+     "mean_cost_usd": null,
+     "scores": {
+      "cost_usd": 0.053812,
+      "decodable": 1,
+      "distinct_colours": 36.666666666666664,
+      "generation_latency_ms": 10216.666666666666,
+      "generator_accepted": 1,
+      "has_alpha": 1,
+      "input_image_tokens": 1024,
+      "input_text_tokens": 430,
+      "input_tokens": 1454,
+      "is_pixel_art": 1,
+      "output_tokens": 1449,
+      "square_1024": 1,
+      "transparent_corners": 0,
+      "transparent_share": 0.40833409627278644,
+      "transparent_top_corners": 1
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-image-2.6-sunburst@medium",
+     "attempts": 3,
+     "usable": 3,
+     "passed": 3,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.43849391955098227,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 19.628,
+     "latency_p95_s": 20.42,
+     "mean_uncached_input_tokens": 1454,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 1449,
+     "mean_cost_usd": null,
+     "scores": {
+      "cost_usd": 0.053812,
+      "decodable": 1,
+      "distinct_colours": 28.333333333333332,
+      "generation_latency_ms": 19628,
+      "generator_accepted": 1,
+      "has_alpha": 1,
+      "input_image_tokens": 1024,
+      "input_text_tokens": 430,
+      "input_tokens": 1454,
+      "is_pixel_art": 1,
+      "output_tokens": 1449,
+      "square_1024": 1,
+      "transparent_corners": 0.3333333333333333,
+      "transparent_share": 0.41652170817057294,
+      "transparent_top_corners": 1
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

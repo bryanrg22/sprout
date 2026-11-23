@@ -70,7 +70,8 @@ enum NotificationService {
         guard !UITestHooks.isActive else { return false }
         #if DEBUG
         // A screenshot run cannot tap the system prompt away, and the prompt covers the screen.
-        if CommandLine.arguments.contains("--demo-no-notification-prompt") { return false }
+        if CommandLine.arguments.contains("--demo-no-notification-prompt")
+            || CommandLine.arguments.contains("--no-notification-prompt") { return false }
         #endif
         return await SystemReminderCenter().requestAuthorization()
     }
@@ -170,7 +171,8 @@ enum NotificationService {
         guard !UITestHooks.isActive else { return }
         #if DEBUG
         // A screenshot run cannot tap the system prompt away, and the prompt covers the screen.
-        if CommandLine.arguments.contains("--demo-no-notification-prompt") { return }
+        if CommandLine.arguments.contains("--demo-no-notification-prompt")
+            || CommandLine.arguments.contains("--no-notification-prompt") { return }
         #endif
         let granted = await center.requestAuthorization()
         guard granted else {

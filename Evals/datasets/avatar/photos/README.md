@@ -24,5 +24,8 @@ and a photo with two people in it (the prompt asks for one).
 
 What the code grades, per image: decodable, square 1024, alpha channel, transparent
 corners, share of transparent pixels, number of distinct colours after quantisation (is it
-pixel art), latency, tokens and list-price cost. What it does not grade: likeness, and fit
+pixel art), latency, tokens and list-price cost. The image models return "solid" at alpha
+253 or 254 and leave traces of alpha 1 and 2 in the background, so the graders count
+alpha at or over 250 as solid and at or under 8 as clear (EVAL_REPORT 23). After a grader
+changes, `Evals/regrade-avatars.sh <run>` grades a past run's saved images again for free. What it does not grade: likeness, and fit
 with the two existing characters. Those are the owner's own rating of the saved images.
