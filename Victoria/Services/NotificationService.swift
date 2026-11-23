@@ -270,6 +270,11 @@ final class ReminderBootstrap {
         }
         guard !scheduled else { return }   // the root view was rebuilt; nothing changed
         scheduled = true
+        #if DEBUG
+        // DEBUG: `--no-reminder-prompt` keeps the system permission alert off the screen
+        // for a screenshot run, where nothing can tap it away.
+        if CommandLine.arguments.contains("--no-reminder-prompt") { return }
+        #endif
         await NotificationService.refreshOnLaunch(for: profile, center: center)
     }
 }

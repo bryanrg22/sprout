@@ -119,25 +119,6 @@ enum BuddyStateComposer {
     }
 }
 
-extension BuddyViewModel {
-    /// Publish a fully-composed snapshot (the convenience the composer feeds).
-    func publishMine(_ s: MyBuddyState) async {
-        await publishMine(
-            loggedToday: s.loggedToday, dayStreak: s.dayStreak,
-            stepsToday: s.stepsToday, stepGoal: s.stepGoal,
-            waterToday: s.waterToday, waterGoal: s.waterGoal,
-            workedOutToday: s.workedOutToday, workoutSummary: s.workoutSummary,
-            sharesFullData: s.sharesFullData,
-            trendWeightLbs: s.trendWeightLbs, goalWeightLbs: s.goalWeightLbs,
-            weeklyRateLbs: s.weeklyRateLbs,
-            caloriesEaten: s.caloriesEaten, calorieTarget: s.calorieTarget,
-            proteinEaten: s.proteinEaten, proteinTarget: s.proteinTarget,
-            carbsEaten: s.carbsEaten, carbTarget: s.carbTarget,
-            fatEaten: s.fatEaten, fatTarget: s.fatTarget,
-            todayFoods: s.todayFoods, displayName: s.displayName)
-    }
-}
-
 /// An invisible, ALWAYS-MOUNTED view (lives at `RootView`, so it's alive on every tab) that keeps my
 /// buddy snapshot fresh the moment I log — **not** only when I happen to open the Buddy tab.
 ///
@@ -157,19 +138,32 @@ struct BuddyAutoPublisher: View {
 
     @Environment(\.scenePhase) private var scenePhase
     // A publish-only view model — no push observer (that's the Buddy hub's job; a second observer
-    // would just double-refresh a snapshot this view never displays).
+    // would just double-refresh a snapshot this view never displays). It shares the app's
+    // publish coordinator with the hub's model, so the two never publish at once.
     @State private var model = BuddyViewModel(observePushes: false)
 
     private var profile: UserProfile? { profiles.first }
 
-    /// A cheap value that changes whenever something publish-worthy changes (a food/water/step/
-    /// workout/weigh-in). Drives the debounced `.task(id:)` so rapid logs coalesce into one upload.
+    /// Drives the debounced `.task(id:)` so rapid logs coalesce into one upload.
     private var dataSignature: String {
-        let cal = Calendar.current
-        let cals = foods.filter { cal.isDateInToday($0.date) }.reduce(0) { $0 + $1.totalCalories }
-        let w    = water.filter { cal.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz }
-        let st   = steps.first { cal.isDateInToday($0.date) }?.count ?? 0
-        return "\(foods.count)|\(Int(cals))|\(Int(w))|\(st)|\(sessions.count)|\(weights.count)"
+        Self.signature(sharesFullStats: profile?.shareFullStatsWithBuddy ?? false,
+                       foods: foods, water: water, steps: steps,
+                       sessionCount: sessions.count, weightCount: weights.count,
+                       now: .now, calendar: .current)
+    }
+
+    /// A cheap value that changes whenever something publish-worthy changes: a food, water,
+    /// step, workout or weigh-in, and the "Share my full stats" switch. The switch is in
+    /// it so that turning sharing OFF publishes a snapshot without the full stats within
+    /// seconds, instead of leaving the last full one in place until the next log.
+    static func signature(sharesFullStats: Bool,
+                          foods: [FoodEntry], water: [WaterEntry], steps: [StepsEntry],
+                          sessionCount: Int, weightCount: Int,
+                          now: Date, calendar cal: Calendar) -> String {
+        let cals = foods.filter { cal.isDate($0.date, inSameDayAs: now) }.reduce(0) { $0 + $1.totalCalories }
+        let w    = water.filter { cal.isDate($0.date, inSameDayAs: now) }.reduce(0) { $0 + $1.amountOz }
+        let st   = steps.first { cal.isDate($0.date, inSameDayAs: now) }?.count ?? 0
+        return "\(foods.count)|\(Int(cals))|\(Int(w))|\(st)|\(sessionCount)|\(weightCount)|\(sharesFullStats ? "full" : "activity")"
     }
 
     var body: some View {
@@ -179,7 +173,9 @@ struct BuddyAutoPublisher: View {
             // Debounce: when my data changes, wait for the logging to settle, then upload ONCE.
             // `.task(id:)` cancels + restarts on every change, so a flurry of logs → one publish.
             .task(id: dataSignature) {
-                guard model.isLinked else { return }
+                // Asked of the service each time, not remembered from launch: this model did
+                // not do the pairing, the Buddy screen's did.
+                guard model.refreshLinkState() else { return }
                 try? await Task.sleep(for: .seconds(6))
                 guard !Task.isCancelled else { return }
                 await publish()
@@ -197,8 +193,7 @@ struct BuddyAutoPublisher: View {
                     // ever-staler snapshot. Retry on every return to the app while the last
                     // attempt failed, and refresh anyway when the last success is old enough
                     // that the buddy would be looking at yesterday's me.
-                    let stale = (model.lastPublishAt ?? .distantPast) < Date.now.addingTimeInterval(-6 * 3600)
-                    if model.isLinked, model.lastPublishFailed || stale {
+                    if model.needsPublishOnForeground() {
                         Task { await publish() }
                     }
                 default:

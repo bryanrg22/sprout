@@ -5,8 +5,9 @@ import SwiftData
 ///
 /// - **Not linked yet** → a friendly "Pair with your buddy 💛" empty state that opens
 ///   `PairingView`.
-/// - **Linked** → the SHARED panda at the top, a `BuddyStatusCard`, a row of nudge
-///   buttons, and a peek at recent nudges (tap through to the full `NudgeInboxView`).
+/// - **Linked** → the SHARED panda at the top, the buddy's day (or, when it is days old,
+///   a card that says so and offers to unpair), a row of nudge buttons, and a peek at
+///   recent nudges. Unpairing is in the toolbar menu, behind a confirmation.
 ///
 /// All sync runs through `BuddyViewModel` in `Task {}`; `BuddySyncError`s surface as kind
 /// inline banners — nothing here can crash or shame.
@@ -39,6 +40,7 @@ struct BuddyHomeView: View {
 
     @State private var didAppear = false
     @State private var showPairing = false
+    @State private var confirmUnpair = false
 
     // MARK: My activity (mirrors DashboardView)
 
@@ -68,7 +70,7 @@ struct BuddyHomeView: View {
     private var myWorkedOutToday: Bool {
         workouts.contains { Calendar.current.isDateInToday($0.date) }
     }
-    /// The single profile (Victoria), the way RootView resolves it.
+    /// The single profile, the way RootView resolves it.
     private var profile: UserProfile? { profiles.first }
     /// My own daily step goal (0 when there's no profile yet → face-off skips that bar).
     private var myStepGoal: Int { max(profile?.dailyStepGoal ?? 0, 0) }
@@ -105,16 +107,51 @@ struct BuddyHomeView: View {
             }
         }
         .navigationDestination(isPresented: $showPairing) {
-            PairingView(model: model) {
+            PairingView(model: model, sharesFullStats: profile?.shareFullStatsWithBuddy ?? false) {
                 // On link, publish my real state right away so the panda + face-off are accurate.
                 Task { await publishMyState() }
             }
+        }
+        .toolbar {
+            if model.isLinked {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(role: .destructive) { confirmUnpair = true } label: {
+                            Label("Unpair from \(buddyName)", systemImage: "person.2.slash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .accessibilityLabel("Buddy options")
+                    }
+                }
+            }
+        }
+        // Ending a pairing cannot be undone from here (pairing again takes a new code from
+        // one of the two), so it is asked once more, with what it does. An alert, not a
+        // confirmation dialog: on iOS 26 that is a popover with the cancel button left out,
+        // anchored wherever the modifier sits; both choices belong on screen here.
+        .alert("Unpair from \(buddyName)?", isPresented: $confirmUnpair) {
+            Button("Unpair", role: .destructive) { Task { await model.unpair() } }
+            Button("Stay paired", role: .cancel) {}
+        } message: {
+            Text("You two will stop seeing each other's day and notes, and the day you shared is removed from iCloud. Everything you logged stays on your phone. To pair again, one of you types the other's new code.")
         }
         .task {
             await model.refresh()
             // Keep my published presence + activity fresh whenever the hub opens.
             await publishMyState()
             withAnimation { didAppear = true }
+            #if DEBUG
+            // DEBUG: `--demo-buddy-ui unpair` opens the confirmation, `unpair-confirmed` does
+            // what its Unpair button does, `pairing-…` opens the pairing screen in a failed
+            // state, so each can be looked at without tapping.
+            switch BuddyDemoUI.requested {
+            case .unpair? where model.isLinked: confirmUnpair = true
+            case .unpairConfirmed?:             await model.unpair()
+            case .pairing?:                    showPairing = !model.isLinked
+            default:                           break
+            }
+            #endif
         }
         .refreshable { await model.refresh() }
         // While the hub is OPEN, re-pull my buddy's snapshot every ~20s. CloudKit's public-DB
@@ -183,7 +220,15 @@ struct BuddyHomeView: View {
         // PLUS, when they've opted into sharing, their metrics as home-screen tiles (weight +
         // calorie/protein rings) and today's food as chips. Replaces the old status +
         // full-stats pair. Metrics self-hide when the buddy shares activity only.
-        if let snap = model.buddySnapshot {
+        if case .stale(let since, let days) = model.buddyFreshness {
+            // Days without a publish: say so instead of showing old numbers as today's.
+            BuddyStaleCard(name: buddyName, nameAtStart: model.buddyFirstNameCapitalized,
+                           since: since, days: days) { confirmUnpair = true }
+                .appearLift(didAppear, index: 1)
+        } else if model.buddySnapshot == nil, model.lastBuddyFetchAt != nil {
+            // Fetched, and there is nothing yet: the buddy has never published.
+            BuddyWaitingCard(name: model.buddyFirstNameCapitalized).appearLift(didAppear, index: 1)
+        } else if let snap = model.buddySnapshot {
             BuddyDayCard(snapshot: snap, avatar: theirAvatar).appearLift(didAppear, index: 1)
 
             // (c) Playful, FAIR, SAFE activity face-off — both pixel avatars + a per-metric
@@ -226,7 +271,11 @@ struct BuddyHomeView: View {
     @ViewBuilder
     private var syncStatusFooter: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if model.lastPublishFailed {
+            if let problem = model.accountProblem {
+                // Signed out of iCloud: nothing syncs until that changes, so it is said plainly.
+                Label(problem, systemImage: "person.icloud")
+                    .foregroundStyle(Theme.warning)
+            } else if model.lastPublishFailed {
                 Label("Your last update hasn't reached iCloud yet — it'll retry on its own.",
                       systemImage: "icloud.slash")
                     .foregroundStyle(Theme.warning)
@@ -234,9 +283,9 @@ struct BuddyHomeView: View {
                 Label("You shared your day \(Self.relative(t)).", systemImage: "icloud.and.arrow.up")
                     .foregroundStyle(Theme.textSecondary)
             }
-            if let snap = model.buddySnapshot,
-               Date.now.timeIntervalSince(snap.lastActive) > 86_400 {
-                Label("\(snap.displayName.split(separator: " ").first.map(String.init) ?? snap.displayName)'s last sync was \(Self.relative(snap.lastActive)) — their phone may not be uploading. Ask them to open the app (and update it if there's a new build).",
+            // A day or two without an update (three or more is the stale card above).
+            if case .quiet(let since, _) = model.buddyFreshness {
+                Label("\(model.buddyFirstNameCapitalized)'s last update was \(Self.relative(since)), so what you see is from then. It refreshes when they next open Sprout.",
                       systemImage: "clock.arrow.circlepath")
                     .foregroundStyle(Theme.warning)
             }
@@ -274,8 +323,12 @@ struct BuddyHomeView: View {
         .cardElevated(padding: Theme.Space.lg)
     }
 
-    /// My buddy's pixel character is the OTHER avatar (if I'm Victoria, they're Bryan).
+    /// My buddy's pixel character is the other built-in avatar from mine.
     private var theirAvatar: CompanionAvatar { myAvatar.buddyStandIn }
+
+    /// The buddy's first name for titles and buttons ("Sam"), or "your buddy" before they
+    /// have published one.
+    private var buddyName: String { model.buddyFirstName }
 
     /// A peek at the latest few notes; taps through to the full inbox.
     private var recentNudges: some View {
@@ -334,7 +387,7 @@ struct BuddyHomeView: View {
                     .font(.title2.weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.center)
-                Text("Team up with a friend to keep each other going. You'll grow a little panda together and send each other cheers — never any pressure, and never your numbers.")
+                Text("Team up with a friend to keep each other going. You'll grow a little panda together and send each other cheers, with never any pressure. What your buddy sees of your numbers is your choice in Settings.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)

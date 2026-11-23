@@ -132,10 +132,23 @@ struct BuddyLinkStorage: Sendable {
         defaults.removeObject(forKey: viaCodeKey)
         defaults.removeObject(forKey: viaRoleKey)
     }
+
+    /// Forget my pairing code, so the next time it is asked for a new one is minted
+    /// (`BuddyViewModel.resolveMyPairingCode`). The code an ex-buddy holds stops being mine.
+    func retireMyCode() {
+        defaults.removeObject(forKey: myCodeKey)
+    }
 }
 
 /// The handshake. One per `BuddySyncService` instance; holds no pairing state of its own —
 /// the link is read from `storage` every time, so two instances for the same user agree.
+///
+/// The rules, each with a test in `BuddyPairingTests`:
+/// - Only the owner of a code creates its record. Typing a code never creates anything.
+/// - A code connects only when its record exists, belongs to someone else, and is unclaimed
+///   (or already claimed by me).
+/// - The device is told it is linked only after the claim is saved.
+/// - Unpairing forgets the link on this device first, then tells the backend if it can.
 @MainActor
 final class BuddyPairingEngine {
     let myUserID: String
@@ -150,57 +163,151 @@ final class BuddyPairingEngine {
 
     var linkedBuddyID: String? { storage.buddyUserID }
 
-    /// Owner side: put my code where a buddy who types it will find it, and if someone
-    /// already claimed it, learn who.
+    // MARK: Owner side
+
+    /// Put my code where a buddy who types it will find it; if someone already typed it,
+    /// learn who.
+    /// - Throws: `.pairingCodeTaken` when the record under my code belongs to someone else
+    ///   (two users minted the same code, or a record left by a build that let the typer
+    ///   create one). The caller mints a new code and announces that.
     func announce(code raw: String) async throws {
         let code = BuddyPairingCode.normalize(raw)
-        guard !code.isEmpty else { throw BuddySyncError.invalidPairingCode }
+        guard !code.isEmpty else { throw BuddySyncError.malformedPairingCode }
         if let existing = try await store.fetch(code: code) {
-            if existing.ownerUserID == myUserID, let claimant = existing.claimantUserID {
-                storage.setLinked(buddyUserID: claimant, via: nil)
-            }
-        } else {
+            guard existing.ownerUserID == myUserID else { throw BuddySyncError.pairingCodeTaken }
+            adoptClaimant(of: existing)
+            return
+        }
+        do {
             try await store.create(BuddyPairingRecord(code: code, ownerUserID: myUserID))
+        } catch BuddyPairingStoreError.alreadyExists {
+            // Someone created it between my read and my write. Mine, from another launch?
+            guard let now = try await store.fetch(code: code), now.ownerUserID == myUserID else {
+                throw BuddySyncError.pairingCodeTaken
+            }
+            adoptClaimant(of: now)
         }
     }
 
-    /// Owner side: has someone typed my code since I last looked?
+    /// Has someone typed my code since I last looked? Quiet: a failed read changes nothing.
     func resolveClaimant() async {
         guard storage.buddyUserID == nil, let code = storage.myCode else { return }
-        if let record = try? await store.fetch(code: code),
-           let claimant = record.claimantUserID, claimant != myUserID {
-            storage.setLinked(buddyUserID: claimant, via: nil)
+        if let record = try? await store.fetch(code: code), record.ownerUserID == myUserID {
+            adoptClaimant(of: record)
         }
     }
 
-    /// Typer side: connect to whoever shared `code`.
+    /// The owner is linked by being claimed: a claimant on my own record is my buddy.
+    private func adoptClaimant(of record: BuddyPairingRecord) {
+        guard storage.buddyUserID == nil,
+              let claimant = record.claimantUserID, claimant != myUserID else { return }
+        storage.setLinked(buddyUserID: claimant, via: .init(code: record.code, role: .owner))
+    }
+
+    // MARK: Typer side
+
+    /// Connect to whoever shared `code`. Returns only once the claim is saved.
     func claim(code raw: String) async throws {
         let code = BuddyPairingCode.normalize(raw)
-        guard !code.isEmpty else { throw BuddySyncError.invalidPairingCode }
-
-        guard var record = try await store.fetch(code: code) else {
-            // Nobody has published this code: publish myself as its owner and wait.
-            storage.clear()
-            try await store.create(BuddyPairingRecord(code: code, ownerUserID: myUserID))
-            return
-        }
-        if record.ownerUserID == myUserID {
-            if let claimant = record.claimantUserID, claimant != myUserID {
-                storage.setLinked(buddyUserID: claimant, via: nil)
-            }
-            return
-        }
-        record.claimantUserID = myUserID
-        storage.setLinked(buddyUserID: record.ownerUserID, via: nil)
-        try await store.update(record)
+        guard BuddyPairingCode.isWellFormed(code) else { throw BuddySyncError.malformedPairingCode }
+        try await claim(code, mayRetry: true)
     }
 
-    /// Forget the pairing on this device. Returns who the buddy was.
+    private func claim(_ code: String, mayRetry: Bool) async throws {
+        let found = try await store.fetch(code: code)
+
+        if code == storage.myCode || found?.ownerUserID == myUserID {
+            // My own code. If my buddy already typed it, that is a real pairing and I adopt
+            // it; otherwise there is nobody on the other end.
+            if let found, found.ownerUserID == myUserID { adoptClaimant(of: found) }
+            if let buddy = storage.buddyUserID, buddy == found?.claimantUserID { return }
+            throw BuddySyncError.ownPairingCode
+        }
+        guard var record = found, !record.ownerUserID.isEmpty else {
+            // Nothing under that code. The owner's phone creates the record, never the typer's:
+            // creating it here is what used to answer a typo with "You're connected!".
+            throw BuddySyncError.invalidPairingCode
+        }
+        if let claimant = record.claimantUserID {
+            guard claimant == myUserID else { throw BuddySyncError.pairingCodeAlreadyClaimed }
+            // I hold this claim already (typed twice, or the device lost the link): no write.
+            storage.setLinked(buddyUserID: record.ownerUserID, via: .init(code: code, role: .claimant))
+            return
+        }
+
+        record.claimantUserID = myUserID
+        do {
+            try await store.update(record)
+        } catch BuddyPairingStoreError.changedSinceFetch {
+            // Someone wrote the record after I read it. Read again: it may be claimed now.
+            guard mayRetry else { throw BuddySyncError.cloudKitUnavailable }
+            try await claim(code, mayRetry: false)
+            return
+        }
+        // Only now, with the claim saved, does this device consider itself linked.
+        storage.setLinked(buddyUserID: record.ownerUserID, via: .init(code: code, role: .claimant))
+    }
+
+    // MARK: Both sides
+
+    /// Does the pairing record still name the two of us? If it was read and does not, the
+    /// buddy ended the pairing: the link is cleared and `.unpairedByBuddy` is thrown.
+    ///
+    /// Only a pairing whose record is known (`storage.via`) can be checked; one made by an
+    /// earlier build is left alone. A read that fails proves nothing and changes nothing.
+    func verifyLink() async throws {
+        guard let buddy = storage.buddyUserID, let via = storage.via else { return }
+        let record: BuddyPairingRecord?
+        do { record = try await store.fetch(code: via.code) } catch { return }
+        let stillPaired: Bool
+        switch via.role {
+        case .owner:
+            stillPaired = record?.ownerUserID == myUserID && record?.claimantUserID == buddy
+        case .claimant:
+            stillPaired = record?.ownerUserID == buddy && record?.claimantUserID == myUserID
+        }
+        guard !stillPaired else { return }
+        storage.clear()
+        throw BuddySyncError.unpairedByBuddy
+    }
+
+    /// End the pairing. Returns who the buddy was, or nil when there was none.
+    ///
+    /// This device forgets the link first. Then, best-effort: my claim comes off the buddy's
+    /// record (when I was the one who typed), and my own code is retired: its record is
+    /// removed and the code forgotten, so the code that was shared stops working. Either
+    /// write is how the other side finds out (`verifyLink`); if neither goes through, the
+    /// other side keeps a link that will show as stale.
+    ///
+    /// One exception keeps my code: someone OTHER than the buddy I am leaving has typed it
+    /// and is waiting. That is the buddy who reinstalled, came back under a new id and
+    /// typed my code while my phone was still linked to their old one. Their claim stands,
+    /// and I am paired with them the next time I look (`resolveClaimant`).
     @discardableResult
     func unlink() async -> String? {
-        let old = storage.buddyUserID
+        guard let buddy = storage.buddyUserID else { return nil }
+        let via = storage.via
+        let myCode = storage.myCode
         storage.clear()
-        return old
+
+        if let via, via.role == .claimant,
+           var record = try? await store.fetch(code: via.code),
+           record.ownerUserID == buddy, record.claimantUserID == myUserID {
+            record.claimantUserID = nil
+            try? await store.update(record)
+        }
+
+        var someoneIsWaiting = false
+        if let myCode,
+           let mine = try? await store.fetch(code: myCode), mine.ownerUserID == myUserID {
+            if let waiting = mine.claimantUserID, waiting != buddy, waiting != myUserID {
+                someoneIsWaiting = true
+            } else {
+                try? await store.delete(code: myCode)
+            }
+        }
+        if !someoneIsWaiting { storage.retireMyCode() }
+        return buddy
     }
 }
 

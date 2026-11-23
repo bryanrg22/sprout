@@ -1,64 +1,39 @@
 import Foundation
 import CloudKit
 
-/// A **real, minimal** CloudKit implementation of `BuddySyncService` for cross-device
-/// buddy sync. It is wired against the current CloudKit async APIs and *degrades
-/// gracefully*: every networked operation first checks that iCloud is actually usable
-/// (`ensureAvailable()`) and throws `BuddySyncError.cloudKitUnavailable` when it isn't —
-/// so nothing here can crash or hang the app, even before the backend is fully set up.
+/// The CloudKit implementation of `BuddySyncService`: pairing, snapshots and nudges in the
+/// container's PUBLIC database. Every networked call first checks that iCloud is usable
+/// (`ensureAvailable()`) and throws a `BuddySyncError` when it is not, so nothing here can
+/// crash or hang the app.
 ///
-/// The CloudKit container `iCloud.com.bryanram.victoria` and the CloudKit service are
-/// already declared in the app's entitlements / `project.yml`, and `Self.containerIdentifier`
-/// matches them. What remains to take this LIVE is human-only (no code changes):
+/// **No test runs this file**: there is no CloudKit in the test process. What it decides
+/// about pairing is in `BuddyPairingEngine`, which is tested; what is left here is the
+/// mapping to and from `CKRecord`. `docs/buddy-sync.md` has the sequence, every failure and
+/// what the user sees.
 ///
-/// ┌─────────────────────────────────────────────────────────────────────────────────┐
-/// │ REMAINING HUMAN STEPS TO GO LIVE (all done by a person; not code):                │
-/// │                                                                                   │
-/// │  1. SIGNING. Set `DEVELOPMENT_TEAM` in Xcode → Signing & Capabilities for a PAID   │
-/// │     Apple Developer team (CloudKit containers require a paid membership; it is     │
-/// │     blank in `project.yml` today).                                                 │
-/// │  2. CONTAINER. Let Xcode create / register the `iCloud.com.bryanram.victoria`      │
-/// │     container under that team (the iCloud capability + id are already declared;    │
-/// │     Xcode just needs to provision it on the portal).                              │
-/// │  3. iCLOUD SIGN-IN on BOTH physical devices (Settings → Apple ID) with DIFFERENT   │
-/// │     iCloud accounts. `accountStatus()` returns `.available` only when signed in;   │
-/// │     until then this service self-degrades to `.cloudKitUnavailable`. NOTE: the     │
-/// │     Simulator can't sign in to iCloud, which is exactly why `BuddySync` routes the │
-/// │     Simulator to `LocalMockSyncService`.                                            │
-/// │  4. CLOUDKIT DASHBOARD — INDEXES. On first save CloudKit auto-creates the record    │
-/// │     types in the *Development* environment, but custom fields are NOT queryable/    │
-/// │     sortable by default. In the PUBLIC database schema add:                          │
-/// │       - QUERYABLE index on `Nudge.toUserID`   (the inbox `records(matching:)` query │
-/// │         AND the nudge push subscription's predicate)                                │
-/// │       - SORTABLE  index on `Nudge.createdAt`  (the inbox sort)                      │
-/// │       - QUERYABLE index on `BuddySnapshot.ownerUserID` — the SNAPSHOT push          │
-/// │         subscription (`ensureSnapshotSubscription`) predicates on it. Fetches are   │
-/// │         by record ID (no index needed), but WITHOUT this index the silent "buddy    │
-/// │         just logged" wake-up never fires and the hub only updates via its 20s poll. │
-/// │     `BuddyPairing.pairingCode` needs no index (addressed by record ID only).        │
-/// │  5. DEPLOY the schema from Development to PRODUCTION in the CloudKit Dashboard      │
-/// │     before shipping a Release/TestFlight build (Development schema is not visible   │
-/// │     to production builds). ⚠️ REPEAT THIS EVERY TIME A NEW FIELD IS ADDED to any    │
-/// │     record type (e.g. the v2 full-share fields carbs/fat/workoutSummary): writing a │
-/// │     field that doesn't exist in the Production schema makes the WHOLE save fail on  │
-/// │     TestFlight builds — publishes silently stop and the buddy sees a frozen, stale  │
-/// │     snapshot even though the app "works". Re-seed (debugSeedSchema) + re-deploy.    │
-/// └─────────────────────────────────────────────────────────────────────────────────┘
+/// What only a person can do, in the CloudKit Dashboard (`docs/buddy-sync.md`, last section):
 ///
-/// HARDENING TODO (future, not required to go live): the pairing rendezvous below uses
-/// the PUBLIC database keyed on a short `pairingCode` (simple, no share-acceptance UI,
-/// fine for a tiny 2-person link). A stronger model would move buddy data into a CKShare
-/// / shared zone so only the two intended iCloud users can see each other's records
-/// rather than relying on a public, guessable code. See the TODO at `link`.
+///  1. INDEXES, public database: `Nudge.toUserID` QUERYABLE (the inbox query and the nudge
+///     push subscription), `Nudge.createdAt` SORTABLE (the inbox sort),
+///     `BuddySnapshot.ownerUserID` QUERYABLE (the snapshot push subscription; without it
+///     the hub only updates by its 20 s poll). `BuddyPairing` needs none: it is addressed
+///     by record name.
+///  2. DEPLOY the schema from Development to PRODUCTION, and again EVERY TIME A FIELD IS
+///     ADDED to a record type. A save that writes a field the Production schema lacks
+///     fails whole: publishes stop on TestFlight builds and the buddy sees a frozen
+///     snapshot. `debugSeedSchema` writes every field once so Development has them all.
+///  3. SECURITY ROLES, public database: claiming a code, unpairing as the one who typed
+///     it, and marking a nudge read each WRITE to a record another iCloud user created.
+///     With the default roles only the creator may write.
 ///
-/// **Isolation & Sendability:** `@MainActor final class` (same rationale as
-/// `LocalMockSyncService` — `Nudge` @Model objects are bound to the main-actor
-/// `ModelContext` and must never cross an actor boundary). The CloudKit `await` calls
-/// suspend off-main internally and resume on the main actor, so this stays fully
-/// async/non-blocking. Because a `Nudge` (and CloudKit's own non-`Sendable` types) must
-/// not be live across those suspensions, every method reads a `Nudge`'s fields into a
-/// `Sendable` `NudgeWire` **synchronously before** the first `await`, and rebuilds any
-/// returned `[Nudge]` from `NudgeWire`s **after** the awaits — see `sendNudge`/`fetchInbox`.
+/// HARDENING TODO: pairing is a rendezvous on a short code in the PUBLIC database. A
+/// stronger model moves buddy data into a CKShare / shared zone so only the two intended
+/// iCloud users can read each other's records.
+///
+/// **Isolation & Sendability:** `@MainActor final class`: `Nudge` @Model objects are
+/// bound to the main-actor `ModelContext` and must never cross an actor boundary. Every
+/// method reads a `Nudge`'s fields into a `Sendable` `NudgeWire` **before** the first
+/// `await`, and rebuilds any returned `[Nudge]` from `NudgeWire`s **after** the awaits.
 @MainActor
 final class CloudKitSyncService: BuddySyncService {
 
@@ -71,7 +46,7 @@ final class CloudKitSyncService: BuddySyncService {
     private static let containerIdentifier = "iCloud.com.bryanram.victoria"
 
     // CloudKit record types. These get auto-created in the Development environment on
-    // first save; remember to add the queryable/sortable indexes (see step 4 above).
+    // first save; remember to add the queryable/sortable indexes (header, step 1).
     private enum RecordType {
         static let pairing  = "BuddyPairing"
         static let nudge    = "Nudge"
@@ -175,7 +150,7 @@ final class CloudKitSyncService: BuddySyncService {
     /// Production schema is missing a field" from a device in the field, and a buddy whose
     /// snapshot silently freezes for a month with no trace anywhere.
     nonisolated static func logCK(_ op: String, _ error: Error) {
-        Diagnostics.shared.log("buddy/ck \(op): \(errLine(error))", .sync)
+        BuddyLog.sync("buddy/ck \(op): \(errLine(error))")
     }
 
     /// Compact one-line description of a (possibly CloudKit) error, for diagnostics.
@@ -188,8 +163,10 @@ final class CloudKitSyncService: BuddySyncService {
 
     // MARK: Availability gate
 
-    /// Throws `.cloudKitUnavailable` unless iCloud is signed in AND reachable. Every
-    /// network method funnels through here first so the service can never hard-fail.
+    /// Throws unless iCloud is signed in AND reachable. Every network method funnels
+    /// through here first so the service can never hard-fail. No account (or a restricted
+    /// one) is `.iCloudAccountMissing`: waiting does not fix it, so the user is told to
+    /// sign in instead of "it will catch up".
     private func ensureAvailable() async throws {
         let status: CKAccountStatus
         do {
@@ -199,17 +176,25 @@ final class CloudKitSyncService: BuddySyncService {
             Self.logCK("accountStatus", error)
             throw BuddySyncError.cloudKitUnavailable
         }
-        guard status == .available else {
-            Diagnostics.shared.log("buddy/ck account not available (status \(status.rawValue))", .sync)
-            throw BuddySyncError.cloudKitUnavailable
+        if let failure = Self.failure(for: status) {
+            BuddyLog.sync("buddy/ck account not available (status \(status.rawValue))")
+            throw failure
+        }
+    }
+
+    /// What an iCloud account status means for sync: nil when it can go ahead.
+    nonisolated static func failure(for status: CKAccountStatus) -> BuddySyncError? {
+        switch status {
+        case .available:                return nil
+        case .noAccount, .restricted:   return .iCloudAccountMissing
+        default:                        return .cloudKitUnavailable
         }
     }
 
     // MARK: BuddySyncService
 
     nonisolated func generatePairingCode() -> String {
-        // Same generator as the mock so codes look identical regardless of backend.
-        LocalMockSyncService.makePairingCode()
+        BuddyPairingCode.make()
     }
 
     func publishMyPairingCode(_ code: String) async throws {
@@ -232,13 +217,13 @@ final class CloudKitSyncService: BuddySyncService {
     /// be QUERYABLE for the subscription's predicate (same index the inbox query needs).
     private func ensureNudgeSubscription() async {
         // v2 bumps the subscription so devices that had the old static-text one recreate it
-        // with the DYNAMIC body below ("Victoria: You've got this 💚" / "🎉 Victoria hit her
-        // goal!") pulled from the nudge's own `text` field, instead of a generic line.
+        // with the DYNAMIC body below, pulled from the nudge's own `text` field, instead of
+        // a generic line.
         let key = "buddy.ck.subscribed.v2.\(myUserID)"
         guard !UserDefaults.standard.bool(forKey: key) else { return }
 
         // Remove the old static-text subscription first, so a nudge can't double-notify.
-        try? await database.deleteSubscription(withID: "nudges-to-\(myUserID)")
+        _ = try? await database.deleteSubscription(withID: "nudges-to-\(myUserID)")
 
         let predicate = NSPredicate(format: "%K == %@", Field.toUserID, myUserID)
         let subscription = CKQuerySubscription(
@@ -254,6 +239,8 @@ final class CloudKitSyncService: BuddySyncService {
         info.alertLocalizationKey = "%@"
         info.alertLocalizationArgs = [Field.text]
         info.soundName = "default"
+        // CloudKit counts this badge on its server and the count only grows; the app sets
+        // the badge to the unread count whenever it loads the inbox (`BuddyViewModel`).
         info.shouldBadge = true
         subscription.notificationInfo = info
         do {
@@ -290,7 +277,7 @@ final class CloudKitSyncService: BuddySyncService {
         } catch {
             // Best-effort: leave the flag unset so we retry next time (once iCloud is ready).
             // Common cause worth reading in the field log: "Field 'ownerUserID' is not marked
-            // queryable" = the Dashboard index from header step 4 is missing.
+            // queryable" = the Dashboard index from header step 1 is missing.
             Self.logCK("snapshotSub.save", error)
         }
     }
@@ -307,17 +294,28 @@ final class CloudKitSyncService: BuddySyncService {
     }
 
     func unlink() async throws {
-        // Best-effort and idempotent. If CloudKit is down we still consider the local
-        // unlink successful, so the user is never blocked from leaving.
-        let old = await pairing.unlink()
-        // Tear down the per-buddy snapshot push subscription — otherwise this device keeps getting
-        // silent wake-ups for the EX-buddy after re-linking, and the per-buddy "created" flag would
-        // never let it be recreated for the next buddy. (The nudge subscription is keyed on my own
-        // id, so it's stable across re-link and left as-is.)
-        if let old {
-            try? await database.deleteSubscription(withID: "buddy-snapshot-\(myUserID)-from-\(old)")
-            UserDefaults.standard.removeObject(forKey: "buddy.ck.snapshotSub.\(myUserID).from.\(old)")
+        // The device forgets the link first; telling CloudKit is best-effort, so the user is
+        // never blocked from leaving (`BuddyPairingEngine.unlink`).
+        guard let old = await pairing.unlink() else { return }
+        await removeSnapshotSubscription(from: old)
+        // What I published was for that buddy: take it out of the public database. The next
+        // pairing's first publish creates it again.
+        do {
+            _ = try await database.deleteRecord(withID: CKRecord.ID(recordName: "snapshot-\(myUserID)"))
+        } catch let ckError as CKError where ckError.code == .unknownItem {
+            // Never published: nothing to remove.
+        } catch {
+            Self.logCK("snapshot.delete", error)
         }
+    }
+
+    /// Tear down the per-buddy snapshot push subscription — otherwise this device keeps getting
+    /// silent wake-ups for the EX-buddy after re-linking, and the per-buddy "created" flag would
+    /// never let it be recreated for the next buddy. (The nudge subscription is keyed on my own
+    /// id, so it's stable across re-link and left as-is.)
+    private func removeSnapshotSubscription(from old: String) async {
+        _ = try? await database.deleteSubscription(withID: "buddy-snapshot-\(myUserID)-from-\(old)")
+        UserDefaults.standard.removeObject(forKey: "buddy.ck.snapshotSub.\(myUserID).from.\(old)")
     }
 
     func sendNudge(_ nudge: Nudge) async throws {
@@ -452,7 +450,7 @@ final class CloudKitSyncService: BuddySyncService {
         } catch {
             // THE line to look for when a buddy's snapshot goes stale: if this logs
             // `invalidArguments` on a TestFlight build, the Production schema is missing a
-            // field this build writes — re-seed + re-deploy the schema (header steps 4–5).
+            // field this build writes — re-seed + re-deploy the schema (header step 2).
             Self.logCK("publish.save", error)
             throw BuddySyncError.cloudKitUnavailable
         }
@@ -462,6 +460,14 @@ final class CloudKitSyncService: BuddySyncService {
         try await ensureAvailable()
         await pairing.resolveClaimant()   // owner side: discover a buddy who claimed my code
         await ensureNudgeSubscription() // one-time: push me a notification when a nudge arrives
+        // Did the buddy end the pairing? Clears the link and throws `.unpairedByBuddy` if so.
+        let linkedBefore = buddyUserID
+        do {
+            try await pairing.verifyLink()
+        } catch {
+            if let linkedBefore { await removeSnapshotSubscription(from: linkedBefore) }
+            throw error
+        }
         guard let buddyUserID else { throw BuddySyncError.notLinked }
         await ensureSnapshotSubscription(buddyUserID: buddyUserID) // one-time: silent push when they log
 
