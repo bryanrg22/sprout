@@ -22,10 +22,10 @@ Last updated: 2026-11-22.
 | G3 | A widget never shows anyone else's data, or yesterday's as today's | blocked: the owner restarts his phone on a build and looks at the widget before unlocking |
 | G4 | The store returns what was put in | in progress: schema, round trips, merges, queries and the SQL script are done; entry points, on-disk and UI comparison remain |
 | G5 | Changing a setting changes everything that depends on it | in progress: three defects fixed and 95 matrix tests (EVAL_REPORT 16); the dependency table and kilograms remain |
-| G6 | No step breaks when done out of order, repeated, or skipped | in progress: UI smoke flows being built |
+| G6 | No step breaks when done out of order, repeated, or skipped | in progress: 15 UI flows pass (EVAL_REPORT 17); the onboarding flow and its skip combinations remain |
 | G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); tool descriptions, onboarding copy and the demo seed remain |
 | G8 | A new person gets their own pixel character from a photo | blocked: built and seen in the simulator (EVAL_REPORT 15); the owner supplies photos and approves the image runs, and deploys the CloudKit schema |
-| G9 | Home and Gym as two modes, switched at the top | blocked: the owner reviews the two screenshots and taps the switch on a build |
+| G9 | Home and Gym as two modes, switched at the top | in progress: built, tapped by a UI test both ways with state kept (EVAL_REPORT 12, 17); open: VoiceOver reaches the hidden surface (U-1), the light theme, and the owner's look at the screenshots |
 | G10 | Nutrition is as specific as it can honestly be | open |
 | G11 | The open defects are closed | open |
 | G12 | Competitions | todo (spec needed) |

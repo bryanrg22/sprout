@@ -26,6 +26,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 14 | Prompts for whoever is using the app, re-measured; a discarded rewrite explained | 2026-11-22 |
 | 15 | A character from a photo | 2026-11-22 |
 | 16 | Settings that change what depends on them: the plan, kilograms, and where a key goes | 2026-11-22 |
+| 17 | UI smoke flows: the app driven end to end, and what the accessibility audit found | 2026-11-23 |
 
 ---
 
@@ -697,3 +698,52 @@ of matrix cells by status; simulator screenshots of the reworded Settings copy; 
 that each new test fails on the old code. **Found and open:** the step bonus is applied
 on the Today ring and the widget but not on Nutrients, the coach, the buddy snapshot or
 achievements; Settings' recommended water is not clamped the way onboarding's is.
+
+## 17. UI smoke flows: the app driven end to end, and what the accessibility audit found (2026-11-23)
+
+Objective G6. Until now nothing drove the app's UI; section 9 measured 19.1% of the
+app's lines executed by tests.
+
+**Added:** a `VictoriaUITests` target with its own scheme, and test hooks compiled into
+Debug builds only (the Release binary was checked to contain none of them):
+`--ui-testing` runs on an in-memory store with CloudKit off and suppresses permission
+prompts, and `--ui-test-scripted-ai=<name>` answers every model call from a built-in
+script. Fifteen flows, each a fresh launch, located by accessibility identifiers rather
+than by copy: a fresh install shows onboarding; a seeded launch shows Today and every
+Home tab opens; the Home and Gym switch is tapped both ways, the tab bar goes and comes
+back, and the choice survives a relaunch; Home's state survives a round trip through
+Gym; a food is logged by hand, appears, and moves Today's calories; logging twice and
+deleting one leaves the right totals; water is logged; a workout is logged; a coach turn
+on a scripted model proposes a tool, applies it, shows the reply, moves Today's water,
+and undoes; a failing provider shows the error and the app stays usable; the app is
+backgrounded in the middle of the food sheet and of a coach turn and comes back valid;
+the coach, Gym and Settings are each opened first on a fresh launch.
+
+**Verified by running:** three consecutive runs by the author of the flows, each 15 tests
+with 10 passed and 5 expected failures, about 5 minutes; and once more on the integrated
+branch (with the character step and the settings changes merged): the same result. Unit
+suite on that branch: **780 tests, 777 passed, 3 known defects pinned.** The flows are a
+CI job; it has not run on GitHub yet.
+
+**This closes two "not verified" items of section 12:** the switch has now been tapped,
+and state surviving a switch is asserted.
+
+**Defects found:**
+
+| ID | Defect | Where |
+|---|---|---|
+| U-1 | The surface hidden by the Home and Gym switch stays in the accessibility tree, so VoiceOver can reach controls that are not on screen. `.accessibilityHidden` on the hidden surface does not take effect on the tab view. Pinned as an expected failure. | `RootView.swift`, the two surfaces under the switch |
+| U-2 | The demo seed's profile is created "now", so both day steppers are disabled and its seeded past days cannot be reached. | `DemoSeed.swift:29` |
+| U-3 | A string in the Nutrients tab still names one person. | `FoodLogView.swift:427` |
+
+**Accessibility audit** (`performAccessibilityAudit`, pinned as expected failures in five
+flows, 19 to 32 issues per screen, about 70% of them from U-1). On screen: 9 pt day
+letters on Workouts with no Dynamic Type and low contrast; contrast on the setup card,
+the widget promo card, the plan card and a weight row; a clipped title on Workouts and,
+in some runs, a clipped greeting on Today; a fixed-height mode switch; an unlabelled
+image and a fixed 56 pt control on Progress; partial Dynamic Type in the coach. None is
+fixed.
+
+**Not covered:** onboarding beyond its first screen (the character step was being added);
+the light theme; locales other than en-US; a run that crosses midnight; a simulator
+signed in to iCloud.
