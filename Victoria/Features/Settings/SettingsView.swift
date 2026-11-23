@@ -71,6 +71,7 @@ struct SettingsView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                         .fontWeight(.semibold)
+                        .accessibilityIdentifier(AccessibilityID.Settings.done)
                 }
             }
         }

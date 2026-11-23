@@ -174,6 +174,7 @@ struct OnboardingView: View {
         }
         .accessibilityElement()
         .accessibilityLabel("Step \(page + 1) of \(pageCount)")
+        .accessibilityIdentifier(AccessibilityID.Onboarding.steps)
     }
 
     // MARK: - Vita: the coach voice

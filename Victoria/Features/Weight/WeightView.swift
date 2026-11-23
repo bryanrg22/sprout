@@ -92,6 +92,7 @@ struct WeightView: View {
                     .padding(.vertical, Theme.spacingL)
                 }
             }
+            .accessibilityIdentifier(AccessibilityID.Progress.root)
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Progress")
             .scrollContentBackground(.hidden)

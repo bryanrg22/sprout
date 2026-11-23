@@ -269,6 +269,7 @@ struct WorkoutLogFlow: View {
                         .background(Theme.brandSoft, in: RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
                     TextField("Minutes", text: $durationText)
                         .keyboardType(.numberPad)
+                        .accessibilityIdentifier(AccessibilityID.WorkoutLog.minutes)
                         .font(.title3.weight(.semibold))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("min")
@@ -323,6 +324,7 @@ struct WorkoutLogFlow: View {
                 Button("Save", action: save)
                     .fontWeight(.semibold)
                     .disabled(!canSave)
+                    .accessibilityIdentifier(AccessibilityID.WorkoutLog.save)
             }
         }
     }
@@ -529,6 +531,7 @@ private struct KindTile: View {
         .buttonStyle(.plain)
         .bouncyPress()
         .accessibilityLabel(kind.label)
+        .accessibilityIdentifier(AccessibilityID.WorkoutLog.kind(kind.rawValue))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

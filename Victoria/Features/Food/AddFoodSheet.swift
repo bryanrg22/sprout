@@ -190,6 +190,7 @@ struct AddFoodSheet: View {
 
                 Section("What did you eat?") {
                     TextField("Name", text: $name)
+                        .accessibilityIdentifier(AccessibilityID.AddFood.name)
                     mealSelectorRow
                     TextField("Serving (e.g. 1 cup)", text: $servingDescription)
                     HStack {
@@ -207,6 +208,7 @@ struct AddFoodSheet: View {
                         portionRow
                     }
                     nutrientRow("Calories", text: $calories, unit: "kcal", color: Theme.calories)
+                        .accessibilityIdentifier(AccessibilityID.AddFood.calories)
                     nutrientRow("Protein", text: $proteinG, unit: "g", color: Theme.protein)
                     nutrientRow("Carbs", text: $carbsG, unit: "g", color: Theme.carbs)
                     nutrientRow("Fat", text: $fatG, unit: "g", color: Theme.fat)
@@ -235,6 +237,7 @@ struct AddFoodSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save).disabled(!canSave)
+                        .accessibilityIdentifier(AccessibilityID.AddFood.save)
                 }
             }
         }

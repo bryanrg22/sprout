@@ -57,6 +57,7 @@ struct WorkoutsView: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
+            .accessibilityIdentifier(AccessibilityID.Workouts.root)
             .navigationTitle("Workouts")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -314,6 +315,7 @@ struct WorkoutsView: View {
         .buttonStyle(.plain)
         .bouncyPress()
         .accessibilityLabel("Log a workout")
+        .accessibilityIdentifier(AccessibilityID.Workouts.log)
     }
 
     // MARK: Empty states
@@ -460,6 +462,7 @@ private struct SessionRow: View {
         .cardElevated()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(WorkoutSummary.title(for: session)), \(WorkoutSummary.summary(for: session, exerciseCount: exercises.count))")
+        .accessibilityIdentifier(AccessibilityID.Workouts.sessionRow)
     }
 }
 
