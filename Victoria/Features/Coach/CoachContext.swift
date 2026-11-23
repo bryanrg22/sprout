@@ -632,6 +632,11 @@ enum CoachContext {
             var details: [String] = []
             let serving = f.servingDescription.trimmingCharacters(in: .whitespacesAndNewlines)
             if !serving.isEmpty { details.append("serving: \(serving)") }
+            // The label nutrients that are KNOWN for this item, scaled like the totals above.
+            // One that is not known is left out, never written as 0.
+            if let label = f.detail.summary(quantity: f.quantity, locale: Locale(identifier: "en_US_POSIX")) {
+                details.append("also: \(label)")
+            }
             if let lo = f.caloriesLow, let hi = f.caloriesHigh, hi > lo {
                 // Per-serving range scaled to the logged quantity, matching the totals above.
                 details.append("est. range \(Int((lo * f.quantity).rounded()))–\(Int((hi * f.quantity).rounded())) kcal")

@@ -123,12 +123,19 @@ struct FoodLogView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { scroller in
             ScrollView {
                 VStack(spacing: Theme.Space.md) {
                     dayNav
                     summaryCard
                     // Macros as goal rings, for any day.
                     macrosCard
+                    // The rest of the label for the day: fiber, sugars, sodium and so on, each
+                    // with how many of the day's foods the total covers.
+                    if !dayEntries.isEmpty {
+                        DayNutrientDetailCard(totals: NutrientTotals(dayEntries))
+                            .id(Self.detailCardID)
+                    }
                     // Steps + Water — each its own card (steps above water), with a goal ring.
                     stepsCard
                     waterCard
@@ -150,6 +157,10 @@ struct FoodLogView: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
+            #if DEBUG
+            .task { await applyDemoArguments(scroller) }
+            #endif
+            }
             // A subtle one-shot celebration for the first food logged today.
             .overlay(ConfettiBurst(trigger: firstLogConfetti).ignoresSafeArea())
             .navigationTitle("Nutrients")
@@ -208,6 +219,36 @@ struct FoodLogView: View {
                 .receive(on: DispatchQueue.main)) { _ in followTodayIfTheDayChanged() }
         }
     }
+
+    private static let detailCardID = "nutrientDetailCard"
+
+    #if DEBUG
+    /// DEBUG launch arguments that put this tab in a state worth a screenshot, since a
+    /// simulator launch cannot tap: `--demo-food-detail <text>` opens the detail card of
+    /// today's food whose name contains the text, `--demo-food-edit <text>` opens its edit
+    /// sheet, and `--demo-scroll-nutrients` scrolls to the "More nutrients" card.
+    @MainActor
+    private func applyDemoArguments(_ scroller: ScrollViewProxy) async {
+        let arguments = CommandLine.arguments
+        func value(after flag: String) -> String? {
+            guard let index = arguments.firstIndex(of: flag), index + 1 < arguments.count else { return nil }
+            return arguments[index + 1]
+        }
+        // Let the seeded rows arrive and the first layout settle.
+        try? await Task.sleep(nanoseconds: 900_000_000)
+        func entry(matching text: String) -> FoodEntry? {
+            dayEntries.first { $0.name.localizedCaseInsensitiveContains(text) }
+        }
+        if arguments.contains("--demo-scroll-nutrients") {
+            scroller.scrollTo(Self.detailCardID, anchor: .center)
+        }
+        if let text = value(after: "--demo-food-detail"), let found = entry(matching: text) {
+            detailEntry = found
+        } else if let text = value(after: "--demo-food-edit"), let found = entry(matching: text) {
+            editingEntry = found
+        }
+    }
+    #endif
 
     private func followTodayIfTheDayChanged() {
         let next = FoodLogDay.rolledForward(selected: selectedDay, lastKnownToday: lastKnownToday, now: .now)
