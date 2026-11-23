@@ -22,6 +22,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   are not supported yet, and Vita now says so instead of relabelling pounds.
 - A key pasted after a reinstall is saved for the right provider.
 - Prompts no longer assume who you are: no "her", no weight-loss framing for someone gaining.
+- Vita's tools no longer describe every user as "she" (EVAL_REPORT 24).
 - The daily brief is no longer thrown away when the model forgets a line break.
 - The food lookup no longer sends a personal email address with each request.
 
@@ -86,7 +87,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,112 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- Tests: 443 → 1,113 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
 - UI smoke flows: 15 end-to-end flows against a scripted model (EVAL_REPORT 17).
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

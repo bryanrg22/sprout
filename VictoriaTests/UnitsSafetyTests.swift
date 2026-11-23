@@ -88,7 +88,7 @@ final class UnitsSafetyTests: XCTestCase {
         w.profile.unitSystem = .metric
 
         let tools = try schemaText(w.profile)
-        XCTAssertTrue(tools.contains("Her weight today in lb."))
+        XCTAssertTrue(tools.contains("Their weight today in lb."))
         XCTAssertTrue(tools.contains("The new goal weight in lb."))
         XCTAssertTrue(tools.contains("The corrected starting weight in lb."))
         // ("in kg" alone would match the example request quoted in set_units' own description.)

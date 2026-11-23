@@ -113,7 +113,7 @@ final class SettingsFixesTests: XCTestCase {
         w.profile.pace = .leanGain
         try w.context.save()
         let applied = try XCTUnwrap(w.viaCoach("set_goal_direction", ["direction": "lose"]))
-        XCTAssertTrue(applied.message.contains("wrong side of her current weight"),
+        XCTAssertTrue(applied.message.contains("wrong side of their current weight"),
                       "goal 180 is above the current 170: \(applied.message)")
     }
 
