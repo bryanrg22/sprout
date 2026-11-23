@@ -297,6 +297,9 @@ enum CoachContext {
         var lines: [String] = []
 
         let unit = profile.unitSystem.weightUnit
+        // Weights are stored in pounds; the coach is told them in the person's unit, so it
+        // answers in the unit they see (EVAL_REPORT 31).
+        let u = profile.unitSystem
         let name = profile.name.isEmpty ? "(not given)" : profile.name
 
         // Weight used as the basis for targets: smoothed trend, else start weight.
@@ -307,14 +310,14 @@ enum CoachContext {
 
         // Goal + pace
         if profile.goalWeightLbs > 0 {
-            lines.append("Goal weight: \(lbs(profile.goalWeightLbs)) \(unit) "
-                         + "(pace: \(profile.pace.label.lowercased()), ~\(rate(profile.pace.weeklyRateLbs)) \(unit)/week)")
+            lines.append("Goal weight: \(lbs(u.display(profile.goalWeightLbs))) \(unit) "
+                         + "(pace: \(profile.pace.label.lowercased()), ~\(rate(u.display(profile.pace.weeklyRateLbs))) \(unit)/week)")
         } else {
             lines.append("Goal: \(profile.pace.label.lowercased()) "
-                         + "(~\(rate(profile.pace.weeklyRateLbs)) \(unit)/week)")
+                         + "(~\(rate(u.display(profile.pace.weeklyRateLbs))) \(unit)/week)")
         }
         if profile.startWeightLbs > 0 {
-            lines.append("Starting weight (at the start): \(lbs(profile.startWeightLbs)) \(unit) "
+            lines.append("Starting weight (at the start): \(lbs(u.display(profile.startWeightLbs))) \(unit) "
                          + "— the progress chart measures from here; the user can correct it in Settings "
                          + "or ask you to (set_start_weight)")
         }
@@ -434,9 +437,9 @@ enum CoachContext {
         // Weight trend + weekly rate + assessment wording.
         if let trend = TrendCalculator.currentTrend(weights) {
             let weeklyRate = TrendCalculator.ratePerWeek(weights)
-            lines.append("Current weight trend: \(lbs(trend)) \(unit) "
+            lines.append("Current weight trend: \(lbs(u.display(trend))) \(unit) "
                          + "(this is the smoothed trend, not today's raw scale number)")
-            lines.append("Recent rate: \(signedRate(weeklyRate)) \(unit)/week — \(assessmentPhrase(weeklyRate, weight: trend, direction: profile.pace.direction))")
+            lines.append("Recent rate: \(signedRate(u.display(weeklyRate))) \(unit)/week — \(assessmentPhrase(weeklyRate, weight: trend, direction: profile.pace.direction))")
 
             if profile.goalWeightLbs > 0,
                let eta = TrendCalculator.projectedGoalDate(weights, goalLbs: profile.goalWeightLbs) {

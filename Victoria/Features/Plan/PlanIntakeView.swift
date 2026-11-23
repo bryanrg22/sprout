@@ -75,8 +75,8 @@ struct PlanIntakeView: View {
                 // Structured context (read straight from the profile — editable goals come later).
                 if profile.goalWeightLbs > 0 {
                     HStack(spacing: Theme.Space.lg) {
-                        labeledStat("Goal", "\(Int(profile.goalWeightLbs)) \(unit)")
-                        labeledStat("Now", "~\(Int(currentWeight.rounded())) \(unit)")
+                        labeledStat("Goal", profile.unitSystem.format(profile.goalWeightLbs, decimals: 0))
+                        labeledStat("Now", "~" + profile.unitSystem.format(currentWeight, decimals: 0))
                     }
                 }
 

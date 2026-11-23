@@ -162,7 +162,7 @@ struct WeightTrendView: View {
         return String(format: "%.1f", t)
     }
     private var rateText: String {
-        String(format: "%@%.1f lb/wk", snap.isLosing ? "↓ " : "↑ ", abs(snap.ratePerWeek))
+        String(format: "%@%.1f %@/wk", snap.isLosing ? "↓ " : "↑ ", abs(snap.ratePerWeek), snap.weightUnit)
     }
     private var rateColor: Color { snap.isLosing ? Theme.positive : Theme.warning }
 
@@ -175,7 +175,7 @@ struct WeightTrendView: View {
                     .font(.system(size: 34, weight: .heavy, design: .rounded))
                     .monospacedDigit().minimumScaleFactor(0.6).lineLimit(1)
                     .foregroundStyle(Theme.textPrimary)
-                Text("lb").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textSecondary)
+                Text(snap.weightUnit).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.textSecondary)
             }
             Spark(points: snap.trendSpark, color: Theme.positive)
                 .frame(height: 36)
@@ -194,11 +194,11 @@ struct WeightTrendView: View {
 
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Label { Text("\(trendText) lb").font(.headline).fontWeight(.bold) }
+            Label { Text("\(trendText) \(snap.weightUnit)").font(.headline).fontWeight(.bold) }
                   icon: { Image(systemName: "chart.line.downtrend.xyaxis") }
             Text(rateText).font(.caption2).foregroundStyle(.secondary)
             if let r = snap.poundsToGoal, r > 0 {
-                Text("\(Int(r)) lb to goal").font(.caption2).foregroundStyle(.secondary)
+                Text("\(Int(r)) \(snap.weightUnit) to goal").font(.caption2).foregroundStyle(.secondary)
             }
         }
         .widgetAccentable()

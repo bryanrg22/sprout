@@ -34,8 +34,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 - **Changing your goal changes your targets.** With a plan, switching between losing and
   gaining left the old plan's calories in force. The plan's numbers now apply only to the
   direction they were written for, and Settings says what a change does (EVAL_REPORT 16).
-- **Asking Vita to switch to kilograms can no longer corrupt your weights.** Kilograms
-  are not supported yet, and Vita now says so instead of relabelling pounds.
+- **Asking Vita to switch to kilograms can no longer corrupt your weights.** A weight said
+  in kilograms is stored as the pounds it equals (EVAL_REPORT 31).
 - A key pasted after a reinstall is saved for the right provider.
 - Prompts no longer assume who you are: no "her", no weight-loss framing for someone gaining.
 - Vita's tools no longer describe every user as "she" (EVAL_REPORT 24).
@@ -69,6 +69,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   (EVAL_REPORT 4).
 
 ### Added
+
+- **Kilograms.** Settings → Your goals → Weight in. Progress, the weigh-in sheet, the
+  coach, the widget and the buddy card follow; stored weights never change, so switching
+  back and forth is safe (EVAL_REPORT 31).
 
 - **A weekly competition with your buddy**, in the Buddy hub: a point a day for each of
   your own targets you hit (calories in your range, protein, water, steps, being active),
@@ -123,8 +127,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,197 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 24 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+- Tests: 443 → 1,202 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- UI smoke flows: 25 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
   through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

@@ -45,6 +45,8 @@ struct WeightView: View {
     /// matches the rest of the app, which labels the lb value with the chosen unit
     /// (see DashboardView). True kg *conversion* is an app-wide gap, flagged separately.
     private var unitLabel: String { profile.unitSystem.weightUnit }
+    /// Weights are stored in pounds and shown in the chosen unit (EVAL_REPORT 31).
+    private var units: UnitSystem { profile.unitSystem }
 
     /// True when the latest raw reading sits noticeably OFF the trend in the direction
     /// that tends to discourage THIS user — so we only pop the reassurance when it helps:
@@ -99,8 +101,8 @@ struct WeightView: View {
             .safeAreaInset(edge: .bottom) { logBar }
             .sheet(isPresented: $showingLog) {
                 LogWeighInSheet(
-                    startingValue: (currentTrend ?? latestRaw?.weightLbs ?? profile.startWeightLbs),
-                    unitLabel: unitLabel,
+                    startingPounds: (currentTrend ?? latestRaw?.weightLbs ?? profile.startWeightLbs),
+                    units: units,
                     onSave: save(weight:)
                 )
             }
@@ -150,7 +152,7 @@ struct WeightView: View {
             HStack(alignment: .firstTextBaseline, spacing: Theme.spacingM) {
                 HStack(alignment: .firstTextBaseline, spacing: Theme.spacingXS) {
                     if let t = currentTrend {
-                        Text(t, format: .number.precision(.fractionLength(1)))
+                        Text(units.display(t), format: .number.precision(.fractionLength(1)))
                             .font(Theme.number(56))
                             .monospacedDigit()
                             .lineLimit(1)
@@ -191,7 +193,7 @@ struct WeightView: View {
         return HStack(spacing: Theme.spacingXS) {
             Image(systemName: goingDown ? "arrow.down.right" : "arrow.up.right")
                 .font(.caption.weight(.bold))
-            Text("\(abs(ratePerWeek), format: .number.precision(.fractionLength(1))) \(unitLabel)/wk")
+            Text(units.formatRate(ratePerWeek))
                 .monospacedDigit()
                 .contentTransition(.numericText())
         }
@@ -239,7 +241,7 @@ struct WeightView: View {
             ForEach(rangedWeights) { entry in
                 PointMark(
                     x: .value("Date", entry.date),
-                    y: .value("Weight", entry.weightLbs)
+                    y: .value("Weight", units.display(entry.weightLbs))
                 )
                 .foregroundStyle(Theme.textSecondary.opacity(0.35))
                 .symbolSize(20)
@@ -250,7 +252,7 @@ struct WeightView: View {
                 AreaMark(
                     x: .value("Date", point.date),
                     yStart: .value("Floor", chartYDomain.lowerBound),
-                    yEnd: .value("Trend", point.value)
+                    yEnd: .value("Trend", units.display(point.value))
                 )
                 .interpolationMethod(.catmullRom)
                 .foregroundStyle(
@@ -266,7 +268,7 @@ struct WeightView: View {
             ForEach(trendPoints) { point in
                 LineMark(
                     x: .value("Date", point.date),
-                    y: .value("Trend", point.value)
+                    y: .value("Trend", units.display(point.value))
                 )
                 .interpolationMethod(.catmullRom)
                 .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
@@ -276,11 +278,11 @@ struct WeightView: View {
             // Dashed goal line — guarded like the start line, so a 0/unset goal never draws a
             // bogus "Goal 0 lb" rule or squashes the chart's Y-domain down to zero.
             if profile.goalWeightLbs > 0 {
-                RuleMark(y: .value("Goal", profile.goalWeightLbs))
+                RuleMark(y: .value("Goal", units.display(profile.goalWeightLbs)))
                     .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                     .foregroundStyle(Theme.accent.opacity(0.85))
                     .annotation(position: .top, alignment: .trailing, spacing: 2) {
-                        Text("Goal \(Int(profile.goalWeightLbs.rounded())) \(unitLabel)")
+                        Text("Goal \(units.format(profile.goalWeightLbs, decimals: 0))")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(Theme.accent)
                     }
@@ -289,11 +291,11 @@ struct WeightView: View {
             // Dashed starting-weight line — so the chart shows BOTH ends of the journey
             // (start → goal), not just the finish. Neutral grey, distinct from the goal line.
             if profile.startWeightLbs > 0 {
-                RuleMark(y: .value("Start", profile.startWeightLbs))
+                RuleMark(y: .value("Start", units.display(profile.startWeightLbs)))
                     .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                     .foregroundStyle(Theme.textSecondary.opacity(0.6))
                     .annotation(position: .bottom, alignment: .leading, spacing: 2) {
-                        Text("Start \(Int(profile.startWeightLbs.rounded())) \(unitLabel)")
+                        Text("Start \(units.format(profile.startWeightLbs, decimals: 0))")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(Theme.textSecondary)
                     }
@@ -347,8 +349,14 @@ struct WeightView: View {
         }
     }
 
-    /// Y-domain padded to include both the data and the goal line, with breathing room.
+    /// Y-domain padded to include both the data and the goal line, with breathing room, in
+    /// the unit shown.
     private var chartYDomain: ClosedRange<Double> {
+        let pounds = chartYDomainPounds
+        return units.display(pounds.lowerBound)...units.display(pounds.upperBound)
+    }
+
+    private var chartYDomainPounds: ClosedRange<Double> {
         var values = rangedWeights.map(\.weightLbs)
         values.append(contentsOf: trendPoints.map(\.value))
         if profile.goalWeightLbs > 0 { values.append(profile.goalWeightLbs) }
@@ -467,23 +475,30 @@ private enum ChartRange: String, CaseIterable, Identifiable {
 // MARK: - Log weigh-in sheet
 
 private struct LogWeighInSheet: View {
-    let startingValue: Double
-    let unitLabel: String
+    let units: UnitSystem
+    /// Called with POUNDS: the sheet works in the shown unit and converts once, on save.
     let onSave: (Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    /// In the shown unit.
     @State private var weight: Double
     @State private var didSave = false
 
-    private let bounds: ClosedRange<Double> = 50...500
-    private let step: Double = 0.2
+    private var unitLabel: String { units.weightUnit }
+    /// 50 to 500 lb, the range the coach tools accept, in the shown unit.
+    private var bounds: ClosedRange<Double> {
+        Self.snap(units.display(50), step: step)...Self.snap(units.display(500), step: step)
+    }
+    /// 0.2 lb, or 0.1 kg: each the finest step a home scale shows.
+    private var step: Double { units == .metric ? 0.1 : 0.2 }
 
-    init(startingValue: Double, unitLabel: String, onSave: @escaping (Double) -> Void) {
-        self.startingValue = startingValue
-        self.unitLabel = unitLabel
+    static func snap(_ value: Double, step: Double) -> Double { (value / step).rounded() * step }
+
+    init(startingPounds: Double, units: UnitSystem, onSave: @escaping (Double) -> Void) {
+        self.units = units
         self.onSave = onSave
-        let clamped = min(500, max(50, startingValue))
-        _weight = State(initialValue: (clamped * 5).rounded() / 5) // snap to 0.2 lb
+        let clamped = min(500, max(50, startingPounds))
+        _weight = State(initialValue: Self.snap(units.display(clamped), step: units == .metric ? 0.1 : 0.2))
     }
 
     var body: some View {
@@ -526,7 +541,7 @@ private struct LogWeighInSheet: View {
                 Spacer()
 
                 Button {
-                    onSave(weight)
+                    onSave(units.pounds(fromDisplay: weight))
                     didSave = true
                     dismiss()
                 } label: {

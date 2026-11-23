@@ -8,6 +8,8 @@ import SwiftUI
 /// today's food as friendly chips instead of a comma list. When they share activity only,
 /// it gracefully shows just the warm header (the old status-card behavior).
 struct BuddyDayCard: View {
+    /// The unit I read weights in (the buddy's are sent in pounds; EVAL_REPORT 31).
+    var units: UnitSystem = .imperial
     let snapshot: BuddySnapshotPayload
     /// The buddy's pixel character (the OTHER avatar from mine).
     var avatar: CompanionAvatar = .bryan
@@ -80,17 +82,17 @@ struct BuddyDayCard: View {
             tile(label: "Weight") {
                 VStack(spacing: 3) {
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text(Self.oneDecimal(snapshot.trendWeightLbs))
+                        Text(Self.oneDecimal(units.display(snapshot.trendWeightLbs)))
                             .font(.title3.weight(.bold)).monospacedDigit()
                             .foregroundStyle(Theme.textPrimary)
-                        Text("lb").font(.caption2).foregroundStyle(Theme.textSecondary)
+                        Text(units.weightUnit).font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     Text(rateText)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(rateTint)
                         .lineLimit(1).minimumScaleFactor(0.8)
                     if snapshot.goalWeightLbs > 0 {
-                        Text("→ \(Self.oneDecimal(snapshot.goalWeightLbs))")
+                        Text("→ \(Self.oneDecimal(units.display(snapshot.goalWeightLbs)))")
                             .font(.caption2).foregroundStyle(Theme.textSecondary).lineLimit(1)
                     }
                 }
@@ -232,7 +234,7 @@ struct BuddyDayCard: View {
     private var rateText: String {
         let rate = snapshot.weeklyRateLbs
         if abs(rate) < Self.flatRateThreshold { return "holding steady" }
-        return "\(rate < 0 ? "↓" : "↑") \(Self.oneDecimal(abs(rate)))/wk"
+        return "\(rate < 0 ? "↓" : "↑") \(Self.oneDecimal(abs(units.display(rate))))/wk"
     }
     private var rateTint: Color {
         let rate = snapshot.weeklyRateLbs
@@ -255,7 +257,7 @@ struct BuddyDayCard: View {
         parts.append(snapshot.loggedTodayEffective ? "logged today" : "hasn't logged yet today")
         parts.append("active \(relativeLastActive)")
         if snapshot.sharesFullData {
-            parts.append("weight \(Self.oneDecimal(snapshot.trendWeightLbs)) lb, \(rateText)")
+            parts.append("weight \(Self.oneDecimal(units.display(snapshot.trendWeightLbs))) \(units.weightUnit), \(rateText)")
             parts.append("calories \(Self.grouped(snapshot.caloriesEaten)) of \(Self.grouped(snapshot.calorieTarget))")
             parts.append("protein \(Self.grouped(snapshot.proteinEaten)) of \(Self.grouped(snapshot.proteinTarget)) grams")
             let foodLabel = snapshot.reflectsToday ? "eaten today: " : "last logged: "

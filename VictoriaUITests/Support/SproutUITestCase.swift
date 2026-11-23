@@ -14,8 +14,10 @@ class SproutUITestCase: XCTestCase {
     private(set) var hasLaunched = false
 
     /// Long enough for a cold launch on a loaded CI runner; a wait returns as soon as
-    /// its condition holds, so a passing run does not spend it.
-    static let timeout: TimeInterval = 20
+    /// its condition holds, so a passing run does not spend it. Was 20 s: the GitHub runner
+    /// is about four times slower than a Mac here (two coach flows took 299 s there, about
+    /// 40 s here), and three flows timed out there on 2026-11-23 that never fail locally.
+    static let timeout: TimeInterval = 60
 
     /// The scripted model's replies start with this (`UITestAIScript` in the app).
     static let scriptedReplyPrefix = "Scripted reply"

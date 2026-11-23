@@ -241,6 +241,7 @@
 		B9743FFE74938D2364D7BCE1 /* CompanionWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = D207DF2D14F12D5402219B72 /* CompanionWidget.swift */; };
 		BA6E9F2FEB4FA46DD0B691A6 /* AvatarGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68E084308C4F9A69FE1A3F2 /* AvatarGeneratorTests.swift */; };
 		BAE285FFCE15DFD8ED258A06 /* CompanionPercentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C4F83F8027A4F1EC7F5441 /* CompanionPercentTests.swift */; };
+		BBC37AD522AEEC231F42780B /* UnitsFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF608D585B6F0F3E076C5B12 /* UnitsFlowTests.swift */; };
 		BD1922AA816F951A74C512D4 /* AchievementCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB148FD05BBC38AA1EC6BFBB /* AchievementCatalog.swift */; };
 		BD446B8FF3EB2499B9C89FD5 /* FoodSuggestionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19061CEB334011B4266ADFA5 /* FoodSuggestionEngineTests.swift */; };
 		BD7EEB2BE5C7040740D8A345 /* DataExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF23E7F3E305D7A9894B3416 /* DataExport.swift */; };
@@ -676,6 +677,7 @@
 		FBA011B2DD8AED5AC24F307A /* WidgetSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotTests.swift; sourceTree = "<group>"; };
 		FCB44AA3B0C46C75968E03EA /* DailyInsightEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyInsightEngineTests.swift; sourceTree = "<group>"; };
 		FDD015E81E66408FE8A52E61 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		FF608D585B6F0F3E076C5B12 /* UnitsFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitsFlowTests.swift; sourceTree = "<group>"; };
 		FFE2EF8BF2793EC41213A3F7 /* AdaptivePlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptivePlanTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -908,6 +910,7 @@
 				AB6C7103D0269A6E57FDB794 /* ModeSwitchFlowTests.swift */,
 				3086A6DA8F78E15CE9B54C20 /* OnboardingFlowTests.swift */,
 				FDD015E81E66408FE8A52E61 /* README.md */,
+				FF608D585B6F0F3E076C5B12 /* UnitsFlowTests.swift */,
 				5A186A55321952FD290E8613 /* WorkoutWeekFlowTests.swift */,
 				596B53E03B776A099B522F1D /* Support */,
 			);
@@ -1567,6 +1570,7 @@
 				FE83C5426F7CFC971DCCBDAE /* ModeSwitchFlowTests.swift in Sources */,
 				B70860584B2ACBE339C03156 /* OnboardingFlowTests.swift in Sources */,
 				047955F9CAF52FEA9D25AA5B /* SproutUITestCase.swift in Sources */,
+				BBC37AD522AEEC231F42780B /* UnitsFlowTests.swift in Sources */,
 				75E95BE7C953D39DA2B5ED24 /* WorkoutWeekFlowTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

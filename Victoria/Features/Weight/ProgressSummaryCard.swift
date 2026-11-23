@@ -167,11 +167,13 @@ struct ProgressSummaryCard: View {
 
         // Weight
         if let trend = TrendCalculator.currentTrend(weights) {
-            lines.append("Weight trend: \(fmt1(trend)) \(unit)")
-            lines.append("Weekly rate: \(fmt1(TrendCalculator.ratePerWeek(weights))) \(unit)/wk (negative = losing)")
-            lines.append("Goal weight: \(fmt1(profile.goalWeightLbs)) \(unit) (goal direction: \(profile.pace.direction))")
+            // In the person's unit, so the recap quotes the numbers they see (EVAL_REPORT 31).
+            let u = profile.unitSystem
+            lines.append("Weight trend: \(fmt1(u.display(trend))) \(unit)")
+            lines.append("Weekly rate: \(fmt1(u.display(TrendCalculator.ratePerWeek(weights)))) \(unit)/wk (negative = losing)")
+            lines.append("Goal weight: \(fmt1(u.display(profile.goalWeightLbs))) \(unit) (goal direction: \(profile.pace.direction))")
             if let remaining = directionRemaining(trend) {
-                lines.append("Still to go: \(fmt1(remaining)) \(unit)")
+                lines.append("Still to go: \(fmt1(u.display(remaining))) \(unit)")
             }
             if let eta = TrendCalculator.projectedGoalDate(weights, goalLbs: profile.goalWeightLbs) {
                 lines.append("Projected goal date: \(eta.formatted(.dateTime.month(.abbreviated).day().year()))")

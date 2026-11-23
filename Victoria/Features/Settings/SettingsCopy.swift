@@ -26,8 +26,8 @@ enum SettingsCopy {
     /// The footer under "Your goals": the journey in one sentence, then either a heads-up
     /// when the direction and the goal weight disagree, or what changing these does.
     static func goalsFooter(startWeightLbs: Double, goalWeightLbs: Double, currentWeightLbs: Double,
-                            pace: GoalPace, source: TargetSource) -> String {
-        var text = "Started at \(Int(startWeightLbs)) lb → aiming for \(Int(goalWeightLbs)) lb at a \(pace.label.lowercased()) pace."
+                            pace: GoalPace, source: TargetSource, units: UnitSystem = .imperial) -> String {
+        var text = "Started at \(units.format(startWeightLbs, decimals: 0)) → aiming for \(units.format(goalWeightLbs, decimals: 0)) at a \(pace.label.lowercased()) pace."
         switch pace.direction {
         case .lose where goalWeightLbs >= currentWeightLbs:
             text += " Heads-up: your goal weight is at or above where you are now — for a lose goal, set it below your current weight."

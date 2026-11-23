@@ -1633,3 +1633,53 @@ evaluation run on them; Fable costs $10 / $50 per million tokens); the meal phot
 
 **Spend:** $1.17 (181 attempts and 8 probe requests). **Spend to date: $23.02 over
 11,107 attempts.**
+
+## 31. Kilograms (2026-11-23)
+
+Objective G5. Until now metric was declined: a weigh-in typed in kilograms had once been
+stored as pounds (section 3, L-B7), so the coach's `set_units` refused metric and every
+weight read "lb".
+
+**The rule:** every weight is still STORED in pounds, in both systems, exactly as before.
+Metric converts what is shown and what is typed, at the edge, with the international
+pound (0.45359237 kg, exact). Switching units therefore never changes a stored value, and
+switching back and forth cannot corrupt anything. This is the usual design for a unit
+setting (one canonical stored unit, conversion at display and input) and the one the app
+already used for water (ounces stored, millilitres optional).
+
+**Where weights are shown or typed in the chosen unit now:**
+
+| Place | What changed |
+|---|---|
+| Settings → Your goals | a new "Weight in" picker (Pounds / Kilograms); goal and start weight steppers step 1 lb or 1 kg; the summary line and the footer |
+| Progress | the trend, the weekly rate, the chart's points, trend, goal and start lines, and the weigh-in sheet (0.1 kg steps, 23–227 kg) |
+| The coach | its context (goal, start, trend, rate, pace), its tool descriptions ("Their weight today in kg."), what it accepts (`log_weight`, `set_weight_goal`, `set_start_weight` take the shown unit and store pounds), its range and confirmation messages, `set_units` now applies metric (with a confirm card, like any change of units) |
+| The progress recap | the facts the model is given |
+| The plan intake | goal and current weight |
+| The widget | the trend, rate, goal and "to goal", written already converted with the unit's name (an older snapshot without it reads as pounds) |
+| The buddy card | the buddy's shared weight, shown in MY unit |
+| Pace subtitles | "About 0.2 kg / week" |
+
+**Not converted, on purpose for now:** onboarding (it asks before any preference exists,
+in pounds; the unit can be changed straight after), and gym loads (machine weights are a
+separate number, in pounds as most US gyms label them).
+
+**Verified:** 13 unit tests replace the 8 that pinned the refusal: the conversion and its
+round trip, the text in both units, switching to metric applies and changes no stored
+value and undoes, a metric profile is asked and told kilograms, **72 kg said to the coach
+is stored as 158.73 lb, never 72 lb** (the original defect, the right way round), goal and
+start weights taken in kilograms, the range said as "23–227 kg", a goal on the wrong side
+explained in kilograms, the Settings footer, the widget in both units, and an older widget
+snapshot. The settings matrix row now expects the widget, the coach and the checklist to
+move on a change of units (they all show weights) and nothing that reads a stored value.
+A UI flow switches to kilograms in Settings and finds the trend and weekly rate in
+kilograms on Progress and the weigh-in sheet in kilograms, switches back, and checks the
+two rates agree by the conversion (passed twice in a row). Seen in the simulator: Settings
+before and after (172 lb → 78 kg, 158 lb → 72 kg).
+
+**Found along the way:** the earlier rewording of the coach's tools (section 24) had left
+"They doesn't have a plan yet" in a reply; my check for singular verbs after "they" missed
+it because the verb ends in "n't". Fixed, and the test that pinned the old sentence now
+pins the new one.
+
+**Not verified:** a phone, and VoiceOver reading the converted values.
