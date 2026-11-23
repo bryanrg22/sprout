@@ -14,7 +14,11 @@ struct WidgetSnapshot: Codable {
     // user's actual skin + show the right pixel companion. Defaulted for back-compat:
     // a snapshot written before these fields existed still decodes (see init(from:)).
     var themeStyleRaw: String = ThemeStyle.cute.rawValue        // "cute" | "cool"
-    var companionAvatarRaw: String = "victoria"                  // "victoria" | "bryan"
+    var companionAvatarRaw: String = "victoria"                  // "victoria" | "bryan" | "custom"
+    /// For a custom character: the SHA-256 of the widget copy of its PNG
+    /// (`WidgetAvatarFile`). The widget draws that file only when it matches, so it can
+    /// never show a character left behind by another profile. nil for a built-in.
+    var companionAvatarDigest: String? = nil
 
     // Calories
     var calorieTarget: Double        // the FLOOR / target (includes step bonus when steps-adjust is on)
@@ -125,6 +129,7 @@ extension WidgetSnapshot {
         name    = try c.decode(String.self, forKey: .name)
         themeStyleRaw     = try c.decodeIfPresent(String.self, forKey: .themeStyleRaw) ?? ThemeStyle.cute.rawValue
         companionAvatarRaw = try c.decodeIfPresent(String.self, forKey: .companionAvatarRaw) ?? "victoria"
+        companionAvatarDigest = try c.decodeIfPresent(String.self, forKey: .companionAvatarDigest)
         calorieTarget = try c.decode(Double.self, forKey: .calorieTarget)
         calorieMax    = try c.decodeIfPresent(Double.self, forKey: .calorieMax) ?? 0
         caloriesEaten = try c.decode(Double.self, forKey: .caloriesEaten)

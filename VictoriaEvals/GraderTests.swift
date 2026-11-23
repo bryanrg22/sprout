@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import Victoria
 
@@ -292,5 +293,196 @@ final class GraderTests: XCTestCase {
 
     func testLiveRunIsSkippedUnlessConfigured() {
         XCTAssertThrowsError(try EvalEnv.requireLive()) { XCTAssertTrue($0 is XCTSkip) }
+    }
+
+    // MARK: - Character image grader (the Avatar evaluation)
+
+    func testAGoodCharacterPassesWithItsExactMetrics() {
+        let png = TestImages.characterPNG(side: 1024)
+        let m = Graders.imageMetrics(png)
+        XCTAssertTrue(m.decodable)
+        XCTAssertEqual(m.width, 1024)
+        XCTAssertEqual(m.height, 1024)
+        XCTAssertTrue(m.isSquare1024)
+        XCTAssertTrue(m.hasAlpha)
+        XCTAssertTrue(m.transparentTopCorners)
+        XCTAssertFalse(m.transparentCorners, "the shoulders reach the bottom corners in this drawing")
+        XCTAssertEqual(m.transparentShare, 24.0 / 64.0, accuracy: 0.0001, "24 of the 64 cells are clear")
+        XCTAssertEqual(m.distinctColours, 5, "hair, skin, eyes, mouth, top")
+
+        let graded = Graders.avatar(png)
+        XCTAssertTrue(graded.pass)
+        XCTAssertEqual(graded.scores["decodable"], 1)
+        XCTAssertEqual(graded.scores["square_1024"], 1)
+        XCTAssertEqual(graded.scores["has_alpha"], 1)
+        XCTAssertEqual(graded.scores["transparent_top_corners"], 1)
+        XCTAssertEqual(graded.scores["transparent_corners"], 0)
+        XCTAssertEqual(graded.scores["distinct_colours"], 5)
+        XCTAssertEqual(graded.scores["is_pixel_art"], 1)
+    }
+
+    func testAllFourCornersClearIsRecordedWhenTheDrawingLeavesThem() {
+        let grid = ["....", ".HH.", ".SS.", "...."]
+        let png = TestImages.png(width: 1024, height: 1024, grid: grid, palette: TestImages.characterPalette)
+        let m = Graders.imageMetrics(png)
+        XCTAssertTrue(m.transparentTopCorners)
+        XCTAssertTrue(m.transparentCorners)
+        XCTAssertEqual(m.transparentShare, 12.0 / 16.0, accuracy: 0.0001)
+        XCTAssertEqual(m.distinctColours, 2)
+    }
+
+    func testAPhotographFailsOnBackgroundAndPalette() throws {
+        let jpeg = try XCTUnwrap(TestImages.spectrum(side: 1024).jpegData(compressionQuality: 0.9))
+        let m = Graders.imageMetrics(jpeg)
+        XCTAssertTrue(m.decodable)
+        XCTAssertTrue(m.isSquare1024)
+        XCTAssertFalse(m.hasAlpha)
+        XCTAssertFalse(m.transparentTopCorners)
+        XCTAssertEqual(m.transparentShare, 0)
+        XCTAssertGreaterThan(m.distinctColours, 200, "a picture shaded in two directions has hundreds of colours")
+        XCTAssertGreaterThan(m.distinctColours, Graders.pixelArtColourLimit)
+        let graded = Graders.avatar(jpeg)
+        XCTAssertFalse(graded.pass)
+        XCTAssertEqual(graded.scores["is_pixel_art"], 0)
+    }
+
+    func testACharacterOnAPaintedBackgroundFails() {
+        let painted = TestImages.png(width: 1024, height: 1024, grid: TestImages.characterGrid,
+                                     palette: TestImages.characterPalette, background: .white)
+        let graded = Graders.avatar(painted)
+        XCTAssertEqual(graded.scores["has_alpha"], 1, "the channel is there; nothing in it is clear")
+        XCTAssertEqual(graded.scores["transparent_top_corners"], 0)
+        XCTAssertEqual(graded.scores["transparent_share"], 0)
+        XCTAssertEqual(graded.scores["distinct_colours"], 6, "the five colours and the white backdrop")
+        XCTAssertFalse(graded.pass)
+    }
+
+    func testTheWrongSizeFailsEvenWhenEverythingElseIsRight() {
+        let small = TestImages.characterPNG(side: 512)
+        let graded = Graders.avatar(small)
+        XCTAssertEqual(graded.scores["square_1024"], 0)
+        XCTAssertEqual(graded.scores["transparent_top_corners"], 1)
+        XCTAssertEqual(graded.scores["is_pixel_art"], 1)
+        XCTAssertFalse(graded.pass)
+
+        let wide = TestImages.png(width: 1536, height: 1024, grid: TestImages.characterGrid,
+                                  palette: TestImages.characterPalette)
+        XCTAssertEqual(Graders.avatar(wide).scores["square_1024"], 0)
+    }
+
+    func testBytesThatAreNotAnImageScoreZeroEverywhere() {
+        let graded = Graders.avatar(Data("definitely not a png".utf8))
+        XCTAssertFalse(graded.pass)
+        XCTAssertEqual(Graders.imageMetrics(Data("definitely not a png".utf8)), Graders.ImageMetrics())
+        for (name, value) in graded.scores { XCTAssertEqual(value, 0, name) }
+        XCTAssertEqual(graded.scores.count, 8)
+    }
+
+    func testColourCountMergesNearShadesAndIgnoresStrayPixels() throws {
+        // Two close shades quantise to one colour; a third, real colour is counted.
+        let palette: [Character: UIColor] = [
+            "A": UIColor(red: 0.53, green: 0.2, blue: 0.2, alpha: 1),
+            "B": UIColor(red: 0.54, green: 0.2, blue: 0.2, alpha: 1),
+            "C": UIColor(red: 0.1, green: 0.8, blue: 0.3, alpha: 1),
+        ]
+        let merged = try XCTUnwrap(AvatarImage.rgba(ofImageData:
+            TestImages.png(width: 100, height: 100, grid: ["AB", "CC"], palette: palette)))
+        XCTAssertEqual(Graders.distinctColours(merged), 2)
+
+        // One stray pixel of a new colour in 10,000 is under the share floor and not a palette entry.
+        var stray = [String](repeating: String(repeating: "A", count: 100), count: 100)
+        stray[50] = String(repeating: "A", count: 50) + "C" + String(repeating: "A", count: 49)
+        let pixels = try XCTUnwrap(AvatarImage.rgba(ofImageData:
+            TestImages.png(width: 100, height: 100, grid: stray, palette: palette)))
+        XCTAssertEqual(Graders.distinctColours(pixels), 1)
+        XCTAssertEqual(Graders.distinctColours(pixels, minShare: 0), 2, "with no floor the stray pixel counts")
+    }
+
+    func testAFullyTransparentImageHasNoColoursAndIsNotPixelArt() {
+        let empty = TestImages.png(width: 1024, height: 1024)
+        let m = Graders.imageMetrics(empty)
+        XCTAssertEqual(m.transparentShare, 1)
+        XCTAssertEqual(m.distinctColours, 0)
+        XCTAssertFalse(Graders.avatar(empty).pass, "an empty picture is not a character")
+    }
+
+    func testImageCostUsesTheThreeRatesAndNeverGuessesAModel() throws {
+        let usage = AvatarGenerator.Usage(inputTokens: 1_210, inputTextTokens: 310, inputImageTokens: 900,
+                                          outputTokens: 4_160, totalTokens: 5_370)
+        // 310 x $5 + 900 x $8 + 4,160 x $30, per million.
+        let flare = try XCTUnwrap(Graders.imageCostUSD(model: "gpt-image-2.6-flare", usage: usage))
+        XCTAssertEqual(flare, 0.13355, accuracy: 0.0000001)
+        XCTAssertNotNil(Graders.imageCostUSD(model: "gpt-image-2.6-sunburst", usage: usage))
+        XCTAssertNil(Graders.imageCostUSD(model: "an-image-model-with-no-rates", usage: usage))
+
+        // Input the response does not break down is priced at the dearer (image) rate.
+        let lump = AvatarGenerator.Usage(inputTokens: 1_000, inputTextTokens: 0, inputImageTokens: 0,
+                                         outputTokens: 0, totalTokens: 1_000)
+        XCTAssertEqual(try XCTUnwrap(Graders.imageCostUSD(model: "gpt-image-2.6-flare", usage: lump)), 0.008,
+                       accuracy: 0.0000001)
+    }
+
+    // MARK: - The Avatar evaluation's own plumbing
+
+    func testAvatarCasesAreThePhotosOfTheFolderInNameOrder() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("avatar-cases-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for name in ["b-glasses.jpg", "a-long-hair.PNG", "README.md", "notes.txt", ".DS_Store", "c.heic"] {
+            try Data([1]).write(to: folder.appendingPathComponent(name))
+        }
+        XCTAssertEqual(LiveEvals.avatarCases(in: folder).map(\.id), ["a-long-hair", "b-glasses", "c"])
+        XCTAssertEqual(LiveEvals.avatarCases(in: folder, limit: 2).map(\.id), ["a-long-hair", "b-glasses"])
+        XCTAssertEqual(LiveEvals.avatarCases(in: folder).first?.url.lastPathComponent, "a-long-hair.PNG")
+        XCTAssertTrue(LiveEvals.avatarCases(in: folder.appendingPathComponent("missing")).isEmpty)
+    }
+
+    func testAvatarOutcomeRecordsScoresUsageCostAndSavesTheImage() throws {
+        let out = FileManager.default.temporaryDirectory.appendingPathComponent("avatar-out-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: out) }
+        let png = TestImages.characterPNG(side: 1024)
+        let character = AvatarGenerator.Character(
+            png: png, pixelSize: 1024, model: "gpt-image-2.6-flare", quality: "low", promptVersion: "avatar-v1",
+            usage: .init(inputTokens: 1_210, inputTextTokens: 310, inputImageTokens: 900, outputTokens: 4_160,
+                         totalTokens: 5_370),
+            latencyMs: 41_500)
+        let outcome = LiveEvals.avatarOutcome(character, caseID: "a-long-hair", out: out)
+        XCTAssertTrue(outcome.ok)
+        XCTAssertTrue(outcome.pass)
+        XCTAssertEqual(outcome.scores["generator_accepted"], 1)
+        XCTAssertEqual(outcome.scores["generation_latency_ms"], 41_500)
+        XCTAssertEqual(outcome.scores["input_text_tokens"], 310)
+        XCTAssertEqual(outcome.scores["input_image_tokens"], 900)
+        XCTAssertEqual(outcome.scores["output_tokens"], 4_160)
+        XCTAssertEqual(try XCTUnwrap(outcome.scores["cost_usd"]), 0.13355, accuracy: 0.0000001)
+        XCTAssertEqual(outcome.scores["distinct_colours"], 5)
+
+        let folder = out.appendingPathComponent("avatars/gpt-image-2.6-flare@low")
+        let saved = try FileManager.default.contentsOfDirectory(atPath: folder.path)
+        XCTAssertEqual(saved.count, 1)
+        XCTAssertTrue(try XCTUnwrap(saved.first).hasPrefix("a-long-hair-"))
+        XCTAssertEqual(try Data(contentsOf: folder.appendingPathComponent(try XCTUnwrap(saved.first))), png)
+        XCTAssertTrue(outcome.output.hasPrefix("gpt-image-2.6-flare low avatar-v1 avatars/gpt-image-2.6-flare@low/a-long-hair-"),
+                      outcome.output)
+
+        // Without usage there is no cost: never an estimate.
+        var bare = character
+        bare.usage = nil
+        let noUsage = LiveEvals.avatarOutcome(bare, caseID: "x", out: nil)
+        XCTAssertNil(noUsage.scores["cost_usd"])
+        XCTAssertNil(noUsage.scores["output_tokens"])
+        XCTAssertTrue(noUsage.output.hasSuffix("not saved"))
+    }
+
+    func testThePhotoFolderHasItsReadmeAndIsKeptOutOfGit() throws {
+        let readme = try String(contentsOf: evalsRoot.appendingPathComponent("datasets/avatar/photos/README.md"),
+                                encoding: .utf8)
+        XCTAssertTrue(readme.contains("Synthetic"))
+        XCTAssertTrue(readme.contains("Consented"))
+        let ignore = try String(contentsOf: evalsRoot.deletingLastPathComponent().appendingPathComponent(".gitignore"),
+                                encoding: .utf8)
+        for rule in ["Evals/datasets/avatar/photos/*", "!Evals/datasets/avatar/photos/README.md", "Evals/runs/*/avatars/"] {
+            XCTAssertTrue(ignore.split(separator: "\n").contains(Substring(rule)), "missing .gitignore rule: \(rule)")
+        }
     }
 }

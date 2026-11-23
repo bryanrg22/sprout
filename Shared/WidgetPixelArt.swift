@@ -242,3 +242,37 @@ struct WidgetPixelPandaView: View {
             .accessibilityHidden(true)
     }
 }
+
+// MARK: - Custom character (the person's own, from `WidgetAvatarFile`)
+
+/// The custom character's widget copy, drawn with hard pixel edges like the grids above.
+/// One image for every mood (version 1 makes a single image per person).
+struct WidgetCustomAvatarView: View {
+    let png: Data
+
+    var body: some View {
+        if let image = UIImage(data: png) {
+            Image(uiImage: image)
+                .interpolation(.none)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .accessibilityHidden(true)
+        } else {
+            WidgetNeutralCompanionView()
+        }
+    }
+}
+
+/// Drawn in the companion's place when there is no character this widget may show: the
+/// custom image is missing or belongs to another profile. The app's own mark, in the
+/// user's skin; it says nothing about anyone.
+struct WidgetNeutralCompanionView: View {
+    var body: some View {
+        Image(systemName: "leaf.fill")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .foregroundStyle(Theme.textSecondary)
+            .padding(8)
+            .accessibilityHidden(true)
+    }
+}

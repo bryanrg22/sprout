@@ -167,6 +167,46 @@ enum AIConfig {
     /// small, well-curated context. See docs/MODEL_CHOICES.md.
     static var planModel: String { model(for: provider, tier: .plan) }
 
+    // MARK: - Image generation (the custom pixel character)
+
+    /// What an image request sends. One place, so the model, the quality and the
+    /// output shape are never named at a call site.
+    struct ImageSetting: Equatable, Sendable {
+        var model: String
+        /// `low` | `medium` | `high` (| `xhigh` | `max` on Sunburst and Flare) | `auto`.
+        var quality: String
+        /// `WIDTHxHEIGHT`.
+        var size: String
+        /// `transparent` | `opaque` | `auto`.
+        var background: String
+        /// `png` | `webp` | `jpeg`. A transparent background needs `png` or `webp`.
+        var outputFormat: String
+    }
+
+    /// The custom character (`AvatarGenerator`). Image generation is OpenAI-only:
+    /// Anthropic's models do not produce images, so this setting has no provider
+    /// dimension and the call always uses the OpenAI key, whatever provider the user
+    /// chose for chat.
+    ///
+    /// NOT YET CHOSEN BY MEASUREMENT. `gpt-image-2.6-flare` at `medium` is a starting
+    /// point picked from the documentation ("fast iteration"; same token rates as
+    /// Sunburst), not from a run. The `Avatar` evaluation (`Evals/run.sh Avatar ...`)
+    /// compares Flare and Sunburst at each quality on consented photos; change this
+    /// only together with the EVAL_REPORT section that measured it. Decision already
+    /// made by the owner: version 1 makes ONE image per person, no per-mood frames.
+    static let avatarImage = ImageSetting(model: "gpt-image-2.6-flare",
+                                          quality: "medium",
+                                          size: "1024x1024",
+                                          background: "transparent",
+                                          outputFormat: "png")
+
+    /// Whether an OpenAI key exists for image generation. Not `hasActiveKey`: a user
+    /// chatting through Anthropic still needs an OpenAI key for this one feature.
+    static var hasImageKey: Bool {
+        if let scoped = AIRuntime.current?.apiKey { return !scoped.isEmpty }
+        return KeychainStore.hasAPIKey(for: .openai)
+    }
+
     enum AIError: LocalizedError {
         case missingKey, badResponse(String), decoding(String)
         var errorDescription: String? {

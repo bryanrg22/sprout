@@ -52,7 +52,7 @@ struct BuddyFaceOff: View {
 
     /// The buddy's avatar is the OTHER pixel character by default (the payload doesn't
     /// carry an avatar choice): if I'm Victoria, my buddy shows as Bryan, and vice-versa.
-    private var theirAvatar: CompanionAvatar { myAvatar == .victoria ? .bryan : .victoria }
+    private var theirAvatar: CompanionAvatar { myAvatar.buddyStandIn }
 
     private var them: FaceOffSide {
         FaceOffSide(name: buddy.displayName.isEmpty ? "Buddy" : buddy.displayName,
@@ -564,6 +564,9 @@ struct PixelAvatarBadge: View {
             switch avatar {
             case .victoria: PixelVictoriaView(mood: mood)
             case .bryan:    PixelBryanView(mood: mood)
+            // My own character (the buddy is always a built-in stand-in): one image for
+            // every mood, in the same 120×144 box the grid characters are authored at.
+            case .custom:   CustomCompanionImage().frame(width: 120, height: 144)
             }
         }
         // The sprite is authored at 120×144; scale it down to a tidy badge for this row.

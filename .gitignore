@@ -22,3 +22,9 @@ build_rel/
 
 # Evaluation runs keep their records and summaries; the build log tail holds local paths
 Evals/runs/*/xcodebuild*.log
+
+# The character evaluation: the photos are of people, and so are the characters made from
+# them. Neither is ever committed; only the folder's README is.
+Evals/datasets/avatar/photos/*
+!Evals/datasets/avatar/photos/README.md
+Evals/runs/*/avatars/

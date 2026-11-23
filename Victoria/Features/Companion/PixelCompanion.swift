@@ -2,7 +2,61 @@ import SwiftUI
 
 /// Which pixel avatar a profile's solo companion uses (Bryan picks `.bryan`,
 /// Victoria `.victoria`). The shared buddy character is always the panda.
-enum CompanionAvatar: String, Codable, CaseIterable { case victoria, bryan }
+///
+/// The raw values are stored (`UserProfile.companionAvatarRaw`, mirrored to CloudKit, and
+/// in the widget snapshot): never rename a case.
+enum CompanionAvatar: String, Codable, CaseIterable {
+    case victoria, bryan
+    /// A character generated from the person's own photo (`AvatarGenerator`); its PNG is
+    /// `UserProfile.customAvatarPNG`. Version 1 has ONE image per person: wherever the two
+    /// built-in characters swap frames by mood or blink, a custom character shows its
+    /// single image (the owner's decision; per-mood frames multiply the cost).
+    case custom
+
+    /// The hand-drawn characters, which need no image and are always available.
+    static let builtIns: [CompanionAvatar] = [.victoria, .bryan]
+
+    var isBuiltIn: Bool {
+        switch self {
+        case .victoria, .bryan: return true
+        case .custom:           return false
+        }
+    }
+
+    /// The built-in character that goes with a look: the rule onboarding has always used.
+    /// It is also what a profile falls back to when it has no custom image.
+    static func builtIn(for theme: ThemeStyle) -> CompanionAvatar {
+        switch theme {
+        case .cool: return .bryan
+        case .cute: return .victoria
+        }
+    }
+
+    /// The avatar to draw for a stored raw value. A value this build does not know
+    /// (written by a newer build, or damaged) resolves to a built-in character, and so
+    /// does `custom` when its image is not there (never made, cleared, or its iCloud
+    /// asset has not arrived on this device yet): a view is never asked to draw a custom
+    /// character that has no image.
+    static func resolve(stored raw: String, hasCustomImage: Bool, theme: ThemeStyle) -> CompanionAvatar {
+        guard let known = CompanionAvatar(rawValue: raw) else { return .victoria }
+        switch known {
+        case .victoria, .bryan: return known
+        case .custom:           return hasCustomImage ? .custom : builtIn(for: theme)
+        }
+    }
+
+    /// The character drawn for the paired buddy. The buddy snapshot carries no avatar, so
+    /// the two built-ins stand in for each other, as they always have. A person with a
+    /// custom character sees their buddy as a built-in: the buddy's own character is not
+    /// shared in version 1.
+    var buddyStandIn: CompanionAvatar {
+        switch self {
+        case .victoria: return .bryan
+        case .bryan:    return .victoria
+        case .custom:   return .victoria
+        }
+    }
+}
 
 /// A hand-authored **pixel-art companion modeled on Victoria** — long dark hair,
 /// her signature thin glasses, warm skin, a friendly smile, an olive top and a
