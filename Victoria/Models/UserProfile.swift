@@ -75,6 +75,13 @@ final class UserProfile {
     var companionName: String = "Sprout"
     /// Which pixel avatar the solo companion uses (Victoria vs Bryan).
     var companionAvatarRaw: String = CompanionAvatar.victoria.rawValue
+    /// The custom character made from the person's photo (`AvatarGenerator`): a square PNG
+    /// with a transparent background. This is the ONLY thing kept from that flow; the photo
+    /// itself is never stored. Optional and stored externally (a CloudKit asset) so the
+    /// @Model stays SwiftData-migration- and CloudKit-ready; nil for everyone who uses a
+    /// built-in character. Kept when the person switches back to a built-in, so they can
+    /// return to it without paying for another image.
+    @Attribute(.externalStorage) var customAvatarPNG: Data?
 
     /// Last day the Alejandro "rival" goal-hit gag played — caps it to once per day. The rival
     /// is a motivational figure only (no data sync). See `AlejandroGagOverlay`.
@@ -134,9 +141,20 @@ final class UserProfile {
         get { ThemeStyle(rawValue: themeStyleRaw) ?? .cute }
         set { themeStyleRaw = newValue.rawValue }
     }
+    /// The avatar to draw. `.custom` only while its image exists (see `CompanionAvatar.resolve`).
     var companionAvatar: CompanionAvatar {
-        get { CompanionAvatar(rawValue: companionAvatarRaw) ?? .victoria }
+        get {
+            CompanionAvatar.resolve(stored: companionAvatarRaw,
+                                    hasCustomImage: customAvatarPNG != nil,
+                                    theme: themeStyle)
+        }
         set { companionAvatarRaw = newValue.rawValue }
+    }
+
+    /// Adopt a generated character: store its PNG and switch the companion to it.
+    func useCustomAvatar(png: Data) {
+        customAvatarPNG = png
+        companionAvatar = .custom
     }
     /// The user's primary gym, or `nil` when unset. Backed by `homeGymRaw`.
     var homeGym: HomeGym? {

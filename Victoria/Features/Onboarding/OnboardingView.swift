@@ -49,6 +49,15 @@ struct OnboardingView: View {
         #endif
         return 0
     }
+    /// DEBUG: `--onboard-look cool` runs onboarding in the dark skin with that look picked,
+    /// for screenshots; nil in normal use (onboarding runs in the default skin).
+    static var debugLook: ThemeStyle? {
+        #if DEBUG
+        if let i = CommandLine.arguments.firstIndex(of: "--onboard-look"),
+           i + 1 < CommandLine.arguments.count { return ThemeStyle(rawValue: CommandLine.arguments[i + 1]) }
+        #endif
+        return nil
+    }
     @State private var page = OnboardingView.initialStep
     @State private var startTrigger = false
     @State private var appeared = false   // drives the gentle per-screen cascade
@@ -70,7 +79,7 @@ struct OnboardingView: View {
     /// Her chosen look (cute = warm/cream, cool = dark/electric). Applied at finish so
     /// each person lands in their own theme — this is the per-user personalization, not
     /// a hardcoded skin. Defaults to cute (the primary user); Bryan picks cool.
-    @State private var themeChoice: ThemeStyle = .cute
+    @State private var themeChoice: ThemeStyle = OnboardingView.debugLook ?? .cute
 
     // Vita's closing reflection: generated (LLM when a key exists) or templated. We
     // kick it off on the "putting your plan together" beat so it's ready by the note
@@ -92,9 +101,14 @@ struct OnboardingView: View {
     @State private var location = LocationService.shared
     @FocusState private var keyFocused: Bool
 
+    // MARK: Character step (optional: a pixel character made from a photo)
+    /// Consent, photo, the call to OpenAI and its fallbacks (`AvatarCreationModel`). The
+    /// accepted PNG is applied in `finish()`; with none, the built-in character stands.
+    @State private var avatarModel = AvatarCreationModel(theme: OnboardingView.debugLook ?? .cute)
+
     // Page indices — named so the flow reads clearly.
     private enum Step: Int, CaseIterable {
-        case fromBryan, welcome, look, goal, education, about, weight, activity, note, plan, connect, vitaNote
+        case fromBryan, welcome, look, goal, education, about, weight, activity, note, plan, connect, avatar, vitaNote
     }
     private var pageCount: Int { Step.allCases.count }
     private var step: Step { Step(rawValue: page) ?? .welcome }
@@ -127,6 +141,7 @@ struct OnboardingView: View {
                 notePage.tag(Step.note.rawValue)
                 summaryPage.tag(Step.plan.rawValue)
                 connectPage.tag(Step.connect.rawValue)
+                avatarPage.tag(Step.avatar.rawValue)
                 vitaNotePage.tag(Step.vitaNote.rawValue)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -144,6 +159,12 @@ struct OnboardingView: View {
             // Begin generating Vita's closing note when her plan is revealed, so it's
             // ready by the final screen. Guarded to run once; never blocks the flow.
             if step == .plan { startCoachMessage() }
+            // The character step falls back to the built-in that goes with the picked look,
+            // and re-checks for an OpenAI key (one may have been saved on the step before).
+            if step == .avatar {
+                avatarModel.theme = themeChoice
+                avatarModel.refreshKeyState()
+            }
         }
     }
 
@@ -1236,7 +1257,21 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Page 11 · A note from Vita (LLM reflection / warm fallback)
+    // MARK: - Page 11 · Your character (optional: a pixel character from a photo)
+
+    /// After the key step, because it needs a key: an OpenAI one, whatever provider she
+    /// chats with. Never required and never a dead end: the footer always moves on, and
+    /// with no key, a refusal or a failure she simply starts with the built-in character.
+    private var avatarPage: some View {
+        coachScroll {
+            vitaBubble("One fun extra: want a **pixel character that looks like you**? Totally optional. Skip it and you'll start with one of mine.")
+                .appearLift(appeared, index: 0)
+            AvatarCreationView(model: avatarModel)
+                .appearLift(appeared, index: 1)
+        }
+    }
+
+    // MARK: - Page 12 · A note from Vita (LLM reflection / warm fallback)
 
     private var vitaNotePage: some View {
         coachScroll {
@@ -1412,6 +1447,7 @@ struct OnboardingView: View {
         case .welcome:   return "Let's start"
         case .note:      return note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Skip for now" : "See my plan"
         case .connect:   return keySaved ? "Continue" : "Maybe later"
+        case .avatar:    return avatarModel.acceptedPNG != nil ? "Continue" : "Skip for now"
         default:         return "Next"
         }
     }
@@ -1573,6 +1609,9 @@ struct OnboardingView: View {
         // this, companionAvatar stayed at its .victoria default for everyone.)
         p.themeStyle = themeChoice
         p.companionAvatar = (themeChoice == .cool) ? .bryan : .victoria
+        // A character she made and accepted on the character step replaces the built-in.
+        // Only the finished PNG is kept; the photo it came from was never stored.
+        if let png = avatarModel.acceptedPNG { p.useCustomAvatar(png: png) }
         // NEW: persist her optional free-text context (trimmed; "" when she skipped).
         p.onboardingNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
         // Seed the recommended goals we just showed her (she can change any in Settings).
