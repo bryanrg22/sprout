@@ -31,6 +31,12 @@ enum OnboardingCoachMessage {
     static func make(_ inputs: Inputs) async -> String {
         let fallback = template(for: inputs)
         guard AIConfig.hasActiveKey else { return fallback }
+        return await written(inputs) ?? fallback
+    }
+
+    /// The model's note, or nil when the call failed or the sanitizer rejected the reply.
+    /// Either way `make` shows the template, so both mean "not used".
+    static func written(_ inputs: Inputs) async -> String? {
         do {
             let client = try AIClient.make()
             let reply = try await client.chat(
@@ -40,9 +46,9 @@ enum OnboardingCoachMessage {
                 maxTokens: 320
             )
             let cleaned = sanitize(reply)
-            return cleaned.isEmpty ? fallback : cleaned
+            return cleaned.isEmpty ? nil : cleaned
         } catch {
-            return fallback   // never let onboarding depend on the network
+            return nil   // never let onboarding depend on the network
         }
     }
 
@@ -50,48 +56,51 @@ enum OnboardingCoachMessage {
 
     static let system = """
     You are Vita, a warm, sharp, encouraging coach welcoming a new friend at the end of \
-    onboarding. Write a short closing note — 2 to 4 sentences — that reflects what she just \
-    shared and sets a confident, motivating tone for getting started. Speak directly to her \
-    ("you"), use her name once if given, and sound like a real friend who knows fitness — \
-    encouraging and direct, never clinical, never precious, never treating her as fragile.
+    onboarding. Write a short closing note — 2 to 4 sentences — that reflects what your new \
+    friend just shared and sets a confident, motivating tone for getting started. Speak \
+    directly to your friend as "you" throughout (never in the third person), use the name \
+    once if given, and sound like a real friend who knows fitness — encouraging and direct, \
+    never clinical, never precious, never treating anyone as fragile.
 
     What to do:
-    - Name her goal plainly (losing weight, maintaining, building muscle) and frame it \
-    around real results and how good she'll feel — strong, energized, capable.
-    - If she shared a note, reflect ONE thing from it so she feels heard. If it's empty, \
-    just welcome her with energy.
-    - End on momentum — you're in this with her, starting now.
+    - Name the goal you are told plainly (losing weight, maintaining, or building muscle — \
+    whichever it is, and only that one) and frame it around real results and how good it \
+    will feel — strong, energized, capable.
+    - If there is a note, reflect ONE thing from it so your friend feels heard. If it's \
+    empty, just give an energetic welcome.
+    - End on momentum — you're in this together, starting now.
 
     Rules:
-    - Don't invent specific calorie, macro, weight, or rate numbers — those live in her \
+    - Don't invent specific calorie, macro, weight, or rate numbers — those live in the \
     plan. Keep this qualitative and motivating.
     - Be honest and encouraging: you can talk naturally about protein, training, steps, \
     consistency, a sensible deficit or surplus. Don't moralize about food, don't shame, \
-    don't hedge.
+    don't hedge. Follow the goal rule you are given.
     - At most one emoji. Output only the note — no headers, no lists, no disclaimer.
     """
 
-    /// The user turn: just the safe, pre-computed facts + her note. No numbers.
+    /// The user turn: just the safe, pre-computed facts + the user's note. No numbers.
     static func userPrompt(_ i: Inputs) -> String {
         let name = displayName(i.name)
         let goal: String
         switch i.direction {
-        case .lose:     goal = "She wants to lose weight — drop fat, feel leaner and stronger."
-        case .maintain: goal = "She wants to maintain — hold steady and lock in strong habits."
-        case .gain:     goal = "She wants to build muscle — a steady, lean gain."
+        case .lose:     goal = "To lose weight — drop fat, feel leaner and stronger."
+        case .maintain: goal = "To maintain — hold steady and lock in strong habits."
+        case .gain:     goal = "To build muscle — a steady, lean gain."
         }
         let trimmedNote = i.note.trimmingCharacters(in: .whitespacesAndNewlines)
         let notePart = trimmedNote.isEmpty
-            ? "She didn't share extra context — just welcome her with energy."
-            : "In her own words, she shared: \"\(trimmedNote)\""
+            ? "No extra context was shared — just give an energetic welcome."
+            : "In \(name)'s own words: \"\(trimmedNote)\""
         return """
-        Her name: \(name)
-        Her goal: \(goal)
-        Her chosen pace: \(i.paceLabel)
-        Her typical activity: \(i.activityLabel)
+        Name: \(name)
+        Goal: \(goal)
+        Goal rule: \(GoalFraming.protectiveRule(i.direction))
+        Chosen pace: \(i.paceLabel)
+        Typical activity: \(i.activityLabel)
         \(notePart)
 
-        Write her closing note now, following every rule.
+        Write the closing note now, to \(name) as "you", following every rule.
         """
     }
 

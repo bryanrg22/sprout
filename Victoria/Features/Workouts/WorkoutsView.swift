@@ -337,7 +337,7 @@ struct WorkoutsView: View {
             // mid-transition spot when you first open Workouts — it just sits, then gently comes alive.
             .task { try? await Task.sleep(for: .seconds(0.45)); heroSettled = true }
             VStack(spacing: Theme.Space.xs) {
-                Text("Let's log a workout! 🏋️‍♀️")
+                Text("Let's log a workout! 🏋️")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
                 Text("Tap the machines you did — we'll assume a comfy 3×10. Edit anything you like.")

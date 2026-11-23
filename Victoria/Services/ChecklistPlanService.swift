@@ -59,18 +59,19 @@ enum ChecklistPlanService {
     /// ONLY movement / rest / prep / wellness — NEVER food restriction or a number on the scale.
     static let system = """
     You are Vita, a warm, upbeat wellness companion planning your friend's day. Given a \
-    factual snapshot of her goal, recent training, and a bit about her life, propose a short \
-    "Today's checklist" by calling the `plan_checklist` tool. Return ONLY the tool call — no \
-    other text.
+    factual snapshot of your friend's goal, recent training, and a bit about your friend's \
+    life, propose a short "Today's checklist" by calling the `plan_checklist` tool. Return \
+    ONLY the tool call — no other text.
 
     Two things to return:
-    - `tasks`: 3 to 5 gentle intentions for TODAY — the few things you'd lovingly nudge her \
-      to do. Make them feel like a caring friend's plan, specific to HER (name her actual \
-      sports / training split when you can tell what they are, e.g. "Leg day at the gym", \
-      "Soccer practice", "Evening run"). Each is a short doable action.
-    - `chips`: 4 to 8 quick-add buttons of activities SHE actually does, so adding to her day \
-      is one tap. Pull these from her real routine (her workouts, what she's told you). \
-      Include a couple of universal ones (a walk, an early night) so the row never feels empty.
+    - `tasks`: 3 to 5 gentle intentions for TODAY — the few things you'd lovingly nudge your \
+      friend to do. Make them feel like a caring friend's plan, specific to THIS person (name \
+      the actual sports / training split when you can tell what they are, e.g. "Leg day at \
+      the gym", "Soccer practice", "Evening run"). Each is a short doable action.
+    - `chips`: 4 to 8 quick-add buttons of activities your friend ACTUALLY does, so adding to \
+      the day is one tap. Pull these from the real routine (the logged workouts, what you've \
+      been told). Include a couple of universal ones (a walk, an early night) so the row \
+      never feels empty.
 
     HARD RULES — this list is about SHOWING UP, never about food or the scale:
     - ONLY movement, rest, recovery, prep, and wellness ("Gym", "Soccer", "Leg day", "Yoga", \
@@ -145,27 +146,28 @@ enum ChecklistPlanService {
 
         let goal: String
         switch direction {
-        case .lose:     goal = "She's working toward gentle, sustainable weight loss — keep the plan about movement and showing up, never about eating less."
-        case .maintain: goal = "She's maintaining and locking in habits that keep her feeling good."
-        case .gain:     goal = "She's building strength with a steady lean gain — training and recovery matter."
+        case .lose:     goal = "Working toward gentle, sustainable weight loss — keep the plan about movement and showing up, never about eating less."
+        case .maintain: goal = "Maintaining, and locking in the habits that feel good."
+        case .gain:     goal = "Building strength with a steady lean gain — training and recovery matter."
         }
 
         let trimmedBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
         let bioPart = trimmedBio.isEmpty
-            ? "She hasn't written an about-me note."
-            : "A bit about her, in her own words: \"\(trimmedBio)\""
+            ? "\(who) hasn't written an about-me note."
+            : "A bit about \(who), in \(who)'s own words: \"\(trimmedBio)\""
 
         let trimmedNotes = memoryNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         let notesPart = trimmedNotes.isEmpty
-            ? "You don't have durable notes about her yet."
-            : "What you remember about her (durable notes — use these to make the chips feel like HER):\n\(trimmedNotes)"
+            ? "You don't have durable notes about \(who) yet."
+            : "What you remember about \(who) (durable notes — use these to make the chips feel personal):\n\(trimmedNotes)"
 
         return """
-        Her name: \(who)
-        Her goal/feeling: \(goal)
+        Name: \(who)
+        Goal/feeling: \(goal)
+        Goal rule: \(GoalFraming.protectiveRule(direction))
 
-        Her current data (use her recent workouts to spot the sports / training split she \
-        actually does — those should become tasks and chips):
+        Current data for \(who) (use the recent workouts to spot the sports / training split \
+        actually done — those should become tasks and chips):
         \(dataSummary)
 
         \(bioPart)
@@ -173,7 +175,7 @@ enum ChecklistPlanService {
         \(notesPart)
 
         Now propose today's checklist via the tool: 3–5 warm tasks for today and 4–8 quick-add \
-        chips of activities she actually does. Movement / rest / prep / wellness only — nothing \
+        chips of activities \(who) actually does. Movement / rest / prep / wellness only — nothing \
         about food or the scale.
         """
     }
@@ -250,7 +252,7 @@ enum ChecklistPlanService {
             system: system,
             userContent: content,
             toolName: "plan_checklist",
-            toolDescription: "Return today's personalized checklist: a few warm tasks plus quick-add chips of activities she actually does.",
+            toolDescription: "Return today's personalized checklist: a few warm tasks plus quick-add chips of activities the user actually does.",
             schema: schema,
             model: AIConfig.model(for: .checklistPlan),
             maxTokens: 700          // bounded: a handful of short tasks + chips is well under this

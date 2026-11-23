@@ -93,11 +93,11 @@ enum RecoverySignal: String {
     var coachLine: String {
         switch self {
         case .rested:
-            return "Recovery signal: RESTED — her RHR/HRV are running better than her own baseline; a good day for anything."
+            return "Recovery signal: RESTED — RHR/HRV are running better than the user's own baseline; a good day for anything."
         case .steady:
-            return "Recovery signal: steady — vitals in her normal range."
+            return "Recovery signal: steady — vitals in the user's normal range."
         case .tender:
-            return "Recovery signal: TENDER — her RHR/HRV are running above her usual load (hard training, short sleep, or a big week). Favor gentleness today: suggest rest, a walk, hydration, an early night — never push, and never dramatize the reading."
+            return "Recovery signal: TENDER — RHR/HRV are running above the user's usual load (hard training, short sleep, or a big week). Favor gentleness today: suggest rest, a walk, hydration, an early night — never push, and never dramatize the reading."
         }
     }
 }

@@ -422,7 +422,7 @@ struct FoodLogView: View {
                 .font(.headline)
                 .foregroundStyle(Theme.textPrimary)
                 .multilineTextAlignment(.center)
-            Text("Snap a photo, scan a barcode, or search — every bite you log helps Victoria cheer you on.")
+            Text("Snap a photo, scan a barcode, or search — every bite you log helps \(profile.coachName) cheer you on.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)

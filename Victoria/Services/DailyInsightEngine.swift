@@ -7,10 +7,10 @@ import Foundation
 /// best+freshest one (or nil — silence is a feature). An LLM is NOT needed to *detect*
 /// an insight; later it will only *rephrase* the chosen one in a warmer voice.
 ///
-/// Anti-restriction contract (the app never rewards eating less): every insight celebrates
-/// sufficiency, protein, hydration, consistency, or showing up. NOTHING here rewards
-/// eating less, a deficit, "cutting", or labels food good/bad. The gentlest nudge is
-/// "let's get you fed," never "you ate too much."
+/// Anti-restriction contract, for any user and any goal direction: every insight
+/// celebrates sufficiency, protein, hydration, consistency, or showing up. NOTHING here
+/// rewards eating less, a deficit, "cutting", or labels food good/bad, and nothing frames
+/// eating as excess. The gentlest nudge is "let's get you fed," never "you ate too much."
 enum DailyInsightEngine {
 
     // MARK: Inputs
@@ -37,6 +37,10 @@ enum DailyInsightEngine {
         /// comeback instead of scolding a light first day back. Defaults to 1 so existing
         /// callers/tests behave exactly as before (no gap).
         var daysAwayBeforeToday: Int = 1
+        /// The profile's goal direction, for the one line whose wording depends on it
+        /// (`well_fueled`). Nil when the caller does not know it: the line then names no
+        /// direction. Defaults to nil so existing callers and tests are unchanged.
+        var goalDirection: GoalPace.Direction? = nil
     }
 
     // MARK: Output
@@ -86,7 +90,7 @@ enum DailyInsightEngine {
             out.append(.init(
                 id: "welcome_back",
                 template: "Welcome back 💛 Coming back after a break is the part most people never do — and you just did it. Today's a fresh start.",
-                factualHint: "She logged again today after \(i.daysAwayBeforeToday) days away — celebrate the return itself; no numbers talk.",
+                factualHint: "The user logged again today after \(i.daysAwayBeforeToday) days away — celebrate the return itself; no numbers talk.",
                 systemImage: "sun.max.fill", tintToken: .brand, score: 120))
         }
 
@@ -98,7 +102,7 @@ enum DailyInsightEngine {
             out.append(.init(
                 id: "fuel_up",
                 template: "You're a bit under your fuel for today — a real dinner or a solid snack would help you feel your best. 🥣",
-                factualHint: "She's eaten well under her daily fuel and it's evening — a gentle, caring nudge to eat a proper dinner/snack (never about eating less).",
+                factualHint: "The user has eaten well under the day's fuel target and it's evening — a gentle, caring nudge to eat a proper dinner/snack (never about eating less).",
                 systemImage: "fork.knife", tintToken: .warning, score: 100))
         }
 
@@ -114,7 +118,7 @@ enum DailyInsightEngine {
             out.append(.init(
                 id: "protein_streak",
                 template: "\(i.proteinHitStreakDays) days of hitting your protein in a row — your body is getting exactly what it needs. 🌟",
-                factualHint: "She hit her protein goal \(i.proteinHitStreakDays) days in a row — celebrate this streak.",
+                factualHint: "The user hit the protein goal \(i.proteinHitStreakDays) days in a row — celebrate this streak.",
                 systemImage: "flame.fill", tintToken: .protein, score: 85))
         }
 
@@ -122,7 +126,7 @@ enum DailyInsightEngine {
         if calFrac >= 0.85, calFrac <= 1.25 {
             out.append(.init(
                 id: "well_fueled",
-                template: "You fueled yourself well today — eating enough is exactly how the weight comes off and stays off. 💚",
+                template: "You fueled yourself well today — \(wellFueledWhy(i.goalDirection)) 💚",
                 systemImage: "checkmark.seal.fill", tintToken: .positive, score: 70))
         }
 
@@ -157,7 +161,7 @@ enum DailyInsightEngine {
         if i.workoutToday {
             out.append(.init(
                 id: "moved",
-                template: "You moved your body today — even a little counts, and it adds up. 🏃‍♀️",
+                template: "You moved your body today — even a little counts, and it adds up. 🏃",
                 systemImage: "figure.run", tintToken: .info, score: 48))
         } else if i.stepGoal > 0, i.steps >= i.stepGoal {
             out.append(.init(
@@ -175,5 +179,16 @@ enum DailyInsightEngine {
         }
 
         return out
+    }
+
+    /// Why eating enough matters, for the goal the profile has. Only a losing user is told
+    /// about weight coming off; a gaining user is told what the food builds.
+    static func wellFueledWhy(_ direction: GoalPace.Direction?) -> String {
+        switch direction {
+        case .lose?:     return "eating enough is exactly how the weight comes off and stays off."
+        case .gain?:     return "eating enough is exactly how the strength gets built."
+        case .maintain?: return "eating enough is exactly how you stay steady and feel good."
+        case nil:        return "eating enough is exactly how you feel your best and keep making progress."
+        }
     }
 }

@@ -185,7 +185,7 @@ struct WorkoutLogView: View {
                     .wiggle()
             }
             VStack(spacing: Theme.Space.xs) {
-                Text("Let's get moving! 🏃‍♀️")
+                Text("Let's get moving! 🏃")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(Theme.textPrimary)
                 Text("No workouts yet — even 10 minutes counts 💪")
