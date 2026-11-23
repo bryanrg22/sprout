@@ -150,6 +150,7 @@ struct FoodLogView: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .scrollIndicators(.hidden)
+            .accessibilityIdentifier(AccessibilityID.Nutrients.root)
             // A subtle one-shot celebration for the first food logged today.
             .overlay(ConfettiBurst(trigger: firstLogConfetti).ignoresSafeArea())
             .navigationTitle("Nutrients")
@@ -252,6 +253,7 @@ struct FoodLogView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Selected day, \(dayLabel). Tap to pick a day.")
+            .accessibilityIdentifier(AccessibilityID.Nutrients.dayLabel)
 
             navChevron("chevron.right", enabled: canGoForward) { step(1) }
                 .accessibilityLabel("Next day")
@@ -514,6 +516,7 @@ struct FoodLogView: View {
         Button { open(.photo) }   label: { Label("Snap or describe a meal", systemImage: "camera.fill") }
         Button { open(.scan) }    label: { Label("Scan", systemImage: "barcode.viewfinder") }
         Button { open(.manual) }  label: { Label("Add manually", systemImage: "square.and.pencil") }
+            .accessibilityIdentifier(AccessibilityID.Nutrients.addManual)
     }
 
     private var addMenu: some View {
@@ -523,6 +526,7 @@ struct FoodLogView: View {
                 .foregroundStyle(Theme.brand)
         }
         .accessibilityLabel("Add food")
+        .accessibilityIdentifier(AccessibilityID.Nutrients.add)
     }
 
     /// Opens an add-flow, optionally targeting a specific meal (otherwise the flow
@@ -870,9 +874,11 @@ private struct FoodRow: View {
                 Button(action: onAskVita) { Label("Ask Vita about this", systemImage: "sparkles") }
             }
             Button(role: .destructive, action: onDelete) { Label("Delete", systemImage: "trash") }
+                .accessibilityIdentifier(AccessibilityID.Nutrients.foodRowDelete)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(entry.name), \(Int(entry.totalCalories.rounded())) calories")
+        .accessibilityIdentifier(AccessibilityID.Nutrients.foodRow)
         .accessibilityHint("Opens details")
         .accessibilityAction(named: "Edit", onEdit)
         .accessibilityAction(named: "Delete", onDelete)

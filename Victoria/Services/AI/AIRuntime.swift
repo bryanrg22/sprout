@@ -67,16 +67,44 @@ struct AIRuntime: Sendable {
 
     @TaskLocal static var current: AIRuntime?
 
+    /// A process-wide runtime, for the one case a task-local cannot cover: the UI smoke
+    /// flows, where the app runs as its own process and every model call it makes (from
+    /// any task, detached ones included) has to be answered by a scripted transport.
+    ///
+    /// It exists only in DEBUG builds. In a Release build there is no setter and the value
+    /// is the constant `nil`, so the shipped app cannot be pointed at anything but the
+    /// Keychain and `URLSession`. Set once at launch by `UITestHooks`, before any call.
+    #if DEBUG
+    private static let processDefaultStorage = ProcessDefaultStorage()
+    static var processDefault: AIRuntime? { processDefaultStorage.get() }
+    static func setProcessDefault(_ runtime: AIRuntime?) { processDefaultStorage.set(runtime) }
+
+    private final class ProcessDefaultStorage: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: AIRuntime?
+        func get() -> AIRuntime? { lock.lock(); defer { lock.unlock() }; return value }
+        func set(_ runtime: AIRuntime?) { lock.lock(); defer { lock.unlock() }; value = runtime }
+    }
+    #else
+    static var processDefault: AIRuntime? { nil }
+    #endif
+
+    /// The runtime in force for a call. Precedence: the task-local scope (tests, evals),
+    /// then the process default (UI smoke flows, DEBUG only), then nothing, which is the
+    /// shipped behaviour (Keychain key, the task's model, `URLSession`). The scope wins
+    /// as a whole: a field it leaves nil is NOT filled in from the process default.
+    static var effective: AIRuntime? { current ?? processDefault }
+
     /// The model a client should send: the scoped override when there is one.
     static func resolve(model: String) -> String {
-        current?.model ?? model
+        effective?.model ?? model
     }
 
     static var transport: any AITransport {
-        current?.transport ?? URLSessionTransport()
+        effective?.transport ?? URLSessionTransport()
     }
 
     static func report(_ usage: AIUsage) {
-        current?.onUsage?(usage)
+        effective?.onUsage?(usage)
     }
 }

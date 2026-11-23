@@ -10,6 +10,21 @@ struct VictoriaApp: App {
     init() {
         // The model list lives in `AppSchema` (one source of truth, shared with the tests).
         let schema = AppSchema.schema
+        #if DEBUG
+        // UI smoke flows (`--ui-testing`): an in-memory store with CloudKit off, and a
+        // scripted (or keyless) AI runtime. Returns before anything below can open the
+        // real store or read a key; a failure here stops the launch rather than falling
+        // through to the real store. See `UITestHooks`.
+        if UITestHooks.isActive {
+            do {
+                container = try UITestHooks.makeContainer()
+            } catch {
+                fatalError("--ui-testing: the in-memory store failed to open: \(error)")
+            }
+            UITestHooks.installAIRuntime()
+            return
+        }
+        #endif
         do {
             container = try ModelContainer(for: schema)
         } catch {

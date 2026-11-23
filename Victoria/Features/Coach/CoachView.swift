@@ -99,6 +99,7 @@ struct CoachView: View {
                         inlineBanner(text: errorBanner,
                                      tint: Theme.warning,
                                      systemImage: "exclamationmark.bubble.fill")
+                            .accessibilityIdentifier(AccessibilityID.Coach.errorBanner)
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
@@ -326,6 +327,7 @@ struct CoachView: View {
                     .tint(Theme.brand)
                     .lineLimit(1...5)
                     .focused($inputFocused)
+                    .accessibilityIdentifier(AccessibilityID.Coach.input)
                     .padding(.horizontal, Theme.Space.md)
                     .padding(.vertical, 11)
                     // A rounded RECTANGLE, not a Capsule: a capsule's big semicircular end-caps
@@ -372,6 +374,7 @@ struct CoachView: View {
                 .scaleEffect(canSend ? 1 : 0.92)
                 .animation(.spring(response: 0.3, dampingFraction: 0.7), value: canSend)
                 .accessibilityLabel("Send message")
+                .accessibilityIdentifier(AccessibilityID.Coach.send)
             }
             .padding(.horizontal, Theme.Space.md)
             .padding(.bottom, Theme.Space.sm)
@@ -977,6 +980,8 @@ private struct MessageRow: View {
         .textSelection(.enabled)
         .accessibilityLabel(message.isUser ? "You said" : "\(coachName) said")
         .accessibilityValue(message.imageData != nil ? "\(message.content) (photo attached)" : message.content)
+        .accessibilityIdentifier(message.isUser ? AccessibilityID.Coach.userMessage
+                                                : AccessibilityID.Coach.assistantMessage)
     }
 
     @ViewBuilder private var bubbleBackground: some View {
@@ -1107,6 +1112,7 @@ private struct TypingIndicator: View {
             )
             .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
             .accessibilityLabel("\(coachName) is typing")
+            .accessibilityIdentifier(AccessibilityID.Coach.typing)
 
             Spacer(minLength: 44)
         }
@@ -1158,6 +1164,7 @@ private struct UndoBanner: View {
                     .foregroundStyle(Theme.brand)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier(AccessibilityID.Coach.undo)
         }
         .padding(.horizontal, Theme.Space.md)
         .padding(.vertical, 11)

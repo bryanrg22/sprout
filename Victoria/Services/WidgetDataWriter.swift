@@ -10,6 +10,9 @@ enum WidgetDataWriter {
     @MainActor
     static func refresh(context: ModelContext, profile: UserProfile?) {
         guard let profile else { return }
+        // A `--ui-testing` launch holds seeded demo data in memory; it must not replace the
+        // real snapshot the widget on this device is showing.
+        guard !UITestHooks.isActive else { return }
         let foods   = (try? context.fetch(FetchDescriptor<FoodEntry>())) ?? []
         let weights = (try? context.fetch(FetchDescriptor<WeightEntry>(sortBy: [SortDescriptor(\.date)]))) ?? []
         let waters  = (try? context.fetch(FetchDescriptor<WaterEntry>())) ?? []
