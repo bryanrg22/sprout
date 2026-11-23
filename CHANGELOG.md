@@ -23,6 +23,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 - A key pasted after a reinstall is saved for the right provider.
 - Prompts no longer assume who you are: no "her", no weight-loss framing for someone gaining.
 - Vita's tools no longer describe every user as "she" (EVAL_REPORT 24).
+- The closing note of onboarding no longer starts with a lower-case "friend," when no name was given.
 - **A short note is no longer lost when a newer Claude model is selected.** Those models
   could spend a note's whole length limit thinking and return nothing; the app showed its
   built-in wording and said nothing. They are now asked not to think for these one-line
@@ -91,8 +92,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,127 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 15 end-to-end flows against a scripted model (EVAL_REPORT 17).
+- Tests: 443 → 1,131 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- UI smoke flows: 20 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+  through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).
 - First live model comparison: ten models, three tasks, 3,636 graded attempts, $6.23

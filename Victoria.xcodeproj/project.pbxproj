@@ -222,6 +222,7 @@
 		B4E847EE1541B6497108A931 /* NutrientDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596C894C31CEC160081188F0 /* NutrientDetailViews.swift */; };
 		B5C65AEAF4FAE0E4C93735E6 /* WidgetTimelinePlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1D0140362973969B0BEFA9 /* WidgetTimelinePlan.swift */; };
 		B62BF6C6FD41715FABC5229D /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95FFCEC3E35084F35904F238 /* PairingView.swift */; };
+		B70860584B2ACBE339C03156 /* OnboardingFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3086A6DA8F78E15CE9B54C20 /* OnboardingFlowTests.swift */; };
 		B74F96503905AEC83B18DF2D /* EvalHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ADEE405D50EEDB9339121DF /* EvalHarness.swift */; };
 		B76309F723716E86A412C2EA /* BuddyPublishCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B71779DC0DC5BF8DADF4171 /* BuddyPublishCoordinator.swift */; };
 		B78FC2BAF873D8AC53EF0FF3 /* NutrientDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F012948D81D2E0776935FD6 /* NutrientDetail.swift */; };
@@ -409,6 +410,7 @@
 		2E63DE685027436E16FE2852 /* CoachTurnEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachTurnEngine.swift; sourceTree = "<group>"; };
 		2ECDA31444D3DB4A5E21B31F /* RecoverySignalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoverySignalTests.swift; sourceTree = "<group>"; };
 		2FDD671E6D161D740EBFF814 /* DetectedWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetectedWorkout.swift; sourceTree = "<group>"; };
+		3086A6DA8F78E15CE9B54C20 /* OnboardingFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowTests.swift; sourceTree = "<group>"; };
 		30BF320BA4DB22D1F5525598 /* FinishSetupCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishSetupCard.swift; sourceTree = "<group>"; };
 		313191B242B0905FDC8A5D6B /* WidgetSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
 		32E4B6EDFA5E8E67D5E2DB61 /* PixelCompanion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelCompanion.swift; sourceTree = "<group>"; };
@@ -872,6 +874,7 @@
 				5CC23A6A3D2E23BB956AB48C /* LaunchFlowTests.swift */,
 				11A32423208EAFBC36161D1C /* LoggingFlowTests.swift */,
 				AB6C7103D0269A6E57FDB794 /* ModeSwitchFlowTests.swift */,
+				3086A6DA8F78E15CE9B54C20 /* OnboardingFlowTests.swift */,
 				FDD015E81E66408FE8A52E61 /* README.md */,
 				596B53E03B776A099B522F1D /* Support */,
 			);
@@ -1491,6 +1494,7 @@
 				6C8F90D2DAE3DEAAA3F9FD8B /* LaunchFlowTests.swift in Sources */,
 				DCA9DBDA5AD31B774AC1669F /* LoggingFlowTests.swift in Sources */,
 				FE83C5426F7CFC971DCCBDAE /* ModeSwitchFlowTests.swift in Sources */,
+				B70860584B2ACBE339C03156 /* OnboardingFlowTests.swift in Sources */,
 				047955F9CAF52FEA9D25AA5B /* SproutUITestCase.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

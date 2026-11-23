@@ -1325,3 +1325,73 @@ comparison is thinking on with a larger cap, not this setting.
 **Spend:** $2.60 for this section (the reproduction, 900 attempts after the fix, 240 for
 the comparison, and 24 probe requests outside the harness).
 **Spend to date across every run: $21.64 over 10,920 attempts.**
+
+## 26. Onboarding walked in every order, and what looking at the result found (2026-11-23)
+
+Objective G6: "what happens if you do one step in front of the other, what happens if you
+manage to skip a step". Section 17 left onboarding out of the UI flows.
+
+**Five flows** (`VictoriaUITests/OnboardingFlowTests.swift`), each from a fresh install on
+an empty in-memory store, reading the step from the indicator ("Step n of 13"):
+
+| Flow | What it does | Result |
+|---|---|---|
+| m | The forward button on all 13 steps with nothing filled in, then "Start my journey" | Today, tab bar, Home / Gym switch, 0 eaten |
+| n | Forward three, back, forward, back to the first step, then all the way through | the same, and still 13 steps |
+| o | Every step passed by dragging the page, the forward button never tapped | the same |
+| p | Backgrounded at the middle step and resumed | the same step, and the flow still finishes |
+| p | Terminated after three steps and launched again | step 1, no Today, no tab bar |
+
+So the pages can be taken in any order, any of them can be passed without its button, and
+an unfinished onboarding is never mistaken for a finished one. All 20 UI flows pass
+(367 s on one simulator), with 1,131 unit tests.
+
+**The flows passed before anything below was found.** Each of these three came from
+walking the same path by hand in the simulator and reading the screens:
+
+1. **A profile made seconds earlier was told "28 days of showing up in a row"**, beside a
+   streak of 1. The once-a-day brief is cached in the app's defaults under the date alone,
+   and a `--ui-testing` launch has an in-memory store but the same defaults as every other
+   launch on that simulator. The brief had been cached earlier that day by a launch with
+   the seeded demo profile. **This cannot happen on a phone as the app is today**: there
+   is no way to replace a profile without reinstalling, which clears the defaults. It was
+   a hole in the test setup, and it means a flow could pass or fail on what an earlier
+   flow left behind. **Fixed:** `--ui-test-fresh-defaults` clears the app's defaults
+   before anything reads them; every flow passes it on its first launch and not when it
+   relaunches to see what was kept. Flow m now also fails if a new profile is shown a run
+   of days. That assertion was written after the fact and has not been seen failing.
+2. **The closing note began "friend, you're in"**, in lower case, when no name was typed:
+   the stand-in for a name, used as one. **Fixed:** with no name the note starts with the
+   sentence ("You're in — let's go."), pinned by a test.
+3. **The first screen every new person sees is a personal note addressed to one person by
+   name.** It is written in the source and shown before anything else. The audit of
+   2026-11-22 listed it; seeing it is different from reading that it exists. **Not
+   changed: it is the owner's note and the owner's decision** (below).
+
+Seen and sane, not asserted by any test: the plan page for the untouched defaults reads
+1,711 kcal with 122 g protein, 183 g carbs and 54 g fat, which add up to 1,706; Today shows
+the same 1,711 as its goal and 1,711 to go.
+
+### What the owner has to decide
+
+- **The first page.** Options: keep it only in builds made on the owner's machine (the
+  text moves to a file that is not committed, and the page is left out when the file is
+  absent); show it only when the person finishing onboarding is the one it is for; or
+  replace it with a note that fits anyone. The first keeps the public repository free of
+  it from now on; none of them removes it from the history that is already public.
+- **What onboarding assumes when nothing is chosen.** Tapping straight through gives the
+  light look, the built-in character that goes with it, and "Female" for the energy
+  estimate. The look and the character can be changed later; the sex changes the calorie
+  target and is never asked again. Requiring a choice on that one field is the smallest
+  fix.
+
+### Not verified
+
+- Nothing was typed in any flow: a name, a weight, a goal weight, a note, a key, and the
+  character step's own states are not exercised here.
+- Whether every combination of skipped steps gives targets inside the safe bounds is not
+  tested as a set; one combination (everything skipped) was looked at. The state behind
+  the 13 pages lives in the view and has no test of its own.
+- Finishing twice (a double tap on the last button) is not tested; reading the code, a
+  second call could insert a second weigh-in.
+- No accessibility audit was run on the onboarding pages.

@@ -1416,12 +1416,14 @@ struct OnboardingView: View {
                         .frame(minHeight: 44)
                 }
                 .accessibilityLabel("Back")
+                .accessibilityIdentifier(AccessibilityID.Onboarding.back)
             }
 
             if isLastPage {
                 Button("Start my journey", action: finish)
                     .buttonStyle(.primary)
                     .sensoryFeedback(.success, trigger: startTrigger)
+                    .accessibilityIdentifier(AccessibilityID.Onboarding.start)
             } else {
                 Button {
                     noteFocused = false
@@ -1435,6 +1437,7 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.primary)
                 .accessibilityLabel(nextButtonTitle)
+                .accessibilityIdentifier(AccessibilityID.Onboarding.next)
             }
         }
         .padding(.horizontal)
