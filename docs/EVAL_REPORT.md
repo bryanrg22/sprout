@@ -21,6 +21,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 9 | Test evidence for build 16, and what the tests do not cover | 2026-11-22 |
 | 10 | First live comparison: ten models on three tasks, and four defects it found | 2026-11-22 |
 | 11 | The widget that showed someone else's data | 2026-11-22 |
+| 12 | Home and Gym: two surfaces and the switch between them | 2026-11-22 |
 
 ---
 
@@ -506,3 +507,35 @@ sample until the next reload. Not reproduced: the simulator has no data protecti
 state carries nothing, retry interval, the midnight entry, a stale snapshot read in the
 morning, a clock moved back). **Not verified:** on a phone. The check is to install the
 build, restart the phone, and look at the widget before and after unlocking.
+
+## 12. Home and Gym: two surfaces and the switch between them (2026-11-22)
+
+Asked for by the owner, with a reference: the two-segment "Chat | Work" capsule at the top
+of the ChatGPT app.
+
+**What was built.** A `Home | Gym` capsule (`ModeSwitch`). Home is the tab bar with Today,
+Nutrients, Progress and the coach; Gym is the Workouts experience on its own, with no tab
+bar. The switch sits at the top of each surface's main screen: above the greeting on Today,
+and in the navigation bar on Workouts. It is not on the other Home tabs or on pushed
+screens, which matches the reference (the capsule is on the main screen only). The choice
+is stored and the app reopens where it was left.
+
+**Choices and why:**
+
+- Both surfaces stay alive under the switch (one is hidden, not destroyed), so each keeps
+  its scroll position, navigation path and half-typed text. Cost: both are in memory.
+- An unknown stored value resolves to Home, so no stored state can open the app onto nothing.
+- "Ask Vita about this" from Gym switches to Home and the coach tab, since the coach lives there.
+- The tab bar went from five items to four, which frees a slot (five is the most iOS shows
+  before a "More" list). Nothing was put in it.
+
+**Verified:** 8 tests in `AppModeTests` for the resolution and launch rules; suite 516
+passed. In the simulator on the dark demo profile, launched once into each surface, the
+capsule renders in the same place on both, Home shows four tabs and Gym shows none
+(`docs/screenshots/review/mode-home.png`, `mode-gym.png`; a first-launch notification
+prompt is over part of both).
+
+**Not verified:** nobody has tapped the switch (the launch argument selected the surface);
+the light theme; Dynamic Type sizes; that hidden-surface state really survives a switch;
+VoiceOver. There is still no UI test target, so none of this is guarded against
+regression. **Needs the owner's eyes** before it counts as done.

@@ -15,21 +15,6 @@ enum DemoSeed {
     /// normal seeding.
     static var isGainRequested: Bool { CommandLine.arguments.contains("--demo-gain") }
 
-    /// Which tab to open on launch, from `--demo-tab <name>`.
-    static var initialTab: Int {
-        guard let i = CommandLine.arguments.firstIndex(of: "--demo-tab"),
-              i + 1 < CommandLine.arguments.count else { return 0 }
-        // Tab order: Today(0) · Nutrients(1) · Progress(2) · Workouts(3) · Vita(4).
-        // (Buddy is a Dashboard quick-link, not a tab — 5-tab max keeps Vita on the bar.)
-        switch CommandLine.arguments[i + 1] {
-        case "food": return 1
-        case "progress": return 2
-        case "workouts": return 3
-        case "coach": return 4
-        default: return 0
-        }
-    }
-
     static func seedIfNeeded(_ context: ModelContext, hasProfile: Bool) {
         guard isRequested, !hasProfile else { return }
         seed(context)

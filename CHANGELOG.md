@@ -28,6 +28,12 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   token parameter by name prefix and would have sent them a request they reject
   (EVAL_REPORT 4).
 
+### Added
+
+- **Home and Gym.** A switch at the top of Today and of Workouts moves between everyday
+  tracking (Today, Nutrients, Progress, the coach) and the workout screens. The app
+  reopens on whichever you left it on (EVAL_REPORT 12).
+
 ### Changed
 
 - The daily brief is written by `claude-haiku-5-5` (Anthropic) or `gpt-6-luna` (OpenAI),
@@ -45,7 +51,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 508 unit tests, plus 18 offline evaluation self-tests.
+- Tests: 443 → 516 unit tests, plus 18 offline evaluation self-tests.
 - First live model comparison: ten models, three tasks, 3,636 graded attempts, $6.23
   (EVAL_REPORT 10). `docs/GOALS.md` lists the objectives and the `/goal` condition that
   works through them.
