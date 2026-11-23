@@ -66,6 +66,10 @@ enum NotificationService {
     /// - Returns: `true` if notifications are allowed (or already authorized).
     @discardableResult
     static func requestAuthorization() async -> Bool {
+        #if DEBUG
+        // A screenshot run cannot tap the system prompt away, and the prompt covers the screen.
+        if CommandLine.arguments.contains("--demo-no-notification-prompt") { return false }
+        #endif
         do {
             return try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .sound, .badge])

@@ -45,6 +45,58 @@ final class FoodEntry {
 
     var createdAt: Date = Date.now
 
+    // MARK: Label nutrients beyond the macros (per serving, like `calories`)
+    //
+    // Each is optional and `nil` means NOT KNOWN: the source did not state it. It is shown
+    // as unknown and never counted as zero; `0` means the source said zero. Optional with no
+    // default so older rows and rows from other devices read as unknown (CloudKit rule).
+    // Read and write them through `detail`.
+    var saturatedFatG: Double?
+    var transFatG: Double?
+    var cholesterolMg: Double?
+    var sodiumMg: Double?
+    var fiberG: Double?
+    /// Total sugars, including any added.
+    var sugarsG: Double?
+    var addedSugarsG: Double?
+    var vitaminDMcg: Double?
+    var calciumMg: Double?
+    var ironMg: Double?
+    var potassiumMg: Double?
+
+    /// The label nutrients as one value. Per serving; a day's totals multiply by `quantity`
+    /// in `NutrientTotals`.
+    var detail: NutrientDetail {
+        get {
+            var d = NutrientDetail()
+            d.saturatedFatG = saturatedFatG
+            d.transFatG = transFatG
+            d.cholesterolMg = cholesterolMg
+            d.sodiumMg = sodiumMg
+            d.fiberG = fiberG
+            d.sugarsG = sugarsG
+            d.addedSugarsG = addedSugarsG
+            d.vitaminDMcg = vitaminDMcg
+            d.calciumMg = calciumMg
+            d.ironMg = ironMg
+            d.potassiumMg = potassiumMg
+            return d
+        }
+        set {
+            saturatedFatG = newValue.saturatedFatG
+            transFatG = newValue.transFatG
+            cholesterolMg = newValue.cholesterolMg
+            sodiumMg = newValue.sodiumMg
+            fiberG = newValue.fiberG
+            sugarsG = newValue.sugarsG
+            addedSugarsG = newValue.addedSugarsG
+            vitaminDMcg = newValue.vitaminDMcg
+            calciumMg = newValue.calciumMg
+            ironMg = newValue.ironMg
+            potassiumMg = newValue.potassiumMg
+        }
+    }
+
     var mealType: MealType {
         get { MealType(rawValue: mealTypeRaw) ?? .snack }
         set { mealTypeRaw = newValue.rawValue }
@@ -84,7 +136,8 @@ final class FoodEntry {
          barcode: String? = nil,
          photoData: Data? = nil,
          additionalPhotoData: [Data]? = nil,
-         isFavorite: Bool = false) {
+         isFavorite: Bool = false,
+         detail: NutrientDetail = NutrientDetail()) {
         self.id = UUID()
         self.date = date
         self.mealTypeRaw = mealType.rawValue
@@ -105,5 +158,35 @@ final class FoodEntry {
         self.additionalPhotoData = additionalPhotoData
         self.isFavorite = isFavorite
         self.createdAt = .now
+        self.detail = detail
+    }
+}
+
+extension FoodEntry {
+    /// A new entry that repeats this one on `date` in `meal` (Recents and Favorites, "log
+    /// again"). It keeps everything that describes the food: name, serving, quantity,
+    /// calories, macros, the label nutrients (known and not known alike), range, source,
+    /// confidence, notes, barcode and the favorite flag. It gets its own identity and
+    /// timestamps, and no photo: a repeat is not the same plate, and copying the stored
+    /// image would grow the store for nothing.
+    func relogged(on date: Date, meal: MealType) -> FoodEntry {
+        FoodEntry(date: date,
+                  mealType: meal,
+                  name: name,
+                  servingDescription: servingDescription,
+                  quantity: quantity,
+                  calories: calories,
+                  proteinG: proteinG,
+                  carbsG: carbsG,
+                  fatG: fatG,
+                  caloriesLow: caloriesLow,
+                  caloriesHigh: caloriesHigh,
+                  source: source,
+                  confidence: confidence,
+                  notes: notes,
+                  barcode: barcode,
+                  photoData: nil,
+                  isFavorite: isFavorite,
+                  detail: detail)
     }
 }

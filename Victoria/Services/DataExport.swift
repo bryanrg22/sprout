@@ -31,6 +31,32 @@ enum DataExport {
         var date: Date; var meal: String; var name: String; var serving: String
         var quantity: Double; var calories: Double; var protein: Double
         var carbs: Double; var fat: Double; var source: String; var notes: String?
+        // The label nutrients, per serving like `calories`, named with their unit. One that
+        // is not known has NO key in the file (the encoder omits nil); it is never written
+        // as 0, so a backup cannot turn "not known" into "none".
+        var saturatedFatG: Double? = nil
+        var transFatG: Double? = nil
+        var cholesterolMg: Double? = nil
+        var sodiumMg: Double? = nil
+        var fiberG: Double? = nil
+        var sugarsG: Double? = nil
+        var addedSugarsG: Double? = nil
+        var vitaminDMcg: Double? = nil
+        var calciumMg: Double? = nil
+        var ironMg: Double? = nil
+        var potassiumMg: Double? = nil
+
+        init(_ entry: FoodEntry) {
+            date = entry.date; meal = entry.mealTypeRaw; name = entry.name
+            serving = entry.servingDescription; quantity = entry.quantity; calories = entry.calories
+            protein = entry.proteinG; carbs = entry.carbsG; fat = entry.fatG
+            source = entry.sourceRaw; notes = entry.notes
+            saturatedFatG = entry.saturatedFatG; transFatG = entry.transFatG
+            cholesterolMg = entry.cholesterolMg; sodiumMg = entry.sodiumMg
+            fiberG = entry.fiberG; sugarsG = entry.sugarsG; addedSugarsG = entry.addedSugarsG
+            vitaminDMcg = entry.vitaminDMcg; calciumMg = entry.calciumMg
+            ironMg = entry.ironMg; potassiumMg = entry.potassiumMg
+        }
     }
     struct WeightDTO: Codable { var date: Date; var weightLbs: Double; var note: String? }
     struct WaterDTO: Codable { var date: Date; var amountOz: Double }
@@ -54,12 +80,7 @@ enum DataExport {
                            goalWeightLbs: $0.goalWeightLbs, dailyStepGoal: $0.dailyStepGoal,
                            waterTargetOz: $0.waterTargetOz)
             },
-            food: fetch(FoodEntry.self).map {
-                FoodDTO(date: $0.date, meal: $0.mealTypeRaw, name: $0.name,
-                        serving: $0.servingDescription, quantity: $0.quantity, calories: $0.calories,
-                        protein: $0.proteinG, carbs: $0.carbsG, fat: $0.fatG,
-                        source: $0.sourceRaw, notes: $0.notes)
-            },
+            food: fetch(FoodEntry.self).map(FoodDTO.init),
             weights: fetch(WeightEntry.self).map { WeightDTO(date: $0.date, weightLbs: $0.weightLbs, note: $0.note) },
             water: fetch(WaterEntry.self).map { WaterDTO(date: $0.date, amountOz: $0.amountOz) },
             steps: fetch(StepsEntry.self).map { StepsDTO(date: $0.date, count: $0.count) },

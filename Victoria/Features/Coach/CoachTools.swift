@@ -278,6 +278,34 @@ enum CoachTools {
     /// Meal identifiers accepted by the food tools (the `MealType` raw values).
     private static let mealEnum = MealType.allCases.map { $0.rawValue }
 
+    /// The optional label-nutrient arguments of `log_food` and `edit_food`, one per
+    /// `Nutrient`, named with their unit (`sodium_mg`). None is ever required: the tools are
+    /// sent non-strict, so an argument the model leaves out is simply absent, and absent is
+    /// recorded as NOT KNOWN, never as 0 (EVAL_REPORT 10 is why they must stay optional).
+    /// The four in `Nutrient.estimable` may be estimated from the food; the rest are for
+    /// numbers the user actually gives (`docs/nutrition-detail.md` section 5).
+    private static func detailProperties(editing: Bool) -> [String: Any] {
+        var out: [String: Any] = [:]
+        for nutrient in Nutrient.allCases {
+            let what = "\(nutrient.label), \(nutrient.unit.rawValue) in ONE serving."
+            let when: String
+            if editing {
+                when = "Only if changing it."
+            } else if Nutrient.estimable.contains(nutrient) {
+                when = "Optional: give it when the user states it or you can work it out from the food; "
+                    + "otherwise omit it. Never send 0 as a placeholder."
+            } else {
+                when = "Optional: ONLY when the user gives the number (for example from a label); otherwise omit it."
+            }
+            out[nutrient.argumentName] = ["type": "number", "description": "\(what) \(when)", "minimum": 0]
+        }
+        return out
+    }
+
+    private static func withDetail(_ properties: [String: Any], editing: Bool) -> [String: Any] {
+        properties.merging(detailProperties(editing: editing)) { existing, _ in existing }
+    }
+
     private static let logFoodSchema: [String: Any] = [
         "name": Name.logFood.rawValue,
         "description": """
@@ -287,11 +315,13 @@ enum CoachTools {
         protein" or "add my oatmeal breakfast". Provide your best calorie + macro estimate \
         from what she described; portion size is the biggest unknown, so estimate sensibly. \
         This logs immediately (she can undo), so only call it when she clearly wants the \
-        item recorded — if she's just chatting about food, don't.
+        item recorded — if she's just chatting about food, don't. The label nutrients \
+        (saturated fat, sodium, fiber, sugars and the rest) are optional: one you leave out \
+        is recorded as not known, which is better than a guess.
         """,
         "input_schema": [
             "type": "object",
-            "properties": [
+            "properties": withDetail([
                 "name": ["type": "string", "description": "What she ate, e.g. \"Chicken burrito bowl\"."],
                 "meal": [
                     "type": "string",
@@ -311,7 +341,7 @@ enum CoachTools {
                     "type": "string",
                     "description": "ONLY when she means a PAST day she forgot to log (e.g. \"add the burger I had yesterday\"): \"yesterday\" or an ISO date like \"2026-06-04\". Omit entirely for today — the normal case.",
                 ],
-            ],
+            ], editing: false),
             "required": ["name", "meal", "calories", "protein_g", "carbs_g", "fat_g"],
         ],
     ]
@@ -327,7 +357,7 @@ enum CoachTools {
         """,
         "input_schema": [
             "type": "object",
-            "properties": [
+            "properties": withDetail([
                 "name": ["type": "string", "description": "The CURRENT name of the logged item to find."],
                 "new_name": ["type": "string", "description": "A new name, if she's renaming it."],
                 "meal": [
@@ -340,7 +370,7 @@ enum CoachTools {
                 "carbs_g": ["type": "number", "description": "New per-serving carb grams, if changing.", "minimum": 0],
                 "fat_g": ["type": "number", "description": "New per-serving fat grams, if changing.", "minimum": 0],
                 "quantity": ["type": "number", "description": "New number of servings, if changing.", "minimum": 0],
-            ],
+            ], editing: true),
             "required": ["name"],
         ],
     ]
@@ -997,11 +1027,14 @@ enum CoachTools {
         var carbsG: Double?
         var fatG: Double?
         var quantity: Double?
+        /// The label nutrients to set. Like the fields above, a nil one is left as it is
+        /// (known or not known); an edit cannot turn a known value back into "not known".
+        var detail = NutrientDetail()
 
         /// True when at least one field is set — guards against a no-op edit.
         var hasAnyChange: Bool {
             name != nil || meal != nil || calories != nil || proteinG != nil
-                || carbsG != nil || fatG != nil || quantity != nil
+                || carbsG != nil || fatG != nil || quantity != nil || !detail.isEmpty
         }
     }
 
@@ -1699,6 +1732,11 @@ enum CoachTools {
         }
         // Quantity is optional; default 1, and never zero/negative.
         let quantity = doubleValue(input["quantity"]).map { $0 > 0 ? $0 : 1 } ?? 1
+        let detail: NutrientDetail
+        switch parseDetail(input: input) {
+        case .success(let parsed): detail = parsed
+        case .failure(let problem): return .invalid(problem.message + " Nothing was logged.")
+        }
 
         var draft = FoodDraft()
         draft.name = rawName
@@ -1710,6 +1748,7 @@ enum CoachTools {
         draft.fatG = fat
         draft.source = .manual   // logged via the coach, same as a manual add
         draft.loggedDate = resolveLogDate(input["date"])   // nil = today; set only when back-dating
+        draft.detail = detail   // what the call left out stays not known
 
         // Show the TOTAL (per-serving × quantity), which is what actually lands in the diary.
         let totalKcal = Int((calories * quantity).rounded())
@@ -1719,6 +1758,27 @@ enum CoachTools {
             name: .logFood,
             confirmSummary: "log \(rawName)\(qtyNote) (\(totalKcal) kcal) to \(meal.label.lowercased())\(dayNote)",
             action: .logFood(draft)))
+    }
+
+    /// Why a label-nutrient argument was refused.
+    struct DetailProblem: Error { let message: String }
+
+    /// The label nutrients a `log_food` / `edit_food` call carries. An argument that is
+    /// absent, null or not a number is NOT KNOWN and stays nil; an explicit 0 is a real zero;
+    /// a negative or implausibly large number refuses the whole call, so a unit slip
+    /// (grams sent as milligrams) is never stored.
+    static func parseDetail(input: [String: Any]) -> Result<NutrientDetail, DetailProblem> {
+        var detail = NutrientDetail()
+        for nutrient in Nutrient.allCases {
+            guard let value = doubleValue(input[nutrient.argumentName]) else { continue }
+            guard nutrient.accepts(value) else {
+                return .failure(DetailProblem(message:
+                    "\(nutrient.label) has to be between 0 and \(Int(nutrient.plausibleMax)) "
+                    + "\(nutrient.unit.rawValue) per serving (I got \(trimmed(value)))."))
+            }
+            detail[nutrient] = value
+        }
+        return .success(detail)
     }
 
     /// Resolve a tool-supplied log-date string to a concrete day (set to NOON, to dodge midnight
@@ -1781,6 +1841,10 @@ enum CoachTools {
         if let q = doubleValue(input["quantity"]) {
             guard q > 0 else { return .invalid("Quantity has to be more than zero. Nothing was changed.") }
             edit.quantity = q
+        }
+        switch parseDetail(input: input) {
+        case .success(let detail): edit.detail = detail
+        case .failure(let problem): return .invalid(problem.message + " Nothing was changed.")
         }
         guard edit.hasAnyChange else {
             return .invalid("I couldn't tell what to change on \"\(match.name)\". "
@@ -2082,11 +2146,17 @@ enum CoachTools {
                 carbsG: draft.carbsG,
                 fatG: draft.fatG,
                 source: draft.source,
-                notes: note)
+                notes: note,
+                detail: draft.detail)
             context.insert(entry)
             Self.saveOrLog(context)
             var msg = "Logged \(entry.name) to \(entry.mealType.label.lowercased()): "
                 + "\(Int(entry.totalCalories.rounded())) kcal, \(Int(entry.totalProteinG.rounded()))g protein."
+            // Say back exactly which label nutrients were stored, so the model does not go on
+            // to talk about one it never supplied as if it were on record.
+            if let also = entry.detail.summary(quantity: entry.quantity, locale: Locale(identifier: "en_US_POSIX")) {
+                msg += " Also recorded: \(also)."
+            }
             if let note { msg += " Note: \(note)." }
             // Hand Vita the AUTHORITATIVE post-log day total so she states the real "kcal left"
             // instead of doing her own (error-prone) chat arithmetic — she was getting it wrong
@@ -2193,6 +2263,8 @@ enum CoachTools {
             let before = FoodEdit(name: entry.name, meal: entry.mealType,
                                   calories: entry.calories, proteinG: entry.proteinG,
                                   carbsG: entry.carbsG, fatG: entry.fatG, quantity: entry.quantity)
+            // Kept whole, not as a `FoodEdit`: undo has to put "not known" back too.
+            let detailBefore = entry.detail
             // Apply only the supplied fields (in place, preserving identity/source), exactly
             // like editing through AddFoodSheet.
             if let n = changes.name { entry.name = n }
@@ -2202,9 +2274,13 @@ enum CoachTools {
             if let c = changes.carbsG { entry.carbsG = c }
             if let f = changes.fatG { entry.fatG = f }
             if let q = changes.quantity { entry.quantity = q }
+            if !changes.detail.isEmpty { entry.detail = entry.detail.merging(changes.detail) }
             Self.saveOrLog(context)
-            let msg = "Updated \(entry.name): \(Int(entry.totalCalories.rounded())) kcal, "
+            var msg = "Updated \(entry.name): \(Int(entry.totalCalories.rounded())) kcal, "
                 + "\(Int(entry.totalProteinG.rounded()))g protein, in \(entry.mealType.label.lowercased())."
+            if let set = changes.detail.summary(locale: Locale(identifier: "en_US_POSIX")) {
+                msg += " Set per serving: \(set)."
+            }
             return Applied(message: msg, undo: {
                 guard let e = fetchFood(id: id, context: context) else { return }
                 e.name = before.name ?? e.name
@@ -2214,6 +2290,7 @@ enum CoachTools {
                 e.carbsG = before.carbsG ?? e.carbsG
                 e.fatG = before.fatG ?? e.fatG
                 e.quantity = before.quantity ?? e.quantity
+                e.detail = detailBefore
                 Self.saveOrLog(context)
             })
 
