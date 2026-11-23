@@ -22,7 +22,7 @@ dataset on every candidate model, and the numbers decide. Results are written up
 
 | Eval | Task | What runs | Pass rule |
 |---|---|---|---|
-| `MealDescribe` | `mealDescribe` | `FoodPhotoAnalyzer.analyze(description:)` on `meal_describe/v3` | total calories within 20% of the USDA total (the US labelling tolerance) |
+| `MealDescribe` | `mealDescribe` | `FoodPhotoAnalyzer.analyze(description:)` on `meal_describe/v1` (v3, with the label nutrients, is not built yet) | total calories within 20% of the USDA total (the US labelling tolerance) |
 | `CoachToolChoice` | `coachTurn` | `CoachContext.systemParts` + `CoachTools.schemas` + `chatWithTools`, then `CoachTools.parse` | the right decision (act or answer), the right action, the right value, as the app itself resolves the call |
 | `DailyBrief` | `dailyBrief` | `DailyBriefService.pick` + `rephrase` | every number kept, none invented, and no wrong-person pronoun |
 | `InsightLine` | `insightLine` | `DailyInsightEngine.bestInsight` + `InsightPhraser.rephrase` on `insight_line/v1` (19 cases) | the line is used (the sanitiser kept it), every number of the template is kept, none is added beyond the template and the observation, and no wrong-person pronoun |

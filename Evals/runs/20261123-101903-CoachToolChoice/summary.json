@@ -1,0 +1,167 @@
+{
+ "run": "20261123-101903-CoachToolChoice",
+ "tasks": [
+  {
+   "task": "coachTurn",
+   "dataset": "coach_tool_choice/v2",
+   "cases": 34,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-4-5-20251001",
+     "attempts": 102,
+     "usable": 102,
+     "passed": 93,
+     "pass_rate": 0.9117647058823529,
+     "ci95": [
+      0.8407538217792032,
+      0.9528849743085355
+     ],
+     "per_repeat_pass": [
+      0.9117647058823529,
+      0.9117647058823529,
+      0.9117647058823529
+     ],
+     "latency_p50_s": 1.013,
+     "latency_p95_s": 3.68,
+     "mean_uncached_input_tokens": 916.1764705882352,
+     "mean_cache_read_tokens": 8541.382352941177,
+     "mean_cache_write_tokens": 348.8529411764706,
+     "mean_output_tokens": 96.2843137254902,
+     "mean_cost_usd": 0.002687802450980392,
+     "scores": {
+      "acted_when_should_not": 0,
+      "arguments_correct": 0.9117647058823529,
+      "call_was_valid": 0.9901960784313726,
+      "decision_correct": 0.9411764705882353,
+      "tool_correct": 0.9313725490196079
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 102,
+     "usable": 102,
+     "passed": 101,
+     "pass_rate": 0.9901960784313726,
+     "ci95": [
+      0.9465407803733753,
+      0.9982673102072662
+     ],
+     "per_repeat_pass": [
+      0.9705882352941176,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 0.832,
+     "latency_p95_s": 2.638,
+     "mean_uncached_input_tokens": 832.6764705882352,
+     "mean_cache_read_tokens": 11295.960784313726,
+     "mean_cache_write_tokens": 461.03921568627453,
+     "mean_output_tokens": 156.85294117647058,
+     "mean_cost_usd": 0.0003322836274509804,
+     "scores": {
+      "acted_when_should_not": 0,
+      "arguments_correct": 0.9901960784313726,
+      "call_was_valid": 1,
+      "decision_correct": 1,
+      "tool_correct": 1
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 102,
+     "usable": 102,
+     "passed": 102,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9637042523922542,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.753,
+     "latency_p95_s": 4.468,
+     "mean_uncached_input_tokens": 830.6764705882352,
+     "mean_cache_read_tokens": 11245.450980392157,
+     "mean_cache_write_tokens": 579.5490196078431,
+     "mean_output_tokens": 123.22549019607843,
+     "mean_cost_usd": 0.006591570588235294,
+     "scores": {
+      "acted_when_should_not": 0,
+      "arguments_correct": 1,
+      "call_was_valid": 1,
+      "decision_correct": 1,
+      "tool_correct": 1
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-5.6-terra",
+     "attempts": 102,
+     "usable": 102,
+     "passed": 102,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9637042523922542,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.454,
+     "latency_p95_s": 2.889,
+     "mean_uncached_input_tokens": 1276.950980392157,
+     "mean_cache_read_tokens": 5674.28431372549,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 42.57843137254902,
+     "mean_cost_usd": 0.004199700000000001,
+     "scores": {
+      "acted_when_should_not": 0,
+      "arguments_correct": 1,
+      "call_was_valid": 1,
+      "decision_correct": 1,
+      "tool_correct": 1
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6-luna",
+     "attempts": 102,
+     "usable": 102,
+     "passed": 102,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9637042523922542,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.195,
+     "latency_p95_s": 2.897,
+     "mean_uncached_input_tokens": 1213.9803921568628,
+     "mean_cache_read_tokens": 5737.254901960784,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 31.07843137254902,
+     "mean_cost_usd": 0.00019430980392156862,
+     "scores": {
+      "acted_when_should_not": 0,
+      "arguments_correct": 1,
+      "call_was_valid": 1,
+      "decision_correct": 1,
+      "tool_correct": 1
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

@@ -14,8 +14,12 @@ import SwiftData
 /// either first name the app was first built around. Each prompt that is told the goal
 /// direction must carry the rule for that direction and not the rule for another.
 ///
-/// Not covered here, and listed in the change that added this file: the tool schemas in
-/// `CoachTools`, onboarding, Settings, the buddy feature and the widgets.
+/// The coach's tool descriptions and schemas are scanned too, as the model receives them
+/// and as source (so the replies a tool hands back to the model are covered).
+///
+/// Not covered here: onboarding, Settings, the buddy feature and the widgets. And one thing
+/// is knowingly allowed: the two built-in characters are still stored, and offered to the
+/// model, under the first names of the two people they were drawn for.
 @MainActor
 final class PromptNeutralityTests: XCTestCase {
 
@@ -398,6 +402,40 @@ final class PromptNeutralityTests: XCTestCase {
         XCTAssertGreaterThan(scanned, 600, "the scan must have looked at every feature for every user")
     }
 
+    /// The tools the coach is given: every name, description, property description and enum
+    /// value, for both users on every goal direction and in both unit systems the profile
+    /// can hold. These were written as "she" and "her" throughout until this test existed.
+    func testEveryCoachToolSchemaIsNeutral() throws {
+        var toolNames: Set<String> = []
+        for u in everyUserAndDirection {
+            let schemas = CoachTools.schemas(for: u.profile)
+            XCTAssertGreaterThanOrEqual(schemas.count, 25, "the whole toolbelt, not a subset")
+            for schema in schemas {
+                let name = try XCTUnwrap(schema["name"] as? String)
+                toolNames.insert(name)
+                var text = strings(in: schema).joined(separator: "\n")
+                // Allowed, and only here: the built-in characters' stored names (see the header).
+                if name == CoachTools.Name.setCompanion.rawValue {
+                    for avatar in CompanionAvatar.builtIns {
+                        text = text.replacingOccurrences(of: avatar.rawValue, with: "", options: .caseInsensitive)
+                    }
+                }
+                XCTAssertEqual(Self.violations(in: text), [],
+                               "tool \(name) for \(u.profile.name) (\(u.profile.pace.direction))")
+                XCTAssertFalse(text.contains("they is") || text.contains("they has") || text.contains("they wants")
+                               || text.contains("they tells") || text.contains("they asks") || text.contains("they says"),
+                               "tool \(name): a verb left in the singular after the rewording")
+            }
+        }
+        XCTAssertGreaterThanOrEqual(toolNames.count, 25)
+
+        // The allowance is exactly as wide as stated: without it, the companion tool is caught.
+        let companion = try XCTUnwrap(CoachTools.schemas(for: user("Alex").profile)
+            .first { ($0["name"] as? String) == CoachTools.Name.setCompanion.rawValue })
+        XCTAssertFalse(Self.violations(in: strings(in: companion).joined(separator: "\n")).isEmpty,
+                       "when the built-in characters are renamed, delete the allowance above")
+    }
+
     /// A user back after a gap, with nothing logged today, an empty name, and a day over the
     /// calorie range: the branches the ordinary fixture does not reach.
     func testTheLessCommonCoachBranchesAreNeutralToo() {
@@ -446,6 +484,7 @@ final class PromptNeutralityTests: XCTestCase {
         "Victoria/Services/TravelSignal.swift",
         "Victoria/Models/CoachMemory.swift",
         "Victoria/Features/Coach/CoachContext.swift",
+        "Victoria/Features/Coach/CoachTools.swift",
         "Victoria/Features/Onboarding/OnboardingCoachMessage.swift",
         "Victoria/Features/Weight/ProgressSummaryCard.swift",
         "Victoria/Features/Plan/PlanIntakeView.swift",

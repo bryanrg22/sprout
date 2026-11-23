@@ -278,7 +278,7 @@ final class SettingsMatrixPlanTests: XCTestCase {
         XCTAssertTrue(away.message.contains("set aside"), away.message)
         XCTAssertFalse(away.message.contains("still drives"), away.message)
         let back = try XCTUnwrap(world.viaCoach("set_goal_direction", ["direction": "lose"]))
-        XCTAssertTrue(back.message.contains("driving her targets"), back.message)
+        XCTAssertTrue(back.message.contains("driving their targets"), back.message)
         // And the standing context says so for every later turn while it is set aside.
         world.viaCoach("set_goal_direction", ["direction": "gain"])
         XCTAssertTrue(PlanGoalsCopy.coachNote(plan: world.plan, profile: world.profile).contains("set its calorie range and protein target aside"))

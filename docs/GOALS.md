@@ -23,7 +23,7 @@ Last updated: 2026-11-22.
 | G4 | The store returns what was put in | in progress: schema, round trips, merges, queries and the SQL script are done; entry points, on-disk and UI comparison remain |
 | G5 | Changing a setting changes everything that depends on it | in progress: three defects fixed and 95 matrix tests (EVAL_REPORT 16); the dependency table and kilograms remain |
 | G6 | No step breaks when done out of order, repeated, or skipped | in progress: 15 UI flows pass (EVAL_REPORT 17); the onboarding flow and its skip combinations remain |
-| G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); tool descriptions, onboarding copy and the demo seed remain |
+| G7 | Prompts and copy fit whoever is using the app | in progress: prompts reworded and tested (EVAL_REPORT 14); the coach's 28 tool descriptions reworded, scanned by a test and re-measured (EVAL_REPORT 24); open: the built-in characters' names, onboarding copy, Settings, buddy, widgets and the demo seed |
 | G8 | A new person gets their own pixel character from a photo | in progress: built (EVAL_REPORT 15) and the call made for real on generated faces, 18 of 18 usable (EVAL_REPORT 23); open: the owner's rating of the images and choice of model, a real photo, the flow in the app with a live image, and the CloudKit schema |
 | G9 | Home and Gym as two modes, switched at the top | in progress: built, tapped by a UI test both ways with state kept (EVAL_REPORT 12, 17); open: VoiceOver reaches the hidden surface (U-1), the light theme, and the owner's look at the screenshots |
 | G10 | Nutrition is as specific as it can honestly be | in progress: built and tested from every source (EVAL_REPORT 18); the estimator's accuracy on the new fields is unmeasured, and the owner deploys the CloudKit schema |
@@ -142,7 +142,11 @@ Prerequisite for G8 and for inviting a third person.
   direction (EVAL_REPORT 3, A-1 lists them); a test scans the prompt sources for
   "her", "she", "weight-loss" used about the user; the `dailyBrief` evaluation's
   `wrong_person_pronoun` score is 0 for the chosen model.
-- **Status:** open.
+- **Status:** in progress. Done: the prompts (EVAL_REPORT 14) and the coach's tools
+  (EVAL_REPORT 24), each with a test that scans what the model receives. **Needs the
+  owner:** what the two built-in characters are called; they are stored and offered as
+  `victoria` and `bryan`. Not yet scanned: onboarding copy, Settings, the buddy feature,
+  the widgets, the demo seed.
 
 ## G8. A new person gets their own pixel character from a photo
 

@@ -1148,3 +1148,51 @@ reader's opinion, not a measurement, and not the owner's:
 
 **Spend:** $0.86 for the two runs and about $0.08 to generate the three portraits.
 **Spend to date across every run: $17.61 over 9,261 attempts.**
+
+## 24. The coach's tools called every user "she" (2026-11-23)
+
+Objective G7. Section 14 reworded the prompts and said the tool descriptions were not
+covered. They are what the coach model reads on every chat turn: 28 tools, and their
+descriptions referred to the user as "she" or "her" 181 times ("Use when she tells you
+what she ate"), whoever was using the app. The owner is one of the people this was wrong
+for.
+
+**Changed:** every description, property description and tool reply in `CoachTools` now
+says "they" and "their", with the verbs made to agree. The example that named a built-in
+character now follows the list of characters instead of spelling one.
+
+**Tested:** a new test reads the tools as the model receives them, for both fixture users
+on each goal direction, and fails on a gendered pronoun, the hard-coded label, or a verb
+left in the singular. It was run against the old text first and failed there (five
+descriptions reported before the output was cut), then passed on the new. `CoachTools.swift`
+was added to the scanned source files, which covers the replies the tools hand back to
+the model. Three tests that pinned the old wording ("Her weight today in lb.", "driving
+her targets", "her current weight") were changed to the new wording; nothing else in them
+changed. 1,113 unit tests pass.
+
+**Measured, because a description is a prompt:** the tool-choice evaluation, same 34
+cases and three repeats as section 10's last run, on the two defaults and three others
+(`Evals/runs/20261123-101903-CoachToolChoice`, 510 attempts, $1.43).
+
+| Model | Before (`…-072221`) | After |
+|---|---|---|
+| `claude-sonnet-5` (default) | 102 of 102 | 102 of 102 |
+| `gpt-5.6-terra` (default) | 102 of 102 | 102 of 102 |
+| `gpt-6-luna` | 102 of 102 | 102 of 102 |
+| `claude-haiku-5-5` | 102 of 102 | 101 of 102 |
+| `claude-haiku-4-5` | 95 of 102 | 93 of 102 |
+
+Read, not just counted: `claude-haiku-4-5` fails the same three cases as before, in the
+same way (it asks a question where the case expects a call, twice, and logs two eggs'
+calories with a quantity of two). The one new miss on `claude-haiku-5-5` is that same
+doubling, which three other models also did before the change. No failure of a new kind
+appeared, and the differences are inside the intervals. The rewording did not change
+which tool a model picks.
+
+**Still open in G7:** the two built-in characters are stored, and offered to the model,
+under the first names of the two people they were drawn for (`victoria`, `bryan`). The
+test allows exactly that and says so. Renaming them changes a stored value and what the
+app shows, and needs the owner to say what they are called. Onboarding copy, Settings,
+the buddy feature, the widgets and the demo seed have not been scanned.
+
+**Spend to date across every run: $19.04 over 9,771 attempts.**
