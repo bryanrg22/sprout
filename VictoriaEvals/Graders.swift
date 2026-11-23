@@ -289,7 +289,7 @@ enum Graders {
         var width = 0
         var height = 0
         var hasAlpha = false
-        /// Every pixel of the two TOP corner blocks is clear. This is the background check
+        /// Every pixel of the two TOP corner blocks is clear (alpha at or under `clearAlphaCeiling`). This is the background check
         /// that decides a pass: the style is a bust cut off by the bottom edge, so shoulders
         /// may rightly reach the bottom corners (the second built-in character's do).
         var transparentTopCorners = false
@@ -297,7 +297,7 @@ enum Graders {
         var transparentCorners = false
         /// Share of pixels with alpha exactly 0.
         var transparentShare = 0.0
-        /// Distinct colours among the opaque pixels after quantisation (see `distinctColours`).
+        /// Distinct colours among the solid pixels after quantisation (see `distinctColours`).
         var distinctColours = 0
 
         var isSquare1024: Bool { width == 1024 && height == 1024 }
@@ -305,16 +305,25 @@ enum Graders {
 
     /// Side of each corner block checked for transparency, as a share of the image side.
     static let cornerBlockShare = 0.03
+    /// A pixel at or under this alpha (about 3%) is graded as clear, and one at or over
+    /// `solidAlphaFloor` (about 98%) as solid. Measured on the first live run (EVAL_REPORT
+    /// 23): the image models return a character whose solid pixels are at alpha 253 or 254,
+    /// never 255, and leave a scatter of alpha 1 and 2 in the cleared background. Neither
+    /// can be seen, so neither decides a grade. Exact 0 and exact 255 graded all nine
+    /// usable characters of that run as "no colours at all".
+    static let clearAlphaCeiling: UInt8 = 8
+    static let solidAlphaFloor: UInt8 = 250
     /// Bits kept per channel when counting colours: 4 bits = 16 levels = 4,096 possible colours.
     static let colourBits = 4
-    /// A quantised colour counts only if it covers at least this share of the opaque pixels,
+    /// A quantised colour counts only if it covers at least this share of the solid pixels,
     /// so a handful of stray anti-aliased pixels do not look like extra palette entries.
     static let minColourShare = 0.002
-    /// At or under this many colours the image is taken to be flat-palette pixel art. The
-    /// prompt asks for 12 to 16; a photograph or a painted illustration quantises to
-    /// hundreds. NOT calibrated on real outputs yet: the first live run should look at the
-    /// distribution of `distinct_colours` before this number is trusted.
-    static let pixelArtColourLimit = 48
+    /// At or under this many colours the image is taken to be flat-palette pixel art.
+    /// Calibrated on 2026-11-23 (EVAL_REPORT 23) on thirteen images: ten pixel characters
+    /// (nine generated, one built in) counted 24 to 45, and the three photographs they were
+    /// made from counted 72 to 81. The limit is the middle of that gap. Thirteen images is a
+    /// small set: a count between 46 and 71 has never been seen and should be looked at.
+    static let pixelArtColourLimit = 58
 
     static func imageMetrics(_ data: Data) -> ImageMetrics {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
@@ -340,15 +349,15 @@ enum Graders {
         for x0 in xs {
             for y0 in ys {
                 for y in y0..<(y0 + block) {
-                    for x in x0..<(x0 + block) where pixels.alpha(x: x, y: y) != 0 { return false }
+                    for x in x0..<(x0 + block) where pixels.alpha(x: x, y: y) > clearAlphaCeiling { return false }
                 }
             }
         }
         return true
     }
 
-    /// Colours among the fully opaque pixels, each channel cut to `colourBits` bits, counting
-    /// only colours that cover at least `minColourShare` of them.
+    /// Colours among the solid pixels (alpha at or over `solidAlphaFloor`), each channel cut
+    /// to `colourBits` bits, counting only colours that cover at least `minColourShare` of them.
     static func distinctColours(_ pixels: AvatarImage.Pixels, bits: Int = colourBits,
                                 minShare: Double = minColourShare) -> Int {
         let shift = UInt8(8 - bits)
@@ -356,7 +365,7 @@ enum Graders {
         var opaque = 0
         var index = 0
         while index < pixels.bytes.count {
-            if pixels.bytes[index + 3] == 255 {
+            if pixels.bytes[index + 3] >= solidAlphaFloor {
                 opaque += 1
                 let r = UInt32(pixels.bytes[index] >> shift)
                 let g = UInt32(pixels.bytes[index + 1] >> shift)

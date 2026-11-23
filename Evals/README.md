@@ -12,6 +12,7 @@ dataset on every candidate model, and the numbers decide. Results are written up
 | `datasets/<task>/v<n>.jsonl` | Labelled cases, one JSON object per line. A released version is never edited: a change is a new `v<n+1>` file, so old results stay comparable. |
 | `datasets/meal_describe/fetch_usda.py`, `build_v1.py`, `build_v3.py` | How the meal dataset's ground truth is produced from USDA FoodData Central (cached in `usda_cache.json`; CI rebuilds `v1.jsonl` and diffs it). `build_v3.py` adds the label nutrients of the same records; `GraderTests` recomputes every v3 column from the cache. |
 | `run.sh` | Runs one live evaluation and leaves a record directory. **Spends money.** |
+| `regrade-avatars.sh` | Grades a past `Avatar` run's saved characters again with the graders as they are now, and writes `regrade-avatar.json` in that run. Calls no model and spends nothing. Only on the machine that made the run: the characters are never committed. |
 | `summarize.py` | Records → `summary.md` / `summary.json`: pass rate with a 95% Wilson interval, per-repeat spread, every score, latency, tokens, cost. |
 | `prices.json` | List prices read from the vendors' pricing pages, with the date. A model not listed gets no cost, never an estimate. |
 | `runs/<utc>-<eval>/` | One directory per run: `manifest.json` (commit, dataset hashes, models, repeats), `records-<task>.jsonl`, `summary.md`. |
