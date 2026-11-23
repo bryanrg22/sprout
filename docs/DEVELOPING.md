@@ -67,8 +67,20 @@ non-zero if a gate failed and writes the record either way.
 xcodegen generate
 xcodebuild test -project Victoria.xcodeproj -scheme Victoria \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' -resultBundlePath /tmp/t.xcresult
-python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 516
+python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 560
 ```
+
+### Verify a store
+
+```bash
+python3 tooling/verify_store.py "<...>/Containers/Shared/AppGroup/<id>/Library/Application Support/default.store"
+python3 tooling/verify_store.py --self-test
+```
+
+Read-only (SQLite `mode=ro`). Prints every entity table with its row count and the per-day
+food, water, steps and weigh-in totals of the last 14 days, and exits 1 on a NULL `id`, a
+negative calorie, macro, weight, ounce or step value, or two rows on one day in the steps,
+sleep or vitals table. Days are counted in `--tz` (default: this machine's zone).
 
 ### Test code that calls a model
 

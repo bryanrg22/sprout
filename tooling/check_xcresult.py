@@ -28,7 +28,11 @@ def main():
 
     passed, failed, skipped = s.get("passedTests", 0), s.get("failedTests", 0), s.get("skippedTests", 0)
     total = s.get("totalTestCount", passed + failed + skipped)
+    expected = s.get("expectedFailures", 0)
     line = f"{s.get('result')}: {total} tests, {passed} passed, {failed} failed, {skipped} skipped"
+    if expected:
+        # A known defect pinned with XCTExpectFailure: counted, shown, and not a pass.
+        line += f", {expected} expected failures (known defects)"
     print(("**" + line + "**") if a.markdown else line)
     for f in s.get("testFailures", []):
         print(("- " if a.markdown else "  FAILED ") + f.get("testName", "?") + ": "
