@@ -1,3 +1,5 @@
+import Foundation
+
 /// The accessibility identifiers the UI smoke flows (`VictoriaUITests`) find controls by.
 ///
 /// This file is compiled into the app AND into the UI test bundle (see `project.yml`),
@@ -18,6 +20,25 @@ enum AccessibilityID {
         static let coach = "tab.coach"
     }
 
+    enum Launch {
+        /// "Sprout couldn't open your data": shown instead of onboarding when the store did not open.
+        static let storeUnavailable = "launch.storeUnavailable"
+        static let sendReport = "launch.sendReport"
+        /// "Looking for your data in iCloud": a launch with no profile, before onboarding.
+        static let restoring = "launch.restoring"
+        static let startFresh = "launch.startFresh"
+    }
+
+    enum Competition {
+        static let card = "competition.card"
+        /// "<me> – <them>" for this week; its label carries both totals.
+        static let score = "competition.score"
+        static let lastWeek = "competition.lastWeek"
+        static let dayDetail = "competition.dayDetail"
+        /// Shown when the buddy's app is older than the competition.
+        static let waiting = "competition.waiting"
+    }
+
     enum Onboarding {
         /// The step indicator; its label carries the step number.
         static let steps = "onboarding.steps"
@@ -27,6 +48,9 @@ enum AccessibilityID {
         static let back = "onboarding.back"
         /// "Start my journey", on the last step only.
         static let start = "onboarding.start"
+        /// The sex picker on the about step (no default), and the line asking for a choice.
+        static let sex = "onboarding.sex"
+        static let sexRequired = "onboarding.sexRequired"
     }
 
     enum Today {
@@ -76,6 +100,19 @@ enum AccessibilityID {
         static let log = "workouts.log"
         /// One logged session; its label carries the title and the summary.
         static let sessionRow = "workouts.session.row"
+        /// One workout Apple Health or the tracker detected, on the day's page.
+        static let detectedRow = "workouts.detected.row"
+        /// The week card: its "N of 7 days active", the arrows, the summary line, and one cell per day.
+        static let week = "workouts.week"
+        static let weekActiveDays = "workouts.week.activeDays"
+        static let weekPrevious = "workouts.week.previous"
+        static let weekNext = "workouts.week.next"
+        static let weekSummary = "workouts.week.summary"
+        /// `workouts.week.day.<yyyy-MM-dd>` in the device's calendar.
+        static func weekDay(_ date: Date, calendar: Calendar = .current) -> String {
+            let c = calendar.dateComponents([.year, .month, .day], from: date)
+            return String(format: "workouts.week.day.%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+        }
     }
 
     enum WorkoutLog {
@@ -87,5 +124,7 @@ enum AccessibilityID {
 
     enum Settings {
         static let done = "settings.done"
+        /// The pounds / kilograms picker.
+        static let weightUnit = "settings.weightUnit"
     }
 }

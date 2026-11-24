@@ -66,8 +66,13 @@ final class LoggingFlowTests: SproutUITestCase {
         openTab(AccessibilityID.Tab.nutrients)
         waitShown(app.scrollViews, AccessibilityID.Nutrients.root)
         foodRows(named: food).firstMatch.press(forDuration: 1.0)
-        tap(app.buttons, AccessibilityID.Nutrients.foodRowDelete)
-        wait("one of the two entries to be gone") { self.foodRows(named: self.food).count == 1 }
+        // Tap Delete only once the menu has finished appearing: on a slow CI runner a tap
+        // the moment the button exists landed during the menu's animation and was lost
+        // (main, 2026-11-23: the same code passed on the pull request and locally).
+        let delete = app.buttons.matching(identifier: AccessibilityID.Nutrients.foodRowDelete).firstMatch
+        wait("the Delete item of the menu to be tappable") { delete.exists && delete.isHittable }
+        delete.tap()
+        wait("one of the two entries to be gone", timeout: 30) { self.foodRows(named: self.food).count == 1 }
         XCTAssertEqual(app.buttons.matching(identifier: AccessibilityID.Nutrients.foodRow).count, rowsBefore + 1)
 
         openTab(AccessibilityID.Tab.today)

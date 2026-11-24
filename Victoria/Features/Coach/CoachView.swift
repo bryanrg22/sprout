@@ -113,6 +113,7 @@ struct CoachView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) { navTitle }
             }
+            .surfaceContent()   // Home | Gym: hidden from VoiceOver when not showing (U-1)
         }
         .tint(Theme.brand)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: aboutTopic)

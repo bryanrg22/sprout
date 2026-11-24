@@ -28,18 +28,19 @@ struct OnboardingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var existing: UserProfile?
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // ✏️  BRYAN — WRITE YOUR PERSONAL NOTE TO VICTORIA HERE.
-    // This is the FIRST screen she sees when she opens the app. Replace the text
-    // below with your own words (keep the triple quotes). Line breaks are fine.
-    // ─────────────────────────────────────────────────────────────────────────
-    private let bryanNote = """
-    Hola Victoria, welcome to my app! I hope the design is cute enough for you and the application is actually helpful, because I spent a long time making sure that there are no bugs, that everything looks just perfect and works perfectly and seems perfect. And if there is anything you would like for me to add, I'm just one Claude Code prompt away!
-
-    Also — ironically, I ended up liking the app while building it so much that I'll also be using it for myself as well. So you'll notice that I added a few little unexpected features that are interesting and hopefully will motivate both of us for both our goals this summer.
-
-    Now, for the real plan: let's go beat that motherfucker Alejandro, so we can spend that $200 on another flight for you to come to SF instead. LOL :) Now go have fun using Sprout! Luv u lots! <3
-    """
+    /// A personal note from the person who set the app up, for one person. Its text is not
+    /// in the repository: it is `Private/PersonalNote.json` on the machine that builds, copied
+    /// into the app only when that file exists (see `PersonalNote`). Without it, or for anyone
+    /// whose name is not the one it is addressed to, the page does not exist.
+    private let personalNote = PersonalNote.load()
+    /// The note's page stays once it has been shown, so changing the name later cannot move
+    /// the steps under the person's feet.
+    @State private var personalNoteSeen = false
+    /// "Choose one" under the sex picker, after Next was tapped without a choice.
+    @State private var sexRequiredShown = false
+    /// Set by the first "Start my journey": a second tap before the screen changes (a double
+    /// tap) would otherwise insert a second starting weigh-in.
+    @State private var didFinish = false
 
     /// DEBUG: `--onboard-step N` jumps straight to a step for screenshots; 0 in normal use.
     static var initialStep: Int {
@@ -64,7 +65,8 @@ struct OnboardingView: View {
 
     // Inputs (unchanged set — the data we collect and persist is identical).
     @State private var name = ""
-    @State private var sex: BiologicalSex = .female
+    /// No default: it changes the calorie target and is not asked again, so it is chosen, not assumed.
+    @State private var sex: BiologicalSex?
     @State private var birthDate = Calendar.current.date(byAdding: .year, value: -25, to: .now) ?? .now
     @State private var heightInches = 65.0
     @State private var currentWeight = 150.0
@@ -107,11 +109,21 @@ struct OnboardingView: View {
     @State private var avatarModel = AvatarCreationModel(theme: OnboardingView.debugLook ?? .cute)
 
     // Page indices — named so the flow reads clearly.
-    private enum Step: Int, CaseIterable {
-        case fromBryan, welcome, look, goal, education, about, weight, activity, note, plan, connect, avatar, vitaNote
+    enum Step: Int, CaseIterable {
+        case welcome, look, goal, education, about, personalNote, weight, activity, note, plan, connect, avatar, vitaNote
     }
-    private var pageCount: Int { Step.allCases.count }
-    private var step: Step { Step(rawValue: page) ?? .welcome }
+    /// The steps in order. The personal note, when there is one for this person, comes right
+    /// after the step where they type their name.
+    static func steps(personalNoteShown: Bool) -> [Step] {
+        Step.allCases.filter { $0 != .personalNote || personalNoteShown }
+    }
+    private var steps: [Step] {
+        let forThisPerson = personalNote?.isFor(name: name) ?? false
+        return Self.steps(personalNoteShown: personalNote != nil && (forThisPerson || personalNoteSeen))
+    }
+    private var pageCount: Int { steps.count }
+    private var step: Step { steps.indices.contains(page) ? steps[page] : .welcome }
+    private func index(of step: Step) -> Int? { steps.firstIndex(of: step) }
     private var isLastPage: Bool { page == pageCount - 1 }
 
     /// The gentlest pace that actually moves weight in the given direction (so a
@@ -130,19 +142,9 @@ struct OnboardingView: View {
                 .padding(.bottom, Theme.Space.sm)
 
             TabView(selection: $page) {
-                fromBryanPage.tag(Step.fromBryan.rawValue)
-                welcomePage.tag(Step.welcome.rawValue)
-                lookPage.tag(Step.look.rawValue)
-                goalPage.tag(Step.goal.rawValue)
-                educationPage.tag(Step.education.rawValue)
-                aboutPage.tag(Step.about.rawValue)
-                weightPage.tag(Step.weight.rawValue)
-                activityPage.tag(Step.activity.rawValue)
-                notePage.tag(Step.note.rawValue)
-                summaryPage.tag(Step.plan.rawValue)
-                connectPage.tag(Step.connect.rawValue)
-                avatarPage.tag(Step.avatar.rawValue)
-                vitaNotePage.tag(Step.vitaNote.rawValue)
+                ForEach(Array(steps.enumerated()), id: \.element) { index, step in
+                    pageView(step).tag(index)
+                }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.spring(response: 0.5, dampingFraction: 0.85), value: page)
@@ -159,12 +161,32 @@ struct OnboardingView: View {
             // Begin generating Vita's closing note when her plan is revealed, so it's
             // ready by the final screen. Guarded to run once; never blocks the flow.
             if step == .plan { startCoachMessage() }
+            if step == .personalNote { personalNoteSeen = true }
             // The character step falls back to the built-in that goes with the picked look,
             // and re-checks for an OpenAI key (one may have been saved on the step before).
             if step == .avatar {
                 avatarModel.theme = themeChoice
                 avatarModel.refreshKeyState()
             }
+        }
+    }
+
+    @ViewBuilder
+    private func pageView(_ step: Step) -> some View {
+        switch step {
+        case .welcome: welcomePage
+        case .look: lookPage
+        case .goal: goalPage
+        case .education: educationPage
+        case .about: aboutPage
+        case .personalNote: personalNotePage
+        case .weight: weightPage
+        case .activity: activityPage
+        case .note: notePage
+        case .plan: summaryPage
+        case .connect: connectPage
+        case .avatar: avatarPage
+        case .vitaNote: vitaNotePage
         }
     }
 
@@ -245,11 +267,11 @@ struct OnboardingView: View {
         return t.isEmpty ? "" : t
     }
 
-    // MARK: - Page 0 · A note from Bryan (the very first, personal beat)
+    // MARK: - The personal note (only for the one person it is addressed to)
 
-    /// A heartfelt opener in Bryan's own voice — the first thing she sees, before Vita.
-    /// The message text lives in `bryanNote` up top (Bryan edits it).
-    private var fromBryanPage: some View {
+    @ViewBuilder
+    private var personalNotePage: some View {
+        if let personalNote {
         coachScroll {
             HStack(spacing: Theme.Space.sm) {
                 ZStack {
@@ -263,7 +285,7 @@ struct OnboardingView: View {
                     Text("A note for you")
                         .font(.headline)
                         .foregroundStyle(Theme.textPrimary)
-                    Text("from Bryan")
+                    Text("from \(personalNote.from)")
                         .font(.subheadline)
                         .foregroundStyle(Theme.textSecondary)
                 }
@@ -271,7 +293,7 @@ struct OnboardingView: View {
             }
             .appearLift(appeared, index: 0)
 
-            Text(bryanNote)
+            Text(personalNote.text)
                 .font(.body)
                 .foregroundStyle(Theme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -287,11 +309,12 @@ struct OnboardingView: View {
                 )
                 .appearLift(appeared, index: 1)
 
-            Text("— Bryan 🫶")
+            Text("— \(personalNote.from) 🫶")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.brand)
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .appearLift(appeared, index: 2)
+        }
         }
     }
 
@@ -578,11 +601,28 @@ struct OnboardingView: View {
                 }
 
                 fieldCard(icon: "figure.stand", label: "Sex (helps estimate your energy needs)") {
-                    Picker("Sex", selection: $sex) {
-                        ForEach(BiologicalSex.allCases) { Text($0.label).tag($0) }
+                    VStack(alignment: .leading, spacing: Theme.Space.xs) {
+                        Picker("Sex", selection: $sex) {
+                            ForEach(BiologicalSex.allCases) { Text($0.label).tag(Optional($0)) }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .accessibilityIdentifier(AccessibilityID.Onboarding.sex)
+                        .onChange(of: sex) { _, chosen in if chosen != nil { sexRequiredShown = false } }
+                        if sexRequiredShown && sex == nil {
+                            // Primary text, not the warning colour: yellow on the light card
+                            // was hard to read (seen). The icon carries the colour.
+                            Label {
+                                Text("Choose one so your calorie target is right.")
+                                    .foregroundStyle(Theme.textPrimary)
+                            } icon: {
+                                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Theme.warning)
+                            }
+                            .font(.footnote.weight(.semibold))
+                            .accessibilityElement(children: .combine)
+                            .accessibilityIdentifier(AccessibilityID.Onboarding.sexRequired)
+                        }
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
                 }
 
                 fieldCard(icon: "calendar", label: "Birthday") {
@@ -1427,6 +1467,11 @@ struct OnboardingView: View {
             } else {
                 Button {
                     noteFocused = false
+                    if step == .about && sex == nil {
+                        sexRequiredShown = true
+                        UIAccessibility.post(notification: .announcement, argument: "Choose one so your calorie target is right.")
+                        return
+                    }
                     withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { page += 1 }
                 } label: {
                     HStack(spacing: Theme.Space.xs) {
@@ -1532,7 +1577,8 @@ struct OnboardingView: View {
 
     private var previewProfile: UserProfile {
         let p = UserProfile()
-        p.sex = sex
+        // Only reachable without a choice by swiping past the step; finishing still asks.
+        p.sex = sex ?? .female
         p.birthDate = birthDate
         p.heightCm = NutritionMath.inToCm(heightInches)
         p.startWeightLbs = currentWeight
@@ -1597,6 +1643,16 @@ struct OnboardingView: View {
     // MARK: - Finish
 
     private func finish() {
+        // The pages can be swiped past, so the one required choice is checked here too.
+        guard !didFinish else { return }
+        guard let sex else {
+            sexRequiredShown = true
+            if let about = index(of: .about) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { page = about }
+            }
+            return
+        }
+        didFinish = true
         startTrigger.toggle()
 
         let p = existing ?? UserProfile()

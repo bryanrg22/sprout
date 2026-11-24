@@ -73,7 +73,9 @@ struct ThemeSkin {
         card:       Color(hex: 0xFFFCF6),   // soft cream-white
         cardRaised: Color(hex: 0xFFFFFF),
         textPrimary:   Color(hex: 0x483F37),   // warm dark brown
-        textSecondary: Color(hex: 0x9A8C7C),
+        // Was 0x9A8C7C: 3.2:1 on the card and 2.9:1 on the page, under WCAG's 4.5:1 for body
+        // text. 0x76695B is the same warm brown, darker: 5.2:1 and 4.75:1 (EVAL_REPORT 29).
+        textSecondary: Color(hex: 0x76695B),
         divider:    Color.black.opacity(0.06),
         colorScheme: .light)
 }

@@ -25,6 +25,16 @@ targets:
     # aborts with "resource fork, Finder information, or similar detritus not allowed". Runs every
     # build (no dependency analysis) so it can't be skipped incrementally.
     postBuildScripts:
+      # The personal onboarding note (`PersonalNote`) is not in the repository. When the
+      # building machine has `Private/PersonalNote.json` it is copied into the app; when it
+      # does not, any copy left by an earlier build is removed, so a build never ships a
+      # note its machine does not have.
+      - name: "Personal note (optional, not in the repository)"
+        basedOnDependencyAnalysis: false
+        script: |
+          src="${SRCROOT}/Private/PersonalNote.json"
+          dst="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/PersonalNote.json"
+          if [ -f "$src" ]; then cp "$src" "$dst"; else rm -f "$dst"; fi
       - name: "Strip xattrs (codesign hygiene)"
         basedOnDependencyAnalysis: false
         script: '/usr/bin/xattr -cr "${TARGET_BUILD_DIR}/${WRAPPER_NAME}" 2>/dev/null || true'

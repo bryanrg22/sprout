@@ -1395,3 +1395,291 @@ the same 1,711 as its goal and 1,711 to go.
 - Finishing twice (a double tap on the last button) is not tested; reading the code, a
   second call could insert a second weigh-in.
 - No accessibility audit was run on the onboarding pages.
+
+## 27. Never onboard someone who already has data; three owner decisions applied (2026-11-23)
+
+The owner: when Victoria gets the next build "I want the app not to onboard her anymore.
+She just continues on like normal, even if she has to redownload something."
+
+### The update path, measured
+
+Her phone has build 15, expired. A new TestFlight build installs over it as an update.
+Apple documents no guarantee about data on that path (the developer forums have reports
+both ways), so it was reproduced: build 15 (`3fc5c6c`, checked out on its own) was
+installed on a simulator, given a profile and a month of data on disk, and the current
+build was installed over it without removing anything, as an update does.
+
+- It opened on Today with the same profile and streak. No onboarding.
+- The store was compared table by table, before and after, by SQL: 20 tables, the same
+  92 rows, and every value of every column the two builds share identical. The only
+  change was 12 new empty columns (the 11 label nutrients and the custom character).
+- `tooling/verify_store.py` gave the same report for both.
+
+So **tapping Update in TestFlight keeps everything and skips onboarding.** Deleting the app
+first does not: it removes the store on the phone.
+
+### What could still send her through onboarding, and what was done
+
+1. **An update whose store does not open.** The app fell back to an empty store in
+   memory, which has no profile, so it showed onboarding, and anything entered there was
+   gone at the next launch. Now it shows "Sprout couldn't open your data": the data is
+   still on the phone, nothing is written while that screen is up, and it says not to
+   delete the app and how to send a report. A UI flow checks this with a simulated
+   failure (`--ui-test-store-failure`).
+2. **A reinstall.** iCloud brings a profile back some seconds after launch, if it does
+   (only `UserProfile` and `WeightEntry` exist in the Production schema today, section 21).
+   Onboarding showed at once and could be finished first. Now a launch with no profile
+   waits: "Looking for your data in iCloud", until iCloud is found unavailable, an
+   import operation ends, a profile appears, or 20 seconds pass; after 4 seconds the
+   person can choose to start fresh. There is no API that says the first import is
+   complete (Apple developer forums, threads 776219 and 763876), so these are the
+   signals there are.
+3. **Two profiles.** Views took `profiles.first`, which is in no defined order. Every view
+   now takes the oldest finished profile, so a profile restored from iCloud wins over one
+   an onboarding made before it arrived.
+
+Checked live on the simulator (Debug build, no iCloud account): the update path still goes
+straight to Today; a fresh install logs "waiting for iCloud", then "ended (noAccount)" in
+the same second, and shows onboarding. **Not checked: a phone signed in to iCloud.** The
+waiting screen, the import signal and a profile arriving were not seen, because the
+simulator has no iCloud account and signing one in is the owner's to do. 16 unit tests
+cover the route for every combination, the profile choice (including profiles read back
+from a store), and the wait's timing, skip and account paths; the import-ended path
+cannot be driven from a test because Core Data's event has no public initialiser.
+
+### The owner's three decisions
+
+- **The personal note is only for Victoria.** Its text left the source: it is
+  `Private/PersonalNote.json` on the owner's machine (git-ignored), copied into the app by
+  a build phase only when the file is there; a build without it removes any old copy. The
+  page now comes after the step where the name is typed, and appears only for that name
+  (case, accents and spacing ignored; "Vic" is not "Victoria"). Seen in the simulator: 12
+  steps before the name, 13 after typing "victoria ", and the note with its signature
+  from the file. The 22 UI flows were run with the file moved aside, as CI builds, and the
+  app had no note. The text is still in the public history of the repository.
+- **Sex is a required choice.** Nothing is selected at first (the US Digital Service
+  pattern for this field: do not pre-select, say why it is asked). Next on that step asks
+  for a choice; finishing after swiping past it goes back to it and asks. Two UI flows
+  cover both. The prompt was first drawn in the warning yellow, which was hard to read on
+  the light card (seen), and now uses the primary text color with a warning icon. Not
+  offered: "prefer not to say", which would need a third value in the stored model and in
+  the calorie formula.
+- **The character model is `gpt-image-2.6-sunburst` at low quality.** Asked for: "the
+  cheapest, but looking like the style we want". A third run, `sunburst` at low on the
+  same three faces (`Evals/runs/20261123-125337-Avatar`, 6 of 6 usable, $0.21): $0.035 a
+  character, the same as the cheapest candidate, with the coarse, flat pixels of `sunburst`
+  at medium (24 to 41 colours counted), closest to the built-in characters
+  (`build/av/contact-sheet-2.png` locally; the images are not committed). Its cost is
+  time: 15 to 19 seconds against about 7 for `flare` at low. The waiting text now says "usually
+  under half a minute" instead of "a minute or two".
+- **The built-in characters keep their names.** The owner's answer: new people type their
+  own name and make their own character.
+
+**Spend:** $0.21. **Spend to date across every run: $21.85 over 10,926 attempts.**
+
+## 28. The week on Workouts: active days, every day tappable (2026-11-23)
+
+The owner: "it shows how many times you've had activities for a week, and then from there
+you can explore what you did the different days."
+
+**What was there:** a "This week" card that counted workouts logged in the app over the
+last 7 days, drew their minutes as bars, could not be tapped, could not go to another
+week, and disappeared in a week with nothing logged. Workouts that Apple Health or the
+tracker detected were not counted and were not shown anywhere on the page.
+
+**What it is now** (`ActivityWeek.swift`): the calendar week of the day being viewed
+(Sunday or Monday first, as the phone's calendar is set), always shown, with:
+- "N of 7 days active", where a day is active if it had any workout, logged or detected,
+  counted once however many it had;
+- seven days, each a button: tapping one opens that day below, and the day stepper and the
+  week stay in step; days after today are dimmed and cannot be tapped;
+- arrows to the previous and next week, stopping at the earliest workout or the day the
+  profile was made, whichever is older (it was the profile's day only, which hid imported
+  and back-dated workouts), and at this week;
+- one line for the week's logged workouts: count, minutes, weight lifted;
+- each day's page now lists the detected workouts too, read-only, with their source.
+
+**Verified:** 8 unit tests (the week's first day for both calendar settings, a day counted
+once with either source, workouts just after midnight and in the neighbouring weeks, today
+and future days, a week across the clock change, negative minutes, what VoiceOver says,
+the day identifier). A UI flow on the seeded profile, written to pass on any weekday:
+the card counts at least one active day, a tap on yesterday opens its logged workout and
+marks the day, four days ago shows "1 tracked" and opens the tracked workout with nothing
+logged, and the arrows come back to this week and no further. Seen in the simulator: 2 of 7
+this week, 3 of 7 the week before (a tracker-only day, a run and a gym day), and a
+Saturday holding a tracked walk and a logged gym session. Two things fixed from looking:
+the tracked-workout row was padded twice, and the back arrow was off because browsing
+stopped at the profile's creation day.
+
+**Not verified:** the light theme; the card with a large Dynamic Type size; months of
+history on a phone.
+
+## 29. The weekly competition; Home and Gym out of each other's way for VoiceOver; readable secondary text (2026-11-23)
+
+### The competition (G12)
+
+The owner asked for everything that remained, including the competition, after the
+proposal in G12. It is built as proposed, so every rule below is the proposal's:
+
+- **Scoring** (`Competition.swift`): a point a day for each of a person's OWN targets hit,
+  up to five: calories inside the range Today shows (with its step bonus, and the same 3%
+  grace at the floor as `calorieStatus`), protein at or above target, water at or above
+  goal, steps at or above goal, and an active day (a workout logged or detected, the
+  Workouts week card's rule). A day with no food logged scores nothing. Someone losing and
+  someone gaining compete on equal terms because each is measured against their own range.
+- **The week** runs Monday to Sunday on both phones, whatever each phone's calendar says,
+  so both score the same seven days.
+- **What crosses to the buddy:** one short string per person, which targets each day of
+  this week and last week hit (`2026-11-16:5,0,31;2026-11-23:16`). No calories, weights or
+  food. It is sent whatever the "share my full stats" switch says, because it holds no
+  numbers; a test checks that the switch still blanks the numbers and leaves this alone.
+- **Where:** a card in the Buddy hub under the daily face-off: this week's totals and who
+  is ahead, a row of seven days for each person with their points, last week's result, and
+  a tap on a day lists the five targets with which were hit. A buddy on an older build
+  sends nothing, and the card says it is waiting for their app to update.
+- **CloudKit:** the snapshot record gains one String field, `competitionWeeks`. The
+  Development schema takes it on the first write; **Production needs it deployed** (the
+  same Console step as section 21). Until it is, a publish from a TestFlight build fails
+  on that field and the buddy sees a stale snapshot, so the field and the Production
+  deploy must ship together.
+
+**Verified:** 15 unit tests (a perfect day; no food is zero; the calorie edges at the 97%
+grace, the ceiling and one over, a gain goal with no ceiling; the other targets exactly
+at and just under; the targets equal Today's, with and without the step bonus; Monday
+weeks on a Sunday-first phone; a worked example over two weeks scoring 2 and 6; the wire
+format round trip and five malformed inputs that are dropped, not scored; the opt-out;
+the CloudKit record with and without the field; the simulated buddy's fixed record; what
+VoiceOver says). A UI flow against the simulator's mock buddy: both scores, last week's
+"– 20", and a tap on the buddy's Monday shows "3 of 5" and closes again.
+**Not verified:** two phones. Everything above ran against the mock; the CloudKit write
+was exercised only through the record mapping.
+
+### Home and Gym out of each other's way (U-1)
+
+`.accessibilityHidden` on a surface does not reach the content of its navigation stacks
+(UIKit underneath). Three attempts, measured with Apple's accessibility audit, which
+reports each issue as on or off screen:
+
+| Attempt | Result |
+|---|---|
+| Ignore the hidden surface's children | worse: the hidden Gym surface became one element covering the screen, found as shown |
+| Mark the visible surface modal (`.isModal`) | no change the tests could see |
+| **Hide the content inside each navigation stack, read from the environment, and the tab bar with it** | **issues on the hidden surface: Gym screen about 7 → 0, Today about 23 → 0** (the 3 left "off screen" on Today are its own cards below the fold) |
+
+So the audit no longer finds either surface while the other shows. **Still open:** in
+Gym, XCUITest still finds Home's "Today" tab button; whether VoiceOver can land on it was
+not checked (no VoiceOver in the simulator here). The check stays pinned as a known defect
+with that wording.
+
+### Readable secondary text
+
+The light look's secondary text, `#9A8C7C`, was 3.2:1 on cards and 2.9:1 on the page,
+under WCAG 2.x's 4.5:1 for normal text, everywhere it was used. It is now `#76695B`, the
+same warm brown, darker: 5.2:1 and 4.75:1. The dark look already passed (5.7:1). A test
+computes all twelve text and surface pairs of both looks with WCAG's formula. The audit's
+remaining contrast flags in the dark look are other pairs (text on tinted or gradient
+backgrounds), not checked one by one.
+
+### Two flaky UI flows, from CI
+
+On a slow CI runner two flows failed that pass locally: a tap on a menu item the instant
+it existed, lost mid-animation, and typing into a field before it had the keyboard. The
+shared helpers now wait for an element to be hittable before tapping and retry a field's
+tap until it has the keyboard focus.
+
+## 30. Structured answers from the Claude models that refuse a forced tool call (2026-11-23)
+
+Objective G1. The app gets every structured answer (meal estimates, food suggestions, the
+checklist, the progress recap, the coach's prompt chips) by forcing a tool call. Checked
+against the API: **`claude-sonnet-5-5`, `claude-opus-5-5` and `claude-fable-5-2` all
+refuse that** with a 400. Anyone typing one of them into Settings → AI provider lost every
+structured feature; section 22 measured `claude-sonnet-5-5` at 0% usable on all four it ran.
+
+**The change** (`AnthropicStructuredFormat.swift`): for those three models, and for any
+other model that answers with that exact refusal (one failed request, then the same call
+again), the request asks for Anthropic's JSON-schema response format instead, and the
+answer is the reply's text. Two things that format needs, both found by trying it: every
+object must say `additionalProperties: false` (a 400 otherwise), and it does not accept
+limits on array length beyond 0 or 1, on numbers or on string length. Those limits move
+into the field's description, where the model still reads them, **and are checked on the
+answer**, because the format no longer enforces them. An answer that breaks one is not
+used; the feature falls back to its built-in text. A format answer that stopped at the
+output cap is never used either, even when its text parses (Anthropic's guidance for these
+models). The double-encoded-field repair of section 22 still applies.
+
+**Measured** on `claude-sonnet-5-5`, the five structured tasks (0% usable before):
+
+| Task | Usable | Passed |
+|---|---|---|
+| Checklist (3 repeats) | 48 / 48 | 48 / 48 |
+| Coach prompt chips | 16 / 16 | 16 / 16 |
+| Meal description | 14 / 14 | 14 / 14 |
+| Food suggestions (3 repeats, with the answer check) | 52 / 54 | 52 / 54 |
+| Progress recap | 15 / 15 | 11 / 15 |
+
+Read, not counted: the two food-suggestion misses are the model returning ONE suggestion
+where two or three are asked for. Before the answer check, the first run let one through,
+and the app would have shown it as "x placeholder: placeholder". They are now rejected.
+The four recap misses are derived numbers ("13.2 lb remain", a goal date), the grader
+question already open in section 22, not the format.
+
+**Tests:** 16 unit tests (listed in the ledger). An evaluation self-test that scripted
+"a refusal means unusable" now scripts "a refusal, then the format answer is used; a
+second failure is reported".
+
+**Not verified:** `claude-opus-5-5` and `claude-fable-5-2` beyond the refusal itself (no
+evaluation run on them; Fable costs $10 / $50 per million tokens); the meal photo task
+(only the typed description was run).
+
+**Spend:** $1.17 (181 attempts and 8 probe requests). **Spend to date: $23.02 over
+11,107 attempts.**
+
+## 31. Kilograms (2026-11-23)
+
+Objective G5. Until now metric was declined: a weigh-in typed in kilograms had once been
+stored as pounds (section 3, L-B7), so the coach's `set_units` refused metric and every
+weight read "lb".
+
+**The rule:** every weight is still STORED in pounds, in both systems, exactly as before.
+Metric converts what is shown and what is typed, at the edge, with the international
+pound (0.45359237 kg, exact). Switching units therefore never changes a stored value, and
+switching back and forth cannot corrupt anything. This is the usual design for a unit
+setting (one canonical stored unit, conversion at display and input) and the one the app
+already used for water (ounces stored, millilitres optional).
+
+**Where weights are shown or typed in the chosen unit now:**
+
+| Place | What changed |
+|---|---|
+| Settings → Your goals | a new "Weight in" picker (Pounds / Kilograms); goal and start weight steppers step 1 lb or 1 kg; the summary line and the footer |
+| Progress | the trend, the weekly rate, the chart's points, trend, goal and start lines, and the weigh-in sheet (0.1 kg steps, 23–227 kg) |
+| The coach | its context (goal, start, trend, rate, pace), its tool descriptions ("Their weight today in kg."), what it accepts (`log_weight`, `set_weight_goal`, `set_start_weight` take the shown unit and store pounds), its range and confirmation messages, `set_units` now applies metric (with a confirm card, like any change of units) |
+| The progress recap | the facts the model is given |
+| The plan intake | goal and current weight |
+| The widget | the trend, rate, goal and "to goal", written already converted with the unit's name (an older snapshot without it reads as pounds) |
+| The buddy card | the buddy's shared weight, shown in MY unit |
+| Pace subtitles | "About 0.2 kg / week" |
+
+**Not converted, on purpose for now:** onboarding (it asks before any preference exists,
+in pounds; the unit can be changed straight after), and gym loads (machine weights are a
+separate number, in pounds as most US gyms label them).
+
+**Verified:** 13 unit tests replace the 8 that pinned the refusal: the conversion and its
+round trip, the text in both units, switching to metric applies and changes no stored
+value and undoes, a metric profile is asked and told kilograms, **72 kg said to the coach
+is stored as 158.73 lb, never 72 lb** (the original defect, the right way round), goal and
+start weights taken in kilograms, the range said as "23–227 kg", a goal on the wrong side
+explained in kilograms, the Settings footer, the widget in both units, and an older widget
+snapshot. The settings matrix row now expects the widget, the coach and the checklist to
+move on a change of units (they all show weights) and nothing that reads a stored value.
+A UI flow switches to kilograms in Settings and finds the trend and weekly rate in
+kilograms on Progress and the weigh-in sheet in kilograms, switches back, and checks the
+two rates agree by the conversion (passed twice in a row). Seen in the simulator: Settings
+before and after (172 lb → 78 kg, 158 lb → 72 kg).
+
+**Found along the way:** the earlier rewording of the coach's tools (section 24) had left
+"They doesn't have a plan yet" in a reply; my check for singular verbs after "they" missed
+it because the verb ends in "n't". Fixed, and the test that pinned the old sentence now
+pins the new one.
+
+**Not verified:** a phone, and VoiceOver reading the converted values.

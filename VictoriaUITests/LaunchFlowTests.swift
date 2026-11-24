@@ -15,6 +15,19 @@ final class LaunchFlowTests: SproutUITestCase {
         XCTAssertFalse(app.buttons[AccessibilityID.Mode.gym].exists, "the Home | Gym switch must not exist before onboarding")
     }
 
+    /// q. A launch whose store did not open shows that, and never onboarding or an empty
+    /// app (EVAL_REPORT 27). Seeded data is irrelevant here: the store is treated as unreadable.
+    func testAStoreThatDidNotOpenShowsThatAndNotOnboarding() {
+        app.launchArguments = ["--ui-testing", "--ui-test-fresh-defaults", "--ui-test-store-failure"]
+        app.launch()
+        waitShown(app.scrollViews, AccessibilityID.Launch.storeUnavailable)
+        XCTAssertTrue(app.staticTexts["Sprout couldn't open your data"].exists)
+        XCTAssertTrue(isShown(app.buttons, AccessibilityID.Launch.sendReport))
+        XCTAssertFalse(isShown(app.otherElements, AccessibilityID.Onboarding.steps), "never onboarding")
+        waitForNoTabBar()
+        XCTAssertFalse(app.scrollViews[AccessibilityID.Today.root].exists)
+    }
+
     /// b. A seeded launch shows Today, and each Home tab opens and shows its root.
     func testSeededLaunchShowsTodayAndEveryHomeTabOpens() throws {
         launch()
