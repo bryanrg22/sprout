@@ -36,7 +36,7 @@ struct CoachView: View {
     @State private var pendingDelete: UUID?
     @State private var showDeleteDialog = false
     @State private var showAISettings = false
-    @State private var scrollPosition = ScrollPosition(idType: UUID.self)
+    @State private var scrollPosition = ScrollPosition(edge: .top)
     /// Scroll offsets, kept out of view state so reading them never re-renders the chat.
     @State private var scrollBox = ChatScrollBox()
 
@@ -113,6 +113,11 @@ struct CoachView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) { navTitle }
             }
+            // The conversation is a flipped scroll view, so the bar cannot tell from its
+            // offset when content is under it (iOS 18), and iOS 26's edge blur is hidden for
+            // it (`chatEdgeEffectsHidden`): the bar always has its own background.
+            .toolbarBackground(Theme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .surfaceContent()   // Home | Gym: hidden from VoiceOver when not showing (U-1)
         }
         .tint(Theme.brand)
@@ -185,7 +190,13 @@ struct CoachView: View {
         engine.noteUnansweredMessageIfAny()
         #if DEBUG
         ChatDebug.runScript(engine: engine, transcript: transcript, center: askVita,
-                            scrollToTop: { scrollPosition.scrollTo(edge: .top) })
+                            scrollToTop: { scrollPosition.scrollTo(edge: .bottom) },
+                            arrive: { [context, transcript] text in
+                                context.insert(ChatMessage(role: "assistant", content: text, createdAt: .now,
+                                                           isSystemSeed: false))
+                                try? context.save()
+                                transcript.appendNewer()
+                            })
         #endif
     }
 
@@ -254,15 +265,46 @@ struct CoachView: View {
     // MARK: - Conversation list
 
     private var conversation: some View {
+        // A FLIPPED list, the layout chat products use (Stream's SwiftUI message list,
+        // UIKit chats on a flipped table): the scroll view is turned upside down and every row
+        // turned back, so the newest message is the START of the content and older pages are
+        // added at its END. Adding at the end never moves what is on screen, so loading
+        // earlier messages cannot jump, whatever the lazy stack estimates for rows it has not
+        // laid out (the unflipped list held its top row from that estimate and moved it by up
+        // to 178 pt: docs/chat-standards.md, section 1; EVAL_REPORT 32).
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Theme.Space.xs) {
-                if transcript.window.hasEarlier {
-                    LoadEarlierRow(isLoading: transcript.window.isLoadingEarlier, action: loadEarlier)
-                        .id(Self.earlierID)
-                } else if transcript.rows.count > transcript.window.pageSize {
-                    ConversationStartRow()
+                // Why the last message has no reply, and what to do about it, right under it.
+                if let failure = engine.failure, !engine.isSending {
+                    TurnFailureRow(failure: failure,
+                                   onRetry: { engine.retry() },
+                                   onOpenSettings: { showAISettings = true })
+                        .chatFlipped()
+                        .id(Self.failureID)
+                        .transition(.opacity)
                 }
-                ForEach(Array(transcript.rows.enumerated()), id: \.element.id) { index, message in
+
+                // The one-tap confirm card sits inline at the bottom of the chat,
+                // beside the coach avatar, like a proposal from Vita herself.
+                if let pending = engine.pendingTool {
+                    ToolConfirmCard(coachName: coachName,
+                                    summary: pending.request.confirmSummary,
+                                    onYes: { engine.confirmPendingTool() },
+                                    onNo: { engine.declinePendingTool() })
+                        .chatFlipped()
+                        .id(Self.confirmID)
+                        // The content is flipped, so its top edge is the screen's bottom.
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                if engine.isSending {
+                    TypingIndicator(coachName: coachName)
+                        .chatFlipped()
+                        .id(Self.typingID)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                ForEach(Array(transcript.rows.enumerated().reversed()), id: \.element.id) { index, message in
                     MessageRow(message: message,
                                coachName: coachName,
                                showsTimestamp: transcript.window.showsTimestamp(at: index),
@@ -279,6 +321,7 @@ struct CoachView: View {
                                    pendingDelete = message.id
                                    showDeleteDialog = true
                                })
+                        .chatFlipped()
                         .id(message.id)
                         #if DEBUG
                         .chatProbeFrame(message.id)
@@ -290,64 +333,46 @@ struct CoachView: View {
                         }
                         #endif
                 }
-                if engine.isSending {
-                    TypingIndicator(coachName: coachName)
-                        .id(Self.typingID)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
 
-                // The one-tap confirm card sits inline at the bottom of the chat,
-                // beside the coach avatar, like a proposal from Vita herself.
-                if let pending = engine.pendingTool {
-                    ToolConfirmCard(coachName: coachName,
-                                    summary: pending.request.confirmSummary,
-                                    onYes: { engine.confirmPendingTool() },
-                                    onNo: { engine.declinePendingTool() })
-                        .id(Self.confirmID)
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
-
-                // Why the last message has no reply, and what to do about it, right under it.
-                if let failure = engine.failure, !engine.isSending {
-                    TurnFailureRow(failure: failure,
-                                   onRetry: { engine.retry() },
-                                   onOpenSettings: { showAISettings = true })
-                        .id(Self.failureID)
-                        .transition(.opacity)
+                if transcript.window.hasEarlier {
+                    LoadEarlierRow(isLoading: transcript.window.isLoadingEarlier, action: loadEarlier)
+                        .chatFlipped()
+                        .id(Self.earlierID)
+                } else if transcript.rows.count > transcript.window.pageSize {
+                    ConversationStartRow()
+                        .chatFlipped()
                 }
             }
-            // The rows are scroll targets, so the scroll position can follow the row at the
-            // top by identity and keep it in place when a page is prepended above it.
-            .scrollTargetLayout()
             .padding(.horizontal, Theme.Space.md)
-            .padding(.top, Theme.Space.md)
-            .padding(.bottom, Theme.Space.sm)
+            // Flipped: the content's top is the screen's bottom.
+            .padding(.top, Theme.Space.sm)
+            .padding(.bottom, Theme.Space.md)
         }
-        // Open at the newest message, and stay there while content grows (a reply typing
-        // itself out, the keyboard), without a programmatic scroll on appear.
-        .defaultScrollAnchor(.bottom)
+        .chatFlipped()
+        .chatEdgeEffectsHidden()
+        // The content starts at the newest message, so the chat opens there with no scroll.
         .scrollPosition($scrollPosition)
         .scrollDismissesKeyboard(.interactively)
         // NOTE: broad `.animation(_:value:)` on the ScrollView was removed — it animated
         // EVERY change in the scroll view (including the keyboard-avoidance inset) and,
         // combined with the auto-scroll on send, drove a non-converging view-graph update
         // (the watchdog freeze). Insert/transition animations are handled locally instead.
-        .onScrollGeometryChange(for: CGFloat.self, of: ChatScrollBox.distanceFromBottom) { _, distance in
+        .onScrollGeometryChange(for: CGFloat.self, of: ChatScrollBox.distanceFromNewest) { _, distance in
             // Written to a box, not to state: this runs on every frame of a scroll.
-            scrollBox.distanceFromBottom = distance
+            scrollBox.distanceFromNewest = distance
         }
         .onScrollPhaseChange { _, phase in
-            // A new drag while the reader is still at the top of what is loaded (the last
-            // page left them there, so "reached the top" will not fire again): load the next.
-            if phase == .interacting, scrollBox.isNearTop, !ChatScrollBox.autoLoadDisabled { loadEarlier() }
+            // A new drag while the reader is still at the oldest loaded message (the last
+            // page left them there, so "reached it" will not fire again): load the next.
+            if phase == .interacting, scrollBox.isNearOldest, !ChatScrollBox.autoLoadDisabled { loadEarlier() }
         }
-        .onScrollGeometryChange(for: Bool.self, of: ChatScrollBox.isNearBottom) { _, atBottom in
-            transcript.setAtBottom(atBottom)
+        .onScrollGeometryChange(for: Bool.self, of: ChatScrollBox.isNearNewest) { _, atNewest in
+            transcript.setAtBottom(atNewest)
         }
-        .onScrollGeometryChange(for: Bool.self, of: ChatScrollBox.isNearTop) { _, nearTop in
-            // Reaching the top of what is loaded loads the page before it.
-            scrollBox.isNearTop = nearTop
-            if nearTop, !ChatScrollBox.autoLoadDisabled { loadEarlier() }
+        .onScrollGeometryChange(for: Bool.self, of: ChatScrollBox.isNearOldest) { _, nearOldest in
+            // Reaching the oldest loaded message loads the page before it.
+            scrollBox.isNearOldest = nearOldest
+            if nearOldest, !ChatScrollBox.autoLoadDisabled { loadEarlier() }
         }
         .onChange(of: transcript.scrollToLatestTick) { scrollToBottom() }
         .onChange(of: engine.isSending) { if transcript.window.isAtBottom { scrollToBottom() } }
@@ -370,11 +395,13 @@ struct CoachView: View {
     private static let failureID = "turn-failure"
     private static let earlierID = "load-earlier"
 
-    /// The newest reply always shows its actions; an older one after a tap on it.
+    /// The newest reply always shows its actions; an older one, or one of her own messages,
+    /// after a tap on it.
     private func showsActions(for message: ChatRow) -> Bool {
-        guard !message.isUser, !message.isDecision, !message.content.isEmpty,
+        guard !message.isDecision, !message.content.isEmpty,
               message.id != engine.streamingMessageID else { return false }
         if message.id == actionsRevealedFor { return true }
+        guard !message.isUser else { return false }
         return message.id == transcript.rows.last(where: { !$0.isUser && !$0.isDecision })?.id
     }
 
@@ -384,15 +411,8 @@ struct CoachView: View {
         }
     }
 
-    /// Prepend the previous page.
-    ///
-    /// A `ScrollView` keeps its offset when content is inserted above the visible rows, which
-    /// would push everything on screen down by the height of the page. The scroll position is
-    /// bound by identity (`ScrollPosition(idType:)` over a `scrollTargetLayout`), and SwiftUI
-    /// keeps the row at the top in place by itself. It is close, not exact: a lazy stack
-    /// only estimates the height of the page it has not laid out yet (measured at rest: the
-    /// top bubble moved 0 to 173 pt). Five ways of correcting it were tried and each made it
-    /// worse; they and their numbers are in `docs/chat-standards.md`, section 1.
+    /// Add the previous page. In the flipped list it goes at the end of the content, past
+    /// the top of the screen, so nothing the reader is looking at moves.
     private func loadEarlier() {
         guard transcript.window.hasEarlier, !transcript.window.isLoadingEarlier else { return }
         #if DEBUG
@@ -405,6 +425,7 @@ struct CoachView: View {
         transcript.loadEarlier()
     }
 
+    /// Scroll to the newest message: the START of the flipped content.
     private func scrollToBottom(animated: Bool = true) {
         // Defer to the next runloop tick so the scroll never runs *inside* the in-progress
         // SwiftUI transaction (the message insert + keyboard dismiss that fire together on
@@ -412,17 +433,9 @@ struct CoachView: View {
         // thread at 100% CPU → the watchdog kill (0x8BADF00D) the user hit on send.
         DispatchQueue.main.async {
             if animated {
-                withAnimation(.easeOut(duration: 0.25)) { scrollPosition.scrollTo(edge: .bottom) }
+                withAnimation(.easeOut(duration: 0.25)) { scrollPosition.scrollTo(edge: .top) }
             } else {
-                scrollPosition.scrollTo(edge: .bottom)
-            }
-            // A lazy stack estimates the height of rows it has not laid out, so a long jump
-            // can land a little short of the end. Once those rows exist, finish the job,
-            // unless the reader has scrolled away in the meantime.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                if transcript.window.isAtBottom, scrollBox.distanceFromBottom > 1 {
-                    scrollPosition.scrollTo(edge: .bottom)
-                }
+                scrollPosition.scrollTo(edge: .top)
             }
         }
     }
@@ -672,10 +685,11 @@ private struct MessageRow: View {
     let showsTimestamp: Bool
     /// True only for the freshest assistant reply, which types itself out; history renders instantly.
     var isStreaming: Bool = false
-    /// Whether the copy / ask / share row sits under this reply.
+    /// Whether the copy / ask / share row sits under this message.
     var showsActions: Bool = false
     var onStreamComplete: () -> Void = {}
-    /// A tap on a reply (not on a link, not one that dismisses a selection).
+    /// A tap on a reply (not on a link, not one that dismisses a selection), or a tap or long
+    /// press on her own message.
     var onTap: () -> Void = {}
     var onCopy: () -> Void = {}
     /// "Ask about this": a selected passage, or nil for the whole message.
@@ -713,7 +727,9 @@ private struct MessageRow: View {
                 if showsActions {
                     MessageActionRow(text: message.content, onCopy: onCopy,
                                      onAsk: { onAsk(nil) }, onDelete: onDelete)
-                        .padding(.leading, 28 + Theme.Space.xs)   // under the bubble, past the avatar
+                        // Under the bubble: past the avatar for a reply, at the right for hers.
+                        .padding(.leading, message.isUser ? 0 : 28 + Theme.Space.xs)
+                        .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
@@ -721,7 +737,8 @@ private struct MessageRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var bubble: some View {
+    /// The bubble as drawn, without its menu or accessibility.
+    private var bubbleBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let data = message.imageData, let ui = UIImage(data: data) {
                 Image(uiImage: ui)
@@ -768,18 +785,12 @@ private struct MessageRow: View {
         )
         .shadow(color: Color.black.opacity(message.isUser ? 0.2 : 0.25),
                 radius: 6, x: 0, y: 3)
-        // Her own messages: a long press opens the message menu. A reply has no context menu,
-        // because a long press on its text starts a selection (one or the other, never both).
-        .contentShape(.contextMenuPreview, BubbleShape(isUser: message.isUser))
-        .contextMenu {
-            if message.isUser, !message.content.isEmpty {
-                Button { onCopy() } label: { Label("Copy", systemImage: "doc.on.doc") }
-                Button { onAsk(nil) } label: { Label("Ask about this", systemImage: "sparkles") }
-                ShareLink(item: message.content) { Label("Share…", systemImage: "square.and.arrow.up") }
-                Divider()
-                Button(role: .destructive) { onDelete() } label: { Label("Delete message", systemImage: "trash") }
-            }
-        }
+    }
+
+    private var bubble: some View {
+        bubbleBody
+            .modifier(OwnMessageActions(enabled: message.isUser && !message.content.isEmpty,
+                                        showsActions: showsActions, onTap: onTap))
         .accessibilityElement(children: .ignore)
         // A message is read-only text. Saying so keeps it a static-text element now that a
         // reply is drawn by a text view (for selection) rather than by `Text`; VoiceOver and
@@ -1127,3 +1138,29 @@ private struct DecidedConfirmCard: View {
         )
     }
 }
+
+/// Her own messages: a tap toggles the same action row a reply has (copy, ask about, share,
+/// delete), and a long press opens it. Not the system context menu: the chat is a flipped
+/// scroll view, and the lifted preview UIKit cuts from a bubble inside it came out as a thin
+/// line, or narrower than the bubble and cut off when given explicitly (seen on iOS 26.4).
+/// Chat SDKs built on a flipped list draw their own message actions for the same reason.
+/// A reply has neither: a long press on its text starts a selection, and a tap on it is
+/// handled by its text view.
+private struct OwnMessageActions: ViewModifier {
+    let enabled: Bool
+    let showsActions: Bool
+    let onTap: () -> Void
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onTap)
+                .onLongPressGesture(minimumDuration: 0.35) { if !showsActions { onTap() } }
+                .sensoryFeedback(.impact(weight: .light), trigger: showsActions) { old, new in !old && new }
+        } else {
+            content
+        }
+    }
+}
+

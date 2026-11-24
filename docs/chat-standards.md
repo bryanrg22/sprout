@@ -84,18 +84,20 @@ message arrives. The arithmetic is `ChatWindow`, a pure type with 21 tests. The 
 screen are value copies (`ChatRow`), so a deleted message cannot be read after the store
 has let go of it.
 
-The list is a `LazyVStack` in a `ScrollView` with `defaultScrollAnchor(.bottom)` (opens at
-the newest message with no programmatic scroll), a `ScrollPosition(idType: UUID.self)`
-over `scrollTargetLayout()`, a "Load earlier messages" row that is also a button, a
-"Beginning of your conversation" marker, and a jump-to-latest button with a count of
-messages that arrived while the reader was further up.
+The list is a `LazyVStack` in a **flipped** `ScrollView` (turned upside down with
+`scaleEffect(y: -1)`, every row turned back): the newest message is the start of the
+content, so the chat opens there with no scroll, and older pages are added at the end. A
+"Load earlier messages" row that is also a button, a "Beginning of your conversation"
+marker, and a jump-to-latest button with a count of messages that arrived while the reader
+was further up. The scroll position is a plain `ScrollPosition(edge:)`: no identity binding.
 
 ### Keeping the position when a page is prepended: what was tried, with numbers
 
-Measured with a UI test that scrolls to the top of the first page with real swipes, lets
-the scroll come to rest, taps "Load earlier messages", and compares where the top bubble
-is before and after (iPhone 17 Pro simulator, iOS 26.4, 201-message seeded conversation).
-0 pt is the goal.
+Measured with a UI flow (`ChatPagingFlowTests`) that scrolls to the top of the first page
+with real swipes, lets the scroll come to rest, taps "Load earlier messages", and compares
+where the top bubble is before and after, three pages in a row (iPhone 17 Pro simulator,
+iOS 26.4, 201-message seeded conversation). 0 pt is the goal. The first six rows are from
+2026-11-22 and were measured by hand; the rest are 2026-11-23 (EVAL_REPORT 32).
 
 | Approach | Top bubble moved by |
 |---|---|
@@ -103,35 +105,58 @@ is before and after (iPhone 17 Pro simulator, iOS 26.4, 201-message seeded conve
 | `ScrollPosition(edge:)`, then `scrollTo(id: anchor, anchor:)` with an anchor computed to restore the row's distance from the top, in the same update as the insert | 329 pt |
 | KVO on the backing `UIScrollView.contentSize`, moving `contentOffset` by the growth | broke the layout (content shifted sideways and past the end): SwiftUI and UIKit fought over the offset |
 | A plain `VStack` (exact sizes) with `ScrollPosition(idType:)` | off screen; also slower to open (540–650 ms vs 360–440 ms) and 75 MB vs 44 MB |
-| **`LazyVStack` + `ScrollPosition(idType:)` + `scrollTargetLayout()`, nothing else** | **−31, +156, −7 pt on three successive pages; −6, +173, +5 and −21, +163, 0 on two more runs** |
+| `LazyVStack` + `ScrollPosition(idType:)` + `scrollTargetLayout()` (shipped until 2026-11-23) | −31, +156, −7 pt; −6, +173, +5; −21, +163, 0; **re-measured by the UI flow: +1, +178, +9** |
 | The same, plus an explicit `scrollTo(y:)` correction once the held row had been laid out again | oscillated between two positions for four frames, ended 16–43 pt off |
+| No identity binding, `defaultScrollAnchor(.bottom, for: .sizeChanges)` | the held message left the screen on the first page |
+| Flipped list, identity binding kept | −27, 0, −27; then −27, +27, −27 (every bubble moved together: the binding re-derives the offset through the heights of newer rows that are off screen, some of them estimates) |
+| **Flipped list, no identity binding (shipped)** | **0, 0, 0 pt**, every bubble on screen at the same pixel, on every run |
 
-So Sprout ships the last-but-one row: identity-based position, nothing added. Over three
-runs of three page loads each, from rest, the top bubble moved 0 to 31 pt on six loads and
-156 to 173 pt on the other three (the second page of each run): it stays on screen every
-time, and it is not pixel-stable. The cause is the one Apple's
-performance article names: a lazy stack does not know the height of the 40 rows it has
-just been given until it lays them out, and it positions the row being held from an
-estimate. The corrections fail for the same reason from the other side: an explicit
-scroll in the same update as the insert is computed from that estimate too, and an explicit
-scroll afterwards replaces the identity-based position with a point, which the next
-layout pass then moves.
+Why the flip works: in the unflipped list a page goes in ABOVE the reader, so keeping
+them in place means moving the offset by the page's height, and a lazy stack only knows
+an estimate of that height until it lays the page out (Apple's performance article; the
+cause of every row above). In the flipped list the page goes in past the END of the
+content, and the offset counts from the start (the newest message), so nothing has to
+move and nothing has to be estimated. This is the layout established chat lists use:
+Stream's SwiftUI message list flips its scroll view, and UIKit chat lists do the same with
+a flipped table or collection view
+([Apple forum thread 731271](https://developer.apple.com/forums/thread/731271) describes the
+workaround).
 
-While the reader is scrolling (the usual way to reach older messages) pages load ahead of
-the finger and the shift is inside the motion. A UI test swipes from the newest message
-of a 201-message conversation to "Beginning of your conversation" through four page loads
-without stalling (14 swipes).
+What the flip needed, each found by running it:
 
-**Open:** exact position on prepend. The two routes that would give it are a
-`UICollectionView`-backed list (cell sizes are known before insertion, and UIKit lets the
-offset be moved in the same layout pass) or a flipped scroll view (older messages are
-appended at the far end, which never moves the viewport). The flipped view was not tried
-because the input bar is a bottom safe-area inset, and in a flipped scroll view that inset
-lands at the wrong end.
+- **The timestamp of the oldest loaded row.** It always showed a time (index 0) and lost
+  it when the page above arrived, a row on screen changing height. `ChatWindow` now keeps
+  the time of the message just older than the window (`earlierBoundary`, from the extra
+  row each fetch already asks for), so that row decides the same way before and after.
+  Three unit tests.
+- **The scroll edge effect (iOS 26).** Its blur mask is laid out in the scroll view's own
+  coordinates and came out inverted: the whole conversation blurred and the text under
+  the title sharp. The chat hides it (`scrollEdgeEffectHidden`) and the navigation bar
+  gets a solid background, which iOS 18 also needs: its bar decides when to show a
+  background from the scroll offset, which the flip reverses.
+- **The long-press menu on her own messages.** The lifted preview UIKit cuts from a bubble
+  inside the flipped list collapsed to a thin line; an explicit preview came out narrower
+  than the bubble and cut off. Her messages now open the same action row a reply has
+  (copy, ask about, share, delete), by a tap or a long press. Chat SDKs on a flipped list
+  draw their own message actions for the same reason. Seen in the simulator, not tested by
+  a flow. A reply's "…" menu (a plain `Menu`, no lifted preview) works unchanged, and text
+  selection in a reply (a UIKit text view inside the double flip) selects the word under
+  the finger with the handles and the edit menu in place (seen).
 
-A long jump to the bottom of a lazy stack can also land short for the same reason
-(measured: about 100 pt short from five pages up), so "jump to latest" scrolls, and 0.4 s
-later finishes the scroll if it is not at the end and the reader has not moved.
+A message that arrives while the reader is further up lands at the start of the content,
+where the offset counts from, so it could have pushed the reader; measured: 0 pt (SwiftUI
+keeps the offset relative to what is on screen there), and it is counted on the
+jump-to-latest button. Jump to latest is now `scrollTo(edge: .top)` of the flipped content,
+an exact place, so the 0.4 s second scroll the unflipped list needed is gone; measured:
+back to the same message at the same pixel as when the chat opened.
+
+A fast swipe moves the same distance as on the unflipped list (four swipes from the newest
+of 201 messages: to #179 flipped, #181 unflipped), and pages load ahead of the finger: a
+121-message conversation reaches "Beginning of your conversation" by swiping alone.
+
+**Open:** VoiceOver order. The rows are now declared newest first (the flip), and
+VoiceOver may follow that order, so swiping through messages could go upward. Not checked:
+no run with VoiceOver on.
 
 ## 2. Selecting text
 
@@ -223,15 +248,17 @@ later finishes the scroll if it is not at the end and the reader has not moved.
 
 | Action | A coach reply | The user's own message |
 |---|---|---|
-| Copy the whole message | action row under the reply; VoiceOver action | context menu; VoiceOver action |
+| Copy the whole message | action row under the reply; VoiceOver action | action row under it (a tap or a long press); VoiceOver action |
 | Copy a passage | select, then Copy | no |
-| Ask about this (quote into the composer) | on a selection (edit menu) or the whole reply (action row; VoiceOver action) | context menu; VoiceOver action |
-| Share | action row; the system menu on a selection | context menu |
-| Delete (with confirmation) | action row overflow; VoiceOver action | context menu, last and red; VoiceOver action |
+| Ask about this (quote into the composer) | on a selection (edit menu) or the whole reply (action row; VoiceOver action) | action row; VoiceOver action |
+| Share | action row; the system menu on a selection | action row |
+| Delete (with confirmation) | action row overflow; VoiceOver action | action row overflow; VoiceOver action |
 | Retry | the failure row under the failed message | same |
 
 The action row is always under the newest reply; a tap on an older reply shows that
-reply's row. "Ask about this" puts the passage above the message field as a quoted
+reply's row. A tap or a long press on one of her own messages shows the same row under it,
+at the right (until 2026-11-23 her messages had the system context menu instead; the
+flipped list broke its preview, section 1). "Ask about this" puts the passage above the message field as a quoted
 reference; it travels inside the message as a Markdown block quote followed by the
 question, which is what the model reads and what the bubble splits back into a reference
 and a question (`ChatQuote`). The existing `AskVitaCenter` bus carries the quote, so
@@ -460,7 +487,7 @@ test or a run named in the row; **partly** = improved, with the rest stated; **o
 | 2 | Earlier messages | load the previous page at the top (§1) | none needed: everything was loaded | — | **fixed**: `ChatWindow`, loads within 240 pt of the top, and a button (`ChatWindowTests`; UI run §10) |
 | 3 | Position when a page is prepended | the rows on screen do not move (§1) | not applicable | new requirement | **partly**: the top row stays on screen but moved 0–173 pt in nine measured loads at rest (§1). Exact hold is **open** |
 | 4 | Opening position | newest message, no visible scroll (§1) | programmatic `scrollTo` from `onAppear`, `CoachView.swift:247`, `263–283` | a jump to the far end of a lazy stack on every open | **fixed**: `defaultScrollAnchor(.bottom)` (UI run §10) |
-| 5 | Jump to latest | a button while scrolled up (§1) | none | missing | **fixed**, with an unseen count (UI run §10) |
+| 5 | Jump to latest | a button while scrolled up (§1) | none | missing | **fixed**, with an unseen count (UI run §10); exact since the flip (§1, EVAL_REPORT 32) |
 | 6 | A message arriving while the reader is scrolled up | do not move the reader | every new row scrolled to the bottom, `CoachView.swift:244` | reading history was interrupted | **fixed**: counted instead; the user's own send still scrolls down (`ChatWindowTests`) |
 | 7 | Selecting part of a reply | a `UITextView` on iOS 18/26 (§2) | `.textSelection(.enabled)` on the bubble, `CoachView.swift:977`: whole text only | no range selection | **fixed** for replies (`SelectableMarkdownText`; UI run §10). The user's own messages: whole-message Copy |
 | 8 | Copy a whole message | one tap or one menu item (§3) | only through that modifier's system menu, `CoachView.swift:977` | not discoverable | **fixed**: action row, context menu, VoiceOver action |
