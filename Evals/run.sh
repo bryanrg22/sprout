@@ -25,7 +25,7 @@ EVAL="${1:?eval name: one of those listed at the top of this script, e.g. MealDe
 MODELS="${2:?models, e.g. anthropic:claude-haiku-4-5,openai:gpt-4.1-mini}"
 REPEATS="${3:-1}"
 LIMIT="${4:-}"
-SIM="${SPROUT_SIM:-Victoria-Dev}"
+SIM="${SPROUT_SIM:-Sprout-Dev}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RUN_ID="$(date -u +%Y%m%d-%H%M%S)-${EVAL}"
@@ -73,10 +73,10 @@ TEST_RUNNER_SPROUT_EVAL_OUT="$OUT" \
 TEST_RUNNER_SPROUT_EVAL_CONCURRENCY="${SPROUT_EVAL_CONCURRENCY:-4}" \
 TEST_RUNNER_ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
 TEST_RUNNER_OPENAI_API_KEY="${OPENAI_API_KEY:-}" \
-xcodebuild test -project Victoria.xcodeproj -scheme VictoriaEvals \
+xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -destination "platform=iOS Simulator,name=$SIM" \
   -derivedDataPath "$DERIVED" \
-  -only-testing:"VictoriaEvals/LiveEvals/test${EVAL}" \
+  -only-testing:"SproutEvals/LiveEvals/test${EVAL}" \
   > "$OUT/xcodebuild.log" 2>&1
 STATUS=$?
 set -e

@@ -12,7 +12,7 @@ set -euo pipefail
 RUN="${1:?a run directory, e.g. Evals/runs/20261123-100309-Avatar}"
 RUN="$(cd "$RUN" && pwd)"
 [ -d "$RUN/avatars" ] || { echo "no saved characters in $RUN/avatars"; exit 1; }
-SIM="${SPROUT_SIM:-Victoria-Dev}"
+SIM="${SPROUT_SIM:-Sprout-Dev}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DERIVED="${SPROUT_DERIVED_DATA:-$ROOT/build/evals-derived}"
 LOG="$(mktemp)"
@@ -23,10 +23,10 @@ rm -f "$RUN/regrade-avatar.json"
 
 set +e
 TEST_RUNNER_SPROUT_EVAL_REGRADE="$RUN" \
-xcodebuild test -project Victoria.xcodeproj -scheme VictoriaEvals \
+xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -destination "platform=iOS Simulator,name=$SIM" \
   -derivedDataPath "$DERIVED" \
-  -only-testing:"VictoriaEvals/AvatarRegrade/testAvatarRegrade" \
+  -only-testing:"SproutEvals/AvatarRegrade/testAvatarRegrade" \
   > "$LOG" 2>&1
 STATUS=$?
 set -e

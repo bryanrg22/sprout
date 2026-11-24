@@ -16,7 +16,7 @@ dataset on every candidate model, and the numbers decide. Results are written up
 | `summarize.py` | Records → `summary.md` / `summary.json`: pass rate with a 95% Wilson interval, per-repeat spread, every score, latency, tokens, cost. |
 | `prices.json` | List prices read from the vendors' pricing pages, with the date. A model not listed gets no cost, never an estimate. |
 | `runs/<utc>-<eval>/` | One directory per run: `manifest.json` (commit, dataset hashes, models, repeats), `records-<task>.jsonl`, `summary.md`. |
-| `../VictoriaEvals/` | The harness (`EvalHarness.swift`), the graders (`Graders.swift`), the live evaluations (`LiveEvals.swift`) and their offline self-tests (`GraderTests.swift`). |
+| `../SproutEvals/` | The harness (`EvalHarness.swift`), the graders (`Graders.swift`), the live evaluations (`LiveEvals.swift`) and their offline self-tests (`GraderTests.swift`). |
 
 ## The evaluations
 

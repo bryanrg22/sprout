@@ -5,6 +5,33 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ## Unreleased (will ship as 2.1, build 16)
 
+### Added
+
+- **Built-in AI: install and it works.** Nobody using Sprout needs an API key any more.
+  The AI runs through a small gateway (`server/`) that holds the keys, answers only a
+  genuine copy of the app on a real iPhone (Apple App Attest), pays only for the models
+  the app uses, and gives each phone a daily allowance; when it is used up, Vita says
+  so and is back the next day. Every text task runs on Claude; OpenAI only draws the
+  character picture (EVAL_REPORT 33).
+
+### Removed
+
+- **The AI settings.** Settings → AI, the "paste your key" card on Today, the key step in
+  onboarding and on the character screen, the provider choice and the model fields are
+  gone. A phone that cannot use the built-in AI (very old hardware) keeps every other
+  feature and says so plainly (EVAL_REPORT 33).
+
+### For people building it
+
+- The code is now named after the app: `Sprout/`, `SproutTests/`, `SproutUITests/`,
+  `SproutWidgets/`, `SproutEvals/`, `Sprout.xcodeproj`, scheme `Sprout`. The bundle id,
+  iCloud container, App Group and every stored value keep the names the app shipped
+  under, so an update still installs over the old app with everything kept.
+- Personal content is out of the repository: one tester's own catchphrases now load from
+  the git-ignored `Private/` folder like the personal note, and comments describe users
+  in general terms. Stale documents (the June research and design notes, the old model
+  rationale) are removed; `docs/README.md` maps what remains.
+
 ### Fixed
 
 - **The chat no longer jumps when older messages load.** The conversation is now a

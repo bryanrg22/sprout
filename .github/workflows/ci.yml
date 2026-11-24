@@ -68,7 +68,7 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild test \
-            -project Victoria.xcodeproj -scheme Victoria \
+            -project Sprout.xcodeproj -scheme Sprout \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath "$RUNNER_TEMP/unit.xcresult" \
             -enableCodeCoverage YES \
@@ -77,12 +77,12 @@ jobs:
 
       # Never trust the pipe: read the counts out of the result bundle. The minimum
       # is what stops "no tests were found" from reading as green; raise it in the
-      # change that adds tests (VictoriaTests/LEDGER.md has the current total).
+      # change that adds tests (SproutTests/LEDGER.md has the current total).
       - name: Verify unit test counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1205 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1205
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1211 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1211
 
       - name: Coverage by target
         if: ${{ !cancelled() }}
@@ -101,7 +101,7 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild test \
-            -project Victoria.xcodeproj -scheme VictoriaEvals \
+            -project Sprout.xcodeproj -scheme SproutEvals \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath "$RUNNER_TEMP/evals.xcresult" \
             -parallel-testing-enabled NO \
@@ -123,7 +123,7 @@ jobs:
           retention-days: 14
 
   # End-to-end flows through the real UI, against a scripted model and an in-memory store
-  # (VictoriaUITests/README.md). Separate from `test` so a slow or flaky simulator boot
+  # (SproutUITests/README.md). Separate from `test` so a slow or flaky simulator boot
   # here cannot hide a unit-test result.
   ui-tests:
     runs-on: macos-26
@@ -149,7 +149,7 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild test \
-            -project Victoria.xcodeproj -scheme VictoriaUITests \
+            -project Sprout.xcodeproj -scheme SproutUITests \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath "$RUNNER_TEMP/ui.xcresult" \
             -parallel-testing-enabled NO \
@@ -184,7 +184,7 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild build \
-            -project Victoria.xcodeproj -scheme Victoria -configuration Release \
+            -project Sprout.xcodeproj -scheme Sprout -configuration Release \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --quiet

@@ -3,7 +3,7 @@
 The leap from tracker → coach. A per-user **Plan** the AI authors from her real data + goals,
 that lives on **Progress**, that **Vita** can read and edit, and that **adapts over time**.
 
-Direction-agnostic: works for loss (Victoria) and gain (Bryan) — same machinery, different targets.
+Direction-agnostic: works for loss and gain — same machinery, different targets.
 
 ## Why (the gap)
 Adaptive coaching works (AI-adaptive plans → 40–60% more adherence) and the "agent keeps a living

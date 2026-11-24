@@ -15,7 +15,7 @@ struct CalorieBudgetView: View {
     var body: some View {
         // Adopt the user's skin before any Theme color resolves. The widget extension
         // never runs RootView, so `Theme.current` would otherwise stay at its `.cool`
-        // default and a Cute (Victoria) user would get dark widgets.
+        // default and a Cute user would get dark widgets.
         let _ = (Theme.current = snap.skin)
         switch family {
         case .systemSmall:        small
@@ -244,7 +244,7 @@ struct CompanionView: View {
         switch WidgetCompanionArt.resolve(raw: snap.companionAvatarRaw, file: file) {
         case .builtIn:
             if snap.usesBryanAvatar { WidgetPixelBryanView() }
-            else                    { WidgetPixelVictoriaView() }
+            else                    { WidgetPixelCuteView() }
         case .custom(let png):
             WidgetCustomAvatarView(png: png)
         case .neutral:

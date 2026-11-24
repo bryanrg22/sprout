@@ -53,7 +53,7 @@ struct WidgetSnapshot: Codable {
     /// The palette the widget should paint with (the user's chosen skin). Falls back
     /// to `.cute` — the app's default — if the stored value is unknown.
     var skin: ThemeSkin { (ThemeStyle(rawValue: themeStyleRaw) ?? .cute).skin }
-    /// True when this profile's solo companion is pixel-Bryan rather than Victoria.
+    /// True when this profile's solo companion is pixel-Bryan rather than the cute character.
     var usesBryanAvatar: Bool { companionAvatarRaw == "bryan" }
 
     var caloriesRemaining: Double { calorieTarget - caloriesEaten }

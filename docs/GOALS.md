@@ -40,7 +40,7 @@ commands itself, so the condition asks for the evidence to be printed. Open the 
 in `~/dev/GitHub/sprout`, switch to auto mode so the turns run unattended, and paste:
 
 ```text
-/goal Every objective in docs/GOALS.md has status "met", "blocked: <what the owner must do>" or "todo (spec needed)", with the proof shown in this conversation. Work the objectives in file order by the method in AGENTS.md, skipping one whose prerequisite is not met. An objective is met only when its Check was run in this session and the output is printed here: for code, tooling/evidence/capture.sh printing every gate exit code 0 and the unit-test count, plus CI green on the pull request; for a model default, the summary table from Evals/run.sh, the new EVAL_REPORT section and the measuredDefaults row. Update the status table in docs/GOALS.md, docs/EVAL_REPORT.md, VictoriaTests/LEDGER.md and CHANGELOG.md in the same change, commit on a branch and push it. At the end of every turn print the GOALS.md status table and, for what changed, what was verified by running and what was only read. Constraints: never weaken, skip or delete a test to make it pass; a defect fix needs a test that fails on the old code; no paid evaluation run estimated above 10 dollars without my approval, and if one needs more, mark that objective blocked and go on to the next; never upload to TestFlight, deploy a CloudKit schema, merge into main or rewrite pushed history; G12 stays todo; anything that needs my eyes or my phone (screenshots to approve, a restart test, label review, sample photos) is marked blocked with exactly what I must do, and work continues on the next objective. Stop after 40 turns.
+/goal Every objective in docs/GOALS.md has status "met", "blocked: <what the owner must do>" or "todo (spec needed)", with the proof shown in this conversation. Work the objectives in file order by the method in AGENTS.md, skipping one whose prerequisite is not met. An objective is met only when its Check was run in this session and the output is printed here: for code, tooling/evidence/capture.sh printing every gate exit code 0 and the unit-test count, plus CI green on the pull request; for a model default, the summary table from Evals/run.sh, the new EVAL_REPORT section and the measuredDefaults row. Update the status table in docs/GOALS.md, docs/EVAL_REPORT.md, SproutTests/LEDGER.md and CHANGELOG.md in the same change, commit on a branch and push it. At the end of every turn print the GOALS.md status table and, for what changed, what was verified by running and what was only read. Constraints: never weaken, skip or delete a test to make it pass; a defect fix needs a test that fails on the old code; no paid evaluation run estimated above 10 dollars without my approval, and if one needs more, mark that objective blocked and go on to the next; never upload to TestFlight, deploy a CloudKit schema, merge into main or rewrite pushed history; G12 stays todo; anything that needs my eyes or my phone (screenshots to approve, a restart test, label review, sample photos) is marked blocked with exactly what I must do, and work continues on the next objective. Stop after 40 turns.
 ```
 
 `/goal` alone shows the status; `/goal clear` stops it.
@@ -76,7 +76,7 @@ in `~/dev/GitHub/sprout`, switch to auto mode so the turns run unattended, and p
 
 ## G3. A widget never shows anyone else's data, or yesterday's as today's
 
-*"I sometimes see Victoria instead of mine."*
+*"I sometimes see the other person's character instead of mine."*
 
 - **Cause (read, not reproduced):** when the widget could not read its snapshot (after a
   phone restart, before the first unlock, the app group's files are still encrypted) it
@@ -202,7 +202,7 @@ Prerequisite for G8 and for inviting a third person.
   evaluation reports the error on each; a value that is not known is shown as unknown,
   never as zero.
 - **Needs the owner before it ships:** the new fields are new CloudKit fields, so the
-  Production schema has to be deployed first (`TESTFLIGHT.md` section 3).
+  Production schema has to be deployed first (`docs/testflight.md` section 3).
 - **Status:** open.
 
 ## G11. The open defects are closed

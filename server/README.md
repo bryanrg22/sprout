@@ -13,7 +13,8 @@ only the app's own models are paid for.
 iPhone (no key) ──signed──▶ gateway (keys, caps, allowlist) ──▶ api.anthropic.com / api.openai.com
 ```
 
-A person who adds their own key in Settings → AI goes straight to the provider, as before.
+The app has no key field at all: every text task runs on Claude through the gateway, and
+OpenAI only draws the character picture. The gateway serves exactly those two endpoints.
 
 ## How a call is checked
 
@@ -77,7 +78,7 @@ curl https://$DOMAIN/health   # {"ok":true,"anthropic":true,"openai":false}
 ```
 
 Caddy gets the HTTPS certificate on first start. Then set `AIGateway.address` in
-`Victoria/Services/AI/AIGateway.swift` to `https://<DOMAIN>` and ship a build.
+`Sprout/Services/AI/AIGateway.swift` to `https://<DOMAIN>` and ship a build.
 
 Update: `git pull && docker compose up -d --build`. Logs: `docker compose logs -f gateway`.
 Today's spend: `docker compose exec gateway node -e "const {DatabaseSync}=require('node:sqlite');console.log(new DatabaseSync('/data/gateway.sqlite').prepare('select key_id, usd, requests from spend where day=date()').all())"`.
@@ -86,7 +87,7 @@ Today's spend: `docker compose exec gateway node -e "const {DatabaseSync}=requir
 
 ```bash
 npm ci
-npm test          # 57 tests: App Attest checks, the store, every route
+npm test          # 58 tests: App Attest checks, the store, every route
 npm run typecheck
 ```
 

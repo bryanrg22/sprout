@@ -1754,3 +1754,74 @@ the beginning was last run locally with a 40-swipe limit on 201 messages and sto
 so it was changed to 121 messages and 60 swipes and has run only on CI; VoiceOver order
 (the rows are declared newest first and VoiceOver may read them that way); a phone; iOS 18
 (the simulator is iOS 26.4).
+
+## 33. Built-in AI, the code renamed Sprout, and personal content out of the repository (2026-11-24)
+
+**The decision (the owner's):** the people using the app are not developers, so the app asks
+for nothing. No key, no provider, no model setting. The AI runs through a gateway the owner
+runs (`server/`), which holds the keys.
+
+### How a call is made now
+
+- **The app** never holds a key. `AIConfig.key(for:)` is the one source: a scoped
+  `AIRuntime` key (tests, evaluations), else the gateway's placeholder, else (DEBUG builds
+  only) a Keychain key for the Simulator, which cannot do App Attest. A request carrying the
+  placeholder goes to the gateway, signed by the phone's App Attest key over
+  `POST\n<route>\n<timestamp>\n` and the body (`AIGatewayTransport`).
+- **The provider** is Anthropic for every text task; OpenAI draws only the character
+  picture. The gateway serves exactly `/anthropic/v1/messages` and `/openai/v1/images/edits`.
+- **The gateway** checks Apple's attestation steps 1 to 9 at registration and the assertion
+  on every call (signature, App ID, counter accepted once within a 64-wide window,
+  timestamp within 5 minutes), then the phone's day ($1) and everyone's ($20), then the
+  model allowlist, the output cap (8,192 tokens) and the tools (Anthropic web search with
+  at most 5 uses). It prices each call from the provider's `usage` report.
+
+### A defect found by asking "does the server allow every model the app uses?"
+
+The gateway's first allowlist was written from the tier defaults and missed the daily
+brief's measured default, `claude-haiku-5-5` (sections 10 and 25): every daily brief would
+have been refused. It is now allowed, and `AIGatewayTests` reads `server/src/pricing.ts` and
+fails if any `AITask`, as the app resolves it, names a model the gateway would refuse, or if
+the image model, its quality or the web-search tool version differ.
+
+### Errors the person can no longer fix
+
+With no settings, a key, model or billing error is the owner's. `CoachTurnError` gives
+those Retry and says it is "on our side, not yours"; none of its messages mentions a key,
+Settings or a console (asserted). A phone without App Attest gets "I can't chat on this
+phone, sorry. Everything you log still works 💚" and no button. Food suggestions and the
+recap are left out there, as before.
+
+### The rename
+
+Targets, schemes, folders and Swift types named after a person became `Sprout*`. Read
+before doing it (`git grep`, the code): no stored data or CloudKit record depends on the
+Swift module name (record types are `CD_<Entity>`; no `NSKeyedArchiver`, `@objc` names or
+transformable types other than Foundation arrays). Kept on purpose, because they are stored:
+the bundle id, iCloud container, App Group, Keychain service, HealthKit sync prefix, the
+check-in `UserDefaults` keys, the avatar raw value `"victoria"` (now the Swift case
+`.cute`) and the alternate icon asset `AppIconVictoria` (iOS stores the chosen icon by
+name). Notification request ids were renamed: every reschedule removes all pending requests
+first.
+
+### Verified
+
+- Unit tests: 1,211 pass (`AIGatewayTests` 15 new; `AIKeyRoutingTests` removed with the
+  code it tested; three override tests replaced by one of the scoped model). Evaluation
+  self-tests: 96 (83 pass, 13 skipped as live). UI flows and Release build: compiled.
+  Gateway: 58 tests pass, `tsc` clean, and the same tests pass in `node:24-slim`.
+- Script checks as CI runs them: `py_compile`, `bash -n`, the store verifier self-test.
+
+### Not verified
+
+- **A real attestation.** Every App Attest object in the tests is made under a test
+  certificate authority. The first real one is a phone registering with the deployed
+  gateway; until then the AAGUID a development build presents and the signature
+  convention on a device are read from Apple's documentation, not seen.
+- **TestFlight without the App Attest entitlement.** Apple's documentation says
+  TestFlight and App Store builds always use the production environment; no TestFlight
+  build has registered yet.
+- **The gateway is not deployed** (`AIGateway.address` is empty), so a Release build made
+  now has no AI at all. No TestFlight build should be made from `main` until it is.
+- **Updating in place after the rename** was reasoned from the code, not run: the next
+  TestFlight build installed over the current one on a phone with data is the check.

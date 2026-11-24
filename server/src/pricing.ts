@@ -3,7 +3,7 @@
  * refused, so nobody can run an expensive model on the owner's bill.
  *
  * Exactly the models the app sends (every text task runs on Anthropic; OpenAI only draws the
- * character picture): the tier defaults in `AIProvider` (Victoria/Services/AI/AIConfig.swift)
+ * character picture): the tier defaults in `AIProvider` (Sprout/Services/AI/AIConfig.swift)
  * and the measured per-task defaults in `AIConfig.measuredDefaults` (AITask.swift, with the
  * docs/EVAL_REPORT.md section that chose each). `AIGatewayTests` fails when the app resolves a
  * model that is missing here, so change them together.

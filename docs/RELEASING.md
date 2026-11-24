@@ -7,7 +7,7 @@ EVAL_REPORT 7).
 ## The setup (once, about 15 minutes, needs the Apple account)
 
 1. **Xcode Cloud workflow.** In Xcode: Product → Xcode Cloud → Create Workflow, for the
-   `Victoria` scheme of this repository (the project and its shared schemes are committed,
+   `Sprout` scheme of this repository (the project and its shared schemes are committed,
    which Xcode Cloud needs).
    - Start conditions: **Branch changes** on `main`, and **On a schedule** for `main`
      (weekly or monthly). The schedule is what stops expiry when nothing has been merged

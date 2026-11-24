@@ -3,15 +3,15 @@ import SwiftUI
 /// Self-contained pixel-art for the WIDGET target.
 ///
 /// Widgets can't reach the app-only `PixelCompanion`/`CompanionMood` types (those
-/// live in the Victoria app target), and a widget never animates — it renders one
+/// live in the Sprout app target), and a widget never animates — it renders one
 /// fixed frame. So this file DUPLICATES, as flat static data, the *thriving* pose
 /// of the two characters the app already draws:
 ///
-///   • `WidgetPixelVictoria` — the companion (pixel-Victoria), beaming + eyes open.
+///   • `WidgetPixelCute` — the cute companion, beaming + eyes open.
 ///   • `WidgetPixelPanda`    — the shared buddy panda, thriving (smiling + bamboo).
 ///
 /// The grids and palettes are copied verbatim from
-/// `Victoria/Features/Companion/PixelCompanion.swift` and frozen to one happy
+/// `Sprout/Features/Companion/PixelCompanion.swift` and frozen to one happy
 /// frame. Keeping a copy here (rather than sharing the app type) is the intended
 /// trade: the widget stays a leaf with no cross-target dependency. This file lives
 /// in `Shared/`, so it compiles in BOTH the app and the widget extension.
@@ -52,11 +52,11 @@ struct WidgetPixelArtView: View {
     }
 }
 
-// MARK: - Pixel Victoria (frozen "thriving" pose)
+// MARK: - Pixel cute (frozen "thriving" pose)
 
-/// Fixed copy of the companion (pixel-Victoria) in her happiest pose: eyes open,
-/// wide beaming smile. Data copied from `PixelVictoria` (app target) and frozen.
-enum WidgetPixelVictoria {
+/// Fixed copy of the cute companion in her happiest pose: eyes open,
+/// wide beaming smile. Data copied from `PixelCute` (app target) and frozen.
+enum WidgetPixelCute {
     /// 20 wide × 24 tall. Identical aspect ratio to the app sprite.
     static let aspect: CGFloat = 20.0 / 24.0
 
@@ -107,12 +107,12 @@ enum WidgetPixelVictoria {
     ]
 }
 
-/// Frozen pixel-Victoria for widgets. Aspect-locked so she's never stretched.
-struct WidgetPixelVictoriaView: View {
+/// Frozen cute companion for widgets. Aspect-locked so she's never stretched.
+struct WidgetPixelCuteView: View {
     var body: some View {
-        WidgetPixelArtView(rows: WidgetPixelVictoria.rows,
-                           palette: WidgetPixelVictoria.palette)
-            .aspectRatio(WidgetPixelVictoria.aspect, contentMode: .fit)
+        WidgetPixelArtView(rows: WidgetPixelCute.rows,
+                           palette: WidgetPixelCute.palette)
+            .aspectRatio(WidgetPixelCute.aspect, contentMode: .fit)
             .accessibilityHidden(true)
     }
 }
@@ -124,7 +124,7 @@ struct WidgetPixelVictoriaView: View {
 /// Data copied from `PixelBryan` (app target) and frozen to one happy frame, so the
 /// widget never reaches the app-only type. Reads on the near-black Cool canvas.
 enum WidgetPixelBryan {
-    /// 20 wide × 24 tall. Same aspect ratio as Victoria so the layout is unchanged.
+    /// 20 wide × 24 tall. Same aspect ratio as the cute companion so the layout is unchanged.
     static let aspect: CGFloat = 20.0 / 24.0
 
     static let palette: [Character: Color] = [

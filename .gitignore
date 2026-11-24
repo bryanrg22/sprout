@@ -13,7 +13,7 @@ DerivedData/
 build/
 
 # Stray xcodegen duplicates
-Victoria [0-9]*.xcodeproj/
+Sprout [0-9]*.xcodeproj/
 
 # Claude Code git worktrees (transient agent scratch)
 .claude/worktrees/

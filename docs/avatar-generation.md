@@ -106,8 +106,8 @@ evaluation's `cost_usd` score. What one character actually costs has to be measu
 
 ## The style the prompt asks for
 
-Taken from the two hand-made characters (`PixelVictoria`, `PixelBryan` in
-`Victoria/Features/Companion/PixelCompanion.swift`: 20x24-cell grids, 13 palette
+Taken from the two hand-made characters (`PixelCute`, `PixelBryan` in
+`Sprout/Features/Companion/PixelCompanion.swift`: 20x24-cell grids, 13 palette
 entries each) and the generated `alejandro_base` asset:
 
 - a head-and-shoulders bust of one person, facing straight ahead, centred; the head and
@@ -121,8 +121,7 @@ entries each) and the generated `alejandro_base` asset:
   accessories) reduced to a few cells; a plain top with no logo or lettering;
 - a fully transparent background, nothing else in the picture.
 
-`docs/pixel-art-refs/` holds reference PHOTOS for other characters, not pixel art; the
-style description above comes from the art in the code and the asset catalog.
+The style description above comes from the art in the code and the asset catalog.
 
 ## What the app checks before it shows a character
 

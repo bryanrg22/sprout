@@ -1,4 +1,4 @@
-# 🌱 Sprout – *An AI Health Coach That Actually Knows You*
+# Sprout
 
 <div align="center">
 
@@ -6,112 +6,104 @@
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-0071e3?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/xcode/swiftui/)
 [![SwiftData](https://img.shields.io/badge/SwiftData-8e44ad?style=flat-square&logo=apple&logoColor=white)](https://developer.apple.com/documentation/swiftdata)
 [![Claude](https://img.shields.io/badge/Claude-d97757?style=flat-square&logo=anthropic&logoColor=white)](https://www.anthropic.com)
-[![OpenAI](https://img.shields.io/badge/GPT--5.6-412991?style=flat-square&logo=openai&logoColor=white)](https://openai.com)
-[![Tests](https://img.shields.io/badge/tests-443%20passing-2f7d4f?style=flat-square)]()
-[![BYOK](https://img.shields.io/badge/keys-bring%20your%20own-555?style=flat-square)]()
+[![CI](https://github.com/bryanrg22/sprout/actions/workflows/ci.yml/badge.svg)](https://github.com/bryanrg22/sprout/actions/workflows/ci.yml)
 
 </div>
 
----
+> **An AI health coach for iOS, and a case study in shipping consumer AI carefully: a model chosen per task by measurement, aggressive cost engineering, real tool use with safety rails, and a working fallback for every AI feature.**
 
-> **A warm, AI-coached health companion for iOS — and a working case study in doing consumer AI *right*: the correct model for each job, aggressive cost engineering, real tool use with safety rails, and graceful degradation everywhere.**
-
-Built native in SwiftUI + SwiftData as my own daily-driver health app, running every day on my real Fitbit data. Not a demo: every AI surface below is live, unit-tested, and verified end-to-end against both the Anthropic and OpenAI production APIs.
+Native SwiftUI + SwiftData. People install it from TestFlight and it simply works: there is no API key to enter. The AI runs through a small gateway that holds the keys and only answers genuine copies of the app.
 
 ---
 
-## System Architecture
-
-<img src="docs/architecture.svg" alt="System architecture diagram" width="900"/>
-
----
-
-## Table of Contents
+## Contents
 
 * [What is Sprout?](#what-is-sprout)
-* [The AI System](#the-ai-system)
-  * [One abstraction, two providers](#one-abstraction-two-providers)
-  * [Right-sized models (the tiering)](#right-sized-models-the-tiering)
+* [Architecture](#architecture)
+* [The AI system](#the-ai-system)
+  * [A model per task, chosen by measurement](#a-model-per-task-chosen-by-measurement)
   * [Cost engineering](#cost-engineering-the-part-that-makes-it-shippable)
   * [Tool use with safety rails](#tool-use-with-safety-rails)
-  * [Data → context → coaching](#reading-the-body-data--context--coaching)
-* [The Data Platform](#the-data-platform)
-* [Verification Culture](#verification-culture)
-* [How This Compares to the Industry](#how-this-compares-to-the-industry)
-* [Project Structure](#project-structure)
-* [Getting Started (Dev)](#getting-started-dev)
+  * [Data, context, coaching](#reading-the-body-data--context--coaching)
+* [The data platform](#the-data-platform)
+* [How it is verified](#how-it-is-verified)
+* [Repository layout](#repository-layout)
+* [Getting started](#getting-started)
 
 ---
 
 ## What is Sprout?
 
-| Today | AI Coach with tool use | Trend + AI plan | AI-personalized checklist |
+| Today | AI coach with tool use | Trend + AI plan | AI-personalized checklist |
 |---|---|---|---|
 | ![Today dashboard](docs/screenshots/today-dashboard.png) | ![Vita executing a tool call](docs/screenshots/vita-tool-call.png) | ![Progress trend](docs/screenshots/progress-trend.png) | ![AI checklist](docs/screenshots/ai-checklist.png) |
 
-> The second screenshot is the interesting one: *"Please log 2 bottles of water for me"* → the model emits a **function call**, the app validates + applies it to the local store (with undo), returns a tool result, and the model confirms — a full agentic round-trip inside a consumer chat UI. Works identically on Claude and GPT.
+**Sprout** is a healthy-habits companion built around **Vita**, an AI coach that reads the person's real data (food, water, weight trend, sleep and recovery from Fitbit or Apple Health, workouts, even timezone changes) and acts on it through validated tools. It is built to reward eating *enough* rather than eating less: no badge, chart or message ever praises restriction.
 
-**Sprout** is a weight-loss / healthy-habits companion built around **Vita**, an AI coach that reads the user's real data (food, water, weight trend, Fitbit sleep + recovery, workouts, even timezone changes) and acts on it through validated tools. It celebrates comebacks instead of shaming streaks, writes one warm proactive note per day, and degrades gracefully at every layer — no API key, no tracker, no iCloud? Still a complete app.
+The second screenshot is the interesting one: *"Please log 2 bottles of water for me"* → the model emits a tool call, the app validates it and applies it to the local store (with Undo), returns a tool result, and the model confirms what actually happened.
 
 ---
 
-## The AI System
-
-**Design stance:** an LLM is a component, not a product. Every feature below was designed backwards from *"what's the cheapest thing that does this job honestly?"* — templates first, small models second, big models only where they earn it, and a working fallback when there's no key or no network.
-
-### One abstraction, two providers
-
-The user picks Anthropic or OpenAI in Settings (bring-your-own-key; keys live only in the Keychain). Every AI feature — chat with tools, vision, structured outputs, web-search research — runs on either vendor:
+## Architecture
 
 ```mermaid
 flowchart LR
-    subgraph Features
-        A[Vita chat + tools]
-        B[Meal-photo vision]
-        C[Adaptive plan + web research]
-        D[Daily brief / insights / reflections]
-        E[Checklist + quick prompts]
-        F[Memory consolidation]
+    subgraph Phone["iPhone: Sprout (SwiftUI + SwiftData)"]
+        F["Features: Vita chat + tools, meal photos,<br/>daily brief, plan, checklist, widgets"]
+        C["AI layer: AITask → model per task<br/>AnthropicClient · AvatarGenerator (image)"]
+        G["AIGatewayTransport<br/>signs each call with App Attest"]
+        S[(SwiftData store)]
+        F --> C --> G
+        F <--> S
     end
-    Features --> G{{"AIClient factory<br/>(reads provider from Settings)"}}
-    G --> H[AnthropicClient<br/>Messages API]
-    G --> I[OpenAIClient<br/>Chat Completions + Responses]
-    H -. "native wire format" .-> J[(Anthropic-shaped<br/>wire vocabulary)]
-    I -. "translates at the boundary" .-> J
+    G -->|"signed request, no key"| GW["AI gateway (server/)<br/>App Attest check · model allowlist<br/>daily cap per phone and in total"]
+    GW -->|"owner's key"| A[Anthropic Messages API]
+    GW -->|"owner's key, character picture only"| O[OpenAI image edits]
+    S <--> CK1[(iCloud private DB<br/>the person's own data)]
+    S <--> CK2[(CloudKit public DB<br/>buddy sync)]
 ```
 
-The trick that keeps this cheap to maintain: the app speaks **one internal wire vocabulary** (Anthropic's content-block format — messages, tool schemas, tool results). `OpenAIClient` translates at its boundary: tool schemas → function declarations, `tool_use` echoes → `tool_calls` with JSON-string arguments, `tool_result` → `role:"tool"` messages, base64 image blocks → data-URL parts. Call sites never branch on the vendor. The translation layer is pinned by fixture tests, including a full round-trip test (response → parse → echo → identical request).
+* **The app** never holds an API key. A call carries a placeholder and goes to the gateway, signed by the phone's Secure Enclave key (App Attest), with the body bound into the signature, so a captured request can be neither replayed nor altered.
+* **The gateway** ([`server/`](server/README.md), Node + SQLite, 58 tests) checks the signature, the phone's allowance for the day and the total for everyone, refuses any model the app does not use, forwards the call with the owner's key, and prices it from the provider's own usage report.
+* **Health data never touches the server.** It lives in the SwiftData store, mirrored to the person's private iCloud database.
 
-### Right-sized models (the tiering)
+---
 
-<img src="docs/technique_tiering.svg" alt="Model tiering diagram" width="900"/>
+## The AI system
 
-| Tier | Anthropic | OpenAI | What runs on it | Why |
-|---|---|---|---|---|
-| **Cheap/fast** | Haiku 4.5 | gpt-4.1-mini *(deliberately non-reasoning)* | Daily brief polish, insight phrasing, weekly reflection, onboarding note, memory folding | Rewording precomputed facts needs zero reasoning — a reasoning mini would burn hidden thinking tokens inside 80–420-token budgets |
-| **Strong** | Sonnet 5 | gpt-5.6-terra *(reasoning pinned low; none on tool turns — a live-discovered 5.6 constraint)* | Vita chat + tools, meal-photo vision, checklist, quick prompts | The $2.50–3 workhorse class; upgraded the moment newer generations hit price parity |
-| **Heavy (rare)** | Opus 4.8 | gpt-5.6-sol | The one-time adaptive plan build/review + live web-search research | Runs a handful of times *ever* per user — worth the tokens. Fable 5 evaluated and rejected (2× price, no transfer to this workload) |
+**Design stance:** an LLM is a component, not a product. Every feature is designed backwards from *"what's the cheapest thing that does this job honestly?"*: templates first, small models second, big models only where they earn it, and a working fallback when there is no AI at all.
 
-The expensive model is reserved for the feature invoked a few times per month; the model invoked many times per day is the cheap one. Users can override any model string in Settings without a rebuild. **Every choice here has a written defense with rejected alternatives and standing revisit triggers: [docs/MODEL_CHOICES.md](docs/MODEL_CHOICES.md).**
+### A model per task, chosen by measurement
+
+Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output contract. A task's model is chosen by running the candidate models on a versioned dataset of cases and comparing accuracy, cost and latency ([`Evals/`](Evals/README.md), results in [`docs/EVAL_REPORT.md`](docs/EVAL_REPORT.md)). A measured choice is written into `AIConfig.measuredDefaults` together with the report section that justifies it, and a test fails if one is missing its citation. A task with no measurement yet runs on its price tier's default, and the table says so.
+
+| Task | Model | How it was chosen |
+|---|---|---|
+| Vita chat turn, meal photo and description, food suggestions, progress recap, checklist, chat chips | `claude-sonnet-5` | tier default (measurement of advice quality pending) |
+| Adaptive plan: build, review, web research | `claude-opus-4-8` | tier default (rare: a few calls per person) |
+| Daily brief | `claude-haiku-5-5` | **measured**: 39/39 at a seventh of the previous model's cost (EVAL_REPORT 10, 25) |
+| Insight line, weekly reflection, onboarding note, memory fold | `claude-haiku-4-5` | tier default (re-measurement in progress) |
+| The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
+
+The gateway allows exactly these models, and a unit test reads the gateway's price table and fails if any task resolves to a model it would refuse.
 
 ### Cost engineering (the part that makes it shippable)
 
-<img src="docs/technique_cost.svg" alt="Cost engineering diagram" width="900"/>
+<img src="docs/diagrams/technique_cost.svg" alt="Cost engineering diagram" width="900"/>
 
 | Technique | Where | Effect |
 |---|---|---|
-| **Template-first generation** | Daily brief, insights, reflections, onboarding | The deterministic template *is* the product; the LLM may only re-warm the same fact. No key / no network → template ships. AI polish costs ≤1 cheap-model call per surface per day. |
+| **Template-first generation** | Daily brief, insights, reflections, onboarding | The deterministic template *is* the product; the LLM may only re-warm the same fact. No AI / no network → template ships. AI polish costs ≤1 cheap-model call per surface per day. |
 | **Response caching (per-day)** | Daily brief | One generation per calendar day, cached in `UserDefaults` — reopening the app 20× costs zero. |
 | **Prompt caching, stable/volatile split** | Coach chat (~6.5k-token prompt) | The system prompt is split into a byte-stable prefix (persona, rules, tool guidance) and a volatile tail (today's data). On Anthropic the prefix carries an explicit `cache_control` breakpoint → cached reads bill at ~10% of input price. |
-| **Explicit cache breakpoints (Responses API)** | Coach chat on OpenAI | Our usage logs caught `cached 0` on every 6.5k-token coach turn — Chat Completions implicit caching simply wasn't hitting, even with a [`prompt_cache_key`](https://developers.openai.com/api/docs/guides/prompt-caching) routing hint. Fix: gpt-5.6 models route to the **Responses API** with an explicit `prompt_cache_breakpoint` after the stable prefix. Measured result on a real key: **`cached 5512` of 6,747 input tokens (82%) at the 90% discount — a coach turn dropped from ~1.7¢ to ~0.45¢**. |
 | **Sliding window + memory folding** | Coach chat | Only recent turns are sent verbatim; older turns are folded into compact long-term notes by the *cheap* model, off the user's turn, with a lost-update guard. Context stays bounded forever. |
 | **Bounded outputs** | Every structured call | Tight `max_tokens` per feature (300–2,200) — a schema-forced call can't ramble. |
 | **Priority ladder, one message** | Daily brief | Google-Health-style proactive note picks ONE topic per day (comeback > milestone > cross-signal > quiet-day > check-in) instead of spamming generations. |
-| **Token observability** | Every call | `in / out / cacheRead / cacheWrite` logged per request to on-device diagnostics — "what does a day of AI cost" is answerable from the phone. This observability is literally how the cache-shard bug above was found. |
+| **Token observability** | Every call | `in / out / cacheRead / cacheWrite` logged per request to on-device diagnostics — "what does a day of AI cost" is answerable from the phone. |
 
 ### Tool use with safety rails
 
-<img src="docs/agent_loop.svg" alt="Tool loop with safety rails diagram" width="900"/>
+<img src="docs/diagrams/agent_loop.svg" alt="Tool loop with safety rails diagram" width="900"/>
 
 Vita has a real toolbelt (log food/water/weight/workouts, edit entries, change goals, remember facts, adjust the plan). The loop is engineered around trust:
 
@@ -119,7 +111,7 @@ Vita has a real toolbelt (log food/water/weight/workouts, edit entries, change g
 sequenceDiagram
     participant U as User
     participant App as CoachView
-    participant LLM as Claude / GPT
+    participant LLM as Claude
     U->>App: "log 2 bottles of water"
     App->>LLM: system (cached prefix + live data) + history + tool schemas
     LLM-->>App: tool_use: log_water {bottles: 2}
@@ -175,64 +167,49 @@ flowchart TD
 
 **Buddy sync** — two paired users share daily snapshots through CloudKit's public DB with deterministic record IDs and silent-push refresh; a privacy toggle controls whether a buddy sees everything or only the activity face-off. Sync health is user-visible (publish status, staleness warnings, one-tap diagnostic).
 
-**Design decision: serverless by design.** There is no backend anywhere in this app — deliberately. AI is bring-your-own-key straight to the provider; buddy sync rides CloudKit's public database (deterministic record IDs, silent-push refresh, dev→prod schema discipline) instead of a custom service. The trade-offs are understood and documented: at consumer scale you'd want a dedicated service (server-side validation, E2E encryption, abuse controls) — for a two-user product, a backend would add an operational surface, a privacy liability, and a monthly bill while delivering nothing the platform doesn't already provide. Same doctrine as the AI layer: use the most boring infrastructure that honestly does the job.
+**One small server, on purpose.** The app has no backend for its data: health data stays in the SwiftData store and the person's own iCloud, and buddy sync rides CloudKit. The only server is the AI gateway (`server/`), which exists so that nobody using the app needs an API key: it holds the keys, accepts calls only from a genuine copy of the app (Apple App Attest), pays only for the models the app uses, and caps each phone's daily spend.
 
-**Every feature degrades gracefully** — no key → templates and manual logging still work; no network → the coach apologizes kindly; no tracker → the app is still a complete manual logger. AI is seasoning, not a dependency.
-
----
-
-## Verification Culture
-
-- **423 unit tests** — wire-format fixtures for both providers, the RFC 7636 PKCE test vector, timezone-crossing sleep bucketing, idempotent-merge integration tests against real SwiftData stores, and copy-contract tests (the recovery signal's own test once caught the word "medical" in coach copy and failed the build).
-- **Live end-to-end, both vendors** — chat, tool calls, and data persistence verified against production APIs; results cross-checked three ways: UI screenshots, direct SQLite inspection of the store (zero duplicate rows after concurrent syncs), and the on-device diagnostics log.
-- **Field diagnostics** — tap the version number 7× for a shareable log of every AI call (with token counts), sync outcome, and lifecycle event. Several real bugs in this repo were found by reading it.
-- **Adversarial review loop** — independent review passes over every major feature; findings get fixed *with* regression tests (see the git history: the launch-race, cache-shard, and provider-parity fixes all landed with tests pinning them).
-
-## How This Compares to the Industry
-
-| Pattern | Who else does it | Here |
-|---|---|---|
-| LLM coach over wearable aggregates | [Whoop Coach (GPT-4, OpenAI partnership)](https://www.whoop.com/us/en/thelocker/whoop-unveils-the-new-whoop-coach-powered-by-openai/) | Vita: same architecture, plus *write* access via validated tools — Whoop's coach only reads |
-| One proactive daily AI note | Google Health app's daily brief | Priority-ladder brief, template-first, ≤1 cheap call/day |
-| AI memory of the user | [Whoop's 2025 roadmap](https://www.whoop.com/us/en/thelocker/inside-look-whats-next-for-whoop-in-2025/) | Shipped: consolidated long-term notes + explicit `remember_about_user` tool |
-| Model routing by task complexity | [Standard cost-optimization practice](https://www.truefoundry.com/blog/llm-cost-optimization) (cache → route → compress) | Three explicit tiers per provider; heavy tier gated to a rare feature |
-| Prompt caching | Anthropic/OpenAI native | Both: explicit breakpoints on Anthropic, shard-routing keys on OpenAI — with on-device logs proving hit rates |
-
-## Project Structure
-
-```
-Victoria/
-├── App/                  # Entry, root refresh orchestration (single-flight, ordered pipes)
-├── Features/
-│   ├── Coach/            # Vita: chat UI, tool loop, context builder, toolbelt (12+ tools)
-│   ├── Dashboard/        # Today: brief, tracker card, checklist, companion
-│   ├── Buddy/            # CloudKit public-DB pairing + daily snapshot sync
-│   ├── Plan/             # Adaptive plan: intake → heavy build w/ web research → review
-│   ├── Weight/ Food/ Workout/ …
-│   └── Settings/         # AI provider picker, Fitbit connect, Apple Health, goals
-├── Services/
-│   ├── AI/               # the provider layer: AIConfig, LLMClient, Anthropic + OpenAI clients
-│   ├── GoogleHealth/     # OAuth PKCE + REST client + sync orchestration
-│   ├── DailyBriefService / DailyInsightEngine / RecoverySignal / CoachMemoryService
-│   └── HealthKit* / StreakCalculator / Diagnostics …
-├── VictoriaTests/        # 443 tests
-└── docs/                 # screenshots, deep-dives, GOOGLE_HEALTH_SETUP.md
-```
-
-## Getting Started (Dev)
-
-Anyone can clone and run this — there's no server to stand up and no secrets in the repo (AI is bring-your-own-key).
-
-1. `brew install xcodegen`
-2. In `project.yml`, make three identifiers yours, then `xcodegen generate`:
-   - `DEVELOPMENT_TEAM` → your Apple Team ID
-   - `bundleIdPrefix` / `PRODUCT_BUNDLE_IDENTIFIER` → your reverse-DNS prefix
-   - the iCloud container (`iCloud.com.bryanram.victoria`) and app group (`group.com.bryanram.victoria`) → your own (also referenced in `Victoria/Features/Buddy/Services/CloudKitSyncService.swift` and the widget) — or skip iCloud entirely; the app runs fully local without it
-3. Open `Victoria.xcodeproj`, let automatic signing register the App IDs, Run.
-4. AI: Settings → AI Provider → pick a vendor, paste your own API key (Keychain-only).
-5. Fitbit (optional): follow [GOOGLE_HEALTH_SETUP.md](GOOGLE_HEALTH_SETUP.md) (~15 min, one-time Google Cloud setup for YOUR account).
-6. Everything works without steps 4–5 — graceful degradation is the point.
+**Every feature degrades gracefully** — no AI on a device (no App Attest) → templates and manual logging still work; no network → the coach apologizes kindly; no tracker → the app is still a complete manual logger. AI is seasoning, not a dependency.
 
 ---
 
-*Built by Bryan Ramirez-Gonzalez as a daily-use app for myself first, and a demonstration of production AI engineering second. AI pair-engineering was used heavily in development — with every change gated behind the test suite and live verification, which is rather the point.*
+## How it is verified
+
+* **Unit tests (about 1,200)**: wire-format fixtures for both providers, the coach's turn engine on scripted replies, App Attest signing against a fake gateway, store verification through the real SwiftData store and by SQL, idempotent merges, the RFC 7636 PKCE vector, timezone-crossing sleep bucketing, and copy-contract tests that ban clinical or shaming language.
+* **UI flows (XCUITest)**: onboarding in every order, logging, the chat with a scripted model, mode switching, each with an accessibility audit.
+* **Evaluations**: every model choice is measured on a dataset, recorded in a numbered, append-only report, with the raw run records committed under `Evals/runs/`.
+* **The gateway**: 58 tests, including Apple's nine attestation checks against a test certificate authority, replay, tampering, the caps and the allowlist.
+* **Records**: [`docs/EVAL_REPORT.md`](docs/EVAL_REPORT.md) (what was measured and decided), [`SproutTests/LEDGER.md`](SproutTests/LEDGER.md) (what each test file proves and does not), [`CHANGELOG.md`](CHANGELOG.md).
+* **Field diagnostics**: tap the version number 7 times for a shareable log of every AI call (with token counts), sync outcome and lifecycle event.
+
+---
+
+## Repository layout
+
+```
+Sprout/            the app: App/, Features/, Models/, Services/ (AI/, GoogleHealth/, …)
+SproutWidgets/     home-screen widgets
+Shared/            code compiled into both the app and the widgets
+SproutTests/       unit tests, and LEDGER.md: what each test file covers
+SproutUITests/     XCUITest flows
+SproutEvals/       the live evaluation harness (its own scheme; calls real models)
+Evals/             evaluation datasets, scripts, prices and committed run records
+server/            the AI gateway (Node, TypeScript, SQLite, Docker + Caddy)
+tooling/           CloudKit schema checks, evidence capture
+docs/              developer guide, release, evaluation report, feature specs, diagrams
+project.yml        XcodeGen spec (Sprout.xcodeproj is generated from it)
+```
+
+See [`docs/README.md`](docs/README.md) for a map of the documentation.
+
+## Getting started
+
+1. `brew install xcodegen`, then `xcodegen generate` and open `Sprout.xcodeproj`.
+2. To build your own copy, change `DEVELOPMENT_TEAM`, the bundle id, the iCloud container and the App Group in `project.yml` to yours (they keep the `com.bryanram.victoria` names the app shipped under; see [`docs/testflight.md`](docs/testflight.md)). iCloud is optional: without it the app runs fully local.
+3. AI: the Simulator cannot do App Attest, so for AI in a DEBUG build pass your own key with the `SPROUT_ANTHROPIC_KEY` launch environment variable (never compiled into a Release build). Or deploy your own gateway ([`server/README.md`](server/README.md)).
+4. Fitbit (optional): [`docs/google-health-setup.md`](docs/google-health-setup.md).
+5. Tests and evaluations: [`docs/DEVELOPING.md`](docs/DEVELOPING.md).
+
+---
+
+*Built by Bryan Ramirez-Gonzalez. AI pair-engineering was used heavily, with every change gated behind the test suite and live verification.*
