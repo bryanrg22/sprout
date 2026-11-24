@@ -9,7 +9,7 @@ import UIKit
 ///   --avatar-stub refusal   the call is blocked by moderation
 ///   --avatar-stub failure   the call fails with a server error
 ///   --avatar-stub slow      the call never answers (the "drawing" state)
-///   --avatar-stub nokey     behave as though no OpenAI key is stored
+///   --avatar-stub nokey     behave as though the character picture is unavailable here
 ///   --avatar-sample-photo   start with a drawn sample photo picked and consent ticked
 ///   --avatar-autostart      press "Make my character" as soon as the step appears
 ///   --avatar-accept         with autostart: also press "Use this" on the preview

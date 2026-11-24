@@ -208,8 +208,8 @@ final class SettingsMatrixTests: XCTestCase {
                 ])
     }
 
-    /// The AI provider and a model override choose which client and model answer. No
-    /// target, snapshot or prompt is computed from them.
+    /// The provider and model (set only by a scoped runtime: the app has no AI settings)
+    /// choose which client and model answer. No target, snapshot or prompt is computed from them.
     func testAIProviderAndModelOverride() throws {
         let world = try SettingsWorld(withPlan: false)
         let before = world.derived()
@@ -218,10 +218,8 @@ final class SettingsMatrixTests: XCTestCase {
         let underOpenAI = AIRuntime.$current.withValue(scoped) { world.derived() }
         XCTAssertEqual(underOpenAI, before, "switching the provider moved a derived value")
 
-        let previous = AIConfig.modelOverride(for: .anthropic, tier: .coach)
-        defer { AIConfig.setModelOverride(previous, for: .anthropic, tier: .coach) }
-        AIConfig.setModelOverride("some-other-model", for: .anthropic, tier: .coach)
-        XCTAssertEqual(world.derived(), before, "a model override moved a derived value")
+        let otherModel = AIRuntime.$current.withValue(AIRuntime(model: "some-other-model")) { world.derived() }
+        XCTAssertEqual(otherModel, before, "a model override moved a derived value")
     }
 
     // MARK: - The plan

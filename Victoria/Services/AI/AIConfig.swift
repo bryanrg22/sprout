@@ -89,52 +89,23 @@ enum AIConfig {
 
     static let anthropicVersion = "2023-06-01"
 
-    // MARK: - Active provider (persisted)
-
-    private static let providerKey = "ai_provider"
-
-    /// The vendor the app currently uses. Defaults to `.anthropic` for existing
-    /// installs / first launch. Writes through to `UserDefaults`.
-    static var provider: AIProvider {
-        get {
-            if let scoped = AIRuntime.effective?.provider { return scoped }
-            guard let raw = UserDefaults.standard.string(forKey: providerKey),
-                  let p = AIProvider(rawValue: raw) else { return .anthropic }
-            return p
-        }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: providerKey) }
-    }
-
-    // MARK: - Resolved model ids for the ACTIVE provider
+    // MARK: - Provider, key and model: decided by the app, never by the person
     //
-    // Resolution order: a user-typed override (per provider) → the provider's default.
-    // An empty/blank override falls back to the default so a cleared field can't brick
-    // requests.
+    // The app has no AI settings. Everyone uses the built-in AI (`AIGateway`), Claude for
+    // every text task and OpenAI only for the character picture, with the model each task
+    // was measured on (`AITask`, `docs/EVAL_REPORT.md`). There is no key field, provider
+    // picker or model field anywhere, so nothing a person does can send a request the
+    // gateway would refuse. Tests and evaluations still pick a provider, key and model
+    // through a scoped `AIRuntime`.
 
-    private static func modelOverrideKey(_ provider: AIProvider, tier: String) -> String {
-        "ai_model_\(provider.rawValue)_\(tier)"   // e.g. "ai_model_openai_coach"
-    }
-
-    /// Read a per-provider model override (or nil/blank → use default).
-    static func modelOverride(for provider: AIProvider, tier: ModelTier) -> String? {
-        let raw = UserDefaults.standard.string(forKey: modelOverrideKey(provider, tier: tier.rawValue))?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return (raw?.isEmpty == false) ? raw : nil
-    }
-
-    /// Persist (or clear, when blank) a per-provider model override.
-    static func setModelOverride(_ value: String?, for provider: AIProvider, tier: ModelTier) {
-        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let key = modelOverrideKey(provider, tier: tier.rawValue)
-        if trimmed.isEmpty { UserDefaults.standard.removeObject(forKey: key) }
-        else { UserDefaults.standard.set(trimmed, forKey: key) }
-    }
+    /// The vendor for text tasks: Anthropic, unless a scoped runtime (tests, evals) says
+    /// otherwise.
+    static var provider: AIProvider { AIRuntime.effective?.provider ?? .anthropic }
 
     enum ModelTier: String { case coach, insight, plan }
 
-    /// The resolved model name for a tier on a given provider (override → default).
+    /// The tier default for a provider (used by a task with no measured default).
     static func model(for provider: AIProvider, tier: ModelTier) -> String {
-        if let override = modelOverride(for: provider, tier: tier) { return override }
         switch tier {
         case .coach:   return provider.defaultCoachModel
         case .insight: return provider.defaultInsightModel
@@ -142,15 +113,24 @@ enum AIConfig {
         }
     }
 
-    /// Whether the ACTIVE provider has an API key stored — the gate every optional AI
-    /// feature should use (checking only the Anthropic slot would wrongly disable
-    /// features for an OpenAI user, and vice versa).
-    /// True as well when the built-in gateway covers the provider (`AIGateway`): then every
-    /// feature works with no key of the person's own.
-    static var hasActiveKey: Bool {
-        if let scoped = AIRuntime.effective?.apiKey { return !scoped.isEmpty }
-        return KeychainStore.hasAPIKey(for: provider) || AIGateway.covers(provider)
+    /// The key a call to `provider` carries, or nil when AI is unavailable here.
+    ///
+    /// Order: a scoped runtime's key (tests, evals) → the built-in gateway's placeholder →
+    /// in DEBUG builds only, a key in the Keychain. The last is for the Simulator, which
+    /// cannot do App Attest; it is filled only by the `SPROUT_ANTHROPIC_KEY` launch variable
+    /// (`VictoriaApp`), and a Release build never reads it, so a key someone saved in an
+    /// older version is ignored and the built-in AI is used instead.
+    static func key(for provider: AIProvider) -> String? {
+        if let scoped = AIRuntime.effective?.apiKey { return scoped.isEmpty ? nil : scoped }
+        if let gateway = AIGateway.placeholder(for: provider) { return gateway }
+        #if DEBUG
+        if let stored = KeychainStore.apiKey(for: provider), !stored.isEmpty { return stored }
+        #endif
+        return nil
     }
+
+    /// Whether text AI works here: the gate every optional AI feature uses.
+    static var hasActiveKey: Bool { key(for: provider) != nil }
 
     /// Strong coach/food model for the ACTIVE provider (override-aware).
     static var coachModel: String { model(for: provider, tier: .coach) }
@@ -203,12 +183,9 @@ enum AIConfig {
                                           background: "transparent",
                                           outputFormat: "png")
 
-    /// Whether an OpenAI key exists for image generation. Not `hasActiveKey`: a user
-    /// chatting through Anthropic still needs an OpenAI key for this one feature.
-    static var hasImageKey: Bool {
-        if let scoped = AIRuntime.current?.apiKey { return !scoped.isEmpty }
-        return KeychainStore.hasAPIKey(for: .openai) || AIGateway.covers(.openai)
-    }
+    /// Whether the character picture works here. Not `hasActiveKey`: it always goes to
+    /// OpenAI, whatever provider the text tasks use.
+    static var hasImageKey: Bool { key(for: .openai) != nil }
 
     enum AIError: LocalizedError {
         case missingKey, badResponse(String), decoding(String)

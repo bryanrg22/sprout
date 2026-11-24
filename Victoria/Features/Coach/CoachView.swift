@@ -35,7 +35,6 @@ struct CoachView: View {
     /// The message a Delete was asked for, until the user confirms.
     @State private var pendingDelete: UUID?
     @State private var showDeleteDialog = false
-    @State private var showAISettings = false
     @State private var scrollPosition = ScrollPosition(edge: .top)
     /// Scroll offsets, kept out of view state so reading them never re-renders the chat.
     @State private var scrollBox = ChatScrollBox()
@@ -148,17 +147,6 @@ struct CoachView: View {
         // one cheap call to regenerate). Never empties the row: on no-key / any failure the service
         // returns the same fixed list `quickPrompts` already holds, so this only ever improves it.
         .task(id: promptPeriodKey) { await loadQuickPrompts() }
-        .sheet(isPresented: $showAISettings) {
-            NavigationStack {
-                AIProviderSettingsView()
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { showAISettings = false }
-                        }
-                    }
-            }
-            .tint(Theme.brand)
-        }
         // The id travels with the dialog (`presenting:`), so the button still has it after
         // the dialog has dismissed itself.
         .confirmationDialog("Delete this message?", isPresented: $showDeleteDialog,
@@ -277,8 +265,7 @@ struct CoachView: View {
                 // Why the last message has no reply, and what to do about it, right under it.
                 if let failure = engine.failure, !engine.isSending {
                     TurnFailureRow(failure: failure,
-                                   onRetry: { engine.retry() },
-                                   onOpenSettings: { showAISettings = true })
+                                   onRetry: { engine.retry() })
                         .chatFlipped()
                         .id(Self.failureID)
                         .transition(.opacity)

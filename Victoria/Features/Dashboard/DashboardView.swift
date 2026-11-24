@@ -121,9 +121,6 @@ struct DashboardView: View {
                     // The once-a-day note from Vita (Google-Health-Coach style) — one warm
                     // observation, cached for the day. Steps aside for the welcome card.
                     DailyBriefCard(profile: profile).appearLift(didAppear, index: 1)
-                    // Recoverable "add your key" nudge — only when she skipped it in setup.
-                    FinishSetupCard(coachName: profile.coachName.isEmpty ? "Vita" : profile.coachName)
-                        .appearLift(didAppear, index: 1)
                     // (Removed the "Vita noticed" InsightCard — it stacked with the weekly reflection
                     // and the streak header, over-cluttering the top of Today.)
                     // Earned, one-time "add a widget" nudge — only once she's a couple days in.

@@ -151,7 +151,7 @@ struct FoodSuggestionService {
     /// Generate suggestions for the given factual context.
     ///
     /// Throws `AIConfig.AIError.missingKey` when no key is configured (the caller gates on
-    /// `KeychainStore.hasAPIKey` first, but we surface it cleanly anyway), and
+    /// `AIConfig.hasActiveKey` first, but we surface it cleanly anyway), and
     /// `AIConfig.AIError.badResponse` / `.decoding` on transport / parse failures.
     ///
     static func suggestions(for context: FoodSuggestionEngine.Context) async throws -> [Suggestion] {

@@ -13,13 +13,15 @@ enum CoachTurnError: Equatable {
     case connectionLost
     /// The request ran out of time (the client's 60 s, or a 408 / 504 from the provider).
     case timeout
-    /// No key is stored for the provider chosen in Settings.
+    /// The built-in AI does not work on this device (no App Attest, or no gateway address),
+    /// so no request can be made.
     case missingKey
-    /// The provider rejected the key (401) or the key may not do this (403).
+    /// The provider rejected the key (401) or the key may not do this (403). The key is the
+    /// owner's, on the gateway: nothing the person can fix.
     case auth
-    /// The model named in AI settings does not exist for this key (404).
+    /// The model the app asks for does not exist for the owner's key (404).
     case modelUnavailable
-    /// The account is out of credit or over a spend limit. Waiting does not fix it.
+    /// The owner's account is out of credit or over a spend limit.
     case billing
     /// Too many requests (429). `retryAfter` is what the provider asked for, when it said.
     case rateLimited(retryAfter: TimeInterval?)
@@ -52,18 +54,18 @@ enum CoachTurnError: Equatable {
         case retry
         /// Send it again, but not before the provider's wait has passed.
         case retryAfter(TimeInterval)
-        /// Fix the key, the provider or the model in AI settings (then Retry).
-        case openAISettings
         /// Nothing to tap: the message itself has to change.
         case rephrase
         /// Nothing to tap: it works again tomorrow.
         case waitForTomorrow
+        /// Nothing to tap: the built-in AI does not work on this device.
+        case unavailable
     }
 
     var action: Action {
         switch self {
-        case .missingKey, .auth, .modelUnavailable, .billing:
-            return .openAISettings
+        case .missingKey:
+            return .unavailable
         case .rateLimited(let retryAfter):
             if let retryAfter, retryAfter >= 1 { return .retryAfter(retryAfter) }
             return .retry
@@ -71,14 +73,21 @@ enum CoachTurnError: Equatable {
             return .rephrase
         case .dailyLimit:
             return .waitForTomorrow
-        case .offline, .connectionLost, .timeout, .overloaded, .server, .cutOff, .cancelled,
+        // The owner's key, model or account: fixed on the gateway, so trying later can work.
+        case .auth, .modelUnavailable, .billing,
+             .offline, .connectionLost, .timeout, .overloaded, .server, .cutOff, .cancelled,
              .interrupted, .malformed, .unknown:
             return .retry
         }
     }
 
     /// Whether sending the same message again can succeed.
-    var canRetry: Bool { action != .rephrase && action != .waitForTomorrow }
+    var canRetry: Bool {
+        switch action {
+        case .retry, .retryAfter: return true
+        case .rephrase, .waitForTomorrow, .unavailable: return false
+        }
+    }
 
     /// A short name for the field log. Never shown to the user.
     var logName: String {
@@ -168,9 +177,9 @@ enum CoachTurnError: Equatable {
     // MARK: - What the user reads
 
     /// One or two friendly sentences in the coach's voice. `provider` is the vendor the
-    /// turn was sent to; `otherProviderHasKey` picks the missing-key wording that points at
-    /// the one-tap fix.
-    func message(provider: AIProvider, otherProviderHasKey: Bool = false) -> String {
+    /// turn was sent to. Nothing here asks the person to fix a key, a model or an account:
+    /// those are the owner's, on the gateway.
+    func message(provider: AIProvider) -> String {
         let name = provider.label
         switch self {
         case .offline:
@@ -180,17 +189,13 @@ enum CoachTurnError: Equatable {
         case .timeout:
             return "That took too long to come back. Your message is saved, so we can just try again."
         case .missingKey:
-            let other: AIProvider = provider == .anthropic ? .openai : .anthropic
-            if otherProviderHasKey {
-                return "You're set to \(name) but only have a \(other.label) key — switch provider or add a \(name) key in More → AI 💚"
-            }
-            return "I'm ready to chat once you add your \(name) key in More → AI 💚"
+            return "I can't chat on this phone, sorry. Everything you log still works 💚"
         case .auth:
-            return "\(name) didn't accept your API key. It may have been mistyped, revoked or expired."
+            return "\(name) turned my request away. That's on our side, not yours, so try again in a little while."
         case .modelUnavailable:
-            return "\(name) doesn't offer the model that's set for me on this key. Clearing the model in AI settings puts the default back."
+            return "\(name) isn't offering the model I use right now. That's on our side, not yours, so try again in a little while."
         case .billing:
-            return "Your \(name) account is out of credit or over its spending limit. That's fixed on \(provider.consoleName); waiting won't change it."
+            return "My \(name) account is paused right now. That's on our side, not yours, so try again in a little while."
         case .rateLimited(let retryAfter):
             if let retryAfter, retryAfter >= 1 {
                 return "\(name) asked us to slow down. It should be clear in about \(Self.waitText(retryAfter))."

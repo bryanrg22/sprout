@@ -5,11 +5,11 @@ import Foundation
 /// Built-in AI: the owner's gateway (`server/`) holds the API keys, so a person who installs
 /// the app from TestFlight can use every AI feature without one.
 ///
-/// How a call gets there: a client with no key of the person's own carries `placeholderKey`
-/// instead, and the default transport (`AIRuntime.transport`) sends any request carrying it
-/// to the gateway through `AIGatewayTransport`, which signs it with App Attest. A person who
-/// adds their own key goes straight to the provider exactly as before; nothing about that
-/// path changed.
+/// How a call gets there: a client carries `placeholderKey` instead of a key
+/// (`AIConfig.key(for:)`), and the default transport (`AIRuntime.transport`) sends any request
+/// carrying it to the gateway through `AIGatewayTransport`, which signs it with App Attest.
+/// The gateway serves Anthropic's Messages API and OpenAI's image edits (the character), and
+/// nothing else: there is no way for a person to add a key of their own.
 ///
 /// Off when there is no gateway address, when the device cannot do App Attest (the Simulator,
 /// older hardware), and whenever a scoped runtime is in force (unit tests, evaluations, UI
@@ -68,8 +68,6 @@ enum AIGateway {
     static func route(for url: URL) -> String? {
         switch (url.host(), url.path()) {
         case ("api.anthropic.com", "/v1/messages"): return "/anthropic/v1/messages"
-        case ("api.openai.com", "/v1/chat/completions"): return "/openai/v1/chat/completions"
-        case ("api.openai.com", "/v1/responses"): return "/openai/v1/responses"
         case ("api.openai.com", "/v1/images/edits"): return "/openai/v1/images/edits"
         default: return nil
         }

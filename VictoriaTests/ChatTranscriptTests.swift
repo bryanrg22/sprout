@@ -202,7 +202,6 @@ final class ChatTranscriptTests: XCTestCase {
         env.now = { clock.now() }
         env.background = RecordingBackgroundTasks()
         env.runtime = wire.runtime(transport)
-        env.otherProviderHasKey = { _ in false }
         let engine = CoachTurnEngine(context: context, profile: profile, env: env)
         let transcript = ChatTranscript(context: context)
         engine.onTranscriptChange = { change in

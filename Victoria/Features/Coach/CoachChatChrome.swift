@@ -12,12 +12,11 @@ import SwiftUI
 struct TurnFailureRow: View {
     let failure: CoachTurnEngine.Failure
     var onRetry: () -> Void
-    var onOpenSettings: () -> Void
 
     private var tint: Color { failure.error == .missingKey ? Theme.brand : Theme.warning }
     private var icon: String {
         switch failure.error {
-        case .missingKey, .auth: return "key.fill"
+        case .missingKey: return "sparkles"
         case .offline, .connectionLost: return "wifi.slash"
         case .cancelled: return "stop.circle.fill"
         default: return "exclamationmark.bubble.fill"
@@ -69,24 +68,9 @@ struct TurnFailureRow: View {
                     pill("Try again", systemImage: "arrow.clockwise", prominent: true, action: onRetry)
                 }
             }
-        case .openAISettings:
-            // Side by side when they fit, stacked when they do not (large text sizes).
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: Theme.Space.sm) { settingsPill; retryPill }
-                VStack(alignment: .leading, spacing: Theme.Space.xs) { settingsPill; retryPill }
-            }
-        case .rephrase, .waitForTomorrow:
+        case .rephrase, .waitForTomorrow, .unavailable:
             EmptyView()
         }
-    }
-
-    private var settingsPill: some View {
-        pill("AI settings", systemImage: "gearshape.fill", prominent: true, action: onOpenSettings)
-            .accessibilityLabel("Open AI settings")
-    }
-
-    private var retryPill: some View {
-        pill("Try again", systemImage: "arrow.clockwise", prominent: false, action: onRetry)
     }
 
     /// "12s", "1:05": a short countdown.

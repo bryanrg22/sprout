@@ -144,11 +144,11 @@ final class UITestHooksTests: XCTestCase {
         XCTAssertEqual(scriptLines.filter { $0.hasPrefix("#if") }.count, 1, "the whole file is one DEBUG block")
     }
 
-    // MARK: - Precedence: task-local scope, then the process default, then URLSession
+    // MARK: - Precedence: task-local scope, then the process default, then the shipped transport
 
-    func testWithNothingSetTheTransportIsURLSession() {
+    func testWithNothingSetTheTransportIsTheShippedOne() {
         XCTAssertNil(AIRuntime.effective)
-        XCTAssertTrue(AIRuntime.transport is URLSessionTransport)
+        XCTAssertTrue(AIRuntime.transport is AIDefaultTransport, "the shipped transport: the gateway for a placeholder key, URLSession otherwise")
         XCTAssertEqual(AIRuntime.resolve(model: "m-1"), "m-1")
     }
 
@@ -210,7 +210,7 @@ final class UITestHooksTests: XCTestCase {
         AIRuntime.$current.withValue(AIRuntime(provider: .anthropic)) {
             XCTAssertEqual(AIConfig.provider, .anthropic)
             XCTAssertEqual(AIRuntime.resolve(model: "m-1"), "m-1")
-            XCTAssertTrue(AIRuntime.transport is URLSessionTransport)
+            XCTAssertTrue(AIRuntime.transport is AIDefaultTransport, "the shipped transport: the gateway for a placeholder key, URLSession otherwise")
         }
     }
 
@@ -220,7 +220,7 @@ final class UITestHooksTests: XCTestCase {
         AIRuntime.setProcessDefault(nil)
         XCTAssertNil(AIRuntime.effective)
         XCTAssertEqual(AIRuntime.resolve(model: "m-1"), "m-1")
-        XCTAssertTrue(AIRuntime.transport is URLSessionTransport)
+        XCTAssertTrue(AIRuntime.transport is AIDefaultTransport, "the shipped transport: the gateway for a placeholder key, URLSession otherwise")
     }
 
     // MARK: - What an active plan installs

@@ -2,10 +2,15 @@
  * Which models the gateway will pay for, and what a call costs. A model not listed here is
  * refused, so nobody can run an expensive model on the owner's bill.
  *
- * Prices are list prices in US dollars per million tokens (Anthropic: cache reads 0.1× and
- * five-minute cache writes 1.25× the input price; OpenAI: cached input as listed). They match
- * the app's own defaults (`AIProvider` in Victoria/Services/AI/AIConfig.swift and
- * docs/MODEL_CHOICES.md). Change them together.
+ * Exactly the models the app sends (every text task runs on Anthropic; OpenAI only draws the
+ * character picture): the tier defaults in `AIProvider` (Victoria/Services/AI/AIConfig.swift)
+ * and the measured per-task defaults in `AIConfig.measuredDefaults` (AITask.swift, with the
+ * docs/EVAL_REPORT.md section that chose each). `AIGatewayTests` fails when the app resolves a
+ * model that is missing here, so change them together.
+ *
+ * Prices are list prices in US dollars per million tokens (cache reads 0.1× and five-minute
+ * cache writes 1.25× the input price), from the vendor's pricing page as recorded in
+ * Evals/prices.json; where the two differ the higher is used, so the caps stay conservative.
  */
 
 export type Upstream = "anthropic" | "openai"
@@ -20,17 +25,13 @@ export interface TokenPrice {
 export const ANTHROPIC_MODELS: Record<string, TokenPrice> = {
   // Coach, meal photos, checklist (the strong tier).
   "claude-sonnet-5": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
-  // Daily brief, insights, reflections (the cheap tier).
+  // The daily brief (measured default, EVAL_REPORT 10 and 25).
+  "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
+  // Insight line, weekly reflection, onboarding note, memory fold (the cheap tier).
   "claude-haiku-4-5-20251001": { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
   "claude-haiku-4-5": { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
   // The rare plan build.
   "claude-opus-4-8": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
-}
-
-export const OPENAI_MODELS: Record<string, TokenPrice> = {
-  "gpt-5.6-terra": { input: 2.5, output: 15, cacheRead: 0.25, cacheWrite: 0 },
-  "gpt-5.6-sol": { input: 5, output: 30, cacheRead: 0.5, cacheWrite: 0 },
-  "gpt-4.1-mini": { input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0 },
 }
 
 /**
@@ -66,19 +67,4 @@ export function anthropicCost(model: string, usage: unknown): number {
     perMillion(n("cache_creation_input_tokens"), price.cacheWrite) +
     perMillion(n("output_tokens"), price.output)
   )
-}
-
-/** Cost of an OpenAI Chat Completions or Responses response, from its `usage` block. */
-export function openaiCost(model: string, usage: unknown): number {
-  const price = OPENAI_MODELS[model]
-  if (!price || !usage || typeof usage !== "object") return 0
-  const u = usage as Record<string, unknown>
-  const num = (v: unknown) => (typeof v === "number" ? v : 0)
-  // Chat Completions: prompt_tokens / completion_tokens; Responses: input_tokens / output_tokens.
-  // Both include the cached part in the input count, reported in a details block.
-  const input = num(u.prompt_tokens ?? u.input_tokens)
-  const output = num(u.completion_tokens ?? u.output_tokens)
-  const details = (u.prompt_tokens_details ?? u.input_tokens_details) as Record<string, unknown> | undefined
-  const cached = Math.min(input, num(details?.cached_tokens))
-  return perMillion(input - cached, price.input) + perMillion(cached, price.cacheRead) + perMillion(output, price.output)
 }

@@ -8,15 +8,16 @@ import UIKit
 ///   the photo goes to OpenAI.
 /// - The photo lives in this object's memory only, and is dropped as soon as a character
 ///   is accepted or the person chooses a built-in one. Only the accepted PNG leaves.
-/// - No state is a dead end: with no key, a refusal, a network failure or a bad image,
+/// - No state is a dead end: with no AI here, a refusal, a network failure or a bad image,
 ///   `fallbackAvatar` is what the person gets, and leaving the step is always possible.
 @MainActor
 @Observable
 final class AvatarCreationModel {
 
     enum Phase: Equatable {
-        /// No OpenAI key is stored.
-        case needsKey
+        /// The built-in AI cannot draw a character on this device (no App Attest, or the
+        /// gateway has no OpenAI key).
+        case unavailable
         /// Consent, pick a photo, "Make my character".
         case start
         case working
@@ -44,7 +45,7 @@ final class AvatarCreationModel {
     init(theme: ThemeStyle, hasKey: @escaping () -> Bool = { AvatarCreationModel.defaultHasKey() }) {
         self.theme = theme
         self.hasKey = hasKey
-        phase = hasKey() ? .start : .needsKey
+        phase = hasKey() ? .start : .unavailable
     }
 
     nonisolated static func defaultHasKey() -> Bool {
@@ -78,17 +79,9 @@ final class AvatarCreationModel {
         photo = nil
     }
 
-    /// Store a pasted OpenAI key (Keychain) and move on to the photo step.
-    func saveKey(_ text: String) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        KeychainStore.setAPIKey(trimmed, for: .openai)
-        if phase == .needsKey { phase = .start }
-    }
-
-    /// Re-check the key (it may have been added in Settings while this was open).
-    func refreshKeyState() {
-        if phase == .needsKey, hasKey() { phase = .start }
+    /// Re-check availability (the gateway's `/health` may have answered since this opened).
+    func refreshAvailability() {
+        if phase == .unavailable, hasKey() { phase = .start }
     }
 
     /// Start a generation. Does nothing without a photo and consent.
@@ -101,7 +94,7 @@ final class AvatarCreationModel {
             guard let self, !Task.isCancelled, self.phase == .working else { return }
             switch outcome {
             case .custom(let character):       self.phase = .preview(character)
-            case .builtIn(_, because: .missingKey): self.phase = .needsKey
+            case .builtIn(_, because: .missingKey): self.phase = .unavailable
             case .builtIn(_, because: let failure): self.phase = .failed(failure)
             }
         }
@@ -144,7 +137,7 @@ final class AvatarCreationModel {
         case .preview, .failed:
             phase = .start
             if canGenerate { generate() }
-        case .needsKey, .start, .working, .accepted, .declined:
+        case .unavailable, .start, .working, .accepted, .declined:
             break
         }
     }
@@ -164,6 +157,6 @@ final class AvatarCreationModel {
         task = nil
         photo = nil
         consented = false
-        phase = hasKey() ? .start : .needsKey
+        phase = hasKey() ? .start : .unavailable
     }
 }

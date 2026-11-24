@@ -67,7 +67,6 @@ final class CoachTurnEngineTests: XCTestCase {
         env.sleep = { _ in await undoGate.wait() }
         env.background = background
         env.runtime = wire.runtime(transport, key: key)
-        env.otherProviderHasKey = { _ in false }
         let engine = CoachTurnEngine(context: context, profile: profile, env: env)
         return Rig(wire: wire, container: container, context: context, profile: profile, clock: clock,
                    background: background, transport: transport, engine: engine, undoGate: undoGate)
@@ -539,7 +538,7 @@ final class CoachTurnEngineTests: XCTestCase {
             await r.engine.send(text: "hello")?.value
 
             XCTAssertEqual(r.engine.failure?.error, .auth, "\(wire)")
-            XCTAssertEqual(r.engine.failure?.action, .openAISettings, "\(wire)")
+            XCTAssertEqual(r.engine.failure?.action, .retry, "\(wire): the owner's key, fixed on the gateway")
             XCTAssertTrue(r.engine.failure?.message.contains(wire.provider.label) ?? false, "\(wire)")
             XCTAssertFalse(r.engine.isSending, "\(wire)")
             XCTAssertEqual(r.transport.requestCount, 1, "\(wire): a 401 is not retried by the client")
@@ -603,7 +602,7 @@ final class CoachTurnEngineTests: XCTestCase {
             await r.engine.send(text: "hello")?.value
             XCTAssertEqual(r.transport.requestCount, 1, "\(wire) \(status): waiting cannot fix an empty account")
             XCTAssertEqual(r.engine.failure?.error, .billing, "\(wire) \(status)")
-            XCTAssertEqual(r.engine.failure?.action, .openAISettings, "\(wire) \(status)")
+            XCTAssertEqual(r.engine.failure?.action, .retry, "\(wire) \(status)")
         }
     }
 
@@ -648,12 +647,12 @@ final class CoachTurnEngineTests: XCTestCase {
         XCTAssertEqual(r.engine.failure?.error, .server)
     }
 
-    func testAnUnknownModelPointsAtAISettings() async throws {
+    func testAnUnknownModelIsTheOwnersToFixAndCanBeRetried() async throws {
         for wire in ChatWire.allCases {
             let r = try rig(wire, [.reply(404, wire.errorBody(type: "not_found_error", message: "model: nope"))])
             await r.engine.send(text: "hello")?.value
             XCTAssertEqual(r.engine.failure?.error, .modelUnavailable, "\(wire)")
-            XCTAssertEqual(r.engine.failure?.action, .openAISettings, "\(wire)")
+            XCTAssertEqual(r.engine.failure?.action, .retry, "\(wire)")
         }
     }
 
@@ -681,14 +680,14 @@ final class CoachTurnEngineTests: XCTestCase {
         }
     }
 
-    func testAMissingKeyMakesNoRequestAndSaysWhichKey() async throws {
+    func testNoAIOnThisPhoneMakesNoRequestAndSaysSo() async throws {
         for wire in ChatWire.allCases {
             let r = try rig(wire, [], key: "")
             await r.engine.send(text: "hello")?.value
             XCTAssertEqual(r.engine.failure?.error, .missingKey, "\(wire)")
-            XCTAssertEqual(r.engine.failure?.action, .openAISettings, "\(wire)")
+            XCTAssertEqual(r.engine.failure?.action, .unavailable, "\(wire)")
             XCTAssertEqual(r.engine.failure?.message,
-                           "I'm ready to chat once you add your \(wire.provider.label) key in More → AI 💚", "\(wire)")
+                           "I can't chat on this phone, sorry. Everything you log still works 💚", "\(wire)")
             XCTAssertEqual(r.transport.requestCount, 0, "\(wire)")
             XCTAssertEqual(try r.transcript(), ["user: hello"], "\(wire)")
         }

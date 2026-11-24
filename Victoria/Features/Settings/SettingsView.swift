@@ -64,7 +64,6 @@ struct SettingsView: View {
                 stepsSection
                 waterSection
                 targetsSection
-                aiSection
                 connectionsSection
                 buddySection
                 #if DEBUG
@@ -592,23 +591,6 @@ struct SettingsView: View {
                 .foregroundStyle(Theme.textSecondary)
                 .monospacedDigit()
         }
-    }
-
-    // MARK: - AI
-
-    private var aiSection: some View {
-        Section {
-            NavigationLink {
-                AIProviderSettingsView()
-            } label: {
-                navRow(icon: "brain.head.profile", title: "AI Provider")
-            }
-        } header: {
-            sectionHeader("AI")
-        } footer: {
-            footer("Choose your provider (Anthropic or OpenAI) and add your key. It’s stored only in this device’s Keychain and powers meal-photo estimates and your coach.")
-        }
-        .listRowBackground(Theme.card)
     }
 
     // MARK: - Reminders & Health

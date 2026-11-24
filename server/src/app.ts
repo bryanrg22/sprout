@@ -4,7 +4,7 @@
  * device's daily allowance and the model allowlist, adds the owner's key and forwards the call
  * unchanged. Bodies are never logged or stored.
  *
- * Signed request (the app's `ManagedAITransport` builds exactly this):
+ * Signed request (the app's `AIGatewayTransport` builds exactly this):
  *   X-Sprout-Key-Id:    the App Attest key id (base64, as `DCAppAttestService` gives it)
  *   X-Sprout-Timestamp: milliseconds since 1970, within 5 minutes of the server's clock
  *   X-Sprout-Assertion: base64 of `generateAssertion(keyId, SHA-256(clientData))`, where
@@ -20,9 +20,7 @@ import {
   ANTHROPIC_WEB_SEARCH,
   MAX_OUTPUT_TOKENS,
   OPENAI_IMAGE,
-  OPENAI_MODELS,
   anthropicCost,
-  openaiCost,
   type Upstream,
 } from "./pricing.js"
 import type { Store } from "./store.js"
@@ -65,8 +63,6 @@ interface Route {
 
 const ROUTES: Record<string, Route> = {
   "/anthropic/v1/messages": { upstream: "anthropic", path: "/v1/messages", kind: "json" },
-  "/openai/v1/chat/completions": { upstream: "openai", path: "/v1/chat/completions", kind: "json" },
-  "/openai/v1/responses": { upstream: "openai", path: "/v1/responses", kind: "json" },
   "/openai/v1/images/edits": { upstream: "openai", path: "/v1/images/edits", kind: "image" },
 }
 
@@ -92,31 +88,21 @@ function clientIp(c: Context): string {
   return c.req.header("x-real-ip") ?? "unknown"
 }
 
-/** Why a request body is refused, or undefined when the gateway will pay for it. */
-function refusal(route: Route, body: Record<string, unknown>): string | undefined {
+/** Why a Messages body is refused, or undefined when the gateway will pay for it. */
+function refusal(body: Record<string, unknown>): string | undefined {
   const model = body.model
   if (typeof model !== "string") return "The request names no model."
   if (body.stream === true) return "Streaming is not supported through the gateway."
-  const allowed = route.upstream === "anthropic" ? ANTHROPIC_MODELS : OPENAI_MODELS
-  if (!(model in allowed)) return `The model ${model} is not available through the gateway.`
-  for (const key of ["max_tokens", "max_completion_tokens", "max_output_tokens"]) {
-    const v = body[key]
-    if (v !== undefined && (typeof v !== "number" || v > MAX_OUTPUT_TOKENS)) {
-      return `${key} must be at most ${MAX_OUTPUT_TOKENS}.`
-    }
-  }
-  if (route.upstream === "anthropic" && typeof body.max_tokens !== "number") return "max_tokens is required."
+  if (!(model in ANTHROPIC_MODELS)) return `The model ${model} is not available through the gateway.`
+  if (typeof body.max_tokens !== "number") return "max_tokens is required."
+  if (body.max_tokens > MAX_OUTPUT_TOKENS) return `max_tokens must be at most ${MAX_OUTPUT_TOKENS}.`
   const tools = Array.isArray(body.tools) ? (body.tools as Record<string, unknown>[]) : []
   for (const tool of tools) {
     const type = tool?.type
-    if (route.upstream === "anthropic") {
-      // Client tools carry no type (or "custom"); the only server tool paid for is web search.
-      if (type === undefined || type === "custom") continue
-      if (type === ANTHROPIC_WEB_SEARCH.type && typeof tool.max_uses === "number" && tool.max_uses <= ANTHROPIC_WEB_SEARCH.maxUses) continue
-      return `The tool ${String(type)} is not available through the gateway.`
-    } else if (type !== "function") {
-      return `The tool ${String(type)} is not available through the gateway.`
-    }
+    // Client tools carry no type (or "custom"); the only server tool paid for is web search.
+    if (type === undefined || type === "custom") continue
+    if (type === ANTHROPIC_WEB_SEARCH.type && typeof tool.max_uses === "number" && tool.max_uses <= ANTHROPIC_WEB_SEARCH.maxUses) continue
+    return `The tool ${String(type)} is not available through the gateway.`
   }
   return undefined
 }
@@ -256,7 +242,7 @@ export function createApp(deps: Deps) {
           return fail(400, "bad_request", "The body is not JSON.")
         }
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return fail(400, "bad_request", "The body is not a JSON object.")
-        const why = refusal(route, parsed as Record<string, unknown>)
+        const why = refusal(parsed as Record<string, unknown>)
         if (why) return fail(400, "not_allowed", why)
         model = (parsed as { model: string }).model
       } else {
@@ -293,7 +279,7 @@ export function createApp(deps: Deps) {
           try {
             const usage = (JSON.parse(Buffer.from(responseBytes).toString("utf8")) as { usage?: unknown }).usage
             // Priced by the model we allowed; the provider may echo a dated snapshot name.
-            usd = route.upstream === "anthropic" ? anthropicCost(model, usage) : openaiCost(model, usage)
+            usd = anthropicCost(model, usage)
           } catch {
             usd = 0
           }

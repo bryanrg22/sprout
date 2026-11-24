@@ -78,10 +78,8 @@ struct OpenAIClient: LLMClient {
     private let key: String
 
     init() throws {
-        // A scoped override (tests / evals) supplies its own key; the app reads the Keychain,
-        // then falls back to the built-in gateway's placeholder (`AIGateway`).
-        let k = AIRuntime.effective?.apiKey ?? KeychainStore.apiKey(for: .openai) ?? AIGateway.placeholder(for: .openai)
-        guard let k, !k.isEmpty else { throw AIConfig.AIError.missingKey }
+        // A scoped runtime's key, else the built-in gateway (`AIConfig.key(for:)`).
+        guard let k = AIConfig.key(for: .openai) else { throw AIConfig.AIError.missingKey }
         key = k
     }
 

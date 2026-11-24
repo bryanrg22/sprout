@@ -105,11 +105,12 @@ final class AIGatewayTests: XCTestCase {
 
     // MARK: - Which requests go to the gateway
 
-    func testTheGatewayServesTheFourProviderEndpointsTheAppCalls() {
+    func testTheGatewayServesClaudeAndTheCharacterPictureOnly() {
         XCTAssertEqual(AIGateway.route(for: URL(string: "https://api.anthropic.com/v1/messages")!), "/anthropic/v1/messages")
-        XCTAssertEqual(AIGateway.route(for: URL(string: "https://api.openai.com/v1/chat/completions")!), "/openai/v1/chat/completions")
-        XCTAssertEqual(AIGateway.route(for: URL(string: "https://api.openai.com/v1/responses")!), "/openai/v1/responses")
         XCTAssertEqual(AIGateway.route(for: URL(string: "https://api.openai.com/v1/images/edits")!), "/openai/v1/images/edits")
+        // OpenAI text is evaluation-only (a scoped runtime with its own key); the app never sends it.
+        XCTAssertNil(AIGateway.route(for: URL(string: "https://api.openai.com/v1/chat/completions")!))
+        XCTAssertNil(AIGateway.route(for: URL(string: "https://api.openai.com/v1/responses")!))
         XCTAssertNil(AIGateway.route(for: URL(string: "https://api.anthropic.com/v1/models")!))
         XCTAssertNil(AIGateway.route(for: URL(string: "https://example.com/v1/messages")!))
     }
@@ -118,9 +119,9 @@ final class AIGatewayTests: XCTestCase {
         var anthropic = providerRequest()
         XCTAssertTrue(AIGateway.carriesPlaceholder(anthropic))
         anthropic.setValue("sk-ant-her-own-key", forHTTPHeaderField: "x-api-key")
-        XCTAssertFalse(AIGateway.carriesPlaceholder(anthropic), "her own key goes straight to Anthropic")
+        XCTAssertFalse(AIGateway.carriesPlaceholder(anthropic), "a real key (an evaluation's) goes straight to Anthropic")
 
-        var openai = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+        var openai = URLRequest(url: URL(string: "https://api.openai.com/v1/images/edits")!)
         openai.setValue("Bearer \(AIGateway.placeholderKey)", forHTTPHeaderField: "Authorization")
         XCTAssertTrue(AIGateway.carriesPlaceholder(openai))
         openai.setValue("Bearer sk-proj-real", forHTTPHeaderField: "Authorization")
@@ -275,6 +276,40 @@ final class AIGatewayTests: XCTestCase {
         }
         let sent = await gateway.requests.count
         XCTAssertEqual(sent, 0)
+    }
+
+    // MARK: - The app asks only for what the gateway pays for
+
+    /// The model names inside `export const <name> = { ... }` in server/src/pricing.ts.
+    private func serverAllowlist(_ name: String) throws -> Set<String> {
+        let pricing = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "server/src/pricing.ts")
+        let source = try String(contentsOf: pricing, encoding: .utf8)
+        guard let start = source.range(of: "export const \(name)") else { return [] }
+        let rest = source[start.upperBound...]
+        guard let end = rest.range(of: "\n}") else { return [] }
+        let block = rest[..<end.lowerBound]
+        let quoted = try Regex(#""([a-z0-9.\-]+)":"#)
+        return Set(block.matches(of: quoted).compactMap { $0.output[1].substring.map(String.init) })
+    }
+
+    func testEveryModelTheAppSendsIsOneTheGatewayAllows() throws {
+        let allowed = try serverAllowlist("ANTHROPIC_MODELS")
+        XCTAssertTrue(allowed.contains("claude-sonnet-5"), "the parser found the table: \(allowed)")
+        // Every task, as the shipped app resolves it (Anthropic: there is no other provider).
+        for task in AITask.allCases {
+            let model = AIConfig.model(for: task, provider: AIConfig.provider)
+            XCTAssertTrue(allowed.contains(model), "\(task.rawValue) sends \(model), which server/src/pricing.ts refuses")
+        }
+        XCTAssertEqual(AIConfig.provider, .anthropic)
+        // The character picture: the one image model, at the one quality.
+        let pricing = try String(contentsOf: URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "server/src/pricing.ts"), encoding: .utf8)
+        XCTAssertTrue(pricing.contains(#"model: "\#(AIConfig.avatarImage.model)", quality: "\#(AIConfig.avatarImage.quality)""#))
+        // And the plan's web search is the tool version the gateway allows.
+        XCTAssertTrue(pricing.contains(#"type: "web_search_20250305""#))
     }
 
     // MARK: - What she reads when the allowance is used up

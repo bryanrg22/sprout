@@ -15,7 +15,7 @@ import CoreLocation
 /// - loaded (the suggestion cards),
 /// - error (a friendly line + Retry),
 /// - empty history ("Log a few meals and I'll start tailoring picks"),
-/// - no API key (a small muted note — no key-entry field; that lives in Settings).
+/// - no AI on this device (the section is left out).
 ///
 /// Caching: the last result is cached in `UserDefaults` keyed by `day + meal-slot`, so it
 /// won't re-call the LLM on every appear; it regenerates automatically when the meal slot
@@ -43,10 +43,10 @@ struct SmartSuggestionsView: View {
     // MARK: - Body
 
     var body: some View {
-        // No key configured → a single small, muted note (suggestions need the AI key).
-        // We don't duplicate a key-entry field; that lives in Settings → AI.
+        // No AI on this device (it cannot do App Attest): the section is left out, as the
+        // Progress recap does. There is nothing the person could do about it.
         if !AIConfig.hasActiveKey {
-            noKeyNote
+            EmptyView()
         } else {
             VStack(alignment: .leading, spacing: Theme.Space.sm) {
                 header
@@ -231,26 +231,6 @@ struct SmartSuggestionsView: View {
             .accessibilityLabel("Retry loading suggestions")
         }
         .padding(.vertical, Theme.Space.xs)
-    }
-
-    /// The small, muted "needs the AI key" note. No key-entry field here — just a pointer.
-    private var noKeyNote: some View {
-        HStack(spacing: Theme.Space.sm) {
-            Image(systemName: "sparkles")
-                .font(.subheadline)
-                .foregroundStyle(Theme.textSecondary)
-            Text("Smart picks need your AI key — add it in Settings → AI.")
-                .font(.caption)
-                .foregroundStyle(Theme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Theme.Space.sm)
-        .background(Theme.card.opacity(0.6),
-                    in: RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.Radius.md, style: .continuous)
-            .strokeBorder(Theme.divider, lineWidth: 1))
     }
 
     // MARK: - Derived inputs (code-owned numbers — same basis as FoodLogView)

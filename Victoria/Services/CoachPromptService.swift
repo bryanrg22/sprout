@@ -9,7 +9,7 @@ import Foundation
 /// - Forced tool use for strict JSON, decoded into `[String]` via a `Payload` envelope.
 /// - Grounded in the same factual `CoachContext.summary(...)` the coach reasons over (plus her
 ///   bio + Vita's durable notes), so the chips read like HER ("How's my soccer week going?").
-/// - Degrades gracefully: gated on `KeychainStore.hasAPIKey`; on no-key / network / parse /
+/// - Degrades gracefully: gated on `AIConfig.hasActiveKey`; on no-key / network / parse /
 ///   guardrail failure it returns the fixed list and NEVER throws (like `WeeklyReflection`), so
 ///   the chip row is never empty and the chat never waits on the network.
 /// - A light banned-word `sanitize` pass (same approach as `WeeklyReflection.sanitize` /

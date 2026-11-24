@@ -85,26 +85,14 @@ final class AITaskModelTests: XCTestCase {
                        ["coachTurn/anthropic", "dailyBrief/anthropic", "mealPhoto/openai"])
     }
 
-    func testSettingsOverrideForTheTierBeatsTheDefault() {
-        AIConfig.setModelOverride("my-own-model", for: .openai, tier: .coach)
-        XCTAssertEqual(AIConfig.model(for: .coachTurn, provider: .openai), "my-own-model")
-        XCTAssertEqual(AIConfig.model(for: .mealPhoto, provider: .openai), "my-own-model")
-        XCTAssertEqual(AIConfig.model(for: .insightLine, provider: .openai), "gpt-6-luna",
-                       "an override of one tier leaves the others alone")
-        XCTAssertEqual(AIConfig.model(for: .coachTurn, provider: .anthropic), "claude-sonnet-5",
-                       "an override is per provider")
-    }
-
-    func testSettingsOverrideBeatsAMeasuredDefault() {
-        XCTAssertEqual(AIConfig.model(for: .dailyBrief, provider: .openai), "gpt-6-luna")
-        AIConfig.setModelOverride("my-own-model", for: .openai, tier: .insight)
-        XCTAssertEqual(AIConfig.model(for: .dailyBrief, provider: .openai), "my-own-model",
-                       "what the user typed in Settings wins over a measured default")
-    }
-
-    func testBlankOverrideFallsBackToTheDefault() {
-        AIConfig.setModelOverride("   ", for: .anthropic, tier: .insight)
-        XCTAssertEqual(AIConfig.model(for: .insightLine, provider: .anthropic), "claude-haiku-4-5-20251001")
+    func testTheAppHasNoModelSettingOnlyAScopedRuntimeChangesTheModel() {
+        // The measured default stands; only an evaluation's scoped model replaces it, and
+        // only inside the clients (`AIRuntime.resolve`).
+        XCTAssertEqual(AIConfig.model(for: .dailyBrief, provider: .anthropic), "claude-haiku-5-5")
+        XCTAssertEqual(AIRuntime.resolve(model: "claude-haiku-5-5"), "claude-haiku-5-5")
+        AIRuntime.$current.withValue(AIRuntime(model: "claude-sonnet-5")) {
+            XCTAssertEqual(AIRuntime.resolve(model: "claude-haiku-5-5"), "claude-sonnet-5")
+        }
     }
 
     func testActiveProviderResolutionFollowsTheScopedProvider() {

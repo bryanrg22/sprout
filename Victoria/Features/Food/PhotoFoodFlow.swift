@@ -316,7 +316,7 @@ struct PhotoFoodFlow: View {
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {
                     phase = .choosing
-                    errorMessage = "Add your AI key in More → AI to use AI estimates."
+                    errorMessage = "AI estimates don't work on this phone. You can still add the meal yourself."
                 }
             } catch {
                 await MainActor.run {

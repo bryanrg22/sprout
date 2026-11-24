@@ -97,13 +97,13 @@ final class CoachTurnErrorTests: XCTestCase {
 
     func testEveryErrorHasItsAction() {
         let expected: [CoachTurnError.Action] = [
-            .retry, .retry, .retry, .openAISettings, .openAISettings, .openAISettings, .openAISettings,
+            .retry, .retry, .retry, .unavailable, .retry, .retry, .retry,
             .retry, .retryAfter(30), .retry, .retry, .rephrase,
             .retry, .rephrase, .retry, .retry, .retry, .retry,
         ]
         XCTAssertEqual(all.map(\.action), expected)
-        XCTAssertEqual(all.filter { !$0.canRetry }, [.tooLong, .refusal],
-                       "only a message that has to change cannot be sent again as it is")
+        XCTAssertEqual(all.filter { !$0.canRetry }, [.missingKey, .tooLong, .refusal],
+                       "only a message that has to change, or a phone with no AI, cannot be sent again")
         XCTAssertEqual(CoachTurnError.rateLimited(retryAfter: 0.4).action, .retry,
                        "a wait under a second is not worth a countdown")
     }
@@ -127,17 +127,22 @@ final class CoachTurnErrorTests: XCTestCase {
             XCTAssertTrue(error.message(provider: .anthropic).contains("Anthropic"), "\(error)")
             XCTAssertTrue(error.message(provider: .openai).contains("OpenAI"), "\(error)")
         }
-        XCTAssertTrue(CoachTurnError.billing.message(provider: .openai).contains("platform.openai.com"))
+        // The owner's key, model and account are on the gateway: nothing asks the person to
+        // fix them, and nothing points at a console or a settings screen.
+        for error in [CoachTurnError.auth, .billing, .modelUnavailable, .missingKey] {
+            let message = error.message(provider: .anthropic)
+            XCTAssertFalse(message.localizedCaseInsensitiveContains("key"), message)
+            XCTAssertFalse(message.contains("Settings") || message.contains("More →") || message.contains(".com"), message)
+        }
         XCTAssertEqual(CoachTurnError.offline.message(provider: .openai),
                        "I can't reach the internet right now — mind checking your connection? 💚",
                        "the offline wording the chat has always used")
     }
 
-    func testMissingKeyWording() {
+    func testNoAIOnThisPhoneWording() {
         XCTAssertEqual(CoachTurnError.missingKey.message(provider: .anthropic),
-                       "I'm ready to chat once you add your Anthropic key in More → AI 💚")
-        XCTAssertEqual(CoachTurnError.missingKey.message(provider: .openai, otherProviderHasKey: true),
-                       "You're set to OpenAI but only have a Anthropic key — switch provider or add a OpenAI key in More → AI 💚")
+                       "I can't chat on this phone, sorry. Everything you log still works 💚")
+        XCTAssertEqual(CoachTurnError.missingKey.action, .unavailable)
     }
 
     func testWaitText() {

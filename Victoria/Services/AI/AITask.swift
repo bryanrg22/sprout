@@ -38,7 +38,7 @@ enum AITask: String, CaseIterable, Sendable {
     case memoryFold
 
     /// The price class a task falls back to when it has no measured default of its own,
-    /// and the Settings override that applies to it.
+    /// which is also its tier in `AIConfig.model(for:tier:)`.
     var tier: AIConfig.ModelTier {
         switch self {
         case .coachTurn, .mealPhoto, .mealDescribe, .foodSuggestions, .progressSummary,
@@ -96,10 +96,9 @@ extension AIConfig {
 
     /// The model a task runs on for a provider.
     ///
-    /// Order: the user's Settings override for the task's tier (an explicit choice
-    /// always wins) → the task's measured default → the tier default.
+    /// Order: the task's measured default → the tier default. (A scoped `AIRuntime.model`,
+    /// used by evaluations, replaces it inside the clients.)
     static func model(for task: AITask, provider: AIProvider) -> String {
-        if let override = modelOverride(for: provider, tier: task.tier) { return override }
         if let measured = measuredDefaults[task]?[provider] { return measured.model }
         // The OpenAI research pass needs a Responses model with the web_search tool,
         // which is a property of the call rather than of the price class.

@@ -222,7 +222,7 @@ enum ChecklistPlanService {
     // MARK: - Make (build context → call model → validate → decode)
 
     /// Generate the day's personalized plan. Throws `AIConfig.AIError.missingKey` when no key
-    /// is configured (the caller gates on `KeychainStore.hasAPIKey` first, but we surface it
+    /// is configured (the caller gates on `AIConfig.hasActiveKey` first, but we surface it
     /// cleanly anyway), and `.badResponse` / `.decoding` on transport / parse failures. The
     /// CARD never lets this throw past it — it catches everything and keeps `fallback()`.
     ///

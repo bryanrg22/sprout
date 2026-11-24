@@ -4,7 +4,7 @@ import UIKit
 /// "Make my character": the card shown as an onboarding step (after the key step) and in
 /// Settings → You. All of its rules live in `AvatarCreationModel`; this is the look.
 ///
-/// States: no OpenAI key · consent + pick a photo · drawing · preview (Use this / Try
+/// States: not available on this device · consent + pick a photo · drawing · preview (Use this / Try
 /// again / Use a built-in character instead) · accepted · failed (the built-in character
 /// stands) · declined. Every state leaves a way forward, and the host (the onboarding
 /// footer, the sheet's Close) can always leave.
@@ -17,8 +17,6 @@ struct AvatarCreationView: View {
 
     @State private var showLibrary = false
     @State private var showCamera = false
-    @State private var keyDraft = ""
-    @FocusState private var keyFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -40,7 +38,7 @@ struct AvatarCreationView: View {
                 .ignoresSafeArea()
         }
         .onAppear {
-            model.refreshKeyState()
+            model.refreshAvailability()
             #if DEBUG
             runDebugScript()
             #endif
@@ -68,7 +66,7 @@ struct AvatarCreationView: View {
 
     private var title: String {
         switch model.phase {
-        case .needsKey:  return "This needs an OpenAI key"
+        case .unavailable:  return "Not on this phone"
         case .start, .working: return "Make your character"
         case .preview:   return "Here's your character"
         case .accepted:  return "This is your character"
@@ -81,7 +79,7 @@ struct AvatarCreationView: View {
 
     @ViewBuilder private var stage: some View {
         switch model.phase {
-        case .needsKey:               needsKeyStage
+        case .unavailable:               unavailableStage
         case .start:                  startStage
         case .working:                workingStage
         case .preview(let character): previewStage(character)
@@ -169,7 +167,7 @@ struct AvatarCreationView: View {
             HStack(alignment: .top, spacing: Theme.Space.sm) {
                 Image(systemName: "arrow.up.forward.circle.fill")
                     .foregroundStyle(Theme.brand)
-                Text("**Your photo is sent to OpenAI** to draw your character, using your OpenAI key. Sprout doesn't keep the photo. Only the finished character is saved.")
+                Text("**Your photo is sent to OpenAI** to draw your character. Sprout doesn't keep the photo. Only the finished character is saved.")
                     .font(.footnote)
                     .foregroundStyle(Theme.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -199,60 +197,16 @@ struct AvatarCreationView: View {
             .strokeBorder(Theme.brand.opacity(0.18), lineWidth: 1))
     }
 
-    // MARK: No key
+    // MARK: Not available here
 
-    private var needsKeyStage: some View {
+    private var unavailableStage: some View {
         VStack(alignment: .leading, spacing: Theme.Space.md) {
-            Text("Your character is drawn by OpenAI's image model, so this one step uses an OpenAI key, even if you chat with another provider. The key stays on your phone, in the Keychain.")
+            Text("Making your own character doesn't work on this phone.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: Theme.Space.sm) {
-                SecureField("Paste your OpenAI key", text: $keyDraft)
-                    .font(.callout)
-                    .foregroundStyle(Theme.textPrimary)
-                    .tint(Theme.brand)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($keyFocused)
-                    .padding(.horizontal, Theme.Space.md)
-                    .padding(.vertical, 11)
-                    .background(Capsule().fill(Theme.cardRaised))
-                    .overlay(Capsule().strokeBorder(Theme.brand.opacity(keyFocused ? 0.45 : 0.12), lineWidth: 1))
-
-                Button {
-                    if let pasted = UIPasteboard.general.string {
-                        keyDraft = pasted.trimmingCharacters(in: .whitespacesAndNewlines)
-                    }
-                } label: {
-                    Image(systemName: "doc.on.clipboard.fill")
-                        .font(.headline)
-                        .foregroundStyle(Theme.brand)
-                        .frame(width: 46, height: 46)
-                        .background(Circle().fill(Theme.brandSoft))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Paste from clipboard")
-            }
-
-            Button {
-                keyFocused = false
-                model.saveKey(keyDraft)
-                keyDraft = ""
-            } label: {
-                Text("Save key").font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 22)
-            }
-            .buttonStyle(.primary)
-            .disabled(keyDraftIsEmpty)
-            .opacity(keyDraftIsEmpty ? 0.45 : 1)
-
-            fallbackRow("No key? Skip this. You'll start with this built-in character and can make your own later in More → You.")
+            fallbackRow("You'll start with this built-in character instead.")
         }
-    }
-
-    private var keyDraftIsEmpty: Bool {
-        keyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: Drawing
@@ -509,7 +463,7 @@ struct AvatarCreationSheet: View {
     private var isDone: Bool {
         switch model.phase {
         case .accepted, .declined: return true
-        case .needsKey, .start, .working, .preview, .failed: return false
+        case .unavailable, .start, .working, .preview, .failed: return false
         }
     }
 }

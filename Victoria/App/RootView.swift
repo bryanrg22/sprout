@@ -33,10 +33,6 @@ struct RootView: View {
                            restoreSettled: restoreWatch.settled)
     }
 
-    /// Runs before any view reads the provider or asks whether a key is stored: after a
-    /// reinstall the provider choice is gone but the keys are not (`AIKeyRouting`).
-    init() { AIKeyRouting.reconcileProviderAtLaunch() }
-
     /// DEBUG: `--demo-screen <workout|achievements>` deep-links straight to a
     /// quick-link screen (normally reached from the Dashboard) so it can be
     /// screenshotted in isolation. Never used in the normal flow.

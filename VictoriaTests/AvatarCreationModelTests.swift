@@ -39,26 +39,26 @@ final class AvatarCreationModelTests: XCTestCase {
 
     // MARK: - Where it starts
 
-    func testWithoutAKeyTheFlowStartsOnTheKeyStepAndCanBeLeft() {
+    func testWithoutAIHereTheFlowSaysSoAndCanBeLeft() {
         let model = model(theme: .cute, hasKey: false)
-        XCTAssertEqual(model.phase, .needsKey)
+        XCTAssertEqual(model.phase, .unavailable)
         XCTAssertNil(model.acceptedPNG)
         XCTAssertEqual(model.fallbackAvatar, .victoria)
         XCTAssertFalse(model.canGenerate)
     }
 
-    func testWithAKeyTheFlowStartsOnThePhotoStep() {
+    func testWithAIHereTheFlowStartsOnThePhotoStep() {
         XCTAssertEqual(model().phase, .start)
     }
 
-    func testKeyStepMovesOnOnceAKeyExists() {
+    func testTheUnavailableStepMovesOnOnceAIIsAvailable() {
         var stored = false
         let model = AvatarCreationModel(theme: .cool, hasKey: { stored })
-        XCTAssertEqual(model.phase, .needsKey)
-        model.refreshKeyState()
-        XCTAssertEqual(model.phase, .needsKey, "no key yet")
+        XCTAssertEqual(model.phase, .unavailable)
+        model.refreshAvailability()
+        XCTAssertEqual(model.phase, .unavailable, "not available yet")
         stored = true
-        model.refreshKeyState()
+        model.refreshAvailability()
         XCTAssertEqual(model.phase, .start)
     }
 
@@ -185,7 +185,7 @@ final class AvatarCreationModelTests: XCTestCase {
         model.pick(TestImages.photo(width: 80, height: 80))
         model.consented = true
         await run(model, transport, key: "")
-        XCTAssertEqual(model.phase, .needsKey)
+        XCTAssertEqual(model.phase, .unavailable)
         XCTAssertTrue(transport.requests.isEmpty)
     }
 

@@ -262,7 +262,7 @@ describe("who may call", () => {
   it("refuses a request signed for another route", async () => {
     const a = app()
     await register(a)
-    const req = signed("/openai/v1/chat/completions", message())
+    const req = signed("/openai/v1/images/edits", message())
     const res = await a.request("/anthropic/v1/messages", req)
     expect(await errorType(res)).toBe("assertion_rejected")
   })
@@ -310,6 +310,15 @@ describe("what may be asked for", () => {
     return { status: res.status, type: await errorType(res) }
   }
 
+  it("the daily brief's model is allowed and priced at its own rate", async () => {
+    const a = app()
+    await register(a)
+    const res = await a.request("/anthropic/v1/messages", signed("/anthropic/v1/messages", message({ model: "claude-haiku-5-5" })))
+    expect(res.status).toBe(200)
+    // The stub's usage (1,000 in, 500 out) at $0.10 / $0.50 per million.
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.00035, 8)
+  })
+
   it("only the app's models", async () => {
     expect(await refused(message({ model: "claude-fable-5" }))).toEqual({ status: 400, type: "not_allowed" })
     expect(await refused(JSON.stringify({ max_tokens: 10, messages: [] }))).toEqual({ status: 400, type: "not_allowed" })
@@ -352,25 +361,20 @@ describe("OpenAI", () => {
   it("is off without a key", async () => {
     const a = app({ openaiKey: undefined })
     await register(a)
-    const res = await a.request("/openai/v1/chat/completions", signed("/openai/v1/chat/completions", "{}"))
+    const res = await a.request("/openai/v1/images/edits", signed("/openai/v1/images/edits", "{}"))
     expect(res.status).toBe(503)
     expect(((await res.json()) as { error: { code: string } }).error.code).toBe("provider_disabled")
   })
 
-  it("forwards chat with the server's bearer key and prices cached input", async () => {
+  it("serves no OpenAI text route: every text task runs on Anthropic", async () => {
     const a = app()
     await register(a)
-    upstreamReply = () =>
-      new Response(JSON.stringify({ usage: { prompt_tokens: 2000, prompt_tokens_details: { cached_tokens: 1000 }, completion_tokens: 100 } }), {
-        status: 200,
-      })
-    const body = JSON.stringify({ model: "gpt-4.1-mini", max_tokens: 300, messages: [] })
-    const res = await a.request("/openai/v1/chat/completions", signed("/openai/v1/chat/completions", body))
-    expect(res.status).toBe(200)
-    expect(sent[0]!.url).toBe("https://api.openai.com/v1/chat/completions")
-    expect(sent[0]!.headers.authorization).toBe(`Bearer ${SERVER_OPENAI_KEY}`)
-    // 1,000 uncached × $0.40 + 1,000 cached × $0.10 + 100 out × $1.60 (per M)
-    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.00066, 8)
+    for (const path of ["/openai/v1/chat/completions", "/openai/v1/responses"]) {
+      const body = JSON.stringify({ model: "gpt-5.6-terra", max_tokens: 300, messages: [] })
+      const res = await a.request(path, signed(path, body))
+      expect(res.status).toBe(404)
+    }
+    expect(sent).toHaveLength(0)
   })
 
   function imageForm(fields: Record<string, string>) {

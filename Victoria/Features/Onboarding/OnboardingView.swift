@@ -92,16 +92,11 @@ struct OnboardingView: View {
     @FocusState private var noteFocused: Bool
 
     // MARK: Connect step (final practical setup — all optional / skippable)
-    /// What she pastes in (the key a friend texted her). Saved to the Keychain on tap.
-    @State private var apiKeyDraft = ""
-    /// Mirrors "is a key stored" so the card + footer react the instant she saves one.
-    @State private var keySaved = AIConfig.hasActiveKey
     /// Apple Health: optimistic "connected" flag once the system sheet has been answered.
     @State private var healthConnected = false
     @State private var healthBusy = false
     /// Live location authorization (permission-only for now; nearby suggestions later).
     @State private var location = LocationService.shared
-    @FocusState private var keyFocused: Bool
 
     // MARK: Character step (optional: a pixel character made from a photo)
     /// Consent, photo, the call to OpenAI and its fallbacks (`AvatarCreationModel`). The
@@ -163,10 +158,10 @@ struct OnboardingView: View {
             if step == .plan { startCoachMessage() }
             if step == .personalNote { personalNoteSeen = true }
             // The character step falls back to the built-in that goes with the picked look,
-            // and re-checks for an OpenAI key (one may have been saved on the step before).
+            // and re-checks whether the built-in AI can draw one here.
             if step == .avatar {
                 avatarModel.theme = themeChoice
-                avatarModel.refreshKeyState()
+                avatarModel.refreshAvailability()
             }
         }
     }
@@ -1084,79 +1079,15 @@ struct OnboardingView: View {
         .card()
     }
 
-    // MARK: - Page 10 · Connect (final practical setup — key + Health + location)
+    // MARK: - Page 10 · Connect (final practical setup — Health + location)
 
-    /// The one practical beat before the warm send-off. The ONLY thing she truly needs is
-    /// the coach key so we can chat; Apple Health and location are *offered*, never required.
-    /// Everything is optional and recoverable later in Settings, so the footer reads
-    /// "Maybe later" until a key is in. (A friend can text her the key — the Paste button
-    /// makes it a single tap.)
-    /// The built-in AI covers chat and no key of her own is saved: nothing to paste.
-    private var usesBuiltInAI: Bool {
-        AIGateway.covers(AIConfig.provider) && !KeychainStore.hasAPIKey(for: AIConfig.provider)
-    }
-
+    /// The one practical beat before the warm send-off. Both are offered, never required,
+    /// and both can be changed later. There is no key: the AI is built in (`AIGateway`).
     private var connectPage: some View {
         coachScroll {
-            vitaBubble(usesBuiltInAI
-                       ? "Last little thing — let's get you set up. I'm already connected, so everything here is optional, and you can change any of it later 💛"
-                       : "Last little thing — let's get you set up. The only must-have is my **key** so we can actually chat. Everything else here is optional, and you can change any of it later 💛")
+            vitaBubble("Last little thing! Both of these are optional, and you can change them any time later 💛")
 
-            // 1) THE KEY — the real unlock for the coach. Most prominent.
-            connectCard(
-                icon: "sparkles",
-                tint: Theme.brand,
-                title: "Connect Vita’s brain",
-                done: keySaved,
-                doneLabel: usesBuiltInAI ? "Ready to chat — no key needed ✨" : "Key saved — we’re all set to chat ✨"
-            ) {
-                VStack(alignment: .leading, spacing: Theme.Space.sm) {
-                    Text("Paste the key you were sent. It lives only on your phone (in the Keychain) — never shared.")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    HStack(spacing: Theme.Space.sm) {
-                        TextField("Paste your key", text: $apiKeyDraft)
-                            .font(.callout)
-                            .foregroundStyle(Theme.textPrimary)
-                            .tint(Theme.brand)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .focused($keyFocused)
-                            .padding(.horizontal, Theme.Space.md)
-                            .padding(.vertical, 11)
-                            .background(Capsule().fill(Theme.cardRaised))
-                            .overlay(Capsule().strokeBorder(
-                                Theme.brand.opacity(keyFocused ? 0.45 : 0.12), lineWidth: 1))
-
-                        Button {
-                            if let s = UIPasteboard.general.string {
-                                apiKeyDraft = s.trimmingCharacters(in: .whitespacesAndNewlines)
-                            }
-                        } label: {
-                            Image(systemName: "doc.on.clipboard.fill")
-                                .font(.headline)
-                                .foregroundStyle(Theme.brand)
-                                .frame(width: 46, height: 46)
-                                .background(Circle().fill(Theme.brandSoft))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Paste from clipboard")
-                    }
-
-                    Button(action: saveKey) {
-                        Text("Save key")
-                            .font(.subheadline.weight(.semibold))
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                    }
-                    .buttonStyle(.primary)
-                    .disabled(apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .opacity(apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1)
-                }
-            }
-
-            // 2) APPLE HEALTH — optional weight sync.
+            // 1) APPLE HEALTH — optional weight sync.
             connectCard(
                 icon: "heart.fill",
                 tint: Theme.positive,
@@ -1178,7 +1109,7 @@ struct OnboardingView: View {
                 }
             }
 
-            // 3) LOCATION — optional, for nearby healthy suggestions (feature coming soon).
+            // 2) LOCATION — optional, for nearby healthy suggestions (feature coming soon).
             connectCard(
                 icon: "location.fill",
                 tint: Theme.info,
@@ -1266,18 +1197,6 @@ struct OnboardingView: View {
     }
 
     // MARK: - Connect actions
-
-    /// Store the pasted key on-device (Keychain), under the ACTIVE provider's slot
-    /// (Anthropic on a fresh install; whatever's selected on a re-onboard).
-    private func saveKey() {
-        let trimmed = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        AIKeyRouting.savePastedKey(trimmed)   // filed by the key's own provider, which becomes active
-        keyFocused = false
-        apiKeyDraft = ""
-        withAnimation { keySaved = true }
-        startTrigger.toggle()
-    }
 
     /// Present the Apple Health permission sheet. HealthKit never reveals read-auth status
     /// (privacy), so we optimistically mark "connected" once she's answered the sheet.
@@ -1502,7 +1421,7 @@ struct OnboardingView: View {
         switch step {
         case .welcome:   return "Let's start"
         case .note:      return note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Skip for now" : "See my plan"
-        case .connect:   return keySaved ? "Continue" : "Maybe later"
+        case .connect:   return healthConnected || location.isAuthorized ? "Continue" : "Maybe later"
         case .avatar:    return avatarModel.acceptedPNG != nil ? "Continue" : "Skip for now"
         default:         return "Next"
         }
@@ -1692,12 +1611,5 @@ struct OnboardingView: View {
         if existing == nil { context.insert(p) }
         context.insert(WeightEntry(weightLbs: currentWeight))
         try? context.save()
-
-        // Safety net: if she typed a key but didn't tap "Save key", flush it now so she
-        // isn't left unable to chat just because she skipped the explicit save.
-        let typedKey = apiKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !typedKey.isEmpty && !AIConfig.hasActiveKey {
-            AIKeyRouting.savePastedKey(typedKey)
-        }
     }
 }

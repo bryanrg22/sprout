@@ -196,13 +196,9 @@ enum AvatarGenerator {
 
     // MARK: - The call
 
-    /// The stored OpenAI key, honouring a scoped runtime (tests, evaluations), then the
-    /// built-in gateway's placeholder when it covers OpenAI (`AIGateway`).
-    static func apiKey() -> String? {
-        let key = AIRuntime.current?.apiKey ?? KeychainStore.apiKey(for: .openai) ?? AIGateway.placeholder(for: .openai)
-        guard let key, !key.isEmpty else { return nil }
-        return key
-    }
+    /// The key the image call carries: a scoped runtime's (tests, evaluations), else the
+    /// built-in gateway's (`AIConfig.key(for:)`).
+    static func apiKey() -> String? { AIConfig.key(for: .openai) }
 
     /// One image from one photo. Throws `Failure`.
     static func generate(from photo: UIImage,

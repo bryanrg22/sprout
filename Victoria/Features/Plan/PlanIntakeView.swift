@@ -236,7 +236,7 @@ struct PlanIntakeView: View {
             } catch AIConfig.AIError.missingKey {
                 await MainActor.run {
                     isBuilding = false
-                    errorText = "\(coachName) needs your \(AIConfig.provider.label) key to \(verb) your plan — add one in More → AI."
+                    errorText = "\(coachName) can't \(verb) your plan on this phone, sorry."
                 }
             } catch {
                 await MainActor.run {

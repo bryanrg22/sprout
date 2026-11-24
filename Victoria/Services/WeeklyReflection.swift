@@ -4,7 +4,7 @@ import Foundation
 /// over the user's last 7 days + onboarding note, shown as a dashboard card.
 ///
 /// Mirrors `OnboardingCoachMessage` / `InsightPhraser`'s safety model EXACTLY:
-/// - Optional: only calls the LLM when an API key exists (`KeychainStore.hasAPIKey`);
+/// - Optional: only calls the LLM when an API key exists (`AIConfig.hasActiveKey`);
 ///   otherwise returns a warm, direction-aware TEMPLATED note. The dashboard NEVER waits
 ///   on or depends on the network, and this never throws — there is always a note.
 /// - Cheap + rare: one short call on the cheap model (`AIConfig.insightModel`), gated to

@@ -276,14 +276,13 @@ final class OpenAIProviderTests: XCTestCase {
     // MARK: - Provider routing
 
     func testPlanModelFollowsProvider() {
-        let original = AIConfig.provider
-        defer { AIConfig.provider = original }
-        AIConfig.provider = .anthropic
+        XCTAssertEqual(AIConfig.provider, .anthropic, "the app has no provider setting")
         XCTAssertEqual(AIConfig.planModel, "claude-opus-4-8")
-        // The heavy tier is deliberately a step ABOVE the coach tier on OpenAI.
-        AIConfig.provider = .openai
-        XCTAssertEqual(AIConfig.planModel, "gpt-5.6-sol")
-        XCTAssertNotEqual(AIConfig.planModel, AIProvider.openai.defaultCoachModel)
+        // The heavy tier is deliberately a step ABOVE the coach tier on OpenAI (evaluations).
+        AIRuntime.$current.withValue(AIRuntime(provider: .openai)) {
+            XCTAssertEqual(AIConfig.planModel, "gpt-5.6-sol")
+            XCTAssertNotEqual(AIConfig.planModel, AIProvider.openai.defaultCoachModel)
+        }
     }
 
     /// Reasoning effort is pinned LOW on gpt-5-family models (thinking tokens bill as

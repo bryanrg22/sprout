@@ -118,10 +118,6 @@ final class CoachTurnEngine {
         /// How long after a turn starts a Stop is ignored. The send button becomes the stop
         /// button in place, so without this a double tap on send would cancel what it sent.
         var stopGuard: TimeInterval = 0.6
-        /// Whether the vendor that is NOT `provider` has a key stored (missing-key wording).
-        var otherProviderHasKey: @MainActor (AIProvider) -> Bool = { provider in
-            KeychainStore.hasAPIKey(for: provider == .anthropic ? .openai : .anthropic)
-        }
     }
 
     /// A validated tool request waiting for the user's Yes or Not now, with what is needed
@@ -463,8 +459,7 @@ final class CoachTurnEngine {
         else { retryNotBefore = nil }
         failedCall = call
         failure = Failure(id: UUID(), error: error,
-                          message: error.message(provider: provider,
-                                                 otherProviderHasKey: env.otherProviderHasKey(provider)),
+                          message: error.message(provider: provider),
                           action: error.action, retryNotBefore: retryNotBefore)
     }
 

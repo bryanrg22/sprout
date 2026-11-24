@@ -34,8 +34,7 @@ final class LoggingFlowTests: SproutUITestCase {
             About 32 issues (19 contrast, 11 Dynamic Type, 2 clipped text; counts are from one run and \
             move by one or two between runs). About 23 are on elements of the hidden \
             Gym surface, which stays in the accessibility tree (Victoria/App/RootView.swift:174, :179). \
-            On screen: contrast on the finish-setup card and its Save key button \
-            (Features/Dashboard/FinishSetupCard.swift:34, :75), on the widget promo card \
+            On screen: contrast on the widget promo card \
             (Features/Dashboard/WidgetPromoCard.swift:37, :61, :72) and on the weekly reflection text \
             (Features/Dashboard/WeeklyReflectionCard.swift); partial Dynamic Type on the promo card's \
             last line (WidgetPromoCard.swift:72); in some runs the two-line greeting is reported clipped \
