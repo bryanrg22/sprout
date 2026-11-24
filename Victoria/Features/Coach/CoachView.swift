@@ -84,6 +84,9 @@ struct CoachView: View {
 
                     conversation
                 }
+                // Read the conversation before the input bar below it, as it is drawn (the
+                // inset is otherwise read first).
+                .accessibilitySortPriority(1)
                 // Pin the input bar as a bottom safe-area INSET rather than a VStack child.
                 // This is the fix for the watchdog freeze (0x8BADF00D) on send: in a plain
                 // VStack the keyboard SHRINKS the whole stack, which resizes the message
@@ -108,6 +111,7 @@ struct CoachView: View {
                 ConfettiBurst(trigger: engine.confettiTick)
                     .allowsHitTesting(false)
             }
+            .accessibilityElement(children: .contain)
             .navigationTitle(coachName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -280,6 +284,7 @@ struct CoachView: View {
                                    onRetry: { engine.retry() },
                                    onOpenSettings: { showAISettings = true })
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.failure)
                         .id(Self.failureID)
                         .transition(.opacity)
                 }
@@ -292,6 +297,7 @@ struct CoachView: View {
                                     onYes: { engine.confirmPendingTool() },
                                     onNo: { engine.declinePendingTool() })
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.confirm)
                         .id(Self.confirmID)
                         // The content is flipped, so its top edge is the screen's bottom.
                         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -300,6 +306,7 @@ struct CoachView: View {
                 if engine.isSending {
                     TypingIndicator(coachName: coachName)
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.typing)
                         .id(Self.typingID)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -322,6 +329,7 @@ struct CoachView: View {
                                    showDeleteDialog = true
                                })
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.message(at: index, of: transcript.rows.count))
                         .id(message.id)
                         #if DEBUG
                         .chatProbeFrame(message.id)
@@ -337,12 +345,16 @@ struct CoachView: View {
                 if transcript.window.hasEarlier {
                     LoadEarlierRow(isLoading: transcript.window.isLoadingEarlier, action: loadEarlier)
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.top(messages: transcript.rows.count))
                         .id(Self.earlierID)
                 } else if transcript.rows.count > transcript.window.pageSize {
                     ConversationStartRow()
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.top(messages: transcript.rows.count))
                 }
             }
+            // The rows' priorities are compared within this container (`ChatReadingOrder`).
+            .accessibilityElement(children: .contain)
             .padding(.horizontal, Theme.Space.md)
             // Flipped: the content's top is the screen's bottom.
             .padding(.top, Theme.Space.sm)

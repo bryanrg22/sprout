@@ -1754,3 +1754,31 @@ the beginning was last run locally with a 40-swipe limit on 201 messages and sto
 so it was changed to 121 messages and 60 swipes and has run only on CI; VoiceOver order
 (the rows are declared newest first and VoiceOver may read them that way); a phone; iOS 18
 (the simulator is iOS 26.4).
+
+## 33. VoiceOver reads the chat in the order it is drawn (2026-11-23)
+
+Objective G14. The flip (section 32) declares the rows newest first, and SwiftUI hands
+assistive technologies the rows in declaration order. Measured in the accessibility tree
+of a 201-message chat at the newest message: the input bar, then messages #200, #199, #198,
+#197 … at y 474, 404, 26, -93: bottom to top. The input bar coming first predates the flip
+(it is a bottom safe-area inset, read before the content).
+
+**The change:** each row is its own accessibility container with a sort priority that
+matches where it is drawn (`ChatReadingOrder` in `ChatScrollSupport.swift`), compared
+within the list: "Load earlier messages" or the start of the conversation highest, the
+messages from the oldest loaded (the count) down to the newest (1), then the typing
+indicator (-1), a confirm card (-2) and an error row (-3). The conversation is given a
+higher priority than the input bar. Sort priority changes only the order, not what is on
+screen or what a touch finds, which is the standard tool for this (Apple's
+`accessibilitySortPriority`; reading order should follow the visual order, WCAG 1.3.2 and
+2.4.3).
+
+**Verified:** a UI flow (`testVoiceOverReadsTheChatInTheOrderItIsDrawn`) reads the tree and
+checks the messages run oldest to newest and top to bottom, the input bar comes after
+them, and "Load earlier messages" before them: at the newest message, at the top of what is
+loaded, and after a page loads. On the code before the change it failed with
+`[200, 199, 198, 197, 196, 195, 194]` for the order. With the change it runs on CI (a local
+run was stopped: the disk was nearly full and another session needed it).
+
+**Not verified:** VoiceOver itself (the simulator has none; the tree's order is what the app
+hands it), a three-finger scroll's direction in the flipped scroll view, a phone, iOS 18.
