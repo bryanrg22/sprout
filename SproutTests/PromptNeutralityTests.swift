@@ -55,7 +55,7 @@ final class PromptNeutralityTests: XCTestCase {
 
     func testTheScannerCatchesWhatItIsFor() {
         XCTAssertFalse(Self.violations(in: "Here is her current data").isEmpty)
-        XCTAssertFalse(Self.violations(in: "Never push restriction.").isEmpty)
+        XCTAssertFalse(Self.violations(in: "She logs every day.").isEmpty)
         XCTAssertFalse(Self.violations(in: "celebrate the strength she's building").isEmpty)
         XCTAssertFalse(Self.violations(in: "that plan is hers").isEmpty)
         XCTAssertFalse(Self.violations(in: "a note she wrote herself").isEmpty)

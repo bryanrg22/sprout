@@ -153,7 +153,7 @@ they held until that user's next publish overwrites them.
 
 | ID | Defect |
 |---|---|
-| A-1 | Prompts are written for one specific person. `InsightPhraser` ("a warm, upbeat weight-loss buddy texting … her day … Never push restriction"), `DailyBriefService` ("writing your friend her short morning note", "Her name:"), `FoodSuggestionService` ("Here is her current data"), `CoachPromptService` ("in her voice"), `ChecklistPlanService` ("she actually does"). For a man on a gain goal the framing and the pronoun are wrong, and the project's own rule says no hardcoded names or goal-direction copy. The `dailyBrief` evaluation scores wrong-person pronouns in the output, so the effect will be measured, not assumed. |
+| A-1 | Prompts are written for one specific person. `InsightPhraser` ("a warm, upbeat weight-loss buddy texting … her day … She …"), `DailyBriefService` ("writing your friend her short morning note", "Her name:"), `FoodSuggestionService` ("Here is her current data"), `CoachPromptService` ("in her voice"), `ChecklistPlanService` ("she actually does"). For a man on a gain goal the framing and the pronoun are wrong, and the project's own rule says no hardcoded names or goal-direction copy. The `dailyBrief` evaluation scores wrong-person pronouns in the output, so the effect will be measured, not assumed. |
 | A-2 | The coach exposes one tool call per turn (`ChatTurn.toolUse` is the first block; the rest are dropped). "Log a banana and two waters" does one of them. By design per the comment, but untested and not told to the user. |
 | A-3 | `UserProfile.aiModelFood` / `aiModelChat` default to `claude-sonnet-4-6` and are read by nothing. |
 | A-4 | `DemoSeed` uses `Int.random`, so the demo profile is different every time; fine for a demo, unusable as a test fixture (the evaluations use fixed fixtures in `EvalFixtures.swift`). |
@@ -607,7 +607,7 @@ the screens show (the script prints them; nobody compared them to the UI).
 ## 14. Prompts for whoever is using the app, re-measured; a discarded rewrite explained (2026-11-22)
 
 Objective G7, finding A-1 of section 3. Every prompt, template and fallback that
-addressed one specific person ("her", "never push restriction", "weight-loss buddy") now
+addressed one specific person ("her", "she", "weight-loss buddy") now
 addresses the user in the second person or by the name passed in, and takes the goal
 direction from the profile through one `GoalFraming` rule: for a user who is losing,
 never push eating less; for a user who is gaining, never frame eating as excess. The
