@@ -34,6 +34,10 @@ struct ChatWindow<Item: ChatWindowItem> {
     private(set) var items: [Item] = []
     /// Whether the store holds messages older than the oldest loaded one.
     private(set) var hasEarlier = false
+    /// When the newest message older than the loaded ones was created (the extra row each
+    /// fetch asks for), so the oldest loaded message gets the same timestamp before and after
+    /// the page above it arrives. Nil when nothing older exists.
+    private(set) var earlierBoundary: Date?
     /// True between `beginLoadingEarlier` and `finishLoadingEarlier`.
     private(set) var isLoadingEarlier = false
     /// Whether the newest message is on screen. The view reports it.
@@ -59,6 +63,7 @@ struct ChatWindow<Item: ChatWindowItem> {
     mutating func load(newestFirst rows: [Item], for request: Request) {
         let page = max(1, request.limit - 1)
         hasEarlier = rows.count > page
+        earlierBoundary = hasEarlier ? rows[page].createdAt : nil
         items = Array(rows.prefix(page).reversed())
         isLoadingEarlier = false
         unseenCount = 0
@@ -90,6 +95,7 @@ struct ChatWindow<Item: ChatWindowItem> {
         let loaded = Set(items.map(\.id))
         let fresh = rows.filter { !loaded.contains($0.id) }
         hasEarlier = fresh.count > pageSize
+        earlierBoundary = hasEarlier ? fresh[pageSize].createdAt : nil
         items.insert(contentsOf: fresh.prefix(pageSize).reversed(), at: 0)
         return anchor
     }
@@ -146,11 +152,15 @@ struct ChatWindow<Item: ChatWindowItem> {
     /// Whether to offer "jump to latest": the reader is away from the newest message.
     var showsJumpToLatest: Bool { !isAtBottom && !items.isEmpty }
 
-    /// A timestamp goes above the first loaded message and above any message more than
-    /// five minutes after the one before it.
+    /// A timestamp goes above the first message of the conversation and above any message
+    /// more than five minutes after the one before it. The oldest loaded message is compared
+    /// with the message just older than the window, when there is one, so loading that page
+    /// never adds or removes a timestamp on a row already on screen (a row changing height
+    /// under the reader's finger is a jump; EVAL_REPORT 32).
     func showsTimestamp(at index: Int) -> Bool {
         guard items.indices.contains(index) else { return false }
-        guard index > 0 else { return true }
-        return items[index].createdAt.timeIntervalSince(items[index - 1].createdAt) > 5 * 60
+        let previous = index > 0 ? items[index - 1].createdAt : earlierBoundary
+        guard let previous else { return true }
+        return items[index].createdAt.timeIntervalSince(previous) > 5 * 60
     }
 }

@@ -127,6 +127,7 @@
 		5CD368013BC2C78C57712615 /* GoogleHealthSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4B4D51A57B8B306EAA7702 /* GoogleHealthSync.swift */; };
 		5CDDD4D42126B1D0F7012359 /* BuddyPairingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C401AF05A411244B19FD6CA9 /* BuddyPairingTests.swift */; };
 		5E744C2AD401B6E4ED5EE7E3 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CBF8EF09D88436338C06CE7 /* RootView.swift */; };
+		600CA65DE4F6BD841045C116 /* ChatPagingFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F9427C000ED1D378B4803A /* ChatPagingFlowTests.swift */; };
 		60CF18226B0598FE179EEECD /* SettingsFixesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF771C1FEDBE42CF1E9F7F92 /* SettingsFixesTests.swift */; };
 		62BD4BA3B7AF9E5EEC20308D /* ChatTranscriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4448840E1E3639D3B9C3F320 /* ChatTranscriptTests.swift */; };
 		62EC1B76C7DC855BB7C18DE7 /* ExerciseEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 066CEAB4D51B49C2AC9788C7 /* ExerciseEntry.swift */; };
@@ -518,6 +519,7 @@
 		7694B82EE0F1BDD58CFBB13E /* ChatMessageFeaturesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageFeaturesTests.swift; sourceTree = "<group>"; };
 		76B031B9F96E4E6B906BF95A /* PlanService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanService.swift; sourceTree = "<group>"; };
 		76EBADA356F716D093622C5A /* GoogleHealthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleHealthClient.swift; sourceTree = "<group>"; };
+		77F9427C000ED1D378B4803A /* ChatPagingFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPagingFlowTests.swift; sourceTree = "<group>"; };
 		799EF3A492C513C7F205CD59 /* GoogleHealthAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleHealthAuth.swift; sourceTree = "<group>"; };
 		7A2A0E45CA2A4CFE08936DB2 /* DataExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportTests.swift; sourceTree = "<group>"; };
 		7AF007C115120AD8D1EE5AC7 /* RunningAppCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningAppCard.swift; sourceTree = "<group>"; };
@@ -902,6 +904,7 @@
 		6BA2B3F9532AA20877D4FF4A /* VictoriaUITests */ = {
 			isa = PBXGroup;
 			children = (
+				77F9427C000ED1D378B4803A /* ChatPagingFlowTests.swift */,
 				61DCD582927A1FD0D0F12A3A /* CoachFlowTests.swift */,
 				002C023EB2C421AA19096CDF /* CompetitionFlowTests.swift */,
 				2E28B64DE7E37A97C3FC6DD5 /* InterruptionFlowTests.swift */,
@@ -1562,6 +1565,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AB04488083BBE76ECFF724B9 /* AccessibilityID.swift in Sources */,
+				600CA65DE4F6BD841045C116 /* ChatPagingFlowTests.swift in Sources */,
 				2927AA633E6FAAB7D5F93B11 /* CoachFlowTests.swift in Sources */,
 				FDB9068EB67871DD166EA28D /* CompetitionFlowTests.swift in Sources */,
 				E0FADFD0B0024D86FA79C90B /* InterruptionFlowTests.swift in Sources */,

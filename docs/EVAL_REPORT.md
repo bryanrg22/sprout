@@ -1683,3 +1683,74 @@ it because the verb ends in "n't". Fixed, and the test that pinned the old sente
 pins the new one.
 
 **Not verified:** a phone, and VoiceOver reading the converted values.
+
+## 32. The chat no longer jumps when earlier messages load (2026-11-23)
+
+Objective G14. Loading earlier messages moved what the reader was looking at. Section 20
+and `docs/chat-standards.md` §1 recorded five ways of correcting it, each measured and
+each worse, and shipped the least bad: the top bubble moved 0 to 31 pt on most loads and
+156 to 173 pt on one load in three.
+
+**Measured first, as a UI flow** (`ChatPagingFlowTests`, new): a 201-message conversation,
+real swipes to the top of what is loaded, the scroll left to rest, "Load earlier messages"
+tapped, the top bubble's position compared; three pages in a row. Automatic loading is
+held off so each page loads from rest, the worst case. The first version of the flow
+matched the message by its label, which is "You said" for every message, and reported
+moves of 500 to 800 pt; the text is the accessibility value, and matching by value gave
+the real baseline: **+1, +178, +9 pt**.
+
+**The change: a flipped list.** The chat's scroll view is turned upside down and every row
+turned back, so the newest message is the start of the content and older pages are added
+at its end. A page added at the end cannot move anything, because the offset counts from
+the start; nothing has to be estimated. This is how established chat lists do it
+(Stream's SwiftUI message list; flipped table and collection views in UIKit chats).
+
+| Version | Moved (three pages) |
+|---|---|
+| Before (identity-bound position, unflipped) | +1, +178, +9 |
+| No identity binding, `defaultScrollAnchor(.bottom, for: .sizeChanges)`, unflipped | held message pushed off screen |
+| Flipped, identity binding kept | −27, 0, −27; −27, +27, −27 |
+| Flipped, oldest row's timestamp fixed, binding kept | −27, +27, −27 |
+| **Flipped, no identity binding (shipped)** | **0, 0, 0**, every bubble on screen at the same pixel |
+
+The ±27 pt was read from every bubble's position before and after: all of them moved
+together, so it was the offset, not a row. The identity binding re-derives the offset from
+the held row through the heights of newer rows that are off screen, some of them
+estimates. Without it, the offset is left alone.
+
+**What else the flip needed, each found by running it:**
+
+- The oldest loaded message always showed a timestamp and lost it once the page above
+  arrived (a row on screen changing height). `ChatWindow` now keeps the time of the
+  message just older than the window, which each fetch already reads, and decides the same
+  way before and after. Three unit tests.
+- iOS 26's scroll edge effect came out inverted in a flipped scroll view (the whole
+  conversation blurred, the text under the title sharp; screenshot). It is hidden for the
+  chat, and the navigation bar has a solid background, which iOS 18 also needs (its bar
+  shows a background according to the scroll offset, which the flip reverses).
+- The long-press menu on her own messages lost its preview (a thin line; with an explicit
+  preview, narrower than the bubble and cut off). Her messages now open the same action
+  row a reply has (copy, ask about, share, delete), by a tap or a long press. Seen in the
+  simulator. A reply's "…" menu and text selection in a reply work unchanged (seen).
+- Jump to latest is now an exact scroll to the start of the content; the second scroll
+  0.4 s later that the unflipped list needed is removed.
+
+**Tests:** six UI flows (`ChatPagingFlowTests`): paging holds the top bubble within 2 pt
+(measured 0.0 on every run since the change); the chat opens at the newest message, just
+above the input bar, oldest above newest; jump to latest returns to the same message at the
+same pixel (within 2 pt); scrolling up alone reaches "Beginning of your conversation"; with
+the keyboard up the newest message stays above the input bar, which stays above the
+keyboard; a message arriving while the reader is further up moves the reader by 0 pt
+(measured 2e-13) and is counted on the jump button, which then shows it. A new debug step
+(`--chat-debug-do arrive:<seconds>`) makes that message arrive. The unit tests for the
+scroll rules are rewritten for the flipped geometry (newest = content start, oldest =
+content end) and three are added for the timestamp. 1,205 unit tests, 0 failed (3 known
+defects pinned, unchanged). A fast swipe moves the same distance flipped and unflipped
+(four swipes from the newest of 201: to #179 and #181).
+
+**Not verified:** the full set of 31 UI flows was not run locally (stopped to free disk
+for another session; CI runs all of them on the pull request); the flow that scrolls to
+the beginning was last run locally with a 40-swipe limit on 201 messages and stopped at #4,
+so it was changed to 121 messages and 60 swipes and has run only on CI; VoiceOver order
+(the rows are declared newest first and VoiceOver may read them that way); a phone; iOS 18
+(the simulator is iOS 26.4).
