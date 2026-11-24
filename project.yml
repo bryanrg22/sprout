@@ -1,4 +1,4 @@
-name: Victoria
+name: Sprout
 options:
   bundleIdPrefix: com.bryanram
   deploymentTarget:
@@ -16,7 +16,7 @@ settings:
     SWIFT_EMIT_LOC_STRINGS: YES
 
 targets:
-  Victoria:
+  Sprout:
     type: application
     platform: iOS
     deploymentTarget: "18.0"
@@ -25,30 +25,32 @@ targets:
     # aborts with "resource fork, Finder information, or similar detritus not allowed". Runs every
     # build (no dependency analysis) so it can't be skipped incrementally.
     postBuildScripts:
-      # The personal onboarding note (`PersonalNote`) is not in the repository. When the
-      # building machine has `Private/PersonalNote.json` it is copied into the app; when it
-      # does not, any copy left by an earlier build is removed, so a build never ships a
-      # note its machine does not have.
-      - name: "Personal note (optional, not in the repository)"
+      # Personal content is not in the repository: the onboarding note (`PersonalNote`) and
+      # the cute character's own lines (`CompanionPhrases`). When the building machine has
+      # `Private/<name>.json` it is copied into the app; when it does not, any copy left by an
+      # earlier build is removed, so a build never ships content its machine does not have.
+      - name: "Private content (optional, not in the repository)"
         basedOnDependencyAnalysis: false
         script: |
-          src="${SRCROOT}/Private/PersonalNote.json"
-          dst="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/PersonalNote.json"
-          if [ -f "$src" ]; then cp "$src" "$dst"; else rm -f "$dst"; fi
+          for name in PersonalNote CompanionPhrases; do
+            src="${SRCROOT}/Private/${name}.json"
+            dst="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${name}.json"
+            if [ -f "$src" ]; then cp "$src" "$dst"; else rm -f "$dst"; fi
+          done
       - name: "Strip xattrs (codesign hygiene)"
         basedOnDependencyAnalysis: false
         script: '/usr/bin/xattr -cr "${TARGET_BUILD_DIR}/${WRAPPER_NAME}" 2>/dev/null || true'
     scheme:
       testTargets:
-        - VictoriaTests
+        - SproutTests
     sources:
-      - path: Victoria
+      - path: Sprout
       - path: Shared
     dependencies:
-      - target: VictoriaWidgets
+      - target: SproutWidgets
         embed: true
     entitlements:
-      path: Victoria/Victoria.entitlements
+      path: Sprout/Sprout.entitlements
       properties:
         com.apple.security.application-groups:
           - group.com.bryanram.victoria
@@ -61,7 +63,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria
-        PRODUCT_NAME: Victoria
+        PRODUCT_NAME: Sprout
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -83,7 +85,7 @@ targets:
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Sprout lets you pick a meal photo from your library to estimate its calories and macros, or a photo of yourself to make your pixel character."
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Sprout uses your location to suggest healthy food options near you when you're out."
 
-  VictoriaWidgets:
+  SproutWidgets:
     type: app-extension
     platform: iOS
     deploymentTarget: "18.0"
@@ -93,15 +95,15 @@ targets:
         basedOnDependencyAnalysis: false
         script: '/usr/bin/xattr -cr "${TARGET_BUILD_DIR}/${WRAPPER_NAME}" 2>/dev/null || true'
     sources:
-      - path: VictoriaWidgets
+      - path: SproutWidgets
       - path: Shared
     entitlements:
-      path: VictoriaWidgets/VictoriaWidgets.entitlements
+      path: SproutWidgets/SproutWidgets.entitlements
       properties:
         com.apple.security.application-groups:
           - group.com.bryanram.victoria
     info:
-      path: VictoriaWidgets/Info.plist
+      path: SproutWidgets/Info.plist
       properties:
         CFBundleDisplayName: Sprout
         NSExtension:
@@ -109,74 +111,74 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.widgets
-        PRODUCT_NAME: VictoriaWidgets
+        PRODUCT_NAME: SproutWidgets
         TARGETED_DEVICE_FAMILY: "1"
         CURRENT_PROJECT_VERSION: "16"
         MARKETING_VERSION: "2.1"
 
   # Model evaluations (Evals/): the app's real AI code paths run against labelled
-  # datasets across candidate models. Its own scheme, so `-scheme Victoria` never
+  # datasets across candidate models. Its own scheme, so `-scheme Sprout` never
   # runs it; live cases skip unless Evals/run.sh configured them.
-  VictoriaEvals:
+  SproutEvals:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - path: VictoriaEvals
-      - path: VictoriaTests/Support
+      - path: SproutEvals
+      - path: SproutTests/Support
     dependencies:
-      - target: Victoria
+      - target: Sprout
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.evals
         GENERATE_INFOPLIST_FILE: YES
 
-  VictoriaTests:
+  SproutTests:
     type: bundle.unit-test
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - path: VictoriaTests
+      - path: SproutTests
     dependencies:
-      - target: Victoria
+      - target: Sprout
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.tests
         GENERATE_INFOPLIST_FILE: YES
 
   # UI smoke flows (XCUITest): the main paths end to end against an in-memory store and a
-  # scripted model (`--ui-testing`, see VictoriaUITests/README.md). Its own scheme, so
-  # `-scheme Victoria` never runs it. `AccessibilityID.swift` is compiled into both the app
+  # scripted model (`--ui-testing`, see SproutUITests/README.md). Its own scheme, so
+  # `-scheme Sprout` never runs it. `AccessibilityID.swift` is compiled into both the app
   # and this bundle so the identifiers cannot drift apart.
-  VictoriaUITests:
+  SproutUITests:
     type: bundle.ui-testing
     platform: iOS
     deploymentTarget: "18.0"
     sources:
-      - path: VictoriaUITests
-      - path: Victoria/App/AccessibilityID.swift
+      - path: SproutUITests
+      - path: Sprout/App/AccessibilityID.swift
     dependencies:
-      - target: Victoria
+      - target: Sprout
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.bryanram.victoria.uitests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_TARGET_NAME: Victoria
+        TEST_TARGET_NAME: Sprout
 
 schemes:
-  VictoriaUITests:
+  SproutUITests:
     build:
       targets:
-        Victoria: all
-        VictoriaUITests: [test]
+        Sprout: all
+        SproutUITests: [test]
     test:
       targets:
-        - VictoriaUITests
-  VictoriaEvals:
+        - SproutUITests
+  SproutEvals:
     build:
       targets:
-        Victoria: all
-        VictoriaEvals: [test]
+        Sprout: all
+        SproutEvals: [test]
     test:
       targets:
-        - VictoriaEvals
+        - SproutEvals

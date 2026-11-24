@@ -5,14 +5,14 @@ every way it can fail, what the code does and what is on screen. When this file 
 code disagree, the code is right and this file is fixed in the same change.
 
 **What is verified and what is not.** Every decision described here is made in code that
-the unit tests run against a server in the test process (`VictoriaTests/Support/BuddySyncTestSupport.swift`).
+the unit tests run against a server in the test process (`SproutTests/Support/BuddySyncTestSupport.swift`).
 The CloudKit calls themselves (`CloudKitSyncService`, `CloudKitPairingStore`) have **never
 been run by a test or, for the parts changed here, on a device**: they were read, not run.
 The last two sections say what has to be checked on a device and in the CloudKit Dashboard.
 
 ## 1. The pieces
 
-| File (`Victoria/Features/Buddy/`) | What it is |
+| File (`Sprout/Features/Buddy/`) | What it is |
 |---|---|
 | `Services/BuddySyncService.swift` | The protocol the app talks to, the snapshot payload, the error cases. |
 | `Services/BuddyPairing.swift` | The pairing handshake (`BuddyPairingEngine`), the store it runs over (`BuddyPairingStore`), where the link is kept on the device (`BuddyLinkStorage`), the code format. |

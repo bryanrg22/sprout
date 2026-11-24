@@ -32,6 +32,18 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 20 | The chat: a testable turn engine, paged history, selection, and named failures | 2026-11-23 |
 | 21 | iCloud was backing up two of twenty models: the CloudKit schema, measured and fixed in Development | 2026-11-23 |
 | 22 | Eight more tasks measured: four defaults changed, and two ways a reply was being lost | 2026-11-23 |
+| 23 | The character call, made for real: eighteen images, and a grader that could not see them | 2026-11-23 |
+| 24 | The coach's tools called every user "she" | 2026-11-23 |
+| 25 | A note lost to thinking: measured, fixed per model, and measured again | 2026-11-23 |
+| 26 | Onboarding walked in every order, and what looking at the result found | 2026-11-23 |
+| 27 | Never onboard someone who already has data; three owner decisions applied | 2026-11-23 |
+| 28 | The week on Workouts: active days, every day tappable | 2026-11-23 |
+| 29 | The weekly competition; Home and Gym out of each other's way for VoiceOver; readable secondary text | 2026-11-23 |
+| 30 | Structured answers from the Claude models that refuse a forced tool call | 2026-11-23 |
+| 31 | Kilograms | 2026-11-23 |
+| 32 | The chat no longer jumps when earlier messages load | 2026-11-23 |
+| 33 | Built-in AI, the code renamed Sprout, and personal content out of the repository | 2026-11-24 |
+| 34 | The evaluations audited: four grader defects, two prompt defects, a regrade of every past answer, and statistics by case | 2026-11-24 |
 
 ---
 
@@ -141,7 +153,7 @@ they held until that user's next publish overwrites them.
 
 | ID | Defect |
 |---|---|
-| A-1 | Prompts are written for one specific person. `InsightPhraser` ("a warm, upbeat weight-loss buddy texting … her day … Never push restriction"), `DailyBriefService` ("writing your friend her short morning note", "Her name:"), `FoodSuggestionService` ("Here is her current data"), `CoachPromptService` ("in her voice"), `ChecklistPlanService` ("she actually does"). For a man on a gain goal the framing and the pronoun are wrong, and the project's own rule says no hardcoded names or goal-direction copy. The `dailyBrief` evaluation scores wrong-person pronouns in the output, so the effect will be measured, not assumed. |
+| A-1 | Prompts are written for one specific person. `InsightPhraser` ("a warm, upbeat weight-loss buddy texting … her day … She …"), `DailyBriefService` ("writing your friend her short morning note", "Her name:"), `FoodSuggestionService` ("Here is her current data"), `CoachPromptService` ("in her voice"), `ChecklistPlanService` ("she actually does"). For a man on a gain goal the framing and the pronoun are wrong, and the project's own rule says no hardcoded names or goal-direction copy. The `dailyBrief` evaluation scores wrong-person pronouns in the output, so the effect will be measured, not assumed. |
 | A-2 | The coach exposes one tool call per turn (`ChatTurn.toolUse` is the first block; the rest are dropped). "Log a banana and two waters" does one of them. By design per the comment, but untested and not told to the user. |
 | A-3 | `UserProfile.aiModelFood` / `aiModelChat` default to `claude-sonnet-4-6` and are read by nothing. |
 | A-4 | `DemoSeed` uses `Int.random`, so the demo profile is different every time; fine for a demo, unusable as a test fixture (the evaluations use fixed fixtures in `EvalFixtures.swift`). |
@@ -595,7 +607,7 @@ the screens show (the script prints them; nobody compared them to the UI).
 ## 14. Prompts for whoever is using the app, re-measured; a discarded rewrite explained (2026-11-22)
 
 Objective G7, finding A-1 of section 3. Every prompt, template and fallback that
-addressed one specific person ("her", "never push restriction", "weight-loss buddy") now
+addressed one specific person ("her", "she", "weight-loss buddy") now
 addresses the user in the second person or by the name passed in, and takes the goal
 direction from the profile through one `GoalFraming` rule: for a user who is losing,
 never push eating less; for a user who is gaining, never frame eating as excess. The
@@ -1754,3 +1766,206 @@ the beginning was last run locally with a 40-swipe limit on 201 messages and sto
 so it was changed to 121 messages and 60 swipes and has run only on CI; VoiceOver order
 (the rows are declared newest first and VoiceOver may read them that way); a phone; iOS 18
 (the simulator is iOS 26.4).
+
+## 33. Built-in AI, the code renamed Sprout, and personal content out of the repository (2026-11-24)
+
+**The decision (the owner's):** the people using the app are not developers, so the app asks
+for nothing. No key, no provider, no model setting. The AI runs through a gateway the owner
+runs (`server/`), which holds the keys.
+
+### How a call is made now
+
+- **The app** never holds a key. `AIConfig.key(for:)` is the one source: a scoped
+  `AIRuntime` key (tests, evaluations), else the gateway's placeholder, else (DEBUG builds
+  only) a Keychain key for the Simulator, which cannot do App Attest. A request carrying the
+  placeholder goes to the gateway, signed by the phone's App Attest key over
+  `POST\n<route>\n<timestamp>\n` and the body (`AIGatewayTransport`).
+- **The provider** is Anthropic for every text task; OpenAI draws only the character
+  picture. The gateway serves exactly `/anthropic/v1/messages` and `/openai/v1/images/edits`.
+- **The gateway** checks Apple's attestation steps 1 to 9 at registration and the assertion
+  on every call (signature, App ID, counter accepted once within a 64-wide window,
+  timestamp within 5 minutes), then the phone's day ($1) and everyone's ($20), then the
+  model allowlist, the output cap (8,192 tokens) and the tools (Anthropic web search with
+  at most 5 uses). It prices each call from the provider's `usage` report.
+
+### A defect found by asking "does the server allow every model the app uses?"
+
+The gateway's first allowlist was written from the tier defaults and missed the daily
+brief's measured default, `claude-haiku-5-5` (sections 10 and 25): every daily brief would
+have been refused. It is now allowed, and `AIGatewayTests` reads `server/src/pricing.ts` and
+fails if any `AITask`, as the app resolves it, names a model the gateway would refuse, or if
+the image model, its quality or the web-search tool version differ.
+
+### Errors the person can no longer fix
+
+With no settings, a key, model or billing error is the owner's. `CoachTurnError` gives
+those Retry and says it is "on our side, not yours"; none of its messages mentions a key,
+Settings or a console (asserted). A phone without App Attest gets "I can't chat on this
+phone, sorry. Everything you log still works 💚" and no button. Food suggestions and the
+recap are left out there, as before.
+
+### The rename
+
+Targets, schemes, folders and Swift types named after a person became `Sprout*`. Read
+before doing it (`git grep`, the code): no stored data or CloudKit record depends on the
+Swift module name (record types are `CD_<Entity>`; no `NSKeyedArchiver`, `@objc` names or
+transformable types other than Foundation arrays). Kept on purpose, because they are stored:
+the bundle id, iCloud container, App Group, Keychain service, HealthKit sync prefix, the
+check-in `UserDefaults` keys, the avatar raw value `"victoria"` (now the Swift case
+`.cute`) and the alternate icon asset `AppIconVictoria` (iOS stores the chosen icon by
+name). Notification request ids were renamed: every reschedule removes all pending requests
+first.
+
+### Verified
+
+- Unit tests: 1,211 pass (`AIGatewayTests` 15 new; `AIKeyRoutingTests` removed with the
+  code it tested; three override tests replaced by one of the scoped model). Evaluation
+  self-tests: 96 (83 pass, 13 skipped as live). UI flows and Release build: compiled.
+  Gateway: 58 tests pass, `tsc` clean, and the same tests pass in `node:24-slim`.
+- Script checks as CI runs them: `py_compile`, `bash -n`, the store verifier self-test.
+
+### Not verified
+
+- **A real attestation.** Every App Attest object in the tests is made under a test
+  certificate authority. The first real one is a phone registering with the deployed
+  gateway; until then the AAGUID a development build presents and the signature
+  convention on a device are read from Apple's documentation, not seen.
+- **TestFlight without the App Attest entitlement.** Apple's documentation says
+  TestFlight and App Store builds always use the production environment; no TestFlight
+  build has registered yet.
+- **The gateway is not deployed** (`AIGateway.address` is empty), so a Release build made
+  now has no AI at all. No TestFlight build should be made from `main` until it is.
+- **Updating in place after the rename** was reasoned from the code, not run: the next
+  TestFlight build installed over the current one on a phone with data is the check.
+
+## 34. The evaluations audited: four grader defects, two prompt defects, a regrade of every past answer, and statistics by case (2026-11-24)
+
+**Why:** the owner asked that every model choice be provable the way Basis proves its own
+(dataset, every candidate, accuracy, cost and latency, versioned records), and that wrong
+results be investigated rather than trusted. An independent read-only audit went through all
+40 run directories; every claim below was then checked against the raw records before
+anything was changed. One of the audit's claims was wrong and is not acted on (see "The
+recap", below).
+
+### What a decision rests on today (Anthropic, the provider that ships)
+
+| Task | Ships | Chosen by |
+|---|---|---|
+| Daily brief | `claude-haiku-5-5` | measured: sections 10 and 25 |
+| The character picture | `gpt-image-2.6-sunburst`, low | measured: sections 23 and 27 |
+| Insight line, weekly reflection, onboarding note, memory fold | `claude-haiku-4-5-20251001` | tier default; section 22 kept it only until the cut-off was solved, which section 25 did; the switch was never re-decided |
+| Chat turn, meal photo, meal description, food suggestions, recap, checklist, chat chips | `claude-sonnet-5` | tier default; the datasets measure rules, not quality (sections 10, 22) |
+| Plan build, review, research | `claude-opus-4-8` | tier default; no dataset |
+
+Two of fifteen tasks have a measured model. That is the honest state.
+
+### Defects found in the app's prompts (verified in the records)
+
+1. **The weekly reflection's prompt contained a digit, and its sanitiser discards any reply
+   with a digit.** The user turn said "Logged six of the last **7** days"; a model that
+   repeated it had its reply thrown away and the template shown. Of the replies the app
+   discarded, 23 of 44 in run `…092731` and 7 of 15 in `…104116` held "7 days", and 20
+   and 6 held "10K", a model's shorthand for the case note "ten-kilometre race" (a reply
+   can hold both). The
+   prompt now says "seven", and tells the model to write every number as a word because a
+   note with a digit is not shown. The sanitiser is unchanged.
+2. **The recap's prompt did not say that working out a figure counts as inventing one.** The
+   grader always held that rule (a figure must be given, because the app's numbers are
+   computed in code and a wrong subtraction would be shown as fact), but the prompt only
+   said "Never invent numbers not given". The prompt now says to use each figure exactly as
+   given and never work out a new one (no differences, totals or percentages).
+
+### Defects found in the graders (verified, then fixed and tested)
+
+1. **Idioms read as numbers:** "a meal or two", "a log or two", "one or two", "a high-five",
+   "the two of us". Removed before numbers are read (`withoutIdioms`), kept to phrases that
+   cannot be a count.
+2. **"Two weeks" for 14 days read as an invented 2 and a dropped 14** (insight
+   `welcome-back-14`, brief `streak-14`). N weeks now counts as 7×N days where those were
+   given; three weeks for 14 days still fails. Not applied to the recap, whose prompt now
+   asks for each figure exactly as given.
+3. **"0 logs" read as invented when the source said "nothing logged".** Zero now counts as
+   given when the source states an absence (`nothing`, `none`, `no`, `zero`). Every
+   "made-up figure" the shipped recap model was charged with in runs `…093733` and
+   `…095733` was this, or "8K" for a given 8,000.
+4. **"8K" read as 8.** A trailing k on a number is now thousands.
+
+Not a grader defect, though the audit called it one: the recap grader failing a figure the
+model computed (158.2 − 145 = "13.2 lb"). The arithmetic was right, but the rule is the
+app's design, so the grader keeps it and now records `states_a_derived_figure` beside it,
+so a reader can tell arithmetic from invention. The prompt was the defect (above).
+
+`GraderTests` gained six tests (idioms, weeks, zero and thousands, derived figures, the
+regrade, the brief's weeks rule); the evaluation self-tests are 102, 14 skipped (13 live,
+1 regrade that needs a named run).
+
+### Every past answer graded again, at no cost
+
+`Evals/regrade-text.sh` grades the text a run recorded against its case, rebuilt from the
+dataset, with the graders as they are now; no model is called. It covers the brief, insight
+line, weekly reflection, onboarding note and recap. A reply the app discarded, or a failed
+call, is not regradable and keeps its result. The per-run tables are in each run's
+`regrade-text.json`. The runs that decide something, Anthropic candidates only, passes of
+attempts:
+
+| Task (run) | `haiku-5-5` before → after | `haiku-4-5` (ships) before → after | `sonnet-5` before → after |
+|---|---|---|---|
+| Insight line (`…103954`) | 54 → **57/57** | 57 → 57/57 | 57 → 57/57 |
+| Weekly reflection (`…104116`) | 46 → **48/48** | 41 → 42/48 | 40 → 41/48 |
+| Onboarding note (`…104337`) | 44 → 44/45 | 42 → 42/45 | 38 → 38/45 |
+| Daily brief (`…104726`) | 39 → 39/39 | 39 → 39/39 | 36 → **39/39** |
+| Recap (`…095733`) | not run | 11 → 15/45 | 26 → **32/45** (ships) |
+
+What is left after the fixes, read case by case: the weekly reflection's remaining failures
+are replies the app discarded (the "7 days" defect, fixed in the prompt, so they need a new
+run); the recap's are mostly the model's own arithmetic (now forbidden by the prompt) and a
+few banned phrases; `claude-haiku-4-5` is the one model that invents figures in the recap
+(110, 1900, 127, 50).
+
+### Statistics by case, and a paired comparison
+
+`summarize.py` gave a Wilson interval over attempts, which treats three repeats of one case
+as three independent pieces of evidence and so is narrower than the data allows. It now also
+gives a **case CI**: 10,000 bootstrap draws over cases (fixed seed), the one to read. With
+`--baseline <candidate>` it compares every candidate with the shipped one on the same cases:
+the mean per-case difference and its case-bootstrap interval. On run `…104116` (weekly
+reflection, old prompt), against `claude-haiku-4-5`: `claude-haiku-5-5` +10.4% (−2.1% to
++25.0%), at $0.20 against $1.51 per 1,000 calls and 1.6 s against 2.3 s at the median.
+
+### Prices
+
+Checked on Anthropic's pricing page on 2026-11-24: Claude Sonnet 5's $2 / $10 launch price
+became its standard price, and the rise to $3 / $15 planned for 2026-09-01 was cancelled.
+`Evals/prices.json` was right; the gateway (`server/src/pricing.ts`) and a comment in
+`AIConfig` had $3 / $15 and are corrected, so a phone's daily allowance is no longer spent
+half as fast again as the real cost. Haiku 5.5 $0.10 / $0.50, Haiku 4.5 $1 / $5, Opus 4.8
+$5 / $25, web search $10 per 1,000: as recorded.
+
+### Corrections to earlier sections
+
+- **Section 25, the daily brief row.** "`haiku-5-5` before: 36/39" cites section 10, whose
+  deciding run (`…054917`) had 39/39; the 36 is from `…071932`. "`sonnet-5-5` not run"
+  and "`sonnet-5` not run" are wrong: `…054917` has 38/39 for each and `…071932` 39/39 for
+  each.
+- **Section 30.** "Fable costs $10 / $50 per million tokens" is the price of
+  `claude-fable-5`; `claude-fable-5-2`, the model that section tried, is $8 / $40.
+- **Runs cited nowhere until now:** `…072749-DailyBrief`, `…095611-ChecklistPlan` and
+  `…095733-ProgressSummary` (the last is used above).
+- **The index** at the top stopped at section 22; it now lists every section.
+
+### Not done, and why
+
+- **No default was changed here.** The four short-writing tasks point to `claude-haiku-5-5`
+  (as good or better on every regraded run at about a seventh of the cost and faster), but
+  the weekly reflection's prompt has changed, the memory fold is not covered by the regrade,
+  and section 25 found that `haiku-5-5` stores an app-owned number in 8–12% of memory
+  folds. A decision needs a run on the current prompts; it needs the owner's approval
+  (estimated at about $0.41 for the four tasks, both models, 5 repeats).
+- **The recap** needs a run on its new prompt before anything is concluded (about $0.48 for
+  `sonnet-5` against `haiku-5-5`, 5 repeats).
+- **Unmeasured:** the meal photo, the three plan tasks, the coach's advice over a whole
+  conversation, and household portions in meal descriptions (`meal_describe/build_v3.py`
+  exists, `v3.jsonl` was never generated). The structured tasks' datasets check rules only;
+  a cheaper model is not adopted for them until something measures quality.
+- **Run records** still lack a hash of the prompts and of `prices.json`, and the deciding
+  runs of sections 10 and 25 were made on uncommitted trees. Open.

@@ -10,7 +10,7 @@
 set -uo pipefail
 
 LABEL="${1:?version label, e.g. v2.1.0-b16}"
-SIM="${SPROUT_SIM:-Victoria-Dev}"
+SIM="${SPROUT_SIM:-Sprout-Dev}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$ROOT/docs/test-evidence/$LABEL"
 WORK="$(mktemp -d)"
@@ -20,17 +20,17 @@ cd "$ROOT"
 
 xcodegen generate > "$WORK/xcodegen.log" 2>&1; GEN=$?
 
-xcodebuild test -project Victoria.xcodeproj -scheme Victoria \
+xcodebuild test -project Sprout.xcodeproj -scheme Sprout \
   -destination "platform=iOS Simulator,name=$SIM" \
   -resultBundlePath "$WORK/unit.xcresult" -enableCodeCoverage YES \
   -parallel-testing-enabled NO -derivedDataPath "$DERIVED" > "$WORK/unit.log" 2>&1; UNIT=$?
 
-xcodebuild test -project Victoria.xcodeproj -scheme VictoriaEvals \
+xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -destination "platform=iOS Simulator,name=$SIM" \
   -resultBundlePath "$WORK/evals.xcresult" \
   -parallel-testing-enabled NO -derivedDataPath "$DERIVED" > "$WORK/evals.log" 2>&1; EVALS=$?
 
-xcodebuild build -project Victoria.xcodeproj -scheme Victoria -configuration Release \
+xcodebuild build -project Sprout.xcodeproj -scheme Sprout -configuration Release \
   -destination 'generic/platform=iOS Simulator' -derivedDataPath "$DERIVED" \
   CODE_SIGNING_ALLOWED=NO > "$WORK/release.log" 2>&1; RELEASE=$?
 
@@ -64,7 +64,7 @@ for root in json.load(sys.stdin).get("testNodes", []):
 }
 list_tests "$WORK/unit.xcresult" > "$OUT/tests.txt"
 list_tests "$WORK/evals.xcresult" > "$OUT/tests_evals.txt"
-WARNINGS=$(grep -E '\.swift:[0-9]+:[0-9]+: warning:' "$WORK/unit.log" | sed -E 's#^.*/(Victoria|Shared|VictoriaWidgets|VictoriaTests)/#\1/#' | sort -u)
+WARNINGS=$(grep -E '\.swift:[0-9]+:[0-9]+: warning:' "$WORK/unit.log" | sed -E 's#^.*/(Sprout|Shared|SproutWidgets|SproutTests)/#\1/#' | sort -u)
 echo "$WARNINGS" > "$OUT/compiler_warnings.txt"
 
 python3 - "$OUT" "$LABEL" "$SIM" "$GEN" "$UNIT" "$EVALS" "$RELEASE" "$LEAKS" "$UNIT_CHECK" "$EVALS_CHECK" "$WORK" <<'PY'
@@ -134,9 +134,9 @@ lines += ["", "## What was under test", "",
           f"- {manifest['swift_files']} tracked Swift files",
           "", "## Commands", "",
           "- `xcodegen generate`",
-          f"- `xcodebuild test -project Victoria.xcodeproj -scheme Victoria -destination 'platform=iOS Simulator,name={sim}' -enableCodeCoverage YES -parallel-testing-enabled NO`",
-          f"- `xcodebuild test -project Victoria.xcodeproj -scheme VictoriaEvals -destination 'platform=iOS Simulator,name={sim}' -parallel-testing-enabled NO`",
-          "- `xcodebuild build -scheme Victoria -configuration Release -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO`",
+          f"- `xcodebuild test -project Sprout.xcodeproj -scheme Sprout -destination 'platform=iOS Simulator,name={sim}' -enableCodeCoverage YES -parallel-testing-enabled NO`",
+          f"- `xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals -destination 'platform=iOS Simulator,name={sim}' -parallel-testing-enabled NO`",
+          "- `xcodebuild build -scheme Sprout -configuration Release -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO`",
           "- `gitleaks git --redact .`",
           "", "## Result", "",
           f"- Unit tests: {counts(manifest['unit'])}",

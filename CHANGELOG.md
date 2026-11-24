@@ -5,6 +5,48 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ## Unreleased (will ship as 2.1, build 16)
 
+### Added
+
+- **Built-in AI: install and it works.** Nobody using Sprout needs an API key any more.
+  The AI runs through a small gateway (`server/`) that holds the keys, answers only a
+  genuine copy of the app on a real iPhone (Apple App Attest), pays only for the models
+  the app uses, and gives each phone a daily allowance; when it is used up, Vita says
+  so and is back the next day. Every text task runs on Claude; OpenAI only draws the
+  character picture (EVAL_REPORT 33).
+
+### Removed
+
+- **The AI settings.** Settings → AI, the "paste your key" card on Today, the key step in
+  onboarding and on the character screen, the provider choice and the model fields are
+  gone. A phone that cannot use the built-in AI (very old hardware) keeps every other
+  feature and says so plainly (EVAL_REPORT 33).
+
+### Fixed
+
+- **The weekly note is shown more often.** Its prompt contained a "7" and the app throws
+  away any note with a digit, so a model that repeated "7 days" lost its note to the
+  template. The prompt now uses words only (EVAL_REPORT 34).
+- **The progress recap no longer works out its own figures**: the prompt now says to use
+  each figure exactly as given, the rule the app always held (EVAL_REPORT 34).
+- The built-in AI charges Sonnet 5 at its real price ($2 / $10 per million tokens, not
+  $3 / $15), so a phone's daily allowance lasts as long as it should.
+
+### For people building it
+
+- **The evaluations were audited.** Four grader defects fixed (idioms, weeks, zero for
+  "nothing", thousands written "8K"), every past answer graded again for free
+  (`Evals/regrade-text.sh`), summaries now give an interval by case and a paired comparison
+  with the shipped model (`--baseline`), and the report's errors are corrected in a new
+  section (EVAL_REPORT 34).
+- The code is now named after the app: `Sprout/`, `SproutTests/`, `SproutUITests/`,
+  `SproutWidgets/`, `SproutEvals/`, `Sprout.xcodeproj`, scheme `Sprout`. The bundle id,
+  iCloud container, App Group and every stored value keep the names the app shipped
+  under, so an update still installs over the old app with everything kept.
+- Personal content is out of the repository: one tester's own catchphrases now load from
+  the git-ignored `Private/` folder like the personal note, and comments describe users
+  in general terms. Stale documents (the June research and design notes, the old model
+  rationale) are removed; `docs/README.md` maps what remains.
+
 ### Fixed
 
 - **The chat no longer jumps when older messages load.** The conversation is now a

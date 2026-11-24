@@ -93,6 +93,6 @@ to be migrated away from to reach C.
   with the current UUID behaviour as one implementation, so the asynchronous path can be
   tested with a scripted resolver before CloudKit is involved.
 - The migration in step 2 above, tested with the two-phone double in
-  `VictoriaTests/Support/BuddySyncTestSupport.swift` (old-id phone, new-id phone, one
+  `SproutTests/Support/BuddySyncTestSupport.swift` (old-id phone, new-id phone, one
   pairing record), then once on devices.
 - Dashboard: `BuddyPairing.ownerUserID` and `buddyUserID` Queryable, deployed to Production.

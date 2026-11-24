@@ -34,7 +34,7 @@ COLUMNS = {
 }
 # (FDC id, column) pairs left null although the record lists a value, because the value
 # does not describe the food the case names. Kept in step with `withheldColumns` in
-# VictoriaEvals/GraderTests.swift, which recomputes every column from the cache.
+# SproutEvals/GraderTests.swift, which recomputes every column from the cache.
 WITHHELD = {
     # v1 chose "Peanut butter, smooth style, WITHOUT SALT" (the search for "with salt" did
     # not return an exact match), but its two cases say only "smooth peanut butter". An

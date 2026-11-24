@@ -13,7 +13,7 @@ DerivedData/
 build/
 
 # Stray xcodegen duplicates
-Victoria [0-9]*.xcodeproj/
+Sprout [0-9]*.xcodeproj/
 
 # Claude Code git worktrees (transient agent scratch)
 .claude/worktrees/
@@ -35,3 +35,6 @@ Private/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# The gateway's example settings are committed; its real .env never is.
+!server/.env.example

@@ -15,7 +15,7 @@ extension Color {
 /// Which user's look the app is wearing. Same layout / flow everywhere — only the
 /// palette + color scheme change.
 enum ThemeStyle: String, Codable, CaseIterable {
-    case cute   // Victoria — soft, warm, pastel (light)
+    case cute   // soft, warm, pastel (light)
     case cool   // Bryan — bold, dark, electric (dark)
 
     var skin: ThemeSkin { self == .cool ? .cool : .cute }
@@ -56,7 +56,7 @@ struct ThemeSkin {
         divider:    Color.white.opacity(0.08),
         colorScheme: .dark)
 
-    /// SOFT · WARM · PASTEL — cream canvas, cozy coral + sage. (Victoria)
+    /// SOFT · WARM · PASTEL — cream canvas, cozy coral + sage.
     static let cute = ThemeSkin(
         brand:      Color(hex: 0xF2976F),   // warm coral
         brandDeep:  Color(hex: 0xE07A50),

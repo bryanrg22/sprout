@@ -83,7 +83,7 @@ contributes zero. That is the behaviour this feature refuses.
 ## 3. What Open Food Facts returns
 
 Read from five product responses recorded from the live API on 2026-11-22
-(`VictoriaTests/Fixtures/OpenFoodFacts/`, barcodes in its README) and from the project's
+(`SproutTests/Fixtures/OpenFoodFacts/`, barcodes in its README) and from the project's
 schema page (<https://openfoodfacts.github.io/documentation/docs/Product-Opener/schemas/schemas/product_nutrition/>).
 
 - The product's `nutriments` object has, for each nutrient, `<name>_100g`, `<name>_serving`,

@@ -8,12 +8,12 @@ the long one. Read section 3 before a first change.
 - macOS with Xcode 26.4, `brew install xcodegen gitleaks`.
 - The repository at `~/dev/GitHub/sprout`. Not under `~/Documents`, `~/Desktop` or any
   other iCloud-synced folder (EVAL_REPORT 2).
-- A simulator named `Victoria-Dev`:
-  `xcrun simctl create Victoria-Dev "iPhone 17 Pro" com.apple.CoreSimulator.SimRuntime.iOS-26-4`
-- `xcodegen generate` after adding or moving any file. `Victoria.xcodeproj` is generated;
+- A simulator named `Sprout-Dev`:
+  `xcrun simctl create Sprout-Dev "iPhone 17 Pro" com.apple.CoreSimulator.SimRuntime.iOS-26-4`
+- `xcodegen generate` after adding or moving any file. `Sprout.xcodeproj` is generated;
   edit `project.yml`.
 
-Schemes: `Victoria` (the app and its unit tests) and `VictoriaEvals` (the evaluation
+Schemes: `Sprout` (the app and its unit tests) and `SproutEvals` (the evaluation
 harness; offline self-tests by default, live evaluations only through `Evals/run.sh`).
 
 ## 2. The records, and what each is for
@@ -21,7 +21,7 @@ harness; offline self-tests by default, live evaluations only through `Evals/run
 | Record | Answers | Updated when |
 |---|---|---|
 | `docs/EVAL_REPORT.md` | What was measured or found, and what it decided. Numbered sections, never rewritten. | Any measurement, audit or decision. |
-| `VictoriaTests/LEDGER.md` | What each test file protects, and what no test covers. | A test file is added, or the behaviour it pins changes. |
+| `SproutTests/LEDGER.md` | What each test file protects, and what no test covers. | A test file is added, or the behaviour it pins changes. |
 | `docs/test-evidence/<label>/` | Exactly what passed for a version: commit, toolchain, counts, coverage, warnings. | Before a TestFlight upload, and when the suite changes materially. |
 | `Evals/runs/<run>/` | One live evaluation: manifest, every record, the summary table. | Every live run, automatically. |
 | `Evals/datasets/<task>/v<n>.jsonl` | The labelled cases. Immutable once a result cites them. | A new version, never an edit. |
@@ -65,9 +65,9 @@ non-zero if a gate failed and writes the record either way.
 
 ```bash
 xcodegen generate
-xcodebuild test -project Victoria.xcodeproj -scheme Victoria \
-  -destination 'platform=iOS Simulator,name=Victoria-Dev' -resultBundlePath /tmp/t.xcresult
-python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1205
+xcodebuild test -project Sprout.xcodeproj -scheme Sprout \
+  -destination 'platform=iOS Simulator,name=Sprout-Dev' -resultBundlePath /tmp/t.xcresult
+python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1211
 ```
 
 ### Verify a store
@@ -122,7 +122,7 @@ let estimate = try await AIRuntime.$current.withValue(runtime) {
 2. `tooling/evidence/capture.sh v<version>-b<build>`; all gates green.
 3. Add the version to `CHANGELOG.md`. Commit.
 4. Archive and upload from Xcode (the owner's action). If the build adds a CloudKit
-   field, deploy the schema to Production first (`TESTFLIGHT.md` section 3).
+   field, deploy the schema to Production first (`docs/testflight.md` section 3).
 5. A TestFlight build stops opening 90 days after upload (EVAL_REPORT 7).
 
 ## 5. Definition of done
