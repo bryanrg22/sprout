@@ -1,0 +1,28 @@
+{
+  "name": "sprout-ai-gateway",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Holds Sprout's AI keys so the app needs none: App Attest, per-device daily caps, a model allowlist.",
+  "type": "module",
+  "engines": {
+    "node": ">=23.4"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.11",
+    "cbor-x": "^1.6.9",
+    "hono": "^4.13.21"
+  },
+  "devDependencies": {
+    "@peculiar/x509": "^3.1.0",
+    "@types/node": "^26.6.6",
+    "reflect-metadata": "^0.2.2",
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.7"
+  }
+}

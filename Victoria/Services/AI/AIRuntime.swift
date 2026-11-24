@@ -106,8 +106,10 @@ struct AIRuntime: Sendable {
         effective?.model ?? model
     }
 
+    /// The scoped transport, or the app's own: straight to the provider, or to the built-in
+    /// gateway for a request carrying its placeholder key (`AIDefaultTransport`).
     static var transport: any AITransport {
-        effective?.transport ?? URLSessionTransport()
+        effective?.transport ?? AIDefaultTransport()
     }
 
     static func report(_ usage: AIUsage) {

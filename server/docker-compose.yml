@@ -1,0 +1,29 @@
+# On the droplet: `docker compose up -d --build` in this folder, with a `.env` next to it.
+services:
+  gateway:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - gateway-data:/data
+    # Reachable only from Caddy on this machine.
+    expose:
+      - "8787"
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - gateway
+volumes:
+  gateway-data:
+  caddy-data:
+  caddy-config:

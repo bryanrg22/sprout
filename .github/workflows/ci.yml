@@ -240,3 +240,18 @@ jobs:
           cp Evals/datasets/meal_describe/v1.jsonl /tmp/v1.before
           python3 Evals/datasets/meal_describe/build_v1.py > /dev/null
           diff /tmp/v1.before Evals/datasets/meal_describe/v1.jsonl
+
+  # The built-in AI gateway (server/): its App Attest checks, store and routes, in the
+  # Node version the droplet runs.
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Tests in the image the droplet runs (node:24-slim)
+        run: docker build --target build -t sprout-gateway-ci .

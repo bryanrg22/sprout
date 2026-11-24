@@ -1091,9 +1091,16 @@ struct OnboardingView: View {
     /// Everything is optional and recoverable later in Settings, so the footer reads
     /// "Maybe later" until a key is in. (A friend can text her the key — the Paste button
     /// makes it a single tap.)
+    /// The built-in AI covers chat and no key of her own is saved: nothing to paste.
+    private var usesBuiltInAI: Bool {
+        AIGateway.covers(AIConfig.provider) && !KeychainStore.hasAPIKey(for: AIConfig.provider)
+    }
+
     private var connectPage: some View {
         coachScroll {
-            vitaBubble("Last little thing — let's get you set up. The only must-have is my **key** so we can actually chat. Everything else here is optional, and you can change any of it later 💛")
+            vitaBubble(usesBuiltInAI
+                       ? "Last little thing — let's get you set up. I'm already connected, so everything here is optional, and you can change any of it later 💛"
+                       : "Last little thing — let's get you set up. The only must-have is my **key** so we can actually chat. Everything else here is optional, and you can change any of it later 💛")
 
             // 1) THE KEY — the real unlock for the coach. Most prominent.
             connectCard(
@@ -1101,7 +1108,7 @@ struct OnboardingView: View {
                 tint: Theme.brand,
                 title: "Connect Vita’s brain",
                 done: keySaved,
-                doneLabel: "Key saved — we’re all set to chat ✨"
+                doneLabel: usesBuiltInAI ? "Ready to chat — no key needed ✨" : "Key saved — we’re all set to chat ✨"
             ) {
                 VStack(alignment: .leading, spacing: Theme.Space.sm) {
                     Text("Paste the key you were sent. It lives only on your phone (in the Keychain) — never shared.")

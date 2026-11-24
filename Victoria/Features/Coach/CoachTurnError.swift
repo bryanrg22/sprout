@@ -23,6 +23,9 @@ enum CoachTurnError: Equatable {
     case billing
     /// Too many requests (429). `retryAfter` is what the provider asked for, when it said.
     case rateLimited(retryAfter: TimeInterval?)
+    /// The built-in AI's allowance for today is used up (the gateway's `daily_limit`, or its
+    /// `service_limit` for everyone). It comes back at midnight UTC; retrying sooner cannot work.
+    case dailyLimit
     /// The provider is overloaded (529, 503).
     case overloaded
     /// The provider failed on its side (any other 5xx).
@@ -53,6 +56,8 @@ enum CoachTurnError: Equatable {
         case openAISettings
         /// Nothing to tap: the message itself has to change.
         case rephrase
+        /// Nothing to tap: it works again tomorrow.
+        case waitForTomorrow
     }
 
     var action: Action {
@@ -64,6 +69,8 @@ enum CoachTurnError: Equatable {
             return .retry
         case .tooLong, .refusal:
             return .rephrase
+        case .dailyLimit:
+            return .waitForTomorrow
         case .offline, .connectionLost, .timeout, .overloaded, .server, .cutOff, .cancelled,
              .interrupted, .malformed, .unknown:
             return .retry
@@ -71,7 +78,7 @@ enum CoachTurnError: Equatable {
     }
 
     /// Whether sending the same message again can succeed.
-    var canRetry: Bool { action != .rephrase }
+    var canRetry: Bool { action != .rephrase && action != .waitForTomorrow }
 
     /// A short name for the field log. Never shown to the user.
     var logName: String {
@@ -84,6 +91,7 @@ enum CoachTurnError: Equatable {
         case .modelUnavailable: return "model-unavailable"
         case .billing: return "billing"
         case .rateLimited: return "rate-limited"
+        case .dailyLimit: return "daily-limit"
         case .overloaded: return "overloaded"
         case .server: return "server"
         case .tooLong: return "too-long"
@@ -130,6 +138,8 @@ enum CoachTurnError: Equatable {
     /// something retryable (OpenAI: 429 `insufficient_quota`; Anthropic: 400 naming the
     /// credit balance).
     static func classify(_ http: AIHTTPFailure) -> CoachTurnError {
+        // The built-in gateway's own allowance, before the generic 429.
+        if http.type == "daily_limit" || http.type == "service_limit" { return .dailyLimit }
         if http.isBillingProblem { return .billing }
         if isContextOverflow(http) { return .tooLong }
         switch http.status {
@@ -186,6 +196,8 @@ enum CoachTurnError: Equatable {
                 return "\(name) asked us to slow down. It should be clear in about \(Self.waitText(retryAfter))."
             }
             return "\(name) asked us to slow down for a moment."
+        case .dailyLimit:
+            return "That's all the AI for today. I'll be back tomorrow, and everything you log still counts 💚"
         case .overloaded:
             return "\(name) is overloaded right now. It usually clears within a minute."
         case .server:

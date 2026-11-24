@@ -32,6 +32,7 @@ struct AIProviderSettingsView: View {
 
     var body: some View {
         Form {
+            builtInSection
             providerSection
             keySection
             modelSection
@@ -49,6 +50,27 @@ struct AIProviderSettingsView: View {
             loadForSelectedProvider()
         }
         .sensoryFeedback(.success, trigger: saveTick)
+    }
+
+    // MARK: - Built-in AI
+
+    /// Shown when Sprout's own gateway covers the chosen provider (`AIGateway`): nothing to set
+    /// up. A key saved below is used instead of it.
+    @ViewBuilder private var builtInSection: some View {
+        if AIGateway.covers(provider) {
+            Section {
+                row(icon: keyStored ? "person.badge.key.fill" : "sparkles", tint: Theme.positive) {
+                    LabeledContent("Built-in AI") {
+                        Text(keyStored ? "Using your key" : "On")
+                            .foregroundStyle(keyStored ? Theme.textSecondary : Theme.positive)
+                    }
+                }
+            } footer: {
+                footer(keyStored
+                       ? "Your own \(provider.label) key is saved, so Sprout uses it. Remove it to go back to the built-in AI."
+                       : "Vita, meal photos and your daily note work with no key. There's a daily limit; if you'd rather have none, add your own \(provider.label) key below.")
+            }
+        }
     }
 
     // MARK: - Provider picker

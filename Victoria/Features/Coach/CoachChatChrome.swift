@@ -75,7 +75,7 @@ struct TurnFailureRow: View {
                 HStack(spacing: Theme.Space.sm) { settingsPill; retryPill }
                 VStack(alignment: .leading, spacing: Theme.Space.xs) { settingsPill; retryPill }
             }
-        case .rephrase:
+        case .rephrase, .waitForTomorrow:
             EmptyView()
         }
     }

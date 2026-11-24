@@ -1,0 +1,6 @@
+# HTTPS with an automatic Let's Encrypt certificate for $DOMAIN.
+{$DOMAIN} {
+	reverse_proxy gateway:8787 {
+		header_up X-Real-IP {remote_host}
+	}
+}

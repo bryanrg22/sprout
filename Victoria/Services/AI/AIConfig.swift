@@ -145,9 +145,11 @@ enum AIConfig {
     /// Whether the ACTIVE provider has an API key stored — the gate every optional AI
     /// feature should use (checking only the Anthropic slot would wrongly disable
     /// features for an OpenAI user, and vice versa).
+    /// True as well when the built-in gateway covers the provider (`AIGateway`): then every
+    /// feature works with no key of the person's own.
     static var hasActiveKey: Bool {
         if let scoped = AIRuntime.effective?.apiKey { return !scoped.isEmpty }
-        return KeychainStore.hasAPIKey(for: provider)
+        return KeychainStore.hasAPIKey(for: provider) || AIGateway.covers(provider)
     }
 
     /// Strong coach/food model for the ACTIVE provider (override-aware).
@@ -205,7 +207,7 @@ enum AIConfig {
     /// chatting through Anthropic still needs an OpenAI key for this one feature.
     static var hasImageKey: Bool {
         if let scoped = AIRuntime.current?.apiKey { return !scoped.isEmpty }
-        return KeychainStore.hasAPIKey(for: .openai)
+        return KeychainStore.hasAPIKey(for: .openai) || AIGateway.covers(.openai)
     }
 
     enum AIError: LocalizedError {

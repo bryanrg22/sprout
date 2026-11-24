@@ -155,6 +155,7 @@
 		75E0BFB4E122AD56B705CE91 /* TestImages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F8815A306895384CA88EFF9 /* TestImages.swift */; };
 		75E95BE7C953D39DA2B5ED24 /* WorkoutWeekFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A186A55321952FD290E8613 /* WorkoutWeekFlowTests.swift */; };
 		7622685A2AD0BEF6BB23A6DA /* StoreVerificationRoundTripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE9DF615FFF75D27C84455A /* StoreVerificationRoundTripTests.swift */; };
+		76701924FD6BF33A54928A71 /* AIGateway.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FD34A135E680A6B8ACAE5EC /* AIGateway.swift */; };
 		767A0C2F139FEEC10299DBF0 /* diet-soda-few-keys.json in Resources */ = {isa = PBXBuildFile; fileRef = 0D87D716A5530AD2CB56BBE1 /* diet-soda-few-keys.json */; };
 		76B7BCA34DADE38099C68209 /* Polish.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E2D64EF2BCF7D6F8422F657 /* Polish.swift */; };
 		77AE54878F67A385DA82A3FF /* NutritionMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB509A7A61B2B0B31522E6E /* NutritionMathTests.swift */; };
@@ -174,6 +175,7 @@
 		83ADA73DD13B81E527A1C7D3 /* NearbyPlacesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 207514F0DF609FA2EE6818F2 /* NearbyPlacesService.swift */; };
 		8588F6EEC52F6CA7A0C89F80 /* AchievementConsistencyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4679044B8355E7B09877ADA0 /* AchievementConsistencyTests.swift */; };
 		8748E127E765AA5B40C9AEC1 /* SettingsMatrixPlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90154BA26CF5A67B48798983 /* SettingsMatrixPlanTests.swift */; };
+		88A719DE0C4C817F6CEFE146 /* AIGatewayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD1AA111A3D31E0A9303C05F /* AIGatewayTests.swift */; };
 		8A50166A9647DE64F225BA5D /* UITestHooksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F1A5A398705E3B542C3D00D /* UITestHooksTests.swift */; };
 		8A847421AC571A63B55C8036 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 805A92CB799597934FD6D76A /* Components.swift */; };
 		8AA4A2E6C70B8241435233C8 /* StoreVerificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55BAB56761423AA82A8F152B /* StoreVerificationTests.swift */; };
@@ -408,6 +410,7 @@
 		1F1A5A398705E3B542C3D00D /* UITestHooksTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestHooksTests.swift; sourceTree = "<group>"; };
 		1F1D21D18B3C96DD028AF731 /* ChecklistCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChecklistCard.swift; sourceTree = "<group>"; };
 		1F855D2CB0ECA33EE29D20FB /* BuddyHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyHomeView.swift; sourceTree = "<group>"; };
+		1FD34A135E680A6B8ACAE5EC /* AIGateway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGateway.swift; sourceTree = "<group>"; };
 		207514F0DF609FA2EE6818F2 /* NearbyPlacesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyPlacesService.swift; sourceTree = "<group>"; };
 		21A0F4EF143038599AF044BD /* HealthKitSleepWorkouts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitSleepWorkouts.swift; sourceTree = "<group>"; };
 		2212ADD4A554F5E9AC9AF5FB /* AIRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRuntime.swift; sourceTree = "<group>"; };
@@ -612,6 +615,7 @@
 		C8E1A21BACC5625A2669CC27 /* LocalMockSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalMockSyncService.swift; sourceTree = "<group>"; };
 		CC332DCA52EF81AEB52DA701 /* RemindersSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersSettingsView.swift; sourceTree = "<group>"; };
 		CCD059F029E1CD63B4D5CD3A /* UITestScriptedAI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestScriptedAI.swift; sourceTree = "<group>"; };
+		CD1AA111A3D31E0A9303C05F /* AIGatewayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGatewayTests.swift; sourceTree = "<group>"; };
 		CDC5C04FF9B37D7FF9C574AF /* VerificationFixesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationFixesTests.swift; sourceTree = "<group>"; };
 		CE67A01A97F219BF3091E0C2 /* WidgetPromoCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPromoCard.swift; sourceTree = "<group>"; };
 		CF771C1FEDBE42CF1E9F7F92 /* SettingsFixesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsFixesTests.swift; sourceTree = "<group>"; };
@@ -935,6 +939,7 @@
 			isa = PBXGroup;
 			children = (
 				9A267D5F232CF47022FB7DEF /* AIConfig.swift */,
+				1FD34A135E680A6B8ACAE5EC /* AIGateway.swift */,
 				B3287FD79ADF90AAB2C2BC2F /* AIHTTPFailure.swift */,
 				4BE94BC66BE59D33A67797B8 /* AIKeyRouting.swift */,
 				2212ADD4A554F5E9AC9AF5FB /* AIRuntime.swift */,
@@ -1011,6 +1016,7 @@
 				4679044B8355E7B09877ADA0 /* AchievementConsistencyTests.swift */,
 				74AC0947C644D607208FEB3B /* ActivityWeekTests.swift */,
 				FFE2EF8BF2793EC41213A3F7 /* AdaptivePlanTests.swift */,
+				CD1AA111A3D31E0A9303C05F /* AIGatewayTests.swift */,
 				B7C927DB4F4B798413A20B4C /* AIKeyRoutingTests.swift */,
 				2CB20C4AE3EA68A9F2DCD524 /* AIRuntimeTests.swift */,
 				407820F82E16B7C15CC60B70 /* AITaskModelTests.swift */,
@@ -1584,6 +1590,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1E86B569B422DB203D89AF15 /* AIConfig.swift in Sources */,
+				76701924FD6BF33A54928A71 /* AIGateway.swift in Sources */,
 				39953C4B5EC76B504146C57B /* AIHTTPFailure.swift in Sources */,
 				736C5879E6198BBB7FB036C8 /* AIKeyRouting.swift in Sources */,
 				23C0A80E6BB3F270E577CA3D /* AIProviderSettingsView.swift in Sources */,
@@ -1780,6 +1787,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				88A719DE0C4C817F6CEFE146 /* AIGatewayTests.swift in Sources */,
 				51C01FD2ECBEF614D7F2F985 /* AIKeyRoutingTests.swift in Sources */,
 				484488610F7BD47A460E22AF /* AIRuntimeTests.swift in Sources */,
 				17C6B5C73F026B7FF2F850FF /* AITaskModelTests.swift in Sources */,

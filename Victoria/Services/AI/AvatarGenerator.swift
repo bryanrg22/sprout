@@ -196,9 +196,10 @@ enum AvatarGenerator {
 
     // MARK: - The call
 
-    /// The stored OpenAI key, honouring a scoped runtime (tests, evaluations).
+    /// The stored OpenAI key, honouring a scoped runtime (tests, evaluations), then the
+    /// built-in gateway's placeholder when it covers OpenAI (`AIGateway`).
     static func apiKey() -> String? {
-        let key = AIRuntime.current?.apiKey ?? KeychainStore.apiKey(for: .openai)
+        let key = AIRuntime.current?.apiKey ?? KeychainStore.apiKey(for: .openai) ?? AIGateway.placeholder(for: .openai)
         guard let key, !key.isEmpty else { return nil }
         return key
     }

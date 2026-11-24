@@ -35,3 +35,6 @@ Private/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# The gateway's example settings are committed; its real .env never is.
+!server/.env.example

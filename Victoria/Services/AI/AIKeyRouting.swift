@@ -51,7 +51,8 @@ enum AIKeyRouting {
         guard !didReconcile else { return }
         didReconcile = true
         let active = AIConfig.provider
-        let next = reconciledProvider(active: active, hasKey: KeychainStore.hasAPIKey(for:))
+        // The built-in gateway counts as a key for the providers it covers.
+        let next = reconciledProvider(active: active, hasKey: { KeychainStore.hasAPIKey(for: $0) || AIGateway.covers($0) })
         if next != active {
             AIConfig.provider = next
             Diagnostics.shared.log("AI provider switched to \(next.rawValue) at launch: \(active.rawValue) has no key", .app)

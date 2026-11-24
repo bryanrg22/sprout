@@ -19,6 +19,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         // Safe to call early; CloudKit pushes only arrive once the user has granted
         // notification permission (NotificationService asks) + iCloud is available.
         application.registerForRemoteNotifications()
+        // Whether the built-in AI also covers OpenAI (best-effort; off when not configured).
+        Task { await AIGateway.refreshStatus() }
         return true
     }
 
