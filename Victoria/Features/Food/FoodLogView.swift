@@ -218,6 +218,7 @@ struct FoodLogView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)
                 .receive(on: DispatchQueue.main)) { _ in followTodayIfTheDayChanged() }
+            .surfaceContent()   // Home | Gym: hidden from VoiceOver when not showing (U-1)
         }
     }
 

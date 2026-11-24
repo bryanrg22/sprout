@@ -118,7 +118,7 @@ enum ChatDebug {
     @MainActor
     static func seedLongChatIfRequested(_ context: ModelContext, now: Date = .now) {
         guard let count = longChatCount else { return }
-        guard let profile = try? context.fetch(FetchDescriptor<UserProfile>()).first else { return }
+        guard let profile = UserProfile.primary(of: (try? context.fetch(FetchDescriptor<UserProfile>())) ?? []) else { return }
         let existing = (try? context.fetchCount(FetchDescriptor<ChatMessage>())) ?? 0
         guard existing != count else { return }
 

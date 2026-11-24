@@ -94,10 +94,15 @@ enum CoachTools {
 
     // Bounds for the data-logging tools. These mirror what the manual UI accepts so the
     // coach can never write a value the user couldn't enter themselves.
-    /// Weigh-in / goal-weight bounds in lb — matches the weigh-in slider (50…500 lb).
-    /// Every weight is stored, entered and shown in pounds (`UnitSystem.weightUnit`); there is
-    /// no kg conversion, which is why `set_units` declines metric (docs/settings-dependencies.md).
+    /// Weigh-in / goal-weight bounds in lb — matches the weigh-in slider (50…500 lb). Weights
+    /// are stored in pounds; the tools take and say them in the person's unit and convert at
+    /// the edge (EVAL_REPORT 31).
     static let weightRangeLbs = 50.0...500.0
+
+    /// The bounds as the person reads them: "50–500 lb" or "23–227 kg".
+    static func weightRangeText(_ units: UnitSystem) -> String {
+        "\(Int(units.display(weightRangeLbs.lowerBound).rounded()))–\(Int(units.display(weightRangeLbs.upperBound).rounded())) \(units.weightUnit)"
+    }
     /// One logged water amount, in oz — generous so any real glass/bottle/jug fits.
     static let waterOzRange = 1.0...300.0
     /// How many containers may be logged at once (e.g. "I drank 3 bottles").
@@ -635,10 +640,9 @@ enum CoachTools {
         "name": Name.setUnits.rawValue,
         "description": """
         Set the user's UNIT SYSTEM. Call this whenever they ask to switch units, e.g. "show my \
-        weight in kg", "switch the app to metric" or "switch me to pounds". Only imperial (lb) \
-        works today: for "metric" the app changes nothing and answers that kilograms aren't \
-        supported yet — still make the call, then tell them that plainly. No logged value is \
-        ever altered.
+        weight in kg", "switch the app to metric" or "switch me to pounds". Metric shows and takes \
+        weights in kilograms, imperial in pounds. No logged value is ever altered: weights are \
+        stored the same way in both, only how they are shown changes.
         """,
         "input_schema": [
             "type": "object",
@@ -988,9 +992,6 @@ enum CoachTools {
         /// goal-changing is gated behind a confirm. This is the single source of truth the
         /// view reads to pick its flow — keeping the risk policy here, next to the tools.
         var requiresConfirm: Bool {
-            // Switching to metric is declined (no kg conversion exists), so there is nothing to
-            // confirm: the answer goes straight back to the model.
-            if case .setUnits(.metric) = action { return false }
             switch name {
             case .logFood, .editFood, .logWater, .logWeight, .rememberFact, .updatePlan, .logWorkout,
                  .forgetFact,
@@ -1155,7 +1156,7 @@ enum CoachTools {
             }
             return .ok(ParsedRequest(
                 name: name,
-                confirmSummary: "switch you to a \(pace.label.lowercased()) pace (\(pace.subtitle.lowercased()))",
+                confirmSummary: "switch you to a \(pace.label.lowercased()) pace (\(pace.subtitle(in: profile.unitSystem).lowercased()))",
                 action: .pace(pace)))
 
         case .logFood:
@@ -1910,25 +1911,28 @@ enum CoachTools {
         guard let weight = doubleValue(input["weight"]) else {
             return .invalid("I need a number for your weigh-in. Nothing was logged.")
         }
-        guard weightRangeLbs.contains(weight) else {
+        // Said in the person's unit, stored in pounds.
+        let lbs = profile.unitSystem.pounds(fromDisplay: weight)
+        guard weightRangeLbs.contains(lbs) else {
             return .invalid("A weigh-in of \(trimmed(weight)) \(unit) is outside the range I can log "
-                          + "(\(Int(weightRangeLbs.lowerBound))–\(Int(weightRangeLbs.upperBound)) \(unit)). Nothing was logged.")
+                          + "(\(weightRangeText(profile.unitSystem))). Nothing was logged.")
         }
         return .ok(ParsedRequest(
             name: .logWeight,
             confirmSummary: "log today's weigh-in at \(trimmed(weight)) \(unit)",
-            action: .logWeight(lbs: weight)))
+            action: .logWeight(lbs: lbs)))
     }
 
     private static func parseWeightGoal(input: [String: Any], profile: UserProfile,
                                         currentWeightLbs: Double? = nil) -> ParseResult {
         let unit = profile.unitSystem.weightUnit
-        guard let goal = doubleValue(input["weight"]) else {
+        guard let goalShown = doubleValue(input["weight"]) else {
             return .invalid("I need a number for your goal weight. Nothing was changed.")
         }
+        let goal = profile.unitSystem.pounds(fromDisplay: goalShown)
         guard weightRangeLbs.contains(goal) else {
-            return .invalid("A goal of \(trimmed(goal)) \(unit) is outside the sensible range "
-                          + "(\(Int(weightRangeLbs.lowerBound))–\(Int(weightRangeLbs.upperBound)) \(unit)). Nothing was changed.")
+            return .invalid("A goal of \(trimmed(goalShown)) \(unit) is outside the sensible range "
+                          + "(\(weightRangeText(profile.unitSystem))). Nothing was changed.")
         }
         // The goal must lie in their goal DIRECTION relative to where they are now (their weight
         // trend when the caller has it, else their start weight; see `currentWeightLbs`). This is
@@ -1939,34 +1943,35 @@ enum CoachTools {
         case .lose:
             guard goal < current else {
                 return .invalid("You're set to lose weight, so your goal should be below your current "
-                              + "\(trimmed(current)) \(unit). Want to pick a lower number? Nothing was changed.")
+                              + "\(trimmed(profile.unitSystem.display(current))) \(unit). Want to pick a lower number? Nothing was changed.")
             }
         case .gain:
             guard goal > current else {
                 return .invalid("You're set to gain, so your goal should be above your current "
-                              + "\(trimmed(current)) \(unit). Want to pick a higher number? Nothing was changed.")
+                              + "\(trimmed(profile.unitSystem.display(current))) \(unit). Want to pick a higher number? Nothing was changed.")
             }
         case .maintain:
             break   // maintaining — any sane target is fine (it just reframes the chart line)
         }
         return .ok(ParsedRequest(
             name: .setWeightGoal,
-            confirmSummary: "set your goal weight to \(trimmed(goal)) \(unit)",
+            confirmSummary: "set your goal weight to \(trimmed(goalShown)) \(unit)",
             action: .weightGoal(lbs: goal)))
     }
 
     private static func parseStartWeight(input: [String: Any], profile: UserProfile) -> ParseResult {
         let unit = profile.unitSystem.weightUnit
-        guard let start = doubleValue(input["weight"]) else {
+        guard let startShown = doubleValue(input["weight"]) else {
             return .invalid("I need a number for your starting weight. Nothing was changed.")
         }
+        let start = profile.unitSystem.pounds(fromDisplay: startShown)
         guard weightRangeLbs.contains(start) else {
-            return .invalid("A starting weight of \(trimmed(start)) \(unit) is outside the sensible range "
-                          + "(\(Int(weightRangeLbs.lowerBound))–\(Int(weightRangeLbs.upperBound)) \(unit)). Nothing was changed.")
+            return .invalid("A starting weight of \(trimmed(startShown)) \(unit) is outside the sensible range "
+                          + "(\(weightRangeText(profile.unitSystem))). Nothing was changed.")
         }
         return .ok(ParsedRequest(
             name: .setStartWeight,
-            confirmSummary: "correct your starting weight to \(trimmed(start)) \(unit)",
+            confirmSummary: "correct your starting weight to \(trimmed(startShown)) \(unit)",
             action: .startWeight(lbs: start)))
     }
 
@@ -2006,12 +2011,6 @@ enum CoachTools {
     }
 
     // MARK: - Apply (called after confirm, or immediately for auto-apply tools)
-
-    /// What `set_units` answers for metric. Goes to the model, which relays it.
-    static let metricUnsupportedMessage =
-        "Kilograms aren't supported yet, so nothing was changed: weights stay in pounds (lb). "
-        + "Tell them that plainly. If they give a weight in kg, convert it to pounds yourself "
-        + "(1 kg = 2.2046 lb) before logging it."
 
     /// The outcome of applying a tool: the model-facing confirmation string, plus an optional
     /// `undo` that EXACTLY reverses the write (present for the reversible auto-apply logs).
@@ -2122,7 +2121,7 @@ enum CoachTools {
             let old = profile.pace
             profile.pace = pace   // enum setter writes paceRaw
             Self.saveOrLog(context)
-            return Applied(message: "Goal pace is now \(pace.label) (\(pace.subtitle.lowercased())).",
+            return Applied(message: "Goal pace is now \(pace.label) (\(pace.subtitle(in: profile.unitSystem).lowercased())).",
                            undo: { profile.pace = old; Self.saveOrLog(context) })
 
         case .logFood(let draft):
@@ -2211,7 +2210,7 @@ enum CoachTools {
 
         case .editPlan(let edit):
             guard let plan = CoachPlan.current(in: context) else {
-                return Applied(message: "They doesn't have a plan yet — they can build one on the Progress tab.",
+                return Applied(message: "There's no plan yet — one can be built on the Progress tab.",
                                undo: nil)
             }
             // Snapshot everything edit_plan can touch so undo restores exactly it.
@@ -2318,7 +2317,7 @@ enum CoachTools {
             context.insert(weight)
             Self.saveOrLog(context)
             let unit = profile.unitSystem.weightUnit
-            return Applied(message: "Logged today's weigh-in: \(trimmed(lbs)) \(unit). Remember, the trend is what matters.",
+            return Applied(message: "Logged today's weigh-in: \(trimmed(profile.unitSystem.display(lbs))) \(unit). Remember, the trend is what matters.",
                            undo: { context.delete(weight); Self.saveOrLog(context) })
 
         case .weightGoal(let lbs):
@@ -2326,7 +2325,7 @@ enum CoachTools {
             profile.goalWeightLbs = lbs
             Self.saveOrLog(context)
             let unit = profile.unitSystem.weightUnit
-            return Applied(message: "Goal weight is now \(trimmed(lbs)) \(unit).",
+            return Applied(message: "Goal weight is now \(trimmed(profile.unitSystem.display(lbs))) \(unit).",
                            undo: { profile.goalWeightLbs = old; Self.saveOrLog(context) })
 
         case .startWeight(let lbs):
@@ -2334,7 +2333,7 @@ enum CoachTools {
             profile.startWeightLbs = lbs
             Self.saveOrLog(context)
             let unit = profile.unitSystem.weightUnit
-            return Applied(message: "Starting weight corrected to \(trimmed(lbs)) \(unit) — the chart baseline and total-change now measure from there.",
+            return Applied(message: "Starting weight corrected to \(trimmed(profile.unitSystem.display(lbs))) \(unit) — the chart baseline and total-change now measure from there.",
                            undo: { profile.startWeightLbs = old; Self.saveOrLog(context) })
 
         case .rememberFact(let note):
@@ -2361,7 +2360,7 @@ enum CoachTools {
             // Append a visible line to their adaptive Plan's changelog so the adaptation is never
             // silent. No plan yet → nothing to amend (they build one on Progress first).
             guard let plan = CoachPlan.current(in: context) else {
-                return Applied(message: "They doesn't have a plan yet — they can build one on the Progress tab.",
+                return Applied(message: "There's no plan yet — one can be built on the Progress tab.",
                                undo: nil)
             }
             let old = plan.changelog
@@ -2376,16 +2375,12 @@ enum CoachTools {
         // MARK: Settings / preferences applies (each captures the old value for Undo)
 
         case .setUnits(let system):
-            // Metric is declined, not half-done. Every weight is stored in pounds and nothing
-            // converts on the way in or out, so a "kg" label would sit beside pound values and
-            // the next weigh-in typed in kg would be stored as pounds (L-B7).
-            guard system == .imperial else {
-                return Applied(message: Self.metricUnsupportedMessage, undo: nil, changed: false)
-            }
+            // Weights stay stored in pounds; only how they are shown and typed changes, so no
+            // logged value is touched either way (EVAL_REPORT 31).
             let old = profile.unitSystem
             profile.unitSystem = system   // enum setter writes unitSystemRaw
             Self.saveOrLog(context)
-            return Applied(message: "Units are now imperial (lb).",
+            return Applied(message: system == .imperial ? "Units are now imperial (lb)." : "Units are now metric (kg).",
                            undo: { profile.unitSystem = old; Self.saveOrLog(context) })
 
         case .setTheme(let theme):

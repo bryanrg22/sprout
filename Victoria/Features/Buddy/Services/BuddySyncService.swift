@@ -118,6 +118,11 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
     /// Today's logged food names, comma-joined.
     var todayFoods: String = ""
 
+    /// The weekly competition (`CompetitionRecord.encoded`): which of the five targets each
+    /// day of this week and last week hit. Never a number, so it is shared whatever the
+    /// full-data opt-in says. Empty from a build older than the competition.
+    var competitionWeeks: String = ""
+
     // MARK: - Freshness
 
     /// True only when this snapshot's data is actually from the current calendar day. A snapshot
@@ -154,7 +159,8 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
          carbTarget: Double = 0,
          fatEaten: Double = 0,
          fatTarget: Double = 0,
-         todayFoods: String = "") {
+         todayFoods: String = "",
+         competitionWeeks: String = "") {
         self.ownerUserID = ownerUserID
         self.displayName = displayName
         self.dayStreak = dayStreak
@@ -180,6 +186,7 @@ struct BuddySnapshotPayload: Codable, Sendable, Equatable {
         self.fatEaten = fatEaten
         self.fatTarget = fatTarget
         self.todayFoods = todayFoods
+        self.competitionWeeks = competitionWeeks
         // The opt-in is enforced HERE, in the one initializer every publish passes through,
         // not left to callers: a snapshot that does not share full data carries none of it.
         if !sharesFullData { self = withoutFullData }

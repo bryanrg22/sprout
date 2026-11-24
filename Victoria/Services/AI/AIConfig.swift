@@ -188,14 +188,15 @@ enum AIConfig {
     /// dimension and the call always uses the OpenAI key, whatever provider the user
     /// chose for chat.
     ///
-    /// NOT YET CHOSEN BY MEASUREMENT. `gpt-image-2.6-flare` at `medium` is a starting
-    /// point picked from the documentation ("fast iteration"; same token rates as
-    /// Sunburst), not from a run. The `Avatar` evaluation (`Evals/run.sh Avatar ...`)
-    /// compares Flare and Sunburst at each quality on consented photos; change this
-    /// only together with the EVAL_REPORT section that measured it. Decision already
-    /// made by the owner: version 1 makes ONE image per person, no per-mood frames.
-    static let avatarImage = ImageSetting(model: "gpt-image-2.6-flare",
-                                          quality: "medium",
+    /// Chosen on 2026-11-23 (EVAL_REPORT 23, 27): every candidate made a usable character
+    /// every time, so the owner's rule decided ("the cheapest, but looking like the style we
+    /// want"). `sunburst` at `low` costs $0.035 a character, the same as the cheapest
+    /// candidate and a third less than either at `medium`, and draws the coarse, flat pixels
+    /// closest to the two built-in characters. Its cost is time: about 17 s against 7 s for
+    /// `flare` at `low`. Change this only together with the EVAL_REPORT section that measured
+    /// it. Decision made by the owner: version 1 makes ONE image per person.
+    static let avatarImage = ImageSetting(model: "gpt-image-2.6-sunburst",
+                                          quality: "low",
                                           size: "1024x1024",
                                           background: "transparent",
                                           outputFormat: "png")

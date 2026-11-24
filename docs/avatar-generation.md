@@ -96,7 +96,7 @@ Usage is reported through `AIRuntime.report` (input and output tokens) and kept 
 - Retry: the guide says to retry transient rate-limit and server errors with backoff, never
   quota or user errors. The app retries once on 429 (unless `insufficient_quota`), 500 and 503.
 - "Complex prompts may take up to 2 minutes to process": the request timeout is 180 s, and
-  the UI says it can take a minute or two and lets the person cancel or move on.
+  the UI says it usually takes under half a minute (measured: 15 to 21 s on `sunburst`, EVAL_REPORT 23, 27) and lets the person cancel or move on.
 
 ## Price (list, per million tokens, both 2.6 models, from the model pages)
 

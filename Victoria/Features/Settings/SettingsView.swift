@@ -167,7 +167,7 @@ struct SettingsView: View {
     }
 
     private var paceSummary: String {
-        "\(profile.pace.label) · goal \(Int(profile.goalWeightLbs)) lb"
+        "\(profile.pace.label) · goal \(profile.unitSystem.format(profile.goalWeightLbs, decimals: 0))"
     }
 
     /// Reads/writes the goal DIRECTION via the persisted pace. Changing direction
@@ -213,6 +213,16 @@ struct SettingsView: View {
                 }
             }
 
+            // Pounds or kilograms: what weights are shown and typed in. Stored values never
+            // change (they are pounds either way), so switching back and forth is safe.
+            row(icon: "scalemass.fill") {
+                Picker("Weight in", selection: $profile.unitSystem) {
+                    Text("Pounds (lb)").tag(UnitSystem.imperial)
+                    Text("Kilograms (kg)").tag(UnitSystem.metric)
+                }
+                .accessibilityIdentifier(AccessibilityID.Settings.weightUnit)
+            }
+
             // Pace options are scoped to the chosen goal direction, so flipping to
             // "Gain" surfaces the lean-gain paces (and hides the loss ones).
             row(icon: "speedometer") {
@@ -224,9 +234,9 @@ struct SettingsView: View {
             }
 
             row(icon: "flag.checkered") {
-                Stepper(value: $profile.goalWeightLbs, in: 70...500, step: 1) {
+                Stepper(value: weightBinding(\.goalWeightLbs), in: displayRange(70...500), step: 1) {
                     LabeledContent("Goal weight") {
-                        Text("\(Int(profile.goalWeightLbs)) lb")
+                        Text(profile.unitSystem.format(profile.goalWeightLbs, decimals: 0))
                             .foregroundStyle(Theme.textSecondary)
                             .monospacedDigit()
                     }
@@ -237,9 +247,9 @@ struct SettingsView: View {
             // total-change math read this; a wrong onboarding value was previously
             // permanent.
             row(icon: "figure.wave") {
-                Stepper(value: $profile.startWeightLbs, in: 50...500, step: 1) {
+                Stepper(value: weightBinding(\.startWeightLbs), in: displayRange(50...500), step: 1) {
                     LabeledContent("Starting weight") {
-                        Text("\(Int(profile.startWeightLbs)) lb")
+                        Text(profile.unitSystem.format(profile.startWeightLbs, decimals: 0))
                             .foregroundStyle(Theme.textSecondary)
                             .monospacedDigit()
                     }
@@ -260,7 +270,8 @@ struct SettingsView: View {
                                  goalWeightLbs: profile.goalWeightLbs,
                                  currentWeightLbs: currentWeightLbs,
                                  pace: profile.pace,
-                                 source: targetSource)
+                                 source: targetSource,
+                                 units: profile.unitSystem)
     }
 
     private var heightText: String { SettingsCopy.heightText(cm: profile.heightCm) }
@@ -469,6 +480,18 @@ struct SettingsView: View {
             get: { profile.waterTargetOz },
             set: { profile.waterGoalOzOverride = $0 }   // setting an explicit goal turns off auto
         )
+    }
+
+    /// A stored pound value as a whole number in the shown unit; setting it stores pounds.
+    /// One step is 1 lb or 1 kg.
+    private func weightBinding(_ key: ReferenceWritableKeyPath<UserProfile, Double>) -> Binding<Double> {
+        Binding(get: { profile.unitSystem.display(profile[keyPath: key]).rounded() },
+                set: { profile[keyPath: key] = profile.unitSystem.pounds(fromDisplay: $0) })
+    }
+
+    /// A range in pounds, in whole numbers of the shown unit.
+    private func displayRange(_ pounds: ClosedRange<Double>) -> ClosedRange<Double> {
+        profile.unitSystem.display(pounds.lowerBound).rounded(.up)...profile.unitSystem.display(pounds.upperBound).rounded(.down)
     }
 
     private var waterSection: some View {

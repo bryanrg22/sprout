@@ -1,0 +1,47 @@
+{
+ "run": "20261123-173019-ChecklistPlan",
+ "tasks": [
+  {
+   "task": "checklistPlan",
+   "dataset": "checklist_plan/v1",
+   "cases": 16,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-sonnet-5-5",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 3.17,
+     "latency_p95_s": 4.393,
+     "mean_uncached_input_tokens": 1933.5833333333333,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 323.2083333333333,
+     "mean_cost_usd": 0.00709925,
+     "scores": {
+      "chips_within_schema": 1,
+      "icons_known_share": 0.9631410256410257,
+      "no_number_outside_the_data": 0.8333333333333334,
+      "none_cut_short": 0.9791666666666666,
+      "none_dropped_by_the_app": 1,
+      "reflects_the_routine": 1,
+      "tasks_within_schema": 1,
+      "titles_at_most_four_words": 0.2708333333333333,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

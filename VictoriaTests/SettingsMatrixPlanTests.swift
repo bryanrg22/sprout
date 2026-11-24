@@ -117,9 +117,9 @@ final class SettingsMatrixPlanTests: XCTestCase {
     }
 
     func testUnits() throws {
-        try row("units → metric", moves: [],
+        try row("units → metric", moves: [.widget, .coach, .checklist],
                 surfaces: [("coach", { w in w.viaCoach("set_units", ["system": "metric"]) })])
-        try row("a profile stored as metric", moves: [.coach],
+        try row("a profile stored as metric", moves: [.widget, .coach, .checklist],
                 surfaces: [("stored value", { w in w.inSettings { $0.unitSystem = .metric } })])
     }
 

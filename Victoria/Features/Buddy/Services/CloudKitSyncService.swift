@@ -43,7 +43,7 @@ final class CloudKitSyncService: BuddySyncService {
     // entitlements / `project.yml` (`com.apple.developer.icloud-container-identifiers`),
     // which is "iCloud." + the bundle id `com.bryanram.victoria`. Keep these in sync if
     // the bundle id ever changes.
-    private static let containerIdentifier = "iCloud.com.bryanram.victoria"
+    static let containerIdentifier = "iCloud.com.bryanram.victoria"
 
     // CloudKit record types. These get auto-created in the Development environment on
     // first save; remember to add the queryable/sortable indexes (header, step 1).
@@ -98,6 +98,9 @@ final class CloudKitSyncService: BuddySyncService {
         static let fatEaten         = "fatEaten"
         static let fatTarget        = "fatTarget"
         static let todayFoods       = "todayFoods"
+        /// The weekly competition, `CompetitionRecord.encoded`. A String field; a build that
+        /// writes it needs it in the Production schema (EVAL_REPORT 29).
+        static let competitionWeeks = "competitionWeeks"
     }
 
     // MARK: Identity / pairing
@@ -444,6 +447,7 @@ final class CloudKitSyncService: BuddySyncService {
         record[Field.fatEaten]         = snapshot.fatEaten as CKRecordValue
         record[Field.fatTarget]        = snapshot.fatTarget as CKRecordValue
         record[Field.todayFoods]       = snapshot.todayFoods as CKRecordValue
+        record[Field.competitionWeeks] = snapshot.competitionWeeks as CKRecordValue
 
         do {
             _ = try await database.save(record)
@@ -543,6 +547,7 @@ final class CloudKitSyncService: BuddySyncService {
         snap[Field.fatEaten]         = 0.0 as CKRecordValue
         snap[Field.fatTarget]        = 0.0 as CKRecordValue
         snap[Field.todayFoods]       = "" as CKRecordValue
+        snap[Field.competitionWeeks] = "" as CKRecordValue
         _ = try await database.save(snap)
 
         // 3) Nudge — the only type needing Dashboard indexes (toUserID Queryable,
@@ -664,7 +669,7 @@ final class CloudKitSyncService: BuddySyncService {
                          isRead: isRead)
     }
 
-    private static func snapshot(from record: CKRecord) -> BuddySnapshotPayload? {
+    static func snapshot(from record: CKRecord) -> BuddySnapshotPayload? {
         guard let owner = record[Field.ownerUserID] as? String,
               let name  = record[Field.displayName] as? String else { return nil }
         let streak  = record[Field.dayStreak] as? Int ?? 0
@@ -695,6 +700,7 @@ final class CloudKitSyncService: BuddySyncService {
         let fatEat     = record[Field.fatEaten] as? Double ?? 0
         let fatTgt     = record[Field.fatTarget] as? Double ?? 0
         let foods      = record[Field.todayFoods] as? String ?? ""
+        let competition = record[Field.competitionWeeks] as? String ?? ""
         return BuddySnapshotPayload(ownerUserID: owner,
                                     displayName: name,
                                     dayStreak: streak,
@@ -719,7 +725,8 @@ final class CloudKitSyncService: BuddySyncService {
                                     carbTarget: carbTgt,
                                     fatEaten: fatEat,
                                     fatTarget: fatTgt,
-                                    todayFoods: foods)
+                                    todayFoods: foods,
+                                    competitionWeeks: competition)
     }
 }
 

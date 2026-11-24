@@ -532,6 +532,37 @@ final class PromptNeutralityTests: XCTestCase {
         }
     }
 
+    /// The screens G7 listed as not yet scanned (EVAL_REPORT 29): their user-facing strings
+    /// (string literals, comments removed) have no gendered pronoun. Names are not checked
+    /// here: the built-in characters and app icons are named after two people on purpose.
+    func testTheRemainingScreensStringsHaveNoGenderedPronoun() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let folders = ["Victoria/Features/Onboarding", "Victoria/Features/Settings", "Victoria/Features/Buddy",
+                       "Victoria/Features/Competition", "VictoriaWidgets"]
+        var files = ["Victoria/Services/DemoSeed.swift"]
+        for folder in folders {
+            let url = root.appendingPathComponent(folder)
+            let found = FileManager.default.enumerator(at: url, includingPropertiesForKeys: nil)?
+                .compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" } ?? []
+            files += found.map { $0.path.replacingOccurrences(of: root.path + "/", with: "") }
+        }
+        XCTAssertGreaterThan(files.count, 30, "the folders were found")
+        let literal = try NSRegularExpression(pattern: #""((?:[^"\\]|\\.)*)""#)
+        for path in files.sorted() {
+            let source = try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+            for line in source.split(separator: "\n", omittingEmptySubsequences: false) {
+                let code = Self.withoutComment(String(line))
+                let range = NSRange(code.startIndex..., in: code)
+                for match in literal.matches(in: code, range: range) {
+                    guard let r = Range(match.range(at: 1), in: code) else { continue }
+                    let text = String(code[r])
+                    let pronouns = Self.words(text).filter { Self.genderedWords.contains($0) }
+                    XCTAssertEqual(pronouns, [], "\(path): \"\(text)\"")
+                }
+            }
+        }
+    }
+
     // MARK: - The rule for the goal direction, prompt by prompt
 
     private let lose = GoalFraming.protectiveRule(.lose)

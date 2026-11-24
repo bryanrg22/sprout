@@ -649,7 +649,8 @@ final class BuddyViewModel {
             carbTarget: Self.fin(s.carbTarget),
             fatEaten: Self.fin(s.fatEaten),
             fatTarget: Self.fin(s.fatTarget),
-            todayFoods: s.todayFoods
+            todayFoods: s.todayFoods,
+            competitionWeeks: s.competitionWeeks
         )
     }
 

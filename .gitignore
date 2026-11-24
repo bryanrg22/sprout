@@ -29,6 +29,9 @@ Evals/datasets/avatar/photos/*
 !Evals/datasets/avatar/photos/README.md
 Evals/runs/*/avatars/
 
+# The personal onboarding note: only on the machine that builds (see PersonalNote.swift)
+Private/
+
 # Python bytecode
 __pycache__/
 *.pyc

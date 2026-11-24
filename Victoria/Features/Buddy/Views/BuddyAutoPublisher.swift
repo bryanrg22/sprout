@@ -28,6 +28,8 @@ struct MyBuddyState {
     var fatTarget: Double
     var todayFoods: String
     var displayName: String
+    /// The weekly competition record, encoded (see `CompetitionRecord`).
+    var competitionWeeks: String = ""
 }
 
 /// Builds `MyBuddyState` from raw local data — the ONE place this computation lives, so the hub and
@@ -40,7 +42,9 @@ enum BuddyStateComposer {
                         water: [WaterEntry],
                         steps: [StepsEntry],
                         sessions: [WorkoutSession],
-                        weights: [WeightEntry]) -> MyBuddyState {
+                        weights: [WeightEntry],
+                        detected: [DetectedWorkout] = [],
+                        now: Date = .now) -> MyBuddyState {
         let cal = Calendar.current
         let todayFood = foods.filter { cal.isDateInToday($0.date) }
         let waterOz   = water.filter { cal.isDateInToday($0.date) }.reduce(0) { $0 + $1.amountOz }
@@ -95,7 +99,10 @@ enum BuddyStateComposer {
             fatEaten: fatsEaten,
             fatTarget: macros?.fatG ?? 0,
             todayFoods: foodNames,
-            displayName: myName
+            displayName: myName,
+            competitionWeeks: CompetitionScoring.record(
+                profile: profile, foods: foods, water: water, steps: steps, sessions: sessions,
+                detected: detected, basisWeight: basis, now: now, calendar: cal).encoded
         )
     }
 
@@ -135,6 +142,7 @@ struct BuddyAutoPublisher: View {
     @Query(sort: \WorkoutSession.date) private var sessions: [WorkoutSession]
     @Query(sort: \WeightEntry.date) private var weights: [WeightEntry]
     @Query private var profiles: [UserProfile]
+    @Query(sort: \DetectedWorkout.date) private var detected: [DetectedWorkout]
 
     @Environment(\.scenePhase) private var scenePhase
     // A publish-only view model — no push observer (that's the Buddy hub's job; a second observer
@@ -142,7 +150,7 @@ struct BuddyAutoPublisher: View {
     // publish coordinator with the hub's model, so the two never publish at once.
     @State private var model = BuddyViewModel(observePushes: false)
 
-    private var profile: UserProfile? { profiles.first }
+    private var profile: UserProfile? { UserProfile.primary(of: profiles) }
 
     /// Drives the debounced `.task(id:)` so rapid logs coalesce into one upload.
     private var dataSignature: String {
@@ -204,7 +212,8 @@ struct BuddyAutoPublisher: View {
 
     private func publish() async {
         let s = BuddyStateComposer.compose(profile: profile, foods: foods, water: water,
-                                           steps: steps, sessions: sessions, weights: weights)
+                                           steps: steps, sessions: sessions, weights: weights,
+                                           detected: detected)
         // Publishes only while linked, then cheers the buddy for any goal just crossed.
         await model.publishIfLinked(s)
     }

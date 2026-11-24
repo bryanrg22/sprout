@@ -24,6 +24,9 @@ struct VictoriaApp: App {
                 fatalError("--ui-testing: the in-memory store failed to open: \(error)")
             }
             UITestHooks.installAIRuntime()
+            if UITestHooks.current.simulateStoreFailure {
+                StoreStatus.recordOpenFailure(UITestHooks.SimulatedStoreFailure())
+            }
             return
         }
         #endif
@@ -35,6 +38,9 @@ struct VictoriaApp: App {
             // relaunch. Leave a loud trace so a field report ("it made me start over") is
             // diagnosable instead of a mystery.
             Diagnostics.shared.log("CRITICAL: SwiftData store failed to open — running IN-MEMORY (data will not persist): \(error.localizedDescription)", .error)
+            // The launch shows `StoreUnavailableView`, never onboarding: the person's data is
+            // still in the file, and onboarding on an empty stand-in would start them over.
+            StoreStatus.recordOpenFailure(error)
             let fallback = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             container = try! ModelContainer(for: schema, configurations: fallback)
         }

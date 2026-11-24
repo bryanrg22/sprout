@@ -30,10 +30,34 @@ final class OnboardingFlowTests: SproutUITestCase {
              file: file, line: line) { self.currentStep() == step }
     }
 
-    /// Tap the footer's forward button and wait for the next step.
+    /// The sex picker, when the step showing has it. It starts with nothing chosen.
+    private var sexPicker: XCUIElement { app.segmentedControls[AccessibilityID.Onboarding.sex] }
+
+    /// Choose a sex if the step showing asks for one and nothing is chosen yet.
+    private func chooseSexIfAsked(_ label: String = "Male") {
+        guard sexPicker.exists, sexPicker.isHittable else { return }
+        let option = sexPicker.buttons[label]
+        if !option.isSelected { option.tap() }
+    }
+
+    /// Tap the footer's forward button and wait for the next step. The one required choice
+    /// (sex, on the about step) is made first: "nothing filled in" means nothing optional.
     private func next(from step: Int, file: StaticString = #filePath, line: UInt = #line) {
+        chooseSexIfAsked()
         tap(app.buttons, AccessibilityID.Onboarding.next, file: file, line: line)
         waitForStep(step + 1, file: file, line: line)
+    }
+
+    /// Drag the page to the next step across its heading (see flow o for why the heading).
+    private func swipeToNextPage() {
+        let before = currentStep() ?? 0
+        let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.17))
+        let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.17))
+        from.press(forDuration: 0.05, thenDragTo: to)
+        let deadline = Date().addingTimeInterval(2)
+        while (currentStep() ?? 0) == before, Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
     }
 
     private func start(file: StaticString = #filePath, line: UInt = #line) {
@@ -117,32 +141,64 @@ final class OnboardingFlowTests: SproutUITestCase {
     // MARK: - o. Steps passed without the button
 
     /// o. The pages can be swiped. Swipe from the first step to the last without ever
-    /// tapping the forward button, and finish: no step's own button was used, so anything
-    /// a step set up only when its button was tapped would be missing here.
-    func testSwipingPastEveryStepThenFinishingStillEndsOnAWorkingToday() {
+    /// tapping the forward button: the required choice was skipped, so finishing goes back
+    /// to it and asks. Choose, swipe to the end again, and finish. Dragging is across the
+    /// top of the page, where every step has its heading: a swipe through the middle lands
+    /// on a wheel picker on the about step and turns the wheel instead (seen).
+    func testSwipingPastEveryStepIsCaughtAtTheEndThenFinishes() {
         launch(seeded: false, tab: nil)
         let count = stepCount()
         waitForStep(1)
 
         var swipes = 0
         while (currentStep() ?? count) < count, swipes < count * 3 {
-            let before = currentStep() ?? 0
-            // Drag across the top of the page, where every step has its heading. A swipe
-            // through the middle of the screen lands on a wheel picker on the "about you"
-            // step and turns the wheel instead of the page (seen: it stopped there).
-            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.17))
-            let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.17))
-            from.press(forDuration: 0.05, thenDragTo: to)
+            swipeToNextPage()
             swipes += 1
-            let deadline = Date().addingTimeInterval(2)
-            while (currentStep() ?? 0) == before, Date() < deadline {
-                RunLoop.current.run(until: Date().addingTimeInterval(0.1))
-            }
         }
         XCTAssertEqual(currentStep(), count,
                        "swiping reached step \(currentStep() ?? 0) of \(count) in \(swipes) swipes")
+
+        tap(app.buttons, AccessibilityID.Onboarding.start)
+        waitShown(app.staticTexts, AccessibilityID.Onboarding.sexRequired)
+        XCTAssertTrue(sexPicker.isHittable, "finishing without the required choice goes back to it")
+        XCTAssertFalse(app.scrollViews[AccessibilityID.Today.root].exists)
+        let about = currentStep() ?? 0
+
+        chooseSexIfAsked("Female")
+        waitHidden(app.staticTexts, AccessibilityID.Onboarding.sexRequired)
+        swipes = 0
+        while (currentStep() ?? count) < count, swipes < count * 3 {
+            swipeToNextPage()
+            swipes += 1
+        }
+        XCTAssertEqual(currentStep(), count, "from step \(about), swiping reached \(currentStep() ?? 0)")
         start()
         assertAnEmptyWorkingToday()
+    }
+
+    /// r. The about step will not go on without a sex chosen: Next stays on the step and says
+    /// why; after a choice it goes on. Nothing is chosen for the person (EVAL_REPORT 27).
+    func testNextOnTheAboutStepAsksForTheOneRequiredChoice() {
+        launch(seeded: false, tab: nil)
+        let count = stepCount()
+        waitForStep(1)
+        var step = 1
+        while !(sexPicker.exists && sexPicker.isHittable), step < count {
+            tap(app.buttons, AccessibilityID.Onboarding.next)
+            step += 1
+            waitForStep(step)
+        }
+        XCTAssertTrue(sexPicker.isHittable, "the about step was reached at step \(step)")
+        XCTAssertFalse(sexPicker.buttons["Female"].isSelected, "nothing is chosen for the person")
+        XCTAssertFalse(sexPicker.buttons["Male"].isSelected)
+
+        tap(app.buttons, AccessibilityID.Onboarding.next)
+        waitShown(app.staticTexts, AccessibilityID.Onboarding.sexRequired)
+        XCTAssertEqual(currentStep(), step, "Next did not move on")
+
+        sexPicker.buttons["Female"].tap()
+        waitHidden(app.staticTexts, AccessibilityID.Onboarding.sexRequired)
+        next(from: step)
     }
 
     // MARK: - p. Leaving in the middle

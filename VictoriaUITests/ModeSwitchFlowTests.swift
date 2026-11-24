@@ -19,10 +19,11 @@ final class ModeSwitchFlowTests: SproutUITestCase {
         waitForNoTabBar()
 
         expectKnownDefect("""
-            The hidden surface stays in the accessibility tree: in Gym, Home's tab bar and \
-            Today are still exposed to VoiceOver (and Gym's controls are while in Home). \
-            `.accessibilityHidden` on the two surfaces does not reach their navigation-stack \
-            content. Victoria/App/RootView.swift:174 and :179
+            In Gym, XCUITest still finds Home's tab bar button. The content of both surfaces \
+            is now hidden from accessibility when not showing (the audit finds none of it, \
+            EVAL_REPORT 29), and the tab bar is hidden with `.toolbar(.hidden, for: .tabBar)`; \
+            whether VoiceOver can still land on this one button is not known. \
+            Victoria/App/RootView.swift, `SurfaceContent`
             """) {
             XCTAssertFalse(app.tabBars.buttons[AccessibilityID.Tab.today].exists,
                            "Home's tab bar must not be reachable by assistive technology while Gym is showing")
@@ -102,11 +103,9 @@ extension SproutUITestCase {
     /// What the accessibility audit reports on the Workouts screen (flows c and h).
     static let workoutsAuditIssues = """
         About 29 issues (14 contrast, 13 Dynamic Type, 2 clipped text; counts are from one run and \
-        move by one or two between runs). About 7 are on elements of the hidden \
-        Home surface, which stays in the accessibility tree (Victoria/App/RootView.swift:174, :179). \
-        On screen: the week chart's day letters are a fixed 9 pt, so no Dynamic Type and low contrast \
-        (Features/Workouts/WorkoutsView.swift:264); contrast and partial Dynamic Type on the stat labels \
-        (WorkoutsView.swift:294); contrast on the white Log a workout label over the brand gradient \
+        move by one or two between runs). None are on the hidden Home \
+        surface any more (EVAL_REPORT 29). On screen: partial Dynamic Type and, for the dates and \
+        the summary line, contrast on the week card (Features/Workouts/ActivityWeek.swift); contrast on the white Log a workout label over the brand gradient \
         (WorkoutsView.swift:307) and on the session summary (WorkoutsView.swift:454); the Home | Gym capsule has a fixed height \
         (Features/AppMode/AppMode.swift:81); a session title is clipped at one line (WorkoutsView.swift:446).
         """

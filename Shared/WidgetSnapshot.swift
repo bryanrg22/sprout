@@ -44,6 +44,10 @@ struct WidgetSnapshot: Codable {
     // Streak
     var streak: Int
 
+    /// The unit the weight fields above are in, "lb" or "kg": the app writes them already
+    /// converted (EVAL_REPORT 31). Absent from a snapshot written before this, which is pounds.
+    var weightUnit: String = "lb"
+
     // MARK: Derived
 
     /// The palette the widget should paint with (the user's chosen skin). Falls back
@@ -149,6 +153,7 @@ extension WidgetSnapshot {
         goalWeight    = try c.decode(Double.self, forKey: .goalWeight)
         trendSpark    = try c.decode([Double].self, forKey: .trendSpark)
         streak        = try c.decode(Int.self, forKey: .streak)
+        weightUnit    = try c.decodeIfPresent(String.self, forKey: .weightUnit) ?? "lb"
     }
 }
 

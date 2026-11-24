@@ -7,6 +7,22 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **Meal estimates, suggestions, the checklist and the recap work on the newest Claude
+  models** (Sonnet 5.5, Opus 5.5, Fable 5.2), which refuse the request the app used; an
+  answer that breaks the expected shape is no longer shown (EVAL_REPORT 30).
+
+- VoiceOver no longer reaches the hidden half of the Home | Gym switch (its content; one
+  tab button is still under check), and secondary text in the light look is darker so it
+  meets the contrast minimum (EVAL_REPORT 29).
+
+- **Updating never starts you over.** An update installed over the old app keeps
+  everything and goes straight to Today (measured from build 15). If an update cannot
+  open your data, the app now says so instead of showing onboarding on an empty app; a
+  reinstall first looks for your profile in iCloud; and if two profiles exist the older
+  one is used (EVAL_REPORT 27).
+- Onboarding no longer chooses "Female" for you: the sex used for the calorie estimate
+  is a required choice with nothing pre-selected.
+
 - **Today's checklist was silently falling back to the generic one about three times in
   ten on Claude.** The model's answer came back in a shape the app could not read; the
   app now reads it (EVAL_REPORT 22).
@@ -18,8 +34,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 - **Changing your goal changes your targets.** With a plan, switching between losing and
   gaining left the old plan's calories in force. The plan's numbers now apply only to the
   direction they were written for, and Settings says what a change does (EVAL_REPORT 16).
-- **Asking Vita to switch to kilograms can no longer corrupt your weights.** Kilograms
-  are not supported yet, and Vita now says so instead of relabelling pounds.
+- **Asking Vita to switch to kilograms can no longer corrupt your weights.** A weight said
+  in kilograms is stored as the pounds it equals (EVAL_REPORT 31).
 - A key pasted after a reinstall is saved for the right provider.
 - Prompts no longer assume who you are: no "her", no weight-loss framing for someone gaining.
 - Vita's tools no longer describe every user as "she" (EVAL_REPORT 24).
@@ -54,6 +70,20 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **Kilograms.** Settings → Your goals → Weight in. Progress, the weigh-in sheet, the
+  coach, the widget and the buddy card follow; stored weights never change, so switching
+  back and forth is safe (EVAL_REPORT 31).
+
+- **A weekly competition with your buddy**, in the Buddy hub: a point a day for each of
+  your own targets you hit (calories in your range, protein, water, steps, being active),
+  Monday to Sunday, with last week's result. Only which targets were hit is shared, never
+  a number (EVAL_REPORT 29).
+
+- **Your week on Workouts:** how many of its 7 days you were active (anything logged, or a
+  workout Apple Health or your tracker saw), each day tappable to see what you did, and
+  arrows back through past weeks. Workouts your tracker detected now show on each day
+  (EVAL_REPORT 28).
+
 - **A chat that holds up.** Select text in Vita's replies and ask about just that part;
   copy, share or quote any message; long conversations open fast and load earlier
   messages as you scroll up; and when something fails Vita says what (offline, a rejected
@@ -74,6 +104,11 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Changed
 
+- New characters are drawn by `gpt-image-2.6-sunburst` at low quality: $0.035 each and
+  closest to the built-in style, about 17 seconds (EVAL_REPORT 27).
+- The personal note in onboarding is no longer in the source and is shown only to the
+  person it is written for.
+
 - On OpenAI, the insight line, weekly reflection, onboarding note and memory now run on
   current models chosen by measurement; nothing defaults to the deprecated
   `gpt-4.1-mini` any more (EVAL_REPORT 22).
@@ -92,8 +127,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,131 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 20 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+- Tests: 443 → 1,202 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- UI smoke flows: 25 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
   through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

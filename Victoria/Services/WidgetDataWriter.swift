@@ -67,12 +67,15 @@ enum WidgetDataWriter {
             fat: fat, fatTarget: macros.fatG,
             steps: stepCount, stepGoal: profile.dailyStepGoal,
             waterOz: waterToday, waterGoalOz: profile.waterTargetOz,
-            trendWeight: trend, ratePerWeek: TrendCalculator.ratePerWeek(weights),
-            goalWeight: profile.goalWeightLbs,
-            trendSpark: spark,
+            // Weights go to the widget already in the person's unit (EVAL_REPORT 31).
+            trendWeight: trend.map(profile.unitSystem.display),
+            ratePerWeek: profile.unitSystem.display(TrendCalculator.ratePerWeek(weights)),
+            goalWeight: profile.unitSystem.display(profile.goalWeightLbs),
+            trendSpark: spark.map(profile.unitSystem.display),
             // Active logging only (food/water/manual weigh-in) — NOT auto-imported steps or
             // scale-synced weights, which would otherwise inflate the streak. See StreakCalculator.
-            streak: StreakCalculator.loggingStreak(foods: foods, waters: waters, weights: weights, calendar: cal)
+            streak: StreakCalculator.loggingStreak(foods: foods, waters: waters, weights: weights, calendar: cal),
+            weightUnit: profile.unitSystem.weightUnit
         )
     }
 }

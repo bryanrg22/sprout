@@ -28,7 +28,7 @@ struct WorkoutDayDetail: View {
         }
     }
     private var stats: WorkoutStats { WorkoutStats(session: session, exercises: exercises) }
-    private var coachName: String { profiles.first?.coachName ?? "Vita" }
+    private var coachName: String { UserProfile.primary(of: profiles)?.coachName ?? "Vita" }
 
     var body: some View {
         ScrollView {
