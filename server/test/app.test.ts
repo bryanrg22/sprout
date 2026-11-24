@@ -177,8 +177,8 @@ describe("a model call", () => {
     expect(sent[0]!.headers["anthropic-version"]).toBe("2023-06-01")
     expect(Object.keys(sent[0]!.headers).some((h) => h.startsWith("x-sprout"))).toBe(false)
     expect(Buffer.from(sent[0]!.body).toString()).toBe(message())
-    // 1,000 input at $3/M + 500 output at $15/M = $0.0105
-    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.0105, 6)
+    // 1,000 input at $2/M + 500 output at $10/M = $0.007
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.007, 6)
   })
 
   it("counts cached tokens and web searches at their own prices", async () => {
@@ -279,10 +279,10 @@ describe("who may call", () => {
 
 describe("the daily allowance", () => {
   it("stops a device at its cap until the next UTC day", async () => {
-    const a = app({ deviceDailyCapUsd: 0.02 })
+    const a = app({ deviceDailyCapUsd: 0.013 })
     await register(a)
-    expect((await a.request("/anthropic/v1/messages", signed("/anthropic/v1/messages", message()))).status).toBe(200) // $0.0105
-    expect((await a.request("/anthropic/v1/messages", signed("/anthropic/v1/messages", message()))).status).toBe(200) // $0.021
+    expect((await a.request("/anthropic/v1/messages", signed("/anthropic/v1/messages", message()))).status).toBe(200) // $0.007
+    expect((await a.request("/anthropic/v1/messages", signed("/anthropic/v1/messages", message()))).status).toBe(200) // $0.014
     const third = await a.request("/anthropic/v1/messages", signed("/anthropic/v1/messages", message()))
     expect(third.status).toBe(429)
     expect(await errorType(third)).toBe("daily_limit")

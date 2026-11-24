@@ -120,17 +120,68 @@ enum Graders {
     /// numbers written as words from two to ninety-nine ("fourteen days" → 14,
     /// "twenty-eight" → 28). "One" is deliberately not counted: in running prose it is
     /// far more often a pronoun or a determiner ("one day at a time") than a quantity.
+    ///
+    /// Phrases that contain a number word but state no quantity are removed first
+    /// (`withoutIdioms`): "a meal or two", "one or two", "a high-five".
     static func numbers(in text: String) -> [Double] {
-        let pattern = #"\d[\d,]*(?:\.\d+)?"#
+        let text = withoutIdioms(text)
+        // "8K steps" is 8,000: a trailing k (a whole word) multiplies by a thousand.
+        let pattern = #"\d[\d,]*(?:\.\d+)?(?:[kK]\b)?"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(text.startIndex..., in: text)
         let digits: [Double] = regex.matches(in: text, range: range).compactMap { match in
             guard let r = Range(match.range, in: text) else { return nil }
             var token = String(text[r]).replacingOccurrences(of: ",", with: "")
+            var scale = 1.0
+            if token.hasSuffix("k") || token.hasSuffix("K") { token.removeLast(); scale = 1000 }
             if token.hasSuffix(".") { token.removeLast() }
-            return Double(token)
+            return Double(token).map { $0 * scale }
         }
         return digits + numberWords(in: text)
+    }
+
+    /// The text with idioms that hold a number word but no quantity taken out. Found in the
+    /// failures of the 2026-11-23 runs (EVAL_REPORT 34): "a log or two", "a meal or two" and
+    /// "a high-five" were each counted as an invented number. Kept to phrases that cannot be
+    /// a count of anything, so a real invented number is never hidden by this.
+    static func withoutIdioms(_ text: String) -> String {
+        let idioms = [
+            #"\b(?:a|an|one)\s+[a-z]+(?:\s+[a-z]+)?\s+or\s+two\b"#,   // "a meal or two", "a quick log or two"
+            #"\bone\s+or\s+two\b"#,
+            #"\bhigh[\s-]+fives?\b"#,
+            #"\bthe\s+two\s+of\s+(?:us|you)\b"#,
+        ]
+        var out = text
+        for idiom in idioms {
+            out = out.replacingOccurrences(of: idiom, with: " ", options: [.regularExpression, .caseInsensitive])
+        }
+        return out
+    }
+
+    /// The counts N in "N weeks" / "N-week" (digits or words). A note may say "two weeks"
+    /// for a source's "14 days"; the graders accept N weeks wherever 7×N days was given.
+    static func weekCounts(in text: String) -> [Double] {
+        let lowered = withoutIdioms(text).lowercased()
+        guard let regex = try? NSRegularExpression(pattern: #"([a-z]+(?:-[a-z]+)?|\d+)[\s-]+weeks?\b"#) else { return [] }
+        let range = NSRange(lowered.startIndex..., in: lowered)
+        return regex.matches(in: lowered, range: range).compactMap { match in
+            guard let r = Range(match.range(at: 1), in: lowered) else { return nil }
+            let token = String(lowered[r])
+            if let value = Double(token) { return value }
+            return numberWords(in: token).first
+        }
+    }
+
+    /// The numbers of `text` that `given` does not state, where N weeks counts as given
+    /// when 7×N days is (unless `weeksAsDays` is false: a task told to use each figure
+    /// exactly as given).
+    private static func notGiven(_ text: String, givenNumbers: Set<Double>, weeksAsDays: Bool = true,
+                                 givenStatesAnAbsence: Bool = false) -> [Double] {
+        let weeks = weeksAsDays ? Set(weekCounts(in: text)) : []
+        return Set(numbers(in: text)).subtracting(givenNumbers)
+            .filter { !($0 == 0 && givenStatesAnAbsence) }
+            .filter { !(weeks.contains($0) && givenNumbers.contains($0 * 7)) }
+            .sorted()
     }
 
     private static let unitWords: [String: Double] = [
@@ -168,9 +219,11 @@ enum Graders {
 
     /// A rewording keeps the numbers when it states every number of the source and
     /// states no number the source did not have.
+    /// "Two weeks" keeps a source's 14 days, and is not an invented 2.
     static func numbersPreserved(source: String, rewrite: String) -> (allKept: Bool, noneInvented: Bool) {
-        let want = Set(numbers(in: source)), got = Set(numbers(in: rewrite))
-        return (want.isSubset(of: got), got.isSubset(of: want))
+        let want = Set(numbers(in: source))
+        let got = Set(numbers(in: rewrite)).union(weekCounts(in: rewrite).map { $0 * 7 })
+        return (want.isSubset(of: got), notGiven(rewrite, givenNumbers: want).isEmpty)
     }
 
     static func sentenceCount(_ text: String) -> Int {
@@ -507,8 +560,39 @@ extension Graders {
     }
 
     /// The numbers `text` states that `given` does not (digits, and words from two to ninety-nine).
-    static func numbersNotGiven(in text: String, given: String) -> [Double] {
-        Set(numbers(in: text)).subtracting(numbers(in: given)).sorted()
+    static func numbersNotGiven(in text: String, given: String, weeksAsDays: Bool = true) -> [Double] {
+        notGiven(text, givenNumbers: Set(numbers(in: given)), weeksAsDays: weeksAsDays,
+                 givenStatesAnAbsence: statesAnAbsence(given))
+    }
+
+    /// Whether the source says something did not happen ("nothing logged", "no workouts"):
+    /// then "0 logs" restates it and is not an invented number (EVAL_REPORT 34).
+    static func statesAnAbsence(_ text: String) -> Bool {
+        text.range(of: #"\b(?:nothing|none|no|zero)\b"#, options: [.regularExpression, .caseInsensitive]) != nil
+    }
+
+    /// The figures of `figures` that are not given but are the exact sum or difference of
+    /// two given figures, at the precision written ("158.2 lb now, goal 145 lb" → "13.2 lb
+    /// to go"). Recorded, not accepted: the app's rule is that code computes every figure
+    /// and the model only words them, so a figure the model worked out itself still fails
+    /// (a wrong subtraction would be shown as fact). This tells "did its own arithmetic"
+    /// apart from "made a number up" when reading the failures.
+    static func derivedFigures(_ figures: [Double], given: Set<Double>) -> Set<Double> {
+        let values = Array(given)
+        var derived = Set<Double>()
+        for figure in figures where !given.contains(figure) {
+            let decimals = figure == figure.rounded() ? 0.0 : 1.0
+            let tolerance = decimals == 0 ? 0.5 : 0.05
+            outer: for i in values.indices {
+                for j in values.indices where j != i {
+                    let a = values[i], b = values[j]
+                    if abs(abs(a - b) - figure) < tolerance || abs((a + b) - figure) < tolerance {
+                        derived.insert(figure); break outer
+                    }
+                }
+            }
+        }
+        return derived
     }
 
     /// A line that begins like a list item or a header.
@@ -774,8 +858,10 @@ extension Graders {
     ///
     /// PASS = safe to show:
     /// - the highlights are within the schema's own bounds and none is blank,
-    /// - no number that is not in the snapshot ("Never invent numbers not given"); a
-    ///   difference the model worked out itself, or a rounded figure, counts as not given,
+    /// - no number that is not in the snapshot ("Use each figure exactly as given: never
+    ///   invent one, and never work out a new one yourself"); a difference the model worked
+    ///   out itself, or a rounded figure, counts as not given (recorded apart, as
+    ///   `states_a_derived_figure`, so a reader can tell arithmetic from invention),
     /// - no wrong-person pronoun,
     /// - none of the prompt's banned phrases, as whole words.
     /// Recorded, not required: the headline of 3 to 6 words, the body of 2 to 4 sentences,
@@ -787,12 +873,18 @@ extension Graders {
         let bounds = itemBounds(ProgressSummaryService.schema, "highlights") ?? 2...4
         let blank = summary.highlights.contains { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         let schemaKept = bounds.contains(summary.highlights.count) && !blank
-        let noneInvented = numbersNotGiven(in: text, given: snapshot).isEmpty
+        // "Use each figure exactly as given": three weeks for a 21-day streak is a new figure here.
+        let notGivenFigures = numbersNotGiven(in: text, given: snapshot, weeksAsDays: false)
+        let derived = derivedFigures(notGivenFigures, given: Set(numbers(in: snapshot)))
+        let noneInvented = notGivenFigures.isEmpty
         let wrongPerson = wrongPersonPronoun(text, reader: reader)
         let noBan = phrases(in: text, from: progressSummaryBans).isEmpty
         let scores: [String: Double] = [
             "highlights_within_schema": flag(schemaKept),
             "no_number_invented": flag(noneInvented),
+            // Recorded: how many of the failures are the model's own (correct) arithmetic.
+            "states_a_derived_figure": flag(!derived.isEmpty),
+            "states_a_figure_neither_given_nor_derived": flag(!notGivenFigures.allSatisfy(derived.contains)),
             "wrong_person_pronoun": flag(wrongPerson),
             "no_banned_phrase": flag(noBan),
             "headline_3_to_6_words": flag((3...6).contains(wordCount(summary.headline))),

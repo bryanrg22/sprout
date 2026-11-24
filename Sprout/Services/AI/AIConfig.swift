@@ -44,8 +44,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Sendable {
     /// A task that has a measured default uses that instead (`AIConfig.measuredDefaults`).
     var defaultCoachModel: String {
         switch self {
-        // Sonnet 5: same list price as Sonnet 4.6 ($3/$15, intro $2/$10 through
-        // 2026-08-31) but a generation newer — upgraded the day it hit price parity.
+        // Sonnet 5: $2/$10 per million tokens (its launch price became the standard price).
         case .anthropic: return "claude-sonnet-5"
         // gpt-5.6-terra: the $2.50/$15 workhorse of the newest family — same price
         // as gpt-5.4, a generation newer (adopted the day GA was confirmed on a real

@@ -32,6 +32,18 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 20 | The chat: a testable turn engine, paged history, selection, and named failures | 2026-11-23 |
 | 21 | iCloud was backing up two of twenty models: the CloudKit schema, measured and fixed in Development | 2026-11-23 |
 | 22 | Eight more tasks measured: four defaults changed, and two ways a reply was being lost | 2026-11-23 |
+| 23 | The character call, made for real: eighteen images, and a grader that could not see them | 2026-11-23 |
+| 24 | The coach's tools called every user "she" | 2026-11-23 |
+| 25 | A note lost to thinking: measured, fixed per model, and measured again | 2026-11-23 |
+| 26 | Onboarding walked in every order, and what looking at the result found | 2026-11-23 |
+| 27 | Never onboard someone who already has data; three owner decisions applied | 2026-11-23 |
+| 28 | The week on Workouts: active days, every day tappable | 2026-11-23 |
+| 29 | The weekly competition; Home and Gym out of each other's way for VoiceOver; readable secondary text | 2026-11-23 |
+| 30 | Structured answers from the Claude models that refuse a forced tool call | 2026-11-23 |
+| 31 | Kilograms | 2026-11-23 |
+| 32 | The chat no longer jumps when earlier messages load | 2026-11-23 |
+| 33 | Built-in AI, the code renamed Sprout, and personal content out of the repository | 2026-11-24 |
+| 34 | The evaluations audited: four grader defects, two prompt defects, a regrade of every past answer, and statistics by case | 2026-11-24 |
 
 ---
 
@@ -1825,3 +1837,135 @@ first.
   now has no AI at all. No TestFlight build should be made from `main` until it is.
 - **Updating in place after the rename** was reasoned from the code, not run: the next
   TestFlight build installed over the current one on a phone with data is the check.
+
+## 34. The evaluations audited: four grader defects, two prompt defects, a regrade of every past answer, and statistics by case (2026-11-24)
+
+**Why:** the owner asked that every model choice be provable the way Basis proves its own
+(dataset, every candidate, accuracy, cost and latency, versioned records), and that wrong
+results be investigated rather than trusted. An independent read-only audit went through all
+40 run directories; every claim below was then checked against the raw records before
+anything was changed. One of the audit's claims was wrong and is not acted on (see "The
+recap", below).
+
+### What a decision rests on today (Anthropic, the provider that ships)
+
+| Task | Ships | Chosen by |
+|---|---|---|
+| Daily brief | `claude-haiku-5-5` | measured: sections 10 and 25 |
+| The character picture | `gpt-image-2.6-sunburst`, low | measured: sections 23 and 27 |
+| Insight line, weekly reflection, onboarding note, memory fold | `claude-haiku-4-5-20251001` | tier default; section 22 kept it only until the cut-off was solved, which section 25 did; the switch was never re-decided |
+| Chat turn, meal photo, meal description, food suggestions, recap, checklist, chat chips | `claude-sonnet-5` | tier default; the datasets measure rules, not quality (sections 10, 22) |
+| Plan build, review, research | `claude-opus-4-8` | tier default; no dataset |
+
+Two of fifteen tasks have a measured model. That is the honest state.
+
+### Defects found in the app's prompts (verified in the records)
+
+1. **The weekly reflection's prompt contained a digit, and its sanitiser discards any reply
+   with a digit.** The user turn said "Logged six of the last **7** days"; a model that
+   repeated it had its reply thrown away and the template shown. Of the replies the app
+   discarded, 23 of 44 in run `…092731` and 7 of 15 in `…104116` held "7 days", and 20
+   and 6 held "10K", a model's shorthand for the case note "ten-kilometre race" (a reply
+   can hold both). The
+   prompt now says "seven", and tells the model to write every number as a word because a
+   note with a digit is not shown. The sanitiser is unchanged.
+2. **The recap's prompt did not say that working out a figure counts as inventing one.** The
+   grader always held that rule (a figure must be given, because the app's numbers are
+   computed in code and a wrong subtraction would be shown as fact), but the prompt only
+   said "Never invent numbers not given". The prompt now says to use each figure exactly as
+   given and never work out a new one (no differences, totals or percentages).
+
+### Defects found in the graders (verified, then fixed and tested)
+
+1. **Idioms read as numbers:** "a meal or two", "a log or two", "one or two", "a high-five",
+   "the two of us". Removed before numbers are read (`withoutIdioms`), kept to phrases that
+   cannot be a count.
+2. **"Two weeks" for 14 days read as an invented 2 and a dropped 14** (insight
+   `welcome-back-14`, brief `streak-14`). N weeks now counts as 7×N days where those were
+   given; three weeks for 14 days still fails. Not applied to the recap, whose prompt now
+   asks for each figure exactly as given.
+3. **"0 logs" read as invented when the source said "nothing logged".** Zero now counts as
+   given when the source states an absence (`nothing`, `none`, `no`, `zero`). Every
+   "made-up figure" the shipped recap model was charged with in runs `…093733` and
+   `…095733` was this, or "8K" for a given 8,000.
+4. **"8K" read as 8.** A trailing k on a number is now thousands.
+
+Not a grader defect, though the audit called it one: the recap grader failing a figure the
+model computed (158.2 − 145 = "13.2 lb"). The arithmetic was right, but the rule is the
+app's design, so the grader keeps it and now records `states_a_derived_figure` beside it,
+so a reader can tell arithmetic from invention. The prompt was the defect (above).
+
+`GraderTests` gained six tests (idioms, weeks, zero and thousands, derived figures, the
+regrade, the brief's weeks rule); the evaluation self-tests are 102, 14 skipped (13 live,
+1 regrade that needs a named run).
+
+### Every past answer graded again, at no cost
+
+`Evals/regrade-text.sh` grades the text a run recorded against its case, rebuilt from the
+dataset, with the graders as they are now; no model is called. It covers the brief, insight
+line, weekly reflection, onboarding note and recap. A reply the app discarded, or a failed
+call, is not regradable and keeps its result. The per-run tables are in each run's
+`regrade-text.json`. The runs that decide something, Anthropic candidates only, passes of
+attempts:
+
+| Task (run) | `haiku-5-5` before → after | `haiku-4-5` (ships) before → after | `sonnet-5` before → after |
+|---|---|---|---|
+| Insight line (`…103954`) | 54 → **57/57** | 57 → 57/57 | 57 → 57/57 |
+| Weekly reflection (`…104116`) | 46 → **48/48** | 41 → 42/48 | 40 → 41/48 |
+| Onboarding note (`…104337`) | 44 → 44/45 | 42 → 42/45 | 38 → 38/45 |
+| Daily brief (`…104726`) | 39 → 39/39 | 39 → 39/39 | 36 → **39/39** |
+| Recap (`…095733`) | not run | 11 → 15/45 | 26 → **32/45** (ships) |
+
+What is left after the fixes, read case by case: the weekly reflection's remaining failures
+are replies the app discarded (the "7 days" defect, fixed in the prompt, so they need a new
+run); the recap's are mostly the model's own arithmetic (now forbidden by the prompt) and a
+few banned phrases; `claude-haiku-4-5` is the one model that invents figures in the recap
+(110, 1900, 127, 50).
+
+### Statistics by case, and a paired comparison
+
+`summarize.py` gave a Wilson interval over attempts, which treats three repeats of one case
+as three independent pieces of evidence and so is narrower than the data allows. It now also
+gives a **case CI**: 10,000 bootstrap draws over cases (fixed seed), the one to read. With
+`--baseline <candidate>` it compares every candidate with the shipped one on the same cases:
+the mean per-case difference and its case-bootstrap interval. On run `…104116` (weekly
+reflection, old prompt), against `claude-haiku-4-5`: `claude-haiku-5-5` +10.4% (−2.1% to
++25.0%), at $0.20 against $1.51 per 1,000 calls and 1.6 s against 2.3 s at the median.
+
+### Prices
+
+Checked on Anthropic's pricing page on 2026-11-24: Claude Sonnet 5's $2 / $10 launch price
+became its standard price, and the rise to $3 / $15 planned for 2026-09-01 was cancelled.
+`Evals/prices.json` was right; the gateway (`server/src/pricing.ts`) and a comment in
+`AIConfig` had $3 / $15 and are corrected, so a phone's daily allowance is no longer spent
+half as fast again as the real cost. Haiku 5.5 $0.10 / $0.50, Haiku 4.5 $1 / $5, Opus 4.8
+$5 / $25, web search $10 per 1,000: as recorded.
+
+### Corrections to earlier sections
+
+- **Section 25, the daily brief row.** "`haiku-5-5` before: 36/39" cites section 10, whose
+  deciding run (`…054917`) had 39/39; the 36 is from `…071932`. "`sonnet-5-5` not run"
+  and "`sonnet-5` not run" are wrong: `…054917` has 38/39 for each and `…071932` 39/39 for
+  each.
+- **Section 30.** "Fable costs $10 / $50 per million tokens" is the price of
+  `claude-fable-5`; `claude-fable-5-2`, the model that section tried, is $8 / $40.
+- **Runs cited nowhere until now:** `…072749-DailyBrief`, `…095611-ChecklistPlan` and
+  `…095733-ProgressSummary` (the last is used above).
+- **The index** at the top stopped at section 22; it now lists every section.
+
+### Not done, and why
+
+- **No default was changed here.** The four short-writing tasks point to `claude-haiku-5-5`
+  (as good or better on every regraded run at about a seventh of the cost and faster), but
+  the weekly reflection's prompt has changed, the memory fold is not covered by the regrade,
+  and section 25 found that `haiku-5-5` stores an app-owned number in 8–12% of memory
+  folds. A decision needs a run on the current prompts; it needs the owner's approval
+  (estimated at about $0.41 for the four tasks, both models, 5 repeats).
+- **The recap** needs a run on its new prompt before anything is concluded (about $0.48 for
+  `sonnet-5` against `haiku-5-5`, 5 repeats).
+- **Unmeasured:** the meal photo, the three plan tasks, the coach's advice over a whole
+  conversation, and household portions in meal descriptions (`meal_describe/build_v3.py`
+  exists, `v3.jsonl` was never generated). The structured tasks' datasets check rules only;
+  a cheaper model is not adopted for them until something measures quality.
+- **Run records** still lack a hash of the prompts and of `prices.json`, and the deciding
+  runs of sections 10 and 25 were made on uncommitted trees. Open.

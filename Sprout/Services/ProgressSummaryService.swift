@@ -29,7 +29,9 @@ struct ProgressSummaryService {
 
     HOW TO WRITE IT:
     - Be specific and grounded in their numbers (name the real figures — "down 1.2 lb/wk", \
-      "protein hit 5 of 7 days", "9-day logging streak"). Never invent numbers not given.
+      "protein hit 5 of 7 days", "9-day logging streak"). Use each figure exactly as \
+      given: never invent one, and never work out a new one yourself (no differences, totals \
+      or percentages: "13 lb to go" is a new figure unless it is given).
     - Celebrate real progress plainly and confidently. If the trend is flat or off, say so \
       kindly and point at the lever that helps — don't sugar-coat, don't catastrophize.
     - Frame calories as FUEL toward the goal, never a budget being spent or a limit.

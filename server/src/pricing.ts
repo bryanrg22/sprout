@@ -9,8 +9,9 @@
  * model that is missing here, so change them together.
  *
  * Prices are list prices in US dollars per million tokens (cache reads 0.1× and five-minute
- * cache writes 1.25× the input price), from the vendor's pricing page as recorded in
- * Evals/prices.json; where the two differ the higher is used, so the caps stay conservative.
+ * cache writes 1.25× the input price), as on Anthropic's pricing page on 2026-11-24 and in
+ * Evals/prices.json. Sonnet 5's $2/$10 launch price became its standard price (the planned
+ * rise to $3/$15 on 2026-09-01 was cancelled).
  */
 
 export type Upstream = "anthropic" | "openai"
@@ -24,7 +25,7 @@ export interface TokenPrice {
 
 export const ANTHROPIC_MODELS: Record<string, TokenPrice> = {
   // Coach, meal photos, checklist (the strong tier).
-  "claude-sonnet-5": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
+  "claude-sonnet-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
   // The daily brief (measured default, EVAL_REPORT 10 and 25).
   "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
   // Insight line, weekly reflection, onboarding note, memory fold (the cheap tier).

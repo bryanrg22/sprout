@@ -56,6 +56,11 @@ enum EvalEnv {
         return URL(fileURLWithPath: path)
     }
 
+    /// Past runs whose recorded text is to be graded again (`Evals/regrade-text.sh`), separated by ":".
+    static var regradeTextRuns: [URL] {
+        (env["SPROUT_EVAL_REGRADE_TEXT"] ?? "").split(separator: ":").map { URL(fileURLWithPath: String($0)) }
+    }
+
     static func key(for provider: AIProvider) -> String? {
         let name = provider == .anthropic ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY"
         guard let value = env[name], !value.isEmpty else { return nil }

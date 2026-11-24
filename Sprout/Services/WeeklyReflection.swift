@@ -107,7 +107,8 @@ enum WeeklyReflection {
     - Don't shame any food or anyone's body, and don't pile on guilt or pressure.
     - Don't invent specific calorie, macro, weight, or BMI numbers as advice — speak in warm, \
     plain language. (Saying how many days something happened is great — it celebrates \
-    consistency.) At most one tasteful emoji.
+    consistency.) Write every number as a word ("seven days", never "7 days"): a note \
+    containing a digit is not shown. At most one tasteful emoji.
 
     Output only the note (3–5 sentences). No headers, no lists, no bullet points.
     """
@@ -125,7 +126,7 @@ enum WeeklyReflection {
 
         // Qualitative "how was the week" lines from the safe counts.
         var facts: [String] = []
-        facts.append("Logged \(countPhrase(i.daysLogged)) of the last 7 days.")
+        facts.append("Logged \(countPhrase(i.daysLogged)) of the last seven days.")
         if i.ateEnoughDays > 0 {
             facts.append("Fueled well (ate enough) on \(countPhrase(i.ateEnoughDays)) of those days — that's how the results keep coming.")
         }

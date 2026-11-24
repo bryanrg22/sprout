@@ -43,10 +43,10 @@ final class AITaskModelTests: XCTestCase {
         .planReview:       ("claude-opus-4-8", "gpt-5.6-sol"),
         .planResearch:     ("claude-opus-4-8", "gpt-5.6-sol"),
         .dailyBrief:       ("claude-haiku-5-5", "gpt-6-luna"),            // EVAL_REPORT 10
-        .insightLine:      ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // EVAL_REPORT 22
-        .weeklyReflection: ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // EVAL_REPORT 22
-        .onboardingNote:   ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // EVAL_REPORT 22
-        .memoryFold:       ("claude-haiku-4-5-20251001", "gpt-5.6-luna"),  // EVAL_REPORT 22
+        .insightLine:      ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // Anthropic: tier default; OpenAI: EVAL_REPORT 22
+        .weeklyReflection: ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // Anthropic: tier default; OpenAI: EVAL_REPORT 22
+        .onboardingNote:   ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // Anthropic: tier default; OpenAI: EVAL_REPORT 22
+        .memoryFold:       ("claude-haiku-4-5-20251001", "gpt-5.6-luna"),  // Anthropic: tier default; OpenAI: EVAL_REPORT 22
     ]
 
     func testEveryTaskHasAPinnedDefault() {

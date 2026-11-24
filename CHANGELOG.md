@@ -21,8 +21,23 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   gone. A phone that cannot use the built-in AI (very old hardware) keeps every other
   feature and says so plainly (EVAL_REPORT 33).
 
+### Fixed
+
+- **The weekly note is shown more often.** Its prompt contained a "7" and the app throws
+  away any note with a digit, so a model that repeated "7 days" lost its note to the
+  template. The prompt now uses words only (EVAL_REPORT 34).
+- **The progress recap no longer works out its own figures**: the prompt now says to use
+  each figure exactly as given, the rule the app always held (EVAL_REPORT 34).
+- The built-in AI charges Sonnet 5 at its real price ($2 / $10 per million tokens, not
+  $3 / $15), so a phone's daily allowance lasts as long as it should.
+
 ### For people building it
 
+- **The evaluations were audited.** Four grader defects fixed (idioms, weeks, zero for
+  "nothing", thousands written "8K"), every past answer graded again for free
+  (`Evals/regrade-text.sh`), summaries now give an interval by case and a paired comparison
+  with the shipped model (`--baseline`), and the report's errors are corrected in a new
+  section (EVAL_REPORT 34).
 - The code is now named after the app: `Sprout/`, `SproutTests/`, `SproutUITests/`,
   `SproutWidgets/`, `SproutEvals/`, `Sprout.xcodeproj`, scheme `Sprout`. The bundle id,
   iCloud container, App Group and every stored value keep the names the app shipped

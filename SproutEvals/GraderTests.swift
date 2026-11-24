@@ -212,6 +212,93 @@ final class GraderTests: XCTestCase {
         XCTAssertFalse(invented.noneInvented)
     }
 
+    /// Idioms that hold a number word but state no quantity (EVAL_REPORT 34): each was counted
+    /// as an invented number in the 2026-11-23 runs.
+    func testIdiomsAreNotNumbers() {
+        XCTAssertEqual(Graders.numbers(in: "Give yourself a high-five, then a meal or two more."), [])
+        XCTAssertEqual(Graders.numbers(in: "A quick log or two keeps it going; one or two walks count."), [])
+        XCTAssertEqual(Graders.numbers(in: "High five! The two of us are on it."), [])
+        // A real count beside an idiom is still read.
+        XCTAssertEqual(Graders.numbers(in: "a meal or two, and three glasses of water"), [3])
+        XCTAssertEqual(Graders.numbers(in: "two meals or three"), [2, 3], "not the idiom: both are counts")
+        // An invented number is not hidden by an idiom near it.
+        XCTAssertEqual(Graders.numbersNotGiven(in: "a log or two, then eight more", given: "logged four days"), [8])
+    }
+
+    /// "Two weeks" for a source's 14 days is the same fact, not an invented 2 (EVAL_REPORT 34).
+    func testWeeksAreSevenDays() {
+        XCTAssertEqual(Graders.weekCounts(in: "two weeks away, a 3-week streak, three-week run"), [2, 3, 3])
+        let kept = Graders.numbersPreserved(source: "You're back after 14 days away.",
+                                            rewrite: "Welcome back after two weeks away!")
+        XCTAssertTrue(kept.allKept, "two weeks keeps the 14 days")
+        XCTAssertTrue(kept.noneInvented, "the 2 of two weeks is the 14 days, not a new number")
+        XCTAssertEqual(Graders.numbersNotGiven(in: "Two weeks of showing up", given: "a 14-day streak"), [])
+        // Wrong arithmetic is still invented: 14 days is not three weeks.
+        XCTAssertEqual(Graders.numbersNotGiven(in: "Three weeks of showing up", given: "a 14-day streak"), [3])
+        XCTAssertFalse(Graders.numbersPreserved(source: "after 14 days away", rewrite: "after three weeks away").noneInvented)
+        // A plain 2 that is not about weeks is still invented.
+        XCTAssertEqual(Graders.numbersNotGiven(in: "Two meals today", given: "a 14-day streak"), [2])
+    }
+
+    /// "0 logs" restates "nothing logged"; "8K" is 8,000 (EVAL_REPORT 34).
+    func testZeroForAnAbsenceAndThousandsWithK() {
+        XCTAssertEqual(Graders.numbers(in: "8K steps, a 10k race, 2.5k"), [8000, 10000, 2500])
+        XCTAssertEqual(Graders.numbers(in: "a kind week, 5 kids"), [5], "a k that starts a word is not thousands")
+        XCTAssertEqual(Graders.numbersNotGiven(in: "0 nutrition logs this week", given: "Nutrition: nothing logged in the last 7 days"), [])
+        XCTAssertEqual(Graders.numbersNotGiven(in: "0 logs", given: "Logged 4 days"), [0], "no absence stated: 0 is invented")
+        XCTAssertEqual(Graders.numbersNotGiven(in: "8K steps a day", given: "Avg steps: 8000"), [])
+        XCTAssertEqual(Graders.numbersNotGiven(in: "9K steps a day", given: "Avg steps: 8000"), [9000])
+    }
+
+    /// The recap may not work out figures itself; the grader records when the failure is
+    /// correct arithmetic rather than a made-up number (EVAL_REPORT 34).
+    func testDerivedFiguresAreRecordedButStillFail() {
+        let given = Set(Graders.numbers(in: "Weight 158.2 lb; goal 145 lb; target 2750 kcal; eaten 2020 kcal"))
+        XCTAssertEqual(Graders.derivedFigures([13.2, 730, 999], given: given), [13.2, 730])
+        let summary = ProgressSummary(headline: "Strong week of fuel", body: "You are 13.2 lb from your goal. Keep going.",
+                                      highlights: ["Ate 2020 kcal on average", "Goal is 145 lb", "Logged every day"])
+        let graded = Graders.progressSummary(snapshot: "Weight 158.2 lb; goal 145 lb; eaten 2020 kcal",
+                                             summary: summary, reader: .init(name: "Sam", isWoman: false, isMan: true))
+        XCTAssertFalse(graded.pass, "a figure the model computed is still not given")
+        XCTAssertEqual(graded.scores["states_a_derived_figure"], 1)
+        XCTAssertEqual(graded.scores["states_a_figure_neither_given_nor_derived"], 0)
+    }
+
+    /// The text regrade grades a recorded reply against its rebuilt case, keeps a reply that
+    /// was not shown as it was, and tallies per candidate.
+    func testTextRegradeGradesRecordedRepliesAgainstTheirCases() throws {
+        let evals = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Evals")
+        let run = FileManager.default.temporaryDirectory.appendingPathComponent("regrade-text-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: run, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: run) }
+        func record(_ output: String, pass: Bool, ok: Bool = true, used: Double = 1, repeatIndex: Int) -> String {
+            let object: [String: Any] = [
+                "task": "weeklyReflection", "dataset": "weekly_reflection/v1", "caseID": "alex-dropped-fast",
+                "candidate": "anthropic:test", "repeatIndex": repeatIndex, "ok": ok, "pass": pass,
+                "output": output, "scores": ["used": used],
+            ]
+            return String(data: try! JSONSerialization.data(withJSONObject: object), encoding: .utf8)!
+        }
+        let idiom = "Alex, you showed up on six days this week, and that is real. Your trend dropped fast, so "
+            + "add a meal or two to fuel the race training. Keep the protein up and the energy will follow."
+        let invented = "Alex, six days logged! Add twelve snacks a day and you'll fly."
+        try [record(idiom, pass: false, repeatIndex: 0), record(invented, pass: false, repeatIndex: 1),
+             record("10K raw text", pass: false, ok: false, used: 0, repeatIndex: 2)]
+            .joined(separator: "\n").write(to: run.appendingPathComponent("records-weeklyReflection.jsonl"),
+                                           atomically: true, encoding: .utf8)
+        let result = try XCTUnwrap(TextRegrade.regrade(run: run, datasets: evals.appendingPathComponent("datasets")))
+        XCTAssertEqual(result.rows.map(\.newPass), [true, false, false],
+                       "the idiom now passes, an invented number still fails, a discarded reply keeps its result")
+        XCTAssertNil(result.rows[2].newScores)
+        let tally = try XCTUnwrap(result.byCandidate["anthropic:test"])
+        XCTAssertEqual([tally.attempts, tally.oldPassed, tally.newPassed, tally.notRegradable], [3, 0, 1, 1])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: run.appendingPathComponent("regrade-text.json").path))
+        // The progress recap is read back from the harness's recorded layout.
+        XCTAssertEqual(TextRegrade.progressSummary(fromRecorded: "Head\nBody.\n- one win\n- two wins")?.highlights,
+                       ["one win", "two wins"])
+    }
+
     func testFoodValueIsCaloriesTimesQuantity() throws {
         let view = try view("log_food", ["name": "Egg", "meal": "breakfast", "calories": 72,
                                          "protein_g": 6, "carbs_g": 0, "fat_g": 5, "quantity": 2])
@@ -245,7 +332,12 @@ final class GraderTests: XCTestCase {
         let template = ("14 days of showing up in a row.", "Showing up beats being perfect.")
         XCTAssertTrue(LiveEvals.gradeBrief(template: template, reply: ("14 days straight, Alex.", "That consistency is everything."),
                                            readerIsNotAWoman: true).pass)
-        XCTAssertFalse(LiveEvals.gradeBrief(template: template, reply: ("Two weeks straight.", "Keep going."),
+        // Two weeks is the same fact as 14 days (EVAL_REPORT 34); three weeks is not.
+        XCTAssertTrue(LiveEvals.gradeBrief(template: template, reply: ("Two weeks straight.", "Keep going."),
+                                           readerIsNotAWoman: true).pass, "two weeks keeps the 14 days")
+        XCTAssertFalse(LiveEvals.gradeBrief(template: template, reply: ("Three weeks straight.", "Keep going."),
+                                            readerIsNotAWoman: true).pass, "the number 14 was dropped")
+        XCTAssertFalse(LiveEvals.gradeBrief(template: template, reply: ("A great streak.", "Keep going."),
                                             readerIsNotAWoman: true).pass, "the number 14 was dropped")
         XCTAssertFalse(LiveEvals.gradeBrief(template: template, reply: ("14 days straight.", "She keeps showing up."),
                                             readerIsNotAWoman: true).pass, "wrong person")
@@ -1592,7 +1684,8 @@ final class GraderTests: XCTestCase {
         XCTAssertTrue(good.pass)
         XCTAssertEqual(good.scores, ["highlights_within_schema": 1, "no_number_invented": 1, "wrong_person_pronoun": 0,
                                      "no_banned_phrase": 1, "headline_3_to_6_words": 1, "body_2_to_4_sentences": 1,
-                                     "highlights_3_to_8_words": 1, "names_a_given_figure": 1])
+                                     "highlights_3_to_8_words": 1, "names_a_given_figure": 1,
+                                     "states_a_derived_figure": 0, "states_a_figure_neither_given_nor_derived": 0])
         // The schema's own bounds on the highlights: 2 to 4.
         let line = "Protein on 5 of 7 days"
         XCTAssertFalse(grade(recap(highlights: [line])).pass)
@@ -1607,7 +1700,8 @@ final class GraderTests: XCTestCase {
         XCTAssertFalse(grade(recap(highlights: [line, "Aim for 130g protein"])).pass)
         XCTAssertFalse(grade(recap(body: "Your trend is about 156 lb. Protein landed on 5 of 7 days.")).pass,
                        "a rounded figure is not the figure given")
-        XCTAssertFalse(grade(recap(body: "Three weeks of logging. Protein landed on 5 of 7 days.")).pass, "a number in words counts")
+        XCTAssertFalse(grade(recap(body: "Three weeks of logging. Protein landed on 5 of 7 days.")).pass,
+                       "a number in words counts, and the recap may not turn a 21-day streak into weeks")
         XCTAssertEqual(grade(recap(headline: "Down 12 pounds already")).scores["no_number_invented"], 0)
         // The right person.
         XCTAssertFalse(grade(recap(body: "He is on track. Protein landed on 5 of 7 days.")).pass)

@@ -109,7 +109,7 @@ jobs:
 
       - name: Verify evaluation self-test counts
         if: ${{ !cancelled() }}
-        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 96 --max-skipped 13
+        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 102 --max-skipped 14
 
       - name: Upload result bundles
         if: ${{ !cancelled() }}
@@ -230,7 +230,7 @@ jobs:
             echo "the checker passed a schema known to be missing 18 record types"; exit 1
           fi
       - name: Shell scripts parse
-        run: bash -n Evals/run.sh && bash -n Evals/regrade-avatars.sh && bash -n tooling/evidence/capture.sh
+        run: bash -n Evals/run.sh && bash -n Evals/regrade-avatars.sh && bash -n Evals/regrade-text.sh && bash -n tooling/evidence/capture.sh
       # Builds temporary SQLite stores with one violation of each rule and checks the
       # report flags it (and that a clean store passes). Standard library only.
       - name: Store verifier self-test
