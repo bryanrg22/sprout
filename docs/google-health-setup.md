@@ -21,7 +21,7 @@ Everything below happens at https://console.cloud.google.com, signed in with the
 - **Audience / Publishing status: keep it in "Testing".** Do NOT publish. Testing mode
   allows up to 100 test users with **no verification review**, which is exactly right
   for personal use — even though the health scopes are "restricted".
-- Under **Test users** → **+ Add users** → add `<email>` (the Google
+- Under **Test users** → **+ Add users** → add the Google account you will sign in with (the Google
   account with your Fitbit data).
 - If there's a "Data Access / Scopes" step, you can skip adding scopes — the app
   requests them at sign-in time. If you prefer to add them, they are:
