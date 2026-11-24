@@ -60,6 +60,23 @@ final class ChatScrollBox {
     }
 }
 
+/// VoiceOver's order for the flipped chat. The rows are declared newest first (that is what
+/// makes the flip work), and assistive technologies follow declaration order, so without
+/// this VoiceOver read the conversation bottom to top (measured: #39, #38, #37 down the
+/// screen's y 474, 404, 26). Each row is its own container with a priority that puts it back
+/// in the order it is drawn, top to bottom: the start of what is loaded, the messages oldest
+/// to newest, then whatever sits under the newest message. Higher is read first.
+enum ChatReadingOrder {
+    /// "Load earlier messages" or the start of the conversation, drawn above everything.
+    static func top(messages count: Int) -> Double { Double(count + 1) }
+    /// The message at `index` in reading order (0 is the oldest loaded): `count` down to 1.
+    static func message(at index: Int, of count: Int) -> Double { Double(count - index) }
+    /// Under the newest message, in the order they are drawn going down.
+    static let typing: Double = -1
+    static let confirm: Double = -2
+    static let failure: Double = -3
+}
+
 extension View {
     /// Turn a view upside down (vertically only). Applied to the chat's scroll view and again
     /// to each row, so the rows read the right way up in a list that grows from the bottom.
@@ -79,5 +96,11 @@ extension View {
             self
         }
     }
-}
 
+    /// One row of the flipped chat as its own accessibility container, at its place in
+    /// reading order (`ChatReadingOrder`).
+    func chatReadingOrder(_ priority: Double) -> some View {
+        accessibilityElement(children: .contain)
+            .accessibilitySortPriority(priority)
+    }
+}

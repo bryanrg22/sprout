@@ -154,9 +154,19 @@ A fast swipe moves the same distance as on the unflipped list (four swipes from 
 of 201 messages: to #179 flipped, #181 unflipped), and pages load ahead of the finger: a
 121-message conversation reaches "Beginning of your conversation" by swiping alone.
 
-**Open:** VoiceOver order. The rows are now declared newest first (the flip), and
-VoiceOver may follow that order, so swiping through messages could go upward. Not checked:
-no run with VoiceOver on.
+**VoiceOver order.** The rows are declared newest first (the flip), and the app gave
+assistive technologies that order: measured in the accessibility tree, the input bar first,
+then the messages newest to oldest (#200, #199, #198 … down the screen's y 474, 404, 26).
+Each row is now its own accessibility container with a sort priority that matches where it
+is drawn (`ChatReadingOrder`): "Load earlier messages" or the start of the conversation, the
+messages oldest to newest, then the typing indicator, a confirm card and an error row. The
+conversation is read before the input bar. `testVoiceOverReadsTheChatInTheOrderItIsDrawn`
+checks the order at the newest message, at the top of what is loaded and after a page loads;
+it failed on the code before the change.
+
+**Open:** the tree's order is what the app hands VoiceOver; VoiceOver itself has not been
+run (the simulator has none). Not checked either: whether a three-finger scroll goes the
+right way in the flipped scroll view.
 
 ## 2. Selecting text
 

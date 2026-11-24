@@ -30,7 +30,7 @@ Last updated: 2026-11-22.
 | G11 | The open defects are closed | in progress: the high-severity lifecycle defects and nine buddy groups are fixed (EVAL_REPORT 16, 19); open: widgets' gain framing, travel day keys, HealthKit sync, U-1 to U-3, S-1, S-2 and the accessibility findings |
 | G12 | Competitions | built as proposed and tested against the mock buddy (EVAL_REPORT 29); needs the `competitionWeeks` field deployed to Production with the next build, and two real phones |
 | G13 | The app is back on the phones and does not expire again | blocked: the owner deploys the CloudKit schema to Production (EVAL_REPORT 21) and uploads the build; an expired build must be updated in place, never deleted, because iCloud holds almost none of the data |
-| G14 | The chat holds up: long histories, selection and copy, "ask about this", real error handling | in progress: built, tested and seen running (EVAL_REPORT 20); loading earlier messages moves nothing (0 pt, flipped list, EVAL_REPORT 32); open: VoiceOver order in the flipped list, nothing was run against a real provider or on a phone, and regenerate, edit-and-resend and streaming are not built |
+| G14 | The chat holds up: long histories, selection and copy, "ask about this", real error handling | in progress: built, tested and seen running (EVAL_REPORT 20); loading earlier messages moves nothing (0 pt, flipped list, EVAL_REPORT 32); the order given to VoiceOver matches the screen (EVAL_REPORT 33); open: VoiceOver itself on a phone, nothing was run against a real provider or on a phone, and regenerate, edit-and-resend and streaming are not built |
 
 ## Running it
 
@@ -265,5 +265,5 @@ Prerequisite for G8 and for inviting a third person.
   the turn logic lives outside the view with a test for every branch on both providers'
   wire formats; screenshots reviewed by the owner.
 - **Status:** in progress (EVAL_REPORT 20, 32). The scroll position is stable on every load
-  of earlier messages (0 pt, EVAL_REPORT 32). Remaining: VoiceOver order; a real provider and a phone; regenerate, edit and resend,
+  of earlier messages (0 pt, EVAL_REPORT 32). The order given to VoiceOver now matches the screen (EVAL_REPORT 33). Remaining: VoiceOver itself on a phone; a real provider and a phone; regenerate, edit and resend,
   streaming; the owner's review of `docs/screenshots/review/chat-*.png`.

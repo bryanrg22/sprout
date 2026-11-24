@@ -184,4 +184,63 @@ final class ChatPagingFlowTests: SproutUITestCase {
         rest()
         XCTAssertEqual(onScreen().last?.n, 9999, "jump to latest shows the message that arrived")
     }
+
+    /// The order assistive technologies get the chat in, by identifier, as the tree lists it.
+    private func readingOrder() -> [(id: String, n: Int?, minY: CGFloat)] {
+        app.descendants(matching: .any).allElementsBoundByIndex.compactMap { e in
+            let id = e.identifier
+            let isMessage = id == AccessibilityID.Coach.userMessage || id == AccessibilityID.Coach.assistantMessage
+            let isEarlier = e.elementType == .button && e.label.hasPrefix("Load earlier messages")
+            guard isMessage || isEarlier || id == AccessibilityID.Coach.input else { return nil }
+            var n: Int?
+            if isMessage, let text = e.value as? String,
+               let r = text.range(of: #"\(#(\d+)\)"#, options: .regularExpression) {
+                n = Int(text[r].dropFirst(2).dropLast())
+            }
+            return (id: isEarlier ? "earlier" : id, n: n, minY: e.frame.minY)
+        }
+    }
+
+    /// VoiceOver reads the chat as it is drawn: top to bottom, oldest to newest, then the
+    /// input bar. The rows are declared newest first for the flip, and this order was
+    /// reversed before `ChatReadingOrder` (docs/chat-standards.md, section 1).
+    func testVoiceOverReadsTheChatInTheOrderItIsDrawn() {
+        app.launchArguments = ["--ui-testing", "--ui-test-fresh-defaults", "--seed-demo", "--demo-gain",
+                               "--demo-tab", "coach", "--demo-long-chat", "201", "--chat-debug-do", "hold"]
+        app.launch()
+        wait("the conversation") { !self.onScreen().isEmpty }
+        rest()
+
+        func check(_ where: String) {
+            let order = readingOrder()
+            print("CHAT-ORDER \(`where`): " + order.map { "\($0.id.split(separator: ".").last ?? "")#\($0.n.map(String.init) ?? "-")@\(Int($0.minY))" }.joined(separator: " "))
+            let messages = order.filter { $0.n != nil }
+            XCTAssertGreaterThan(messages.count, 2, "\(`where`): messages exposed")
+            XCTAssertEqual(messages.map { $0.n! }, messages.map { $0.n! }.sorted(), "\(`where`): oldest to newest")
+            XCTAssertEqual(messages.map(\.minY), messages.map(\.minY).sorted(), "\(`where`): top to bottom")
+            let input = order.firstIndex { $0.id == AccessibilityID.Coach.input }
+            let lastMessage = order.lastIndex { $0.n != nil }
+            XCTAssertNotNil(input, "\(`where`): the input bar is exposed")
+            if let input, let lastMessage {
+                XCTAssertGreaterThan(input, lastMessage, "\(`where`): the input bar after the conversation")
+            }
+            if let earlier = order.firstIndex(where: { $0.id == "earlier" }),
+               let firstMessage = order.firstIndex(where: { $0.n != nil }) {
+                XCTAssertLessThan(earlier, firstMessage, "\(`where`): load earlier before the messages")
+            }
+        }
+
+        check("at the newest")
+        var swipes = 0
+        while !(loadEarlier.exists && loadEarlier.isHittable), swipes < 40 {
+            app.swipeDown(velocity: .fast)
+            swipes += 1
+        }
+        XCTAssertTrue(loadEarlier.isHittable, "reached the top of what is loaded")
+        rest()
+        check("at the top of what is loaded")
+        loadEarlier.tap()
+        rest()
+        check("after loading earlier")
+    }
 }

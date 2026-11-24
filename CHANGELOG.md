@@ -13,6 +13,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   now show the same copy / ask / share / delete row as Vita's replies, on a tap or a
   long press (EVAL_REPORT 32).
 
+- **VoiceOver reads the chat top to bottom again.** After the flip it went from the input
+  bar to the newest message and upward; it now goes oldest to newest, as drawn, and then
+  the input bar (EVAL_REPORT 33).
+
 - **Meal estimates, suggestions, the checklist and the recap work on the newest Claude
   models** (Sonnet 5.5, Opus 5.5, Fable 5.2), which refuse the request the app used; an
   answer that breaks the expected shape is no longer shown (EVAL_REPORT 30).
@@ -134,7 +138,7 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
 - Tests: 443 → 1,205 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 31 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+- UI smoke flows: 32 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
   through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

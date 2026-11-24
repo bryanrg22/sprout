@@ -16,14 +16,14 @@ xcodegen generate
 xcodebuild test -project Victoria.xcodeproj -scheme VictoriaUITests \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' \
   -resultBundlePath /tmp/ui.xcresult
-python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 31
+python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 32
 ```
 
 The scheme is separate, so `-scheme Victoria` (the unit suite) neither builds nor runs
 these. Read the count from the result bundle, as for the unit suite. One flow:
 `-only-testing:VictoriaUITests/CoachFlowTests/testProviderFailureShowsTheErrorAndTheAppStaysUsable`.
 
-There are 31 tests and a run takes about six and a half minutes on one simulator. Today the result
+There are 32 tests and a run takes about six and a half minutes on one simulator. Today the result
 is 10 passed and 5 expected failures. An expected failure is not a pass: it is a flow whose
 behaviour assertions all held and which also carries a known defect or a known
 accessibility-audit result (see below), kept visible in every result.
@@ -81,7 +81,7 @@ flow sees the same screen on every run. To script one of them, add a case to
 | `WorkoutWeekFlowTests` | s. the week card on Workouts counts active days; tapping a day opens it (a logged workout, a tracked one); the arrows move between weeks and stop at this one. |
 | `CompetitionFlowTests` | t. the weekly competition in the Buddy hub against the mock buddy: both scores, last week's result, a day's targets on a tap. |
 | `UnitsFlowTests` | u. kilograms chosen in Settings reach Progress (trend and weekly rate) and the weigh-in sheet; back to pounds; the two rates agree by the conversion. |
-| `ChatPagingFlowTests` | v. the chat (201 seeded messages): loading earlier messages from rest keeps the top bubble in place (three pages, within 2 pt); it opens at the newest message in reading order; jump to latest returns to the same place; scrolling up alone reaches the beginning (121 messages); the keyboard keeps the newest message visible; a message arriving while scrolled up moves nothing and is counted. |
+| `ChatPagingFlowTests` | v. the chat (201 seeded messages): loading earlier messages from rest keeps the top bubble in place (three pages, within 2 pt); it opens at the newest message in reading order; jump to latest returns to the same place; scrolling up alone reaches the beginning (121 messages); the keyboard keeps the newest message visible; a message arriving while scrolled up moves nothing and is counted; VoiceOver gets the chat in the order it is drawn (oldest to newest, then the input bar). |
 
 Flows b, c, e, h and i end with `performAccessibilityAudit()` on the screen they finish on
 (Progress, Workouts, Today, Workouts again, the coach).
