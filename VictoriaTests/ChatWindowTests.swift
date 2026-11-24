@@ -302,33 +302,83 @@ final class ChatWindowTests: XCTestCase {
         XCTAssertFalse(window.showsTimestamp(at: -1))
     }
 
+    /// The oldest loaded message is compared with the one just older than the window, so a
+    /// page arriving above it never adds or removes its timestamp (a row on screen changing
+    /// height is a jump: it moved the held bubble 27 pt, EVAL_REPORT 32).
+    func testTheOldestLoadedMessageKeepsItsTimestampWhenThePageBeforeItArrives() {
+        let store = conversation(95)   // one minute apart: no gaps anywhere
+        var window = opened(store, pageSize: 40)
+        XCTAssertEqual(window.items.first?.name, "m55")
+        XCTAssertEqual(window.earlierBoundary, store[54].createdAt)
+        XCTAssertFalse(window.showsTimestamp(at: 0), "m54 is a minute before m55: no timestamp, even before it is loaded")
+
+        loadEarlier(&window, from: store)
+        let m55 = window.items.firstIndex { $0.name == "m55" }!
+        XCTAssertFalse(window.showsTimestamp(at: m55), "unchanged by the page above it")
+        XCTAssertEqual(window.items.first?.name, "m15")
+        XCTAssertFalse(window.showsTimestamp(at: 0))
+
+        loadEarlier(&window, from: store)
+        XCTAssertEqual(window.items.first?.name, "m0")
+        XCTAssertFalse(window.hasEarlier)
+        XCTAssertNil(window.earlierBoundary)
+        XCTAssertTrue(window.showsTimestamp(at: 0), "the first message of the conversation carries one")
+    }
+
+    func testAGapJustBeforeTheWindowIsATimestampBeforeAndAfterTheLoad() {
+        var store = conversation(95)
+        // m55 and everything after it come ten minutes later.
+        store = store.enumerated().map { index, item in
+            index < 55 ? item : Item(id: item.id, createdAt: item.createdAt.addingTimeInterval(600),
+                                     isUser: item.isUser, name: item.name)
+        }
+        var window = opened(store, pageSize: 40)
+        XCTAssertTrue(window.showsTimestamp(at: 0))
+        loadEarlier(&window, from: store)
+        XCTAssertTrue(window.showsTimestamp(at: window.items.firstIndex { $0.name == "m55" }!))
+    }
+
+    func testReloadingKeepsTheBoundary() {
+        let store = conversation(95)
+        var window = opened(store, pageSize: 40)
+        let request = window.reloadRequest
+        window.load(newestFirst: answer(request, from: store), for: request)
+        XCTAssertEqual(window.earlierBoundary, store[54].createdAt)
+        XCTAssertFalse(window.showsTimestamp(at: 0))
+    }
+
     // MARK: - Scroll rules
 
-    func testNearBottom() {
-        // Measured: visible 874, insets 116 + 193. At the very bottom of 16 235 pt of content
-        // the offset is 15 554.
-        XCTAssertTrue(ChatScrollBox.nearBottom(contentHeight: 16_235, bottomInset: 193, offset: 15_554, viewHeight: 874))
-        XCTAssertTrue(ChatScrollBox.nearBottom(contentHeight: 16_235, bottomInset: 193, offset: 15_554 - 119, viewHeight: 874))
-        XCTAssertFalse(ChatScrollBox.nearBottom(contentHeight: 16_235, bottomInset: 193, offset: 15_554 - 121, viewHeight: 874))
-        XCTAssertTrue(ChatScrollBox.nearBottom(contentHeight: 300, bottomInset: 193, offset: -116, viewHeight: 874),
-                      "content shorter than the view is all on screen")
-        XCTAssertTrue(ChatScrollBox.nearBottom(contentHeight: 9_000, bottomInset: 0, offset: 0, viewHeight: 0),
-                      "before the view has a size the chat counts as at the bottom, where it opens")
+    // The list is flipped: the newest message is the START of the content (offset
+    // `-startInset` there) and the oldest loaded one is its END (offset
+    // `contentHeight + endInset - viewHeight` there). The numbers are a view 874 pt tall with
+    // insets of 116 and 193 pt around 16 235 pt of content.
+
+    func testNearTheNewestMessage() {
+        XCTAssertTrue(ChatScrollBox.nearNewest(startInset: 116, offset: -116, viewHeight: 874), "at the newest message")
+        XCTAssertTrue(ChatScrollBox.nearNewest(startInset: 116, offset: -116 + 119, viewHeight: 874))
+        XCTAssertFalse(ChatScrollBox.nearNewest(startInset: 116, offset: -116 + 120, viewHeight: 874),
+                       "120 pt away is no longer at the newest (about two short bubbles)")
+        XCTAssertTrue(ChatScrollBox.nearNewest(startInset: 0, offset: 9_000, viewHeight: 0),
+                      "before the view has a size the chat counts as at the newest, where it opens")
     }
 
-    func testDistanceFromBottom() {
-        XCTAssertEqual(ChatScrollBox.distanceFromBottom(contentHeight: 16_235, bottomInset: 193, offset: 15_554, viewHeight: 874), 0)
-        XCTAssertEqual(ChatScrollBox.distanceFromBottom(contentHeight: 16_235, bottomInset: 193, offset: 15_454, viewHeight: 874), 100)
-        XCTAssertEqual(ChatScrollBox.distanceFromBottom(contentHeight: 16_235, bottomInset: 193, offset: 0, viewHeight: 0), 0)
+    func testDistanceFromTheNewestMessage() {
+        XCTAssertEqual(ChatScrollBox.distanceFromNewest(startInset: 116, offset: -116, viewHeight: 874), 0)
+        XCTAssertEqual(ChatScrollBox.distanceFromNewest(startInset: 116, offset: -16, viewHeight: 874), 100)
+        XCTAssertEqual(ChatScrollBox.distanceFromNewest(startInset: 116, offset: 5_000, viewHeight: 0), 0)
     }
 
-    func testNearTop() {
-        XCTAssertTrue(ChatScrollBox.nearTop(contentHeight: 16_235, topInset: 116, offset: -116, viewHeight: 874))
-        XCTAssertTrue(ChatScrollBox.nearTop(contentHeight: 16_235, topInset: 116, offset: 123, viewHeight: 874))
-        XCTAssertFalse(ChatScrollBox.nearTop(contentHeight: 16_235, topInset: 116, offset: 124, viewHeight: 874))
-        XCTAssertFalse(ChatScrollBox.nearTop(contentHeight: 26, topInset: 0, offset: 26, viewHeight: 0),
+    func testNearTheOldestLoadedMessage() {
+        let end: CGFloat = 16_235 + 193 - 874   // the offset at the end of the content
+        XCTAssertTrue(ChatScrollBox.nearOldest(contentHeight: 16_235, endInset: 193, offset: end, viewHeight: 874))
+        XCTAssertTrue(ChatScrollBox.nearOldest(contentHeight: 16_235, endInset: 193, offset: end - 239, viewHeight: 874))
+        XCTAssertFalse(ChatScrollBox.nearOldest(contentHeight: 16_235, endInset: 193, offset: end - 240, viewHeight: 874))
+        XCTAssertFalse(ChatScrollBox.nearOldest(contentHeight: 16_235, endInset: 193, offset: -116, viewHeight: 874),
+                       "at the newest message, nowhere near the oldest")
+        XCTAssertFalse(ChatScrollBox.nearOldest(contentHeight: 26, endInset: 0, offset: 0, viewHeight: 0),
                        "the first layout passes run with no size; they must not load a page")
-        XCTAssertFalse(ChatScrollBox.nearTop(contentHeight: 300, topInset: 116, offset: -116, viewHeight: 874),
-                       "content that does not fill the view has no top to scroll to")
+        XCTAssertFalse(ChatScrollBox.nearOldest(contentHeight: 300, endInset: 193, offset: -116, viewHeight: 874),
+                       "content that does not fill the view has nothing to scroll to")
     }
 }

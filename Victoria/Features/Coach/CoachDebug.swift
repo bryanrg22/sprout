@@ -315,7 +315,8 @@ extension ChatDebug {
     /// `--chat-debug-do`: run the steps one a second, starting once the chat has settled.
     @MainActor
     static func runScript(engine: CoachTurnEngine, transcript: ChatTranscript,
-                          center: AskVitaCenter?, scrollToTop: @escaping () -> Void) {
+                          center: AskVitaCenter?, scrollToTop: @escaping () -> Void,
+                          arrive: @escaping (String) -> Void) {
         let steps = self.steps.filter { $0 != "hold" }
         guard !steps.isEmpty else { return }
         Task { @MainActor in
@@ -323,6 +324,11 @@ extension ChatDebug {
             for step in steps {
                 if step == "top" {
                     scrollToTop()
+                } else if step.hasPrefix("arrive:"), let seconds = Double(step.dropFirst(7)) {
+                    // A message arrives on its own after a while (another device, a late
+                    // reply), so a test can be reading further up when it lands.
+                    try? await Task.sleep(for: .seconds(seconds))
+                    arrive("A message that arrived while you were reading (#9999)")
                 } else if step.hasPrefix("send:") {
                     engine.send(text: String(step.dropFirst(5)))
                 } else if step == "quote", let reply = transcript.rows.last(where: { !$0.isUser && !$0.isDecision }) {
