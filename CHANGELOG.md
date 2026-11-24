@@ -7,6 +7,12 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **The chat no longer jumps when older messages load.** The conversation is now a
+  flipped list, the way chat apps build it, so older messages are added past the top
+  and nothing on screen moves (measured 0 pt; it was up to 178 pt). Your own messages
+  now show the same copy / ask / share / delete row as Vita's replies, on a tap or a
+  long press (EVAL_REPORT 32).
+
 - **Meal estimates, suggestions, the checklist and the recap work on the newest Claude
   models** (Sonnet 5.5, Opus 5.5, Fable 5.2), which refuse the request the app used; an
   answer that breaks the expected shape is no longer shown (EVAL_REPORT 30).
@@ -127,8 +133,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   scan, tooling checks.
 - Records: `docs/EVAL_REPORT.md`, `VictoriaTests/LEDGER.md`, `docs/test-evidence/`,
   `docs/DEVELOPING.md`, `AGENTS.md` as the single instruction file.
-- Tests: 443 → 1,202 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
-- UI smoke flows: 25 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
+- Tests: 443 → 1,205 unit tests (3 are known defects pinned as expected failures), plus 18 offline evaluation self-tests.
+- UI smoke flows: 31 end-to-end flows against a scripted model (EVAL_REPORT 17, 26), five of them
   through onboarding; each flow now starts from empty app defaults.
 - Store verification: 44 tests through the production schema, and `tooling/verify_store.py`,
   which checks a store by SQL (EVAL_REPORT 13).

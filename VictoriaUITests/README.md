@@ -16,14 +16,14 @@ xcodegen generate
 xcodebuild test -project Victoria.xcodeproj -scheme VictoriaUITests \
   -destination 'platform=iOS Simulator,name=Victoria-Dev' \
   -resultBundlePath /tmp/ui.xcresult
-python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 25
+python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 31
 ```
 
 The scheme is separate, so `-scheme Victoria` (the unit suite) neither builds nor runs
 these. Read the count from the result bundle, as for the unit suite. One flow:
 `-only-testing:VictoriaUITests/CoachFlowTests/testProviderFailureShowsTheErrorAndTheAppStaysUsable`.
 
-There are 25 tests and a run takes about six and a half minutes on one simulator. Today the result
+There are 31 tests and a run takes about six and a half minutes on one simulator. Today the result
 is 10 passed and 5 expected failures. An expected failure is not a pass: it is a flow whose
 behaviour assertions all held and which also carries a known defect or a known
 accessibility-audit result (see below), kept visible in every result.
@@ -45,6 +45,7 @@ passed (`UITestHooksTests`).
 | `--ui-test-scripted-ai=<name>` | Needs `--ui-testing`. Every model call in the app is answered by the named script instead of the network, and the app behaves as if a key were present. An unknown name stops the launch with the list of known names. |
 | `--ui-test-fresh-defaults` | Needs `--ui-testing`. The app's own defaults are cleared before anything reads them: the stored mode, the provider choice and every once-a-day cache of that install on that simulator. `launch` passes it on a flow's first launch and not on a relaunch, so a flow never sees what an earlier flow (or a person using the simulator) left, and a relaunch still sees what the flow itself stored. The app group's defaults are not touched. |
 | `--ui-test-store-failure` | Needs `--ui-testing`. The launch behaves as if the on-disk store had failed to open, so a flow can check that it shows "Sprout couldn't open your data" and never onboarding. |
+| `--demo-long-chat <n>`, `--chat-debug-do hold` / `arrive:<seconds>` | DEBUG builds. A conversation of n seeded messages, each with "(#i)" in its text; `hold` stops "Load earlier messages" from loading on its own, so a flow can load each page from rest; `arrive:<seconds>` makes a coach message arrive on its own after that long, as one from another device would. Used by `ChatPagingFlowTests`. |
 
 The Home or Gym choice lives in UserDefaults, which outlives the in-memory store. A flow
 that can leave Gym stored registers `leaveStoredModeAtHome()` as a teardown block.
@@ -80,6 +81,7 @@ flow sees the same screen on every run. To script one of them, add a case to
 | `WorkoutWeekFlowTests` | s. the week card on Workouts counts active days; tapping a day opens it (a logged workout, a tracked one); the arrows move between weeks and stop at this one. |
 | `CompetitionFlowTests` | t. the weekly competition in the Buddy hub against the mock buddy: both scores, last week's result, a day's targets on a tap. |
 | `UnitsFlowTests` | u. kilograms chosen in Settings reach Progress (trend and weekly rate) and the weigh-in sheet; back to pounds; the two rates agree by the conversion. |
+| `ChatPagingFlowTests` | v. the chat (201 seeded messages): loading earlier messages from rest keeps the top bubble in place (three pages, within 2 pt); it opens at the newest message in reading order; jump to latest returns to the same place; scrolling up alone reaches the beginning (121 messages); the keyboard keeps the newest message visible; a message arriving while scrolled up moves nothing and is counted. |
 
 Flows b, c, e, h and i end with `performAccessibilityAudit()` on the screen they finish on
 (Progress, Workouts, Today, Workouts again, the coach).
