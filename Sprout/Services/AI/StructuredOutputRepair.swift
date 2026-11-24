@@ -10,6 +10,9 @@ import Foundation
 ///  - an object wrapping the same key, as a string, once per key:
 ///    `"chips": "{\"chips\": [...]}", "tasks": "{\"tasks\": [...]}"`
 ///    (claude-sonnet-5 on the checklist, 14 of 48 calls).
+///  - a list of strings written as tagged lines in one string:
+///    `"highlights": "\n<item>a</item>\n<item>b</item>\n"` (also `<li>`)
+///    (claude-sonnet-5 on the progress recap, 3 of 75 calls, EVAL_REPORT 35).
 ///
 /// The repair is driven by the schema: only a property declared as an array or an object
 /// is looked at, so a string property is never touched however much it looks like JSON,
@@ -22,7 +25,13 @@ enum StructuredOutputRepair {
         for (key, value) in input {
             guard let declared = properties[key] as? [String: Any],
                   let kind = declared["type"] as? String, kind == "array" || kind == "object",
-                  let text = value as? String, let parsed = parse(text) else { continue }
+                  let text = value as? String else { continue }
+            if kind == "array", (declared["items"] as? [String: Any])?["type"] as? String == "string",
+               let lines = taggedLines(text) {
+                repaired[key] = lines
+                continue
+            }
+            guard let parsed = parse(text) else { continue }
             if matches(parsed, kind: kind), !isSelfWrapper(parsed, key: key, kind: kind) {
                 repaired[key] = parsed
             } else if let wrapper = parsed as? [String: Any], let inner = wrapper[key], matches(inner, kind: kind) {
@@ -40,6 +49,22 @@ enum StructuredOutputRepair {
     private static func isSelfWrapper(_ parsed: Any, key: String, kind: String) -> Bool {
         guard kind == "object", let object = parsed as? [String: Any] else { return false }
         return object.count == 1 && object[key] is [String: Any]
+    }
+
+    /// The contents of every `<item>…</item>` or `<li>…</li>` in `text`, trimmed, when the
+    /// text is nothing but such elements (and whitespace); nil otherwise, so prose that merely
+    /// mentions a tag is never split.
+    static func taggedLines(_ text: String) -> [String]? {
+        guard let regex = try? NSRegularExpression(pattern: #"<(item|li)>(.*?)</\1>"#,
+                                                   options: [.dotMatchesLineSeparators]) else { return nil }
+        let range = NSRange(text.startIndex..., in: text)
+        let matches = regex.matches(in: text, range: range)
+        guard !matches.isEmpty else { return nil }
+        let leftover = regex.stringByReplacingMatches(in: text, range: range, withTemplate: "")
+        guard leftover.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return matches.compactMap { match in
+            Range(match.range(at: 2), in: text).map { String(text[$0]).trimmingCharacters(in: .whitespacesAndNewlines) }
+        }
     }
 
     private static func parse(_ text: String) -> Any? {

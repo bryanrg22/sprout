@@ -34,6 +34,26 @@ final class StructuredOutputRepairTests: XCTestCase {
         XCTAssertEqual((out["tasks"] as? [[String: String]])?.map { $0["title"] ?? "" }, ["Walk", "Stretch"])
     }
 
+    /// Recorded from claude-sonnet-5 on the progress recap, 3 of 75 calls (EVAL_REPORT 35).
+    func testAListOfStringsWrittenAsTaggedLinesIsSplit() {
+        let recap: [String: Any] = ["type": "object", "properties": [
+            "highlights": ["type": "array", "items": ["type": "string"]],
+            "tasks": ["type": "array", "items": ["type": "object"]],
+            "body": ["type": "string"],
+        ]]
+        let items = "\n<item>📉 -0.6 lb/wk trend</item>\n<item>🔥 21-day logging streak</item>\n"
+        XCTAssertEqual(StructuredOutputRepair.repair(["highlights": items], schema: recap)["highlights"] as? [String],
+                       ["📉 -0.6 lb/wk trend", "🔥 21-day logging streak"])
+        let list = "<li>Gaining 0.5 lb/wk</li>\n<li> Protein hit 6 of 7 days </li>"
+        XCTAssertEqual(StructuredOutputRepair.repair(["highlights": list], schema: recap)["highlights"] as? [String],
+                       ["Gaining 0.5 lb/wk", "Protein hit 6 of 7 days"])
+        // Not split: prose that mentions a tag, a string property, and a list of objects.
+        let prose = "Keep going <item>strong</item> this week"
+        XCTAssertEqual(StructuredOutputRepair.repair(["highlights": prose], schema: recap)["highlights"] as? String, prose)
+        XCTAssertEqual(StructuredOutputRepair.repair(["body": items], schema: recap)["body"] as? String, items)
+        XCTAssertEqual(StructuredOutputRepair.repair(["tasks": items], schema: recap)["tasks"] as? String, items)
+    }
+
     func testAnObjectThatArrivedAsAStringIsParsed() {
         let input: [String: Any] = ["tasks": [], "chips": [], "meta": "{\"source\": \"plan\"}"]
         let out = StructuredOutputRepair.repair(input, schema: schema)

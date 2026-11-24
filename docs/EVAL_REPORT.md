@@ -44,6 +44,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 32 | The chat no longer jumps when earlier messages load | 2026-11-23 |
 | 33 | Built-in AI, the code renamed Sprout, and personal content out of the repository | 2026-11-24 |
 | 34 | The evaluations audited: four grader defects, two prompt defects, a regrade of every past answer, and statistics by case | 2026-11-24 |
+| 35 | Five tasks measured on the current prompts: three move to the cheaper model, the recap keeps its own | 2026-11-24 |
 
 ---
 
@@ -1969,3 +1970,67 @@ $5 / $25, web search $10 per 1,000: as recorded.
   a cheaper model is not adopted for them until something measures quality.
 - **Run records** still lack a hash of the prompts and of `prices.json`, and the deciding
   runs of sections 10 and 25 were made on uncommitted trees. Open.
+
+## 35. Five tasks measured on the current prompts: three move to the cheaper model, the recap keeps its own (2026-11-24)
+
+**Approved by the owner** at the estimate in section 34 (about $0.90). Each run is
+`claude-haiku-5-5` (thinking off on the plain-text path, as the app sends it, section 25)
+against the model that ships, 5 repeats of every case, on a committed tree (`193edee`, clean;
+the manifest records the app and harness tree ids and the price table's hash), with the
+graders of section 34. Intervals resample cases (section 34); "difference" is the paired
+per-case difference with the shipped model.
+
+| Task (run `20261124-…`) | Cases | Shipped model | `claude-haiku-5-5` | Difference (95%) | $ / 1,000 calls | p50 latency |
+|---|---|---|---|---|---|---|
+| Insight line (`211959`) | 19 | `haiku-4-5` 100% | 100% | +0.0% (0 to 0) | 0.43 → 0.06 | 0.6 → 0.5 s |
+| Weekly reflection (`212051`) | 16 | `haiku-4-5` 99% | 100% | +1.2% (0 to +3.7) | 1.52 → 0.20 | 2.3 → 1.5 s |
+| Onboarding note (`212230`) | 15 | `haiku-4-5` 95% | 97% | +2.7% (0 to +8.0) | 0.91 → 0.13 | 1.6 → 1.2 s |
+| Memory fold (`212339`) | 12 | `haiku-4-5` 98% | 97% | −1.7% (−10 to +5) | 2.08 → 0.35 | 2.7 → 2.3 s |
+| Progress recap (`212512`) | 15 | `sonnet-5` 88% | 80% | −8.0% (−17.3 to +1.3) | 6.22 → 0.31 | 3.9 → 1.8 s |
+
+Spend: $0.90 for 770 attempts. **Spend to date, recomputed from every run's summary:
+$22.72 over 11,853 priced attempts**, plus 24 image attempts whose cost is recorded per
+image in sections 23 and 27 and is not in that sum.
+
+### The prompt fixes, measured
+
+The weekly reflection's prompt no longer hands the model a digit (section 34). The shipped
+model passed 85% on the old prompt (run `…104116`) and 99% on this one; no reply was
+discarded by the sanitiser on either model, against 4 and 0 before.
+
+### Decisions
+
+- **Insight line, weekly reflection, onboarding note → `claude-haiku-5-5`.** As good as or
+  better than the shipped model on every case, at about a seventh of the cost and faster.
+  The rule, from Basis: the cheapest candidate whose interval does not favour the incumbent.
+  In `AIConfig.measuredDefaults`, citing this section.
+- **Progress recap: `claude-sonnet-5` stays, now by measurement.** The cheaper model's
+  interval reaches +1.3%, but its point estimate is 8 points lower and its failures are the
+  card's whole point: 11 of its 15 are figures it worked out itself, against 5 of 9 for
+  `sonnet-5`. Accuracy of the person's numbers is what this card is for, so the rule's
+  exception applies. In `measuredDefaults`, citing this section.
+- **Memory fold: unchanged, for the owner.** Equal on the pass rule, different defects in the
+  scores the rule does not count: `claude-haiku-5-5` stores a number the app owns (a target,
+  which then goes stale in the coach's notes) in 20% of folds and keeps small talk in 57%;
+  `claude-haiku-4-5` writes a gendered pronoun in 28% of folds (the notes are read back into
+  every chat turn). A code guard that strips app-owned numbers from the notes would make the
+  cheaper model the clear choice; that is a change to the app, not to the model.
+
+### A defect found in the replies: a list written as tagged lines
+
+`claude-sonnet-5` answered the recap's forced tool call with `highlights` as one string of
+`<item>…</item>` lines (twice) or `<li>…</li>` lines (once) instead of an array: 3 of 75
+calls, which the app could not decode, so the card showed its error state. The repair the
+app already applies to forced answers (`StructuredOutputRepair`, section 22) now also splits
+such a string, only for a property the schema declares as an array of strings and only when
+the string is nothing but such elements; one new test. The three failures above are counted
+as failures: the run was made before the repair.
+
+### Not verified
+
+- None of the new defaults has been seen in the app's UI; they are measured through the
+  harness, which calls the app's own functions.
+- The datasets are 12 to 19 cases. "As good as" means "not worse beyond what 12 to 19 cases
+  can show", which the intervals state.
+- Still unmeasured on quality: the coach's turn, meal photo and description, food
+  suggestions, checklist, chat chips and the plan (section 34, "Not done").

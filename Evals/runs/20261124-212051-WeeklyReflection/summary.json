@@ -1,0 +1,104 @@
+{
+ "run": "20261124-212051-WeeklyReflection",
+ "tasks": [
+  {
+   "task": "weeklyReflection",
+   "dataset": "weekly_reflection/v1",
+   "cases": 16,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-4-5-20251001",
+     "attempts": 80,
+     "usable": 80,
+     "passed": 79,
+     "pass_rate": 0.9875,
+     "ci95_cases": [
+      0.9625,
+      1.0
+     ],
+     "ci95": [
+      0.9325356757603457,
+      0.9977900813816939
+     ],
+     "per_repeat_pass": [
+      1.0,
+      0.9375,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.328,
+     "latency_p95_s": 2.963,
+     "mean_uncached_input_tokens": 778.1875,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 148.675,
+     "mean_cost_usd": 0.0015215625,
+     "scores": {
+      "at_most_one_emoji": 0.9875,
+      "name_used_once": 1,
+      "no_list_or_header": 1,
+      "no_number_invented": 0.9875,
+      "repeats_a_given_count": 0.9857142857142858,
+      "three_to_five_sentences": 0.85,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 80,
+     "usable": 80,
+     "passed": 80,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.954180263735425,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.549,
+     "latency_p95_s": 1.84,
+     "mean_uncached_input_tokens": 1076.8125,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 191.2,
+     "mean_cost_usd": 0.00020328125,
+     "scores": {
+      "at_most_one_emoji": 1,
+      "name_used_once": 0.9875,
+      "no_list_or_header": 1,
+      "no_number_invented": 1,
+      "repeats_a_given_count": 1,
+      "three_to_five_sentences": 0.9875,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-haiku-4-5-20251001",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "shared_cases": 16,
+     "mean_difference": 0.012499999999999997,
+     "ci95": [
+      0.0,
+      0.03749999999999999
+     ]
+    }
+   ]
+  }
+ ]
+}

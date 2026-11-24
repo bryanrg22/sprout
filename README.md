@@ -79,11 +79,12 @@ Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output 
 
 | Task | Model | How it was chosen |
 |---|---|---|
-| Vita chat turn, meal photo and description, food suggestions, progress recap, checklist, chat chips | `claude-sonnet-5` | tier default (measurement of advice quality pending) |
-| Adaptive plan: build, review, web research | `claude-opus-4-8` | tier default (rare: a few calls per person) |
-| Daily brief | `claude-haiku-5-5` | **measured**: 39/39 at a seventh of the previous model's cost (EVAL_REPORT 10, 25) |
-| Insight line, weekly reflection, onboarding note, memory fold | `claude-haiku-4-5` | tier default (re-measurement in progress) |
+| Daily brief, insight line, weekly reflection, onboarding note | `claude-haiku-5-5` | **measured**: as good as or better than the previous model at about a seventh of the cost, and faster (EVAL_REPORT 10, 25, 35) |
+| Progress recap | `claude-sonnet-5` | **measured**: 88% against 80% for the cheaper candidate; the numbers on this card are the point (EVAL_REPORT 35) |
 | The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
+| Memory fold | `claude-haiku-4-5` | measured, undecided: the cheaper model is as accurate but stores app-owned numbers more often (EVAL_REPORT 35) |
+| Vita chat turn, meal photo and description, food suggestions, checklist, chat chips | `claude-sonnet-5` | tier default; their datasets check rules, not quality, so a cheaper model is not adopted until quality is measured |
+| Adaptive plan: build, review, web research | `claude-opus-4-8` | tier default (rare: a few calls per person); no dataset yet |
 
 The gateway allows exactly these models, and a unit test reads the gateway's price table and fails if any task resolves to a model it would refuse.
 

@@ -1,0 +1,110 @@
+{
+ "run": "20261124-212512-ProgressSummary",
+ "tasks": [
+  {
+   "task": "progressSummary",
+   "dataset": "progress_summary/v1",
+   "cases": 15,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 75,
+     "usable": 75,
+     "passed": 60,
+     "pass_rate": 0.8,
+     "ci95_cases": [
+      0.6666666666666666,
+      0.9066666666666666
+     ],
+     "ci95": [
+      0.6958850544883829,
+      0.8748796179687971
+     ],
+     "per_repeat_pass": [
+      0.8666666666666667,
+      0.8,
+      0.6666666666666666,
+      0.8,
+      0.8666666666666667
+     ],
+     "latency_p50_s": 1.759,
+     "latency_p95_s": 1.967,
+     "mean_uncached_input_tokens": 1441.8666666666666,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 327.4266666666667,
+     "mean_cost_usd": 0.0003079,
+     "scores": {
+      "body_2_to_4_sentences": 1,
+      "headline_3_to_6_words": 1,
+      "highlights_3_to_8_words": 0.9866666666666667,
+      "highlights_within_schema": 0.9733333333333334,
+      "names_a_given_figure": 1,
+      "no_banned_phrase": 0.96,
+      "no_number_invented": 0.8533333333333334,
+      "states_a_derived_figure": 0.14666666666666667,
+      "states_a_figure_neither_given_nor_derived": 0,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 75,
+     "usable": 72,
+     "passed": 66,
+     "pass_rate": 0.88,
+     "ci95_cases": [
+      0.7866666666666667,
+      0.9600000000000001
+     ],
+     "ci95": [
+      0.7874015748031495,
+      0.9355670103092784
+     ],
+     "per_repeat_pass": [
+      1.0,
+      0.8,
+      0.9333333333333333,
+      0.8666666666666667,
+      0.8
+     ],
+     "latency_p50_s": 3.931,
+     "latency_p95_s": 4.802,
+     "mean_uncached_input_tokens": 1507.8666666666666,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 320.1333333333333,
+     "mean_cost_usd": 0.006217066666666667,
+     "scores": {
+      "body_2_to_4_sentences": 1,
+      "headline_3_to_6_words": 0.9722222222222222,
+      "highlights_3_to_8_words": 0.9861111111111112,
+      "highlights_within_schema": 1,
+      "names_a_given_figure": 1,
+      "no_banned_phrase": 0.9861111111111112,
+      "no_number_invented": 0.9305555555555556,
+      "states_a_derived_figure": 0.06944444444444445,
+      "states_a_figure_neither_given_nor_derived": 0,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "decoding(\"DecodingError.typeMismatch: expected value of type Array<Any>. Path: highlights. Debug description: Expected to decode Array<Any> but found a string instead.\")"
+     ]
+    }
+   ],
+   "baseline": "anthropic:claude-sonnet-5",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "shared_cases": 15,
+     "mean_difference": -0.08,
+     "ci95": [
+      -0.1733333333333333,
+      0.013333333333333315
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -71,15 +71,31 @@ extension AIConfig {
             .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 10"),
             .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 10"),
         ],
-        // The other four short-writing tasks, OpenAI only: each replaces the deprecated
-        // gpt-4.1-mini with the cheapest candidate within noise of the best on its dataset.
-        // Anthropic stays on the tier default: claude-haiku-5-5 thinks before it writes and
-        // runs out of these tasks' output caps (EVAL_REPORT 22), which is not yet solved.
-        .insightLine: [.openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22")],
-        .weeklyReflection: [.openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22")],
-        .onboardingNote: [.openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22")],
-        // gpt-6-luna kept every planted fact in the durable notes in only 78% of runs here.
+        // Three short-writing tasks. Anthropic: claude-haiku-5-5 (thinking off, EVAL_REPORT 25)
+        // passed as often as claude-haiku-4-5 or more, 5 repeats on the current prompts, at a
+        // seventh of the cost and faster (EVAL_REPORT 35). OpenAI: each replaced the deprecated
+        // gpt-4.1-mini with the cheapest candidate within noise of the best (EVAL_REPORT 22).
+        .insightLine: [
+            .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 35"),
+            .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22"),
+        ],
+        .weeklyReflection: [
+            .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 35"),
+            .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22"),
+        ],
+        .onboardingNote: [
+            .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 35"),
+            .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22"),
+        ],
+        // The memory fold stays on the Anthropic tier default: claude-haiku-5-5 passes as often
+        // but stores a number the app owns in 20% of folds, against a gendered pronoun in 28%
+        // for claude-haiku-4-5; which defect is worse is the owner's call (EVAL_REPORT 35).
+        // OpenAI: gpt-6-luna kept every planted fact in only 78% of runs (EVAL_REPORT 22).
         .memoryFold: [.openai: AITaskDefault(model: "gpt-5.6-luna", evidence: "EVAL_REPORT 22")],
+        // The recap: claude-sonnet-5 passed 88% against 80% for claude-haiku-5-5, whose failures
+        // were mostly its own arithmetic on the person's figures (EVAL_REPORT 35). Kept, now
+        // by measurement; accuracy of the numbers is the point of this card.
+        .progressSummary: [.anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 35")],
     ]
 
     /// Rows of a defaults table that do not say which EVAL_REPORT section measured them.
