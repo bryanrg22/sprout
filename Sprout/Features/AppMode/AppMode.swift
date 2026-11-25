@@ -60,28 +60,37 @@ enum HomeTab: Int, CaseIterable, Sendable {
     }
 }
 
-/// The Home | Gym switch: a capsule with two segments, the selected one raised.
+/// The Home | Gym switch, built like ChatGPT's Chat | Work switch (from the owner's
+/// `chatgpt-ios-ui` skeleton, MIT): two equal segments in a Liquid Glass capsule, the selected
+/// one marked by a soft pill that slides between them. On iOS 18 to 25, which have no Liquid
+/// Glass, the capsule is the system's thin material instead.
 struct ModeSwitch: View {
     @AppStorage(AppMode.storageKey) private var stored: String = AppMode.home.rawValue
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var highlight
 
     private var mode: AppMode { AppMode.resolve(stored: stored) }
 
+    /// The selected pill: a darker well in the dark look, a light grey wash in the light one.
+    private var selectedFill: Color {
+        colorScheme == .dark ? Theme.background.opacity(0.8) : Color.black.opacity(0.06)
+    }
+
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 0) {
             ForEach(AppMode.allCases) { option in
                 Button {
                     guard option != mode else { return }
-                    withAnimation(.snappy(duration: 0.28)) { stored = option.rawValue }
+                    withAnimation(reduceMotion ? nil : .default) { stored = option.rawValue }
                 } label: {
                     Text(option.label)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(option == mode ? Theme.textPrimary : Theme.textSecondary)
-                        .padding(.horizontal, 20)
-                        .frame(height: 36)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Theme.textPrimary)
+                        .frame(width: 72, height: 39)
                         .background {
                             if option == mode {
-                                Capsule().fill(Theme.cardRaised)
+                                Capsule().fill(selectedFill)
                                     .matchedGeometryEffect(id: "selected", in: highlight)
                             }
                         }
@@ -92,11 +101,21 @@ struct ModeSwitch: View {
                 .accessibilityAddTraits(option == mode ? [.isSelected] : [])
             }
         }
-        .padding(3)
-        .background(Capsule().fill(Theme.card))
-        .overlay(Capsule().strokeBorder(Theme.textSecondary.opacity(0.18), lineWidth: 1))
+        .padding(4)
+        .modeSwitchGlass()
         .sensoryFeedback(.selection, trigger: stored)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Section")
+    }
+}
+
+private extension View {
+    /// Liquid Glass where the system has it, the thin material otherwise.
+    @ViewBuilder func modeSwitchGlass() -> some View {
+        if #available(iOS 26, *) {
+            glassEffect(.regular, in: Capsule())
+        } else {
+            background(.ultraThinMaterial, in: Capsule())
+        }
     }
 }
