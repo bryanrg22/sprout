@@ -1,0 +1,98 @@
+{
+ "run": "20261125-093628-CoachConversation",
+ "tasks": [
+  {
+   "task": "coachTurn",
+   "dataset": "coach_conversations/v1",
+   "cases": 2,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 2,
+     "usable": 2,
+     "passed": 2,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.34237195288961925,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 1.423,
+     "latency_p95_s": 1.645,
+     "mean_uncached_input_tokens": 1401,
+     "mean_cache_read_tokens": 5876.5,
+     "mean_cache_write_tokens": 11744.5,
+     "mean_output_tokens": 158.5,
+     "mean_cost_usd": 0.0017461775,
+     "scores": {
+      "assistant_messages": 1,
+      "fallback_shown": 0,
+      "reply_chars": 235.5,
+      "reply_non_empty": 1,
+      "reply_sentences": 4,
+      "reply_words": 46,
+      "tool_applied_count": 0.5,
+      "tool_as_expected": 1,
+      "tool_call_count": 0.5,
+      "tool_called": 0.5,
+      "tool_calls_dropped_by_app": 0,
+      "tool_invalid_count": 0,
+      "tool_proposed": 0,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 2,
+     "usable": 2,
+     "passed": 2,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.34237195288961925,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 1.837,
+     "latency_p95_s": 2.33,
+     "mean_uncached_input_tokens": 1398,
+     "mean_cache_read_tokens": 5910.5,
+     "mean_cache_write_tokens": 11812.5,
+     "mean_output_tokens": 114,
+     "mean_cost_usd": 0.034649349999999995,
+     "scores": {
+      "assistant_messages": 1,
+      "fallback_shown": 0,
+      "reply_chars": 184,
+      "reply_non_empty": 1,
+      "reply_sentences": 2.5,
+      "reply_words": 33.5,
+      "tool_applied_count": 0.5,
+      "tool_as_expected": 1,
+      "tool_call_count": 0.5,
+      "tool_called": 0.5,
+      "tool_calls_dropped_by_app": 0,
+      "tool_invalid_count": 0,
+      "tool_proposed": 0,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}
