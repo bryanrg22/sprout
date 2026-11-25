@@ -2084,41 +2084,43 @@ final class GraderTests: XCTestCase {
     func testFoodAttemptOnAScriptedModel() async throws {
         let cases = try rows("food_suggestions/v1.jsonl", as: LiveEvals.FoodCase.self)
         let item = try XCTUnwrap(cases.first { $0.id == "sam-vegetarian-lunch" })
+        // The replies are forced tool calls, so a model that is sent one is pinned: food ships on
+        // claude-sonnet-5-5 (EVAL_REPORT 40), which is asked for a JSON-schema answer.
         func suggestion(_ kind: String, _ title: String, _ detail: String) -> [String: Any] {
             ["kind": kind, "title": title, "detail": detail, "emoji": "🥗"]
         }
         let lentil = suggestion("add", "Lentil soup plus", "Stir a scoop of cottage cheese into your lentil soup for 14 g more protein.")
         let tofu = suggestion("idea", "Tofu rice bowl", "Build a tofu stir-fry bowl with edamame and brown rice.")
-        var outcome = await scripted([toolReply(["suggestions": [lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
+        var outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertTrue(outcome.ok); XCTAssertTrue(outcome.pass)
         XCTAssertEqual(outcome.scores["avoided_foods_absent"], 1)
         XCTAssertEqual(outcome.scores["model_count_within_schema"], 1)
         XCTAssertTrue(outcome.output.hasPrefix("[add] 🥗 Lentil soup plus: Stir a scoop"), outcome.output)
 
         let chicken = suggestion("add", "Grilled chicken add-on", "Add grilled chicken to your veggie burger for 30 g of protein.")
-        outcome = await scripted([toolReply(["suggestions": [lentil, chicken]])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [lentil, chicken]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertTrue(outcome.pass, "the feature is told no diet, so this is recorded and does not fail the case")
         XCTAssertEqual(outcome.scores["avoided_foods_absent"], 0)
 
         // One suggestion left after the service drops an empty row: shown, and within the schema
         // since one is enough (EVAL_REPORT 40); fewer than the prompt asks for is recorded.
-        outcome = await scripted([toolReply(["suggestions": [lentil, suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [lentil, suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertTrue(outcome.ok); XCTAssertTrue(outcome.pass)
         XCTAssertEqual(outcome.scores["shown_within_schema"], 1)
         XCTAssertEqual(outcome.scores["at_least_two_shown"], 0)
         // Four returned, three shown: the app's cap makes it showable; the model's own count is recorded.
-        outcome = await scripted([toolReply(["suggestions": [lentil, tofu, lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [lentil, tofu, lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertTrue(outcome.pass)
         XCTAssertEqual(outcome.scores["model_count_within_schema"], 0)
 
         // Nothing the service can use: not usable, and what the model sent is kept.
-        outcome = await scripted([toolReply(["suggestions": [suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertFalse(outcome.ok)
         XCTAssertTrue(outcome.output.contains("\"suggestions\""), outcome.output)
-        outcome = await scripted([toolReply(["picks": []])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["picks": []])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertFalse(outcome.ok)
         XCTAssertEqual(outcome.output, #"{"picks":[]}"#)
-        outcome = await scripted([serverError]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [serverError]) { await LiveEvals.foodAttempt(item) }
         XCTAssertFalse(outcome.ok); XCTAssertEqual(outcome.output, "")
     }
 

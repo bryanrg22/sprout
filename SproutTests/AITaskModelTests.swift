@@ -35,12 +35,12 @@ final class AITaskModelTests: XCTestCase {
         .coachTurn:        ("claude-haiku-5-5", "gpt-5.6-terra"),          // Anthropic: EVAL_REPORT 37
         .mealPhoto:        ("claude-sonnet-5", "gpt-5.6-terra"),
         .mealDescribe:     ("claude-sonnet-5-5", "gpt-5.6-terra"),         // Anthropic: EVAL_REPORT 39
-        .foodSuggestions:  ("claude-sonnet-5", "gpt-5.6-terra"),
+        .foodSuggestions:  ("claude-sonnet-5-5", "gpt-5.6-terra"),         // Anthropic: EVAL_REPORT 40
         .progressSummary:  ("claude-sonnet-5", "gpt-5.6-terra"),           // Anthropic: EVAL_REPORT 35 (kept by measurement)
         .checklistPlan:    ("claude-sonnet-5-5", "gpt-5.6-terra"),         // Anthropic: EVAL_REPORT 39
         .coachPrompts:     ("claude-haiku-5-5", "gpt-5.6-terra"),          // Anthropic: EVAL_REPORT 36
-        .planBuild:        ("claude-opus-4-8", "gpt-5.6-sol"),
-        .planReview:       ("claude-opus-4-8", "gpt-5.6-sol"),
+        .planBuild:        ("claude-opus-5-5", "gpt-5.6-sol"),             // Anthropic: EVAL_REPORT 40
+        .planReview:       ("claude-opus-5-5", "gpt-5.6-sol"),             // Anthropic: EVAL_REPORT 40
         .planResearch:     ("claude-opus-5-5", "gpt-5.6-sol"),             // Anthropic: EVAL_REPORT 39
         .dailyBrief:       ("claude-sonnet-5", "gpt-6-luna"),             // Anthropic: EVAL_REPORT 39; OpenAI: 10
         .insightLine:      ("claude-sonnet-5", "gpt-6-luna"),             // Anthropic: EVAL_REPORT 39; OpenAI: 22
@@ -102,7 +102,7 @@ final class AITaskModelTests: XCTestCase {
             XCTAssertEqual(AIConfig.coachModel, "gpt-5.6-terra")
         }
         AIRuntime.$current.withValue(AIRuntime(provider: .anthropic)) {
-            XCTAssertEqual(AIConfig.model(for: .planBuild), "claude-opus-4-8")
+            XCTAssertEqual(AIConfig.model(for: .planBuild), "claude-opus-5-5")   // EVAL_REPORT 40
             XCTAssertEqual(AIConfig.insightModel, "claude-haiku-4-5-20251001")
         }
     }

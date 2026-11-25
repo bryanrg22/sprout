@@ -218,6 +218,13 @@ extension LiveEvals {
             outcome.given = userContent
             return outcome
         case .success(let result):
+            // The app refuses a reply that is not a plan before storing anything (`generate`).
+            guard PlanService.isUsable(result) else {
+                var outcome = EvalOutcome.failed(AIConfig.AIError.decoding("the plan came back empty"),
+                                                 output: tap.raw ?? EvalRunner.compactJSON(result))
+                outcome.given = userContent
+                return outcome
+            }
             let plan = PlanService.makePlan(from: result, dataPoints: points)
             let graded = Graders.adaptivePlan(plan, raw: result, given: userContent, facts: facts)
             return EvalOutcome(ok: true, error: nil, scores: graded.scores, pass: graded.pass,

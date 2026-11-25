@@ -49,6 +49,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 37 | Three new datasets: meal photos from Nutrition5k, meals in household measures, and thirty coach conversations | 2026-11-25 |
 | 38 | Every task's model decided on the evidence: the chat and the chips move to the cheaper model | 2026-11-25 |
 | 39 | Every task tested: upward as well as down, the plan's three calls, and the two newest models | 2026-11-25 |
+| 40 | The plan moves to claude-opus-5-5 once it has room to think; food moves to claude-sonnet-5-5 once one suggestion is shown | 2026-11-25 |
 
 ---
 
@@ -2442,4 +2443,63 @@ is a product choice, left to the owner.
 - The judge against a person: the owner's labels are still pending (1 of 45).
 - None of today's new defaults has been seen in the app on a phone.
 - The datasets are 8 to 30 cases, and the plan and coach datasets were written by a model.
+
+## 40. The plan moves to claude-opus-5-5 once it has room to think; food moves to claude-sonnet-5-5 once one suggestion is shown (2026-11-25)
+
+**Approved by the owner**: "why not just do opus 5-5? cheaper and smarter no?", then "1. sure",
+in reply to the two follow-ups of section 39. **Spent: $7.95** ($6.32 runs, $1.63 judge).
+**Spend to date: about $72.58.** Runs `20261125-121105` (food, 3 repeats), `121304` (plan
+build, 2) and `121921` (plan review, 2), on `4df5487`.
+
+### Two app changes, each tested before the runs
+
+- **Room to think.** `claude-opus-5-5` and `claude-fable-5-2` cannot switch thinking off,
+  and `max_tokens` counts the thinking. In section 39, `claude-opus-5-5` thought for up to
+  1,191 tokens and was cut off at the plan's 2,200 in 17 of 30 builds. Those two models now
+  get 4,096 tokens on top of what every call asks for (`AnthropicModelProfile.maxTokens`).
+  It is a ceiling, so only what is used is billed. Every other model is sent exactly what it
+  was before. Tests in `AnthropicStructuredFormatTests` and `AnthropicThinkingTests`.
+- **One food suggestion is shown rather than none.** `claude-sonnet-5-5` gave one suggestion
+  in 6 of 54 calls, and the schema's `minItems: 2` turned each into an empty card. The schema
+  now allows 1. The prompt still asks for 2 to 3, and the grader records
+  `at_least_two_shown`.
+
+### Results
+
+| Task | Rules: shipped / candidate | Judge: candidate / shipped / tie | net (95%) | $ per 1,000 |
+|---|---|---|---|---|
+| Plan build: `claude-opus-4-8` / `claude-opus-5-5` | 97% / 97%, both readable every time (was 43%) | **21 / 3 / 6** | **+0.60 (+0.37 to +0.80)** | 52.45 / 53.04 |
+| Plan review: `claude-opus-4-8` / `claude-opus-5-5` | 96% / 100% | 17 / 7 / 4 | +0.36 (−0.04 to +0.71) | 42.60 / 43.84 |
+| Food: `claude-sonnet-5` / `claude-sonnet-5-5` | 100% / 100% (was 89%); two or more shown in 96% | 22 / 12 / 20 | +0.19 (−0.02 to +0.39) | 7.14 / 6.45 |
+
+The shipped model's two plan failures were a wrong-person pronoun. `claude-opus-5-5`'s one
+failure was a blank plan: every field empty and every number 0, on one repeat of a case it
+answered well on the other.
+
+**A defect that blank plan exposed, fixed for every model.** `PlanService` stored whatever
+the model sent. A blank answer to a review would have overwritten the person's plan with an
+empty one; on a build it would have saved an empty plan. `PlanService.requireUsable` now
+refuses a reply with no headline, no assessment, no calorie range or no protein target, and
+throws before anything is stored or folded into About You. The person sees the build's or the
+review's error and keeps their plan. The plan evaluation applies the same check. Two tests: the
+recorded blank reply is not a plan, and a review given one throws with the plan unchanged.
+
+### Decisions
+
+- **Plan build → `claude-opus-5-5`**: preferred beyond noise, at the same cost.
+- **Plan review → `claude-opus-5-5`**: better on the rules and leaning ahead on the judge, at
+  about 3% more. Strictly, the cheapest model within noise is `claude-opus-4-8`. The review
+  re-emits the plan the build wrote, and the build is now `claude-opus-5-5`, so one model
+  writes the document.
+- **Food suggestions → `claude-sonnet-5-5`**: usable every time now, leaning ahead on the
+  judge (beyond noise in section 39, within it here), and about 10% cheaper.
+
+The plan's three calls now all run on `claude-opus-5-5`. `claude-opus-4-8` stays in the
+gateway as the plan tier's default; no task resolves to it.
+
+### Not verified
+
+- The judge against a person: the owner's labels are still pending.
+- How often `claude-opus-5-5` answers blank in use: once in 30 builds and 28 reviews here.
+- Seen in the app on a phone: none of it.
 

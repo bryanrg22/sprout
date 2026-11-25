@@ -49,6 +49,8 @@ enum PlanService {
             maxTokens: 2200
         )
 
+        // A blank answer must never replace a plan (EVAL_REPORT 40): nothing is touched.
+        try requireUsable(result)
         let fresh = makePlan(from: result, dataPoints: points)
         // Fold the model's structured profile summary into her editable "About You" (the single
         // canonical bio every coach surface reads) — this is why the plan-intake answers now show
@@ -137,6 +139,8 @@ enum PlanService {
             maxTokens: 2200
         )
 
+        // A blank answer must never overwrite the plan it was reviewing (EVAL_REPORT 40).
+        try requireUsable(result)
         // Map the fresh result, then keep history: merge changelogs + carry the original createdAt.
         let fresh = makePlan(from: result, dataPoints: points)
         // Keep her editable About You in sync as the plan adapts (the canonical bio all surfaces read).
@@ -379,6 +383,25 @@ enum PlanService {
 
     /// Map a validated `write_plan` result into a `CoachPlan`. Tolerant of missing/loosely-typed
     /// fields (numbers may arrive as Int/Double/String). Stamps one changelog entry for this build.
+    /// Whether a reply is a plan at all: a headline, an assessment, a calorie range and a
+    /// protein target. claude-opus-5-5 once answered with every field empty and every number
+    /// 0 (1 of 30 builds, EVAL_REPORT 40), which `makePlan` would have stored over the
+    /// person's plan. The schema cannot forbid empty strings and zeros on every wire.
+    static func isUsable(_ result: [String: Any]) -> Bool {
+        !str(result["headline"]).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !str(result["assessment"]).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && num(result["calorie_min"]) > 0 && num(result["calorie_max"]) > 0
+            && num(result["protein_target"]) > 0
+    }
+
+    /// Throws, before anything is stored, when the reply is not a plan.
+    static func requireUsable(_ result: [String: Any]) throws {
+        guard isUsable(result) else {
+            Diagnostics.shared.log("plan: the model returned an empty plan; nothing was changed", .ai)
+            throw AIConfig.AIError.decoding("the plan came back empty")
+        }
+    }
+
     static func makePlan(from result: [String: Any], dataPoints: Int, now: Date = .now) -> CoachPlan {
         let insights = (result["insights"] as? [[String: Any]] ?? []).compactMap { d -> PlanInsight? in
             guard let title = (d["title"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),

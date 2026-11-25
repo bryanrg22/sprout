@@ -119,6 +119,18 @@ extension AIConfig {
         // as often as claude-sonnet-5 (94% each) at about 30% less, and faster (EVAL_REPORT 39);
         // claude-haiku-5-5 was worse (EVAL_REPORT 37).
         .mealDescribe: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT 39")],
+        // The plan build and review: once claude-opus-5-5 had room to think (it cannot switch
+        // thinking off; AnthropicModelProfile.thinkingHeadroom), it finished every plan, and a
+        // blind judge preferred its builds to claude-opus-4-8's 21 to 3 (+0.37 to +0.80) and leaned
+        // its way on reviews (17 to 7) with the rules at 100% against 96%; the cost is within a few
+        // per cent. One blank answer in 30 builds is refused before anything is stored
+        // (PlanService.requireUsable). EVAL_REPORT 40.
+        .planBuild: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 40")],
+        .planReview: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 40")],
+        // Food suggestions: once the card shows a single suggestion (it showed none when a model
+        // gave one), claude-sonnet-5-5 was usable every time, leaned ahead of claude-sonnet-5 on
+        // the judge (22 to 12) and costs about 10% less. EVAL_REPORT 40.
+        .foodSuggestions: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT 40")],
         // The plan's web research: a blind judge preferred claude-opus-5-5's brief to
         // claude-opus-4-8's 6 to 0 (+0.75, +0.38 to +1.00) on 8 cases, every brief searched,
         // at about 15% less (EVAL_REPORT 39).

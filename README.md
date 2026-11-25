@@ -82,10 +82,9 @@ Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output 
 | Vita chat turn, chat chips | `claude-haiku-5-5` | **measured**: over 30 multi-turn conversations a blind judge preferred it to `claude-sonnet-5` (50 to 15, beyond noise), with the right tool as often, at an eighteenth of the cost (EVAL_REPORT 37, 38) |
 | Weekly note, onboarding note | `claude-haiku-5-5` | **measured**: as good as `claude-sonnet-5` on a blind judge, and better on the rules for the onboarding note (EVAL_REPORT 35, 39) |
 | Daily brief, insight line, memory fold | `claude-sonnet-5` | **measured**: a blind judge preferred it to `claude-haiku-5-5` beyond noise on all three (the brief 20 to 2); each runs about once a day (EVAL_REPORT 39) |
-| Food suggestions, progress recap, meal photo | `claude-sonnet-5` | **measured**: the cheaper models were worse beyond noise; `claude-sonnet-5-5` left 11% of food cards blank, invented recap figures more often, and was less accurate on photos (EVAL_REPORT 35-39) |
-| Daily checklist, a typed meal | `claude-sonnet-5-5` | **measured**: as good or better than `claude-sonnet-5` (the checklist preferred by the judge), cheaper and faster (EVAL_REPORT 39) |
-| Plan build, plan review | `claude-opus-4-8` | **measured**: the cheaper models were worse or set an unsafe range; `claude-opus-5-5` is cut off by the build's token cap (EVAL_REPORT 39) |
-| Plan web research | `claude-opus-5-5` | **measured**: a blind judge preferred its brief 6 to 0, at about 15% less (EVAL_REPORT 39) |
+| Progress recap, meal photo | `claude-sonnet-5` | **measured**: the cheaper models were worse beyond noise; `claude-sonnet-5-5` invented recap figures more often and was less accurate on photos (EVAL_REPORT 35-39) |
+| Daily checklist, a typed meal, food suggestions | `claude-sonnet-5-5` | **measured**: as good or better than `claude-sonnet-5` (the checklist and food preferred by the judge), cheaper and faster (EVAL_REPORT 39, 40) |
+| Plan build, review and web research | `claude-opus-5-5` | **measured**: a blind judge preferred its plans to `claude-opus-4-8`'s 21 to 3 once it had room to think, and its research 6 to 0; the cheaper models set unsafe ranges or wrote worse plans (EVAL_REPORT 39, 40) |
 | The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
 
 The gateway allows exactly these models, and a unit test reads the gateway's price table and fails if any task resolves to a model it would refuse.
