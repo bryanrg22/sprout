@@ -2580,12 +2580,14 @@ The OpenAI text routes removed in section 33 are back (`/openai/v1/responses`,
 - `background` and premium `service_tier` refused (they would bill without a usage the
   gateway can count).
 
-70 gateway tests. Two things are open:
-- **Cache writes:** OpenAI's 30-minute cache writes are priced at the input rate. The usage
-  field that reports written tokens is not confirmed, so the gateway may undercharge them by up
-  to a quarter of the input price.
-- **Searches per call:** the number of searches is limited only when the app sends
-  `max_tool_calls`.
+Two follow-ups, settled the same day:
+- **Cache writes:** OpenAI's usage reports cache reads but no tokens written, so every
+  uncached input token is charged at the 30-minute cache-write rate (1.25× input). For a
+  spending cap, overcounting is the safe direction.
+- **Searches per call:** the app's research call now sends `max_tool_calls: 5`, and the gateway
+  refuses web search without a limit.
+
+71 gateway tests.
 
 ### Not verified
 

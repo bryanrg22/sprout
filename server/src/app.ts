@@ -119,8 +119,12 @@ function refusal(route: Route, body: Record<string, unknown>): string | undefine
     if (body.service_tier !== undefined && body.service_tier !== "auto" && body.service_tier !== "default") {
       return `The service tier ${String(body.service_tier)} is not available through the gateway.`
     }
-    // Not required (the app's research call does not send it yet), but bounded when sent.
+    // A request that may search must bound how many times (the app's research call sends 5).
+    const searches = Array.isArray(body.tools) && (body.tools as Record<string, unknown>[]).some((t) => t?.type === OPENAI_WEB_SEARCH.type)
     const maxToolCalls = body.max_tool_calls
+    if (searches && maxToolCalls === undefined) {
+      return `A request with web search must set max_tool_calls (at most ${OPENAI_WEB_SEARCH.maxCalls}).`
+    }
     if (maxToolCalls !== undefined && (typeof maxToolCalls !== "number" || maxToolCalls > OPENAI_WEB_SEARCH.maxCalls)) {
       return `max_tool_calls must be at most ${OPENAI_WEB_SEARCH.maxCalls}.`
     }

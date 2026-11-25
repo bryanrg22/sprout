@@ -413,8 +413,9 @@ describe("OpenAI", () => {
     expect(sent[0]!.headers["x-api-key"]).toBeUndefined()
     expect(Object.keys(sent[0]!.headers).some((h) => h.startsWith("x-sprout") || h.startsWith("anthropic"))).toBe(false)
     expect(Buffer.from(sent[0]!.body).toString()).toBe(responsesRequest())
-    // 2,000 uncached × $2 + 1,000 cached × $0.10 + 400 out (reasoning included) × $10 (per M)
-    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.0081, 8)
+    // 2,000 uncached × $2.50 (the cache-write rate, the upper bound) + 1,000 cached × $0.10
+    // + 400 out (reasoning included) × $10 (per M)
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.0091, 8)
   })
 
   it("charges each completed web_search_call of the plan's research at $0.01", async () => {
@@ -437,20 +438,33 @@ describe("OpenAI", () => {
       instructions: "research",
       input: "the person",
       tools: [{ type: "web_search" }],
+      max_tool_calls: 5,
       max_output_tokens: 1800,
       reasoning: { effort: "low" },
     })
     const res = await responses(body)
     expect(res.status).toBe(200)
-    // 5,000 in × $4 + 1,000 out × $20 (per M) = $0.04, + 3 completed searches × $0.01 (the failed one is free)
-    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.04 + 0.03, 8)
+    // 5,000 in × $5 (cache-write rate) + 1,000 out × $20 (per M) = $0.045, + 3 completed searches
+    // × $0.01 (the failed one is free)
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.045 + 0.03, 8)
+  })
+
+  it("refuses web search without a search limit, so one call cannot run up searches", async () => {
+    const body = JSON.stringify({
+      model: "gpt-5.6-sol", instructions: "research", input: "the person",
+      tools: [{ type: "web_search" }], max_output_tokens: 1800,
+    })
+    const res = await responses(body)
+    expect(res.status).toBe(400)
+    expect(await res.text()).toContain("max_tool_calls")
+    expect(sent).toHaveLength(0)
   })
 
   it("prices gpt-6-luna at its own rate", async () => {
     upstreamReply = () => responsesOk({ model: "gpt-6-luna", usage: { input_tokens: 10_000, output_tokens: 2000 } })
     expect((await responses(responsesRequest({ model: "gpt-6-luna" }))).status).toBe(200)
-    // 10,000 × $0.10 + 2,000 × $0.50 (per M)
-    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.002, 8)
+    // 10,000 × $0.125 (cache-write rate) + 2,000 × $0.50 (per M)
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.00225, 8)
   })
 
   it("forwards Chat Completions for an allowlisted model and prices cached input", async () => {
@@ -472,8 +486,8 @@ describe("OpenAI", () => {
     expect(res.status).toBe(200)
     expect(sent[0]!.url).toBe("https://api.openai.com/v1/chat/completions")
     expect(sent[0]!.headers.authorization).toBe(`Bearer ${SERVER_OPENAI_KEY}`)
-    // 1,000 uncached × $0.10 + 1,000 cached × $0.01 + 100 out × $0.50 (per M)
-    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.00016, 10)
+    // 1,000 uncached × $0.125 + 1,000 cached × $0.01 + 100 out × $0.50 (per M)
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.000185, 10)
   })
 
   it("refuses a model that is not allowlisted, on either text route", async () => {

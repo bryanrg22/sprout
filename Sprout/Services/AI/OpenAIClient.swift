@@ -199,6 +199,9 @@ struct OpenAIClient: LLMClient {
             "instructions": system,
             "input": userContent,
             "tools": [["type": "web_search"]],
+            // At most five searches, as on Anthropic; the gateway refuses web search without a
+            // limit, so one call can never run up searches (EVAL_REPORT 41).
+            "max_tool_calls": 5,
             "max_output_tokens": maxTokens,
             // gpt-5.x reasoning draws from the output budget — keep the thinking light so
             // a search-and-synthesize task can't burn the whole budget before writing.

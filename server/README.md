@@ -122,7 +122,7 @@ Logs: `journalctl -u sprout-gateway -f`. Health: `curl https://137-184-90-238.ss
 
 ```bash
 npm ci
-npm test          # 70 tests: App Attest checks, the store, every route, the config
+npm test          # 71 tests: App Attest checks, the store, every route, the config
 npm run typecheck
 ```
 

@@ -45,9 +45,10 @@ export const ANTHROPIC_MODELS: Record<string, TokenPrice> = {
  * `OpenAIModelProfile` in Sprout/Services/AI/OpenAIClient.swift) or `/v1/chat/completions`.
  *
  * `cacheWrite` is OpenAI's 30-minute cache write for the 5.6 and 6.x families (1.25x input,
- * Evals/prices.json). It is recorded but NOT charged by `openaiCost`: the usage block the app
- * reads reports only `cached_tokens` (reads), and no field for written tokens is known, so a
- * write is priced at the plain input rate (up to 0.25x input low on those tokens). UNVERIFIED.
+ * Evals/prices.json). The usage block reports only `cached_tokens` (reads); no field for the
+ * tokens written is known. So every uncached input token is charged at the higher of the input
+ * and cache-write prices: for a spending cap, counting up to 0.25x input too much on those
+ * tokens is the safe direction, and counting too little is not.
  */
 export const OPENAI_MODELS: Record<string, TokenPrice> = {
   "gpt-6-luna": { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
@@ -129,5 +130,7 @@ export function openaiCost(model: string, response: unknown): number {
   const output = num(u.completion_tokens ?? u.output_tokens)
   const details = (u.prompt_tokens_details ?? u.input_tokens_details) as Record<string, unknown> | undefined
   const cached = Math.min(input, num(details?.cached_tokens))
-  return searches + perMillion(input - cached, price.input) + perMillion(cached, price.cacheRead) + perMillion(output, price.output)
+  // Any uncached token may have been written to the 30-minute cache (see OPENAI_MODELS).
+  const fresh = Math.max(price.input, price.cacheWrite)
+  return searches + perMillion(input - cached, fresh) + perMillion(cached, price.cacheRead) + perMillion(output, price.output)
 }
