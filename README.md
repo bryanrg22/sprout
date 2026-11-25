@@ -79,13 +79,14 @@ Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output 
 
 | Task | Model | How it was chosen |
 |---|---|---|
-| Daily brief, insight line, weekly reflection, onboarding note, memory fold | `claude-haiku-5-5` | **measured**: as good as or better than the previous model on the rules, at about a seventh of the cost, and faster; a blind judge read all but the daily brief and favoured the old model on none, the weekly note clearly the new one. The memory fold's one defect (storing a calorie target) is removed in code (EVAL_REPORT 10, 25, 35, 36) |
-| Progress recap, daily checklist | `claude-sonnet-5` | **measured**: the cheaper model is worse beyond noise, on the recap's numbers and on the checklist's plans as the judge reads them (EVAL_REPORT 35, 36) |
+| Vita chat turn, chat chips | `claude-haiku-5-5` | **measured**: over 30 multi-turn conversations a blind judge preferred it to `claude-sonnet-5` (50 to 15, beyond noise), with the right tool as often, at an eighteenth of the cost (EVAL_REPORT 37, 38) |
+| Weekly note, onboarding note | `claude-haiku-5-5` | **measured**: as good as `claude-sonnet-5` on a blind judge, and better on the rules for the onboarding note (EVAL_REPORT 35, 39) |
+| Daily brief, insight line, memory fold | `claude-sonnet-5` | **measured**: a blind judge preferred it to `claude-haiku-5-5` beyond noise on all three (the brief 20 to 2); each runs about once a day (EVAL_REPORT 39) |
+| Food suggestions, progress recap, meal photo | `claude-sonnet-5` | **measured**: the cheaper models were worse beyond noise; `claude-sonnet-5-5` left 11% of food cards blank, invented recap figures more often, and was less accurate on photos (EVAL_REPORT 35-39) |
+| Daily checklist, a typed meal | `claude-sonnet-5-5` | **measured**: as good or better than `claude-sonnet-5` (the checklist preferred by the judge), cheaper and faster (EVAL_REPORT 39) |
+| Plan build, plan review | `claude-opus-4-8` | **measured**: the cheaper models were worse or set an unsafe range; `claude-opus-5-5` is cut off by the build's token cap (EVAL_REPORT 39) |
+| Plan web research | `claude-opus-5-5` | **measured**: a blind judge preferred its brief 6 to 0, at about 15% less (EVAL_REPORT 39) |
 | The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
-| Vita chat turn, chat chips | `claude-haiku-5-5` | **measured**: over 30 multi-turn conversations a blind judge preferred it to `claude-sonnet-5` (50 to 15, an interval above zero), with the right tool as often, at an eighteenth of the cost; on the chips both were perfect on the rules and the judge leaned its way (EVAL_REPORT 36, 37, 38) |
-| Food suggestions | `claude-sonnet-5` | **measured**: within noise overall, but the cheaper model's misses are the feature's point (meat suggested to a vegetarian, a food re-pitched) (EVAL_REPORT 36, 38) |
-| Meal description, meal photo | `claude-sonnet-5` | **measured**: from household measures it is within 20% on 92% of meals against 83%, and from photos of weighed plates on 46% against 19% (31% mean error, between people at 41-53% and models trained on the photos at 19-26%) (EVAL_REPORT 37) |
-| Adaptive plan: build, review, web research | `claude-opus-4-8` | tier default (rare: a few calls per person); no dataset yet |
 
 The gateway allows exactly these models, and a unit test reads the gateway's price table and fails if any task resolves to a model it would refuse.
 

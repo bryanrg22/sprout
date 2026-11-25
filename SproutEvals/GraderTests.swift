@@ -897,6 +897,10 @@ final class GraderTests: XCTestCase {
     private let serverError: ScriptedTransport.Reply = .json(500, ["error": ["message": "boom"]])
 
     /// Runs `call` against a scripted model, the way an evaluation attempt runs against a real one.
+    private func scripted<T>(model: String, _ replies: [ScriptedTransport.Reply], _ call: () async -> T) async -> T {
+        await scripted(replies, model: model, call)
+    }
+
     private func scripted<T>(_ replies: [ScriptedTransport.Reply], provider: AIProvider = .anthropic,
                              model: String? = nil, _ call: () async -> T) async -> T {
         let runtime = AIRuntime(provider: provider, apiKey: "test-key-not-real", model: model,
@@ -2365,29 +2369,31 @@ final class GraderTests: XCTestCase {
 
     func testChecklistAttemptOnAScriptedModel() async throws {
         let item = try XCTUnwrap(try coachCases("checklist_plan").first { $0.id == "alex-lifter-bio-and-notes" })
+        // The replies are forced tool calls, so a model that is sent one is pinned: the checklist
+        // ships on claude-sonnet-5-5 (EVAL_REPORT 39), which is asked for a JSON-schema answer.
         func entry(_ title: String, _ icon: String = "figure.walk") -> [String: Any] { ["title": title, "icon": icon] }
         let tasks = [entry("Leg day at the gym", "dumbbell.fill"), entry("Evening walk"), entry("Early night", "bed.double.fill")]
         let chips = [entry("Gym", "dumbbell.fill"), entry("Walk"), entry("Stretch", "figure.flexibility"), entry("Meal prep", "carrot.fill")]
-        var outcome = await scripted([toolReply(["tasks": tasks, "chips": chips])]) { await LiveEvals.checklistAttempt(item) }
+        var outcome = await scripted(model: "claude-sonnet-5", [toolReply(["tasks": tasks, "chips": chips])]) { await LiveEvals.checklistAttempt(item) }
         XCTAssertTrue(outcome.ok); XCTAssertTrue(outcome.pass)
         XCTAssertEqual(outcome.scores["reflects_the_routine"], 1)
         XCTAssertEqual(outcome.scores["icons_known_share"], 1)
         XCTAssertTrue(outcome.output.contains("Leg day at the gym"))
 
         // The app's own filter drops a task about the scale; two tasks are left, under the minimum.
-        outcome = await scripted([toolReply(["tasks": [tasks[0], tasks[1], entry("Morning weigh-in")], "chips": chips])]) {
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["tasks": [tasks[0], tasks[1], entry("Morning weigh-in")], "chips": chips])]) {
             await LiveEvals.checklistAttempt(item)
         }
         XCTAssertTrue(outcome.ok); XCTAssertFalse(outcome.pass)
         XCTAssertEqual(outcome.scores["tasks_within_schema"], 0)
         XCTAssertEqual(outcome.scores["none_dropped_by_the_app"], 0)
         // Nothing left after cleaning: the service throws, the card keeps its presets, the reply is kept.
-        outcome = await scripted([toolReply(["tasks": [entry("Skip dinner")], "chips": [entry("Start a diet")]])]) {
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["tasks": [entry("Skip dinner")], "chips": [entry("Start a diet")]])]) {
             await LiveEvals.checklistAttempt(item)
         }
         XCTAssertFalse(outcome.ok)
         XCTAssertTrue(outcome.output.contains("Skip dinner"))
-        outcome = await scripted([serverError]) { await LiveEvals.checklistAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [serverError]) { await LiveEvals.checklistAttempt(item) }
         XCTAssertFalse(outcome.ok)
         XCTAssertTrue(outcome.error?.contains("boom") ?? false, outcome.error ?? "")
     }

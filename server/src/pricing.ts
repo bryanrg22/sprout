@@ -24,15 +24,19 @@ export interface TokenPrice {
 }
 
 export const ANTHROPIC_MODELS: Record<string, TokenPrice> = {
-  // Coach, meal photos, checklist (the strong tier).
+  // Meal photos, food suggestions, the recap, the daily brief, the insight line, the memory fold.
   "claude-sonnet-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
-  // The daily brief (measured default, EVAL_REPORT 10 and 25).
+  // The checklist and a typed meal (EVAL_REPORT 39).
+  "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.1, cacheWrite: 2.5 },
+  // Vita's chat, the chat chips, the weekly note, the onboarding note (EVAL_REPORT 35-38).
   "claude-haiku-5-5": { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
-  // Insight line, weekly reflection, onboarding note, memory fold (the cheap tier).
+  // The cheap tier's default; no task resolves to it now, kept as the tier default in the app.
   "claude-haiku-4-5-20251001": { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
   "claude-haiku-4-5": { input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25 },
-  // The rare plan build.
+  // The rare plan build and review.
   "claude-opus-4-8": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
+  // The plan's web research (EVAL_REPORT 39).
+  "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
 }
 
 /**

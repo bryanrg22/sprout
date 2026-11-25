@@ -87,6 +87,35 @@ final class StructuredOutputRepairTests: XCTestCase {
         XCTAssertEqual(out["tasks"] as? String, leaked)
     }
 
+    /// Recorded from claude-sonnet-5 on the plan (EVAL_REPORT 39): a list of objects written
+    /// as tool-call parameters, one JSON object each, inside a string.
+    func testAListOfObjectsWrittenAsParameterChunksIsRead() {
+        let closed = "\n<parameter name=\"item\">{\"title\": \"Under the floor\", \"body\": \"Eat up to 1,250.\", \"tone\": \"watch\"}</parameter>"
+            + "\n<parameter name=\"item\">{\"title\": \"10-day streak\", \"body\": \"Keep going.\", \"tone\": \"win\"}</parameter>\n"
+        let out = StructuredOutputRepair.repair(["tasks": closed, "chips": []], schema: schema)
+        let tasks = out["tasks"] as? [[String: Any]]
+        XCTAssertEqual(tasks?.map { $0["title"] as? String }, ["Under the floor", "10-day streak"])
+        XCTAssertEqual(tasks?.last?["tone"] as? String, "win")
+        // The same without closing tags: each chunk runs to the next marker.
+        let open = "<parameter name=\"item\">{\"title\": \"A\", \"body\": \"b\"}\n<parameter name=\"item\">{\"title\": \"C\", \"body\": \"d\"}"
+        XCTAssertEqual((StructuredOutputRepair.repair(["tasks": open, "chips": []], schema: schema)["tasks"] as? [[String: Any]])?.count, 2)
+    }
+
+    /// The other shape recorded in the same run has nothing in it to recover.
+    func testAParameterFragmentOrABrokenChunkIsNotRepaired() {
+        for text in ["\n<parameter name=\"tone\">watch",
+                     "<parameter name=\"item\">{\"title\": \"A\"}<parameter name=\"item\">not json",
+                     "Intro <parameter name=\"item\">{\"title\": \"A\"}</parameter>",
+                     "<parameter name=\"item\">[1, 2]</parameter>"] {
+            let out = StructuredOutputRepair.repair(["tasks": text, "chips": []], schema: schema)
+            XCTAssertEqual(out["tasks"] as? String, text, text)
+        }
+        // A list of strings is not read as objects.
+        let strings: [String: Any] = ["type": "object", "properties": ["notes": ["type": "array", "items": ["type": "string"]]]]
+        let chunk = "<parameter name=\"item\">{\"title\": \"A\"}</parameter>"
+        XCTAssertEqual(StructuredOutputRepair.repair(["notes": chunk], schema: strings)["notes"] as? String, chunk)
+    }
+
     func testAStringPropertyIsNeverParsedEvenWhenItLooksLikeJSON() {
         let input: [String: Any] = ["tasks": [], "chips": [], "note": "[\"this\", \"is\", \"text\"]"]
         let out = StructuredOutputRepair.repair(input, schema: schema)

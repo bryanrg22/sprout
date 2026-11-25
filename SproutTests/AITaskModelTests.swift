@@ -34,14 +34,14 @@ final class AITaskModelTests: XCTestCase {
     private let expected: [AITask: (anthropic: String, openai: String)] = [
         .coachTurn:        ("claude-haiku-5-5", "gpt-5.6-terra"),          // Anthropic: EVAL_REPORT 37
         .mealPhoto:        ("claude-sonnet-5", "gpt-5.6-terra"),
-        .mealDescribe:     ("claude-sonnet-5", "gpt-5.6-terra"),
+        .mealDescribe:     ("claude-sonnet-5-5", "gpt-5.6-terra"),         // Anthropic: EVAL_REPORT 39
         .foodSuggestions:  ("claude-sonnet-5", "gpt-5.6-terra"),
         .progressSummary:  ("claude-sonnet-5", "gpt-5.6-terra"),           // Anthropic: EVAL_REPORT 35 (kept by measurement)
-        .checklistPlan:    ("claude-sonnet-5", "gpt-5.6-terra"),
+        .checklistPlan:    ("claude-sonnet-5-5", "gpt-5.6-terra"),         // Anthropic: EVAL_REPORT 39
         .coachPrompts:     ("claude-haiku-5-5", "gpt-5.6-terra"),          // Anthropic: EVAL_REPORT 36
         .planBuild:        ("claude-opus-4-8", "gpt-5.6-sol"),
         .planReview:       ("claude-opus-4-8", "gpt-5.6-sol"),
-        .planResearch:     ("claude-opus-4-8", "gpt-5.6-sol"),
+        .planResearch:     ("claude-opus-5-5", "gpt-5.6-sol"),             // Anthropic: EVAL_REPORT 39
         .dailyBrief:       ("claude-sonnet-5", "gpt-6-luna"),             // Anthropic: EVAL_REPORT 39; OpenAI: 10
         .insightLine:      ("claude-sonnet-5", "gpt-6-luna"),             // Anthropic: EVAL_REPORT 39; OpenAI: 22
         .weeklyReflection: ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
@@ -88,7 +88,7 @@ final class AITaskModelTests: XCTestCase {
     func testTheAppHasNoModelSettingOnlyAScopedRuntimeChangesTheModel() {
         // The measured default stands; only an evaluation's scoped model replaces it, and
         // only inside the clients (`AIRuntime.resolve`).
-        XCTAssertEqual(AIConfig.model(for: .dailyBrief, provider: .anthropic), "claude-haiku-5-5")
+        XCTAssertEqual(AIConfig.model(for: .dailyBrief, provider: .anthropic), "claude-sonnet-5")
         XCTAssertEqual(AIRuntime.resolve(model: "claude-haiku-5-5"), "claude-haiku-5-5")
         AIRuntime.$current.withValue(AIRuntime(model: "claude-sonnet-5")) {
             XCTAssertEqual(AIRuntime.resolve(model: "claude-haiku-5-5"), "claude-sonnet-5")

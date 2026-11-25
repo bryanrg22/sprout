@@ -1,0 +1,219 @@
+{
+ "task": "planResearch",
+ "run": "20261125-105108-PlanResearch",
+ "baseline": "anthropic:claude-opus-4-8",
+ "candidate": "anthropic:claude-sonnet-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "b25317d01c157a5ab524f2be27aa0c5e9f60777da68930727b79abe73ee7127c",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 8,
+ "pairs_skipped": [],
+ "cases": 8,
+ "candidate_wins": 2,
+ "baseline_wins": 3,
+ "ties": 3,
+ "both_bad": 0,
+ "orders_agree_share": 0.625,
+ "net": -0.125,
+ "net_ci95_cases": [
+  -0.625,
+  0.375
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 28,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.2342,
+ "verdicts": [
+  {
+   "case": "build-sam-ambitious-timeframe",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers invent the name \"Sam\", which is not in the input, and both are cut off mid-sentence. Answer A also leaks process narration (\"I'll research...\") and rarely names its sources. Answer B names reputable bodies inline (CDC, NHS, ACSM, AHA/ACC/TOS), covers rate, deficit, protein and the sweet tooth in more depth, and turns the 6-week window into a realistic total. However, B adds an invented gender (\"her\"), a dubious ACSM attribution, an overstated \"dramatic drop\" claim and some commercial-sounding sources, so it is better overall despite real flaws.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are truncated, both invent the name \"Sam\" (and A adds a gender), and both lean on citations that read like blogs or brands (A even quotes \"comments from customers\"). A has a dubious, overstated claim about protein causing a \"dramatic drop\" in sugar cravings, and its figure of 1.8\u20132.7 g/kg for general fat loss is high. B's figures are more conservative and accurate (1.6\u20132.2 g/kg; 3\u20136 lb of fat over 6 weeks, plus a water-weight caveat) and it adds a resistance-training recommendation fitting the new runner, though it leaks process text at the top and its deficit sentence is garbled.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both briefs are truncated, open with process chatter, and invent the name \"Sam\" and B adds a \"~7 months\" figure not in the input. B also has a real arithmetic error: 550 kcal/day is about 1 lb/week, not 0.5 kg, and its loose sourcing (\"multiple sources\", \"research suggests\") is weaker. A gives correct deficit figures, sensible protein ranges matched to Sam's lack of resistance training, a calorie floor, and named bodies (WHO, NHS, CDC), while covering the breakfast-skipping angle. A is clearly better despite the truncation.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both briefs are truncated, both open with process chatter, and both invent the name \"Sam\", which is not in the input. Answer A contains a likely misquoted line (\"550 kcal/day produces about 0.5 kg/week\" mislabelled as 1 lb). Its sources are not clearly named inline, and its 4pm blood-sugar framing is weakly evidenced, though its breakfast-skipping evidence is nuanced and good. Answer B names reputable bodies (WHO, NHS, AHA, CDC), gives a sensible deficit range, a calorie floor and situation-specific protein guidance for someone not lifting, so it is somewhat more useful and accurate despite similar flaws.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-first-day-no-logs",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are truncated before finishing, and neither reaches the shift-work or fast-food evidence. A has leaked process text (\"I'll research...\") and invents the name \"Sam\", while B assumes \"she\" and \"roughly 6 months\", neither of which is in the input. B is better targeted, though: it ties the rate of loss to the timeframe, gives a sourced deficit size, a fitting protein range and well-developed walking evidence, and began a shift-work section. Despite its flaws, B is more useful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both briefs are truncated before reaching the closing-shift and fast-food evidence, the situation-specific part that matters most. Answer B has process filler (\"I'll research...\", \"Let me get one more piece\") and invents the name \"Sam\", which is not in the input. B also leans on weaker sources such as NASM and generic calculator advice. Answer A uses stronger sources (NIH, NHS, ACSM, Annals of Family Medicine), gives concrete figures, and has no meta-filler, though it assumes the person is female and its truncation drops the shift-work section.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-knee-injury",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are truncated, contain process chatter, and use the name 'Sam', which is not in the input. A cuts off before addressing the meniscus or swimming, though its rate, deficit and protein figures are reasonable. It also cites 'Garthe et al.' as an International Journal of Obesity study on 0.5\u20131 lb/week, a likely misattributed source, and adds an irrelevant note on older adults. B covers rate, protein and deficit, then reaches the meniscus constraints with useful situation-specific guidance (avoid breaststroke kick), but it leans on bodybuilder and athlete sources and some blog-like quotes, and still never reaches the evening snacking habit.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers invent the name \"Sam\" and leak process narration, and both are truncated before covering the evening snacking habit. A misapplies a body-fat range and a bodybuilder protocol, cites a 1.6\u20132.4 g/kg range as \"most effective\", and stops mid-way through the meniscus section. B gives a well-framed rate of 0.5\u20130.75%/week, deficit guidance, a calorie floor and adaptation, but assumes the person is female and misattributes Garthe et al. (an athlete study) to the International Journal of Obesity. Both share these faults, but B is more structured and covers more of what moves the goal, while A covers the meniscus-specific swimming guidance B lacks; on balance B is somewhat better.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-maintain-after-goal",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers invent the name \"Sam\" and both are truncated, and both include quotes with no sources named. A leaks process narration (\"I'll research...\") and gives a coaching formula that assumes figures not in the input. Its claim that slow reverse dieting delays recovery is shaky. B is cleaner and more directly addresses the person's fear with a testable weekly protocol and a maintenance range, but its \"10-15% below a TDEE calculator\" bottom line overstates the modest ~50 kcal adaptation it cites. On balance, B is more usable and has fewer faults.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are truncated, address someone named \"Sam\" whose name does not appear in the input, and lean on quote fragments without clear source names. A has a serious factual fault: its 'bottom line' says to expect maintenance 10-15% below calculator predictions, contradicting its own cited 50-60 kcal/d (3-4%) figures. B more accurately reports the modest adaptation and that it largely resolves at maintenance, and it honestly caveats the evidence on reverse dieting. B also leaks process chatter at the top and cites a crude formula, but overall it is more accurate and more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers leak process text, call the person 'Sam' (a name not in the input), and are cut off mid-sentence. A uses better sources and more precise rate figures (0.5\u20130.75%/wk, a 4-month total, a protein adjustment for higher body weight). It also handles the night-shift issue well with the circadian and PNAS evidence, though it invents 'her' and gets cut off early in that section. B misattributes a study (Garthe 2011 was on athletes, not published in IJO, and its rates are misstated), cites blog-like claims as sourced, and repeats the generic 1200-calorie floor, though it covers shift work more fully before truncating.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are truncated, include leftover process chatter, and name the user 'Sam' even though no name appears in the input. A has more problems: it misattributes the Garthe et al. 2011 study (that was elite athletes in a Scandinavian journal, not the International Journal of Obesity) and misquotes the ACSM guidance. B handles the timeframe more honestly, adjusts protein for higher body weight, and gives more shift-specific grounding, though some of its percentage claims are loosely sourced.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-vegetarian",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B invents a '~5 weeks' timeframe, a current date that is not in the input, and builds a bottom-line loss estimate on it. It also misattributes claims to the ACSM and NHS. Answer A leaks process chatter ('Let me get one more piece'), uses a name not in the input, and is truncated before reaching the vegetarian specifics, but its figures are accurate and properly framed. A's faults are about presentation, while B's invented timeframe is a serious fault, so A is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A invents a fact the input does not contain: 'end of year = ~5 weeks'. It builds its whole framing and bottom line on that, and it also assumes the person is female ('her'). Both answers are truncated, and both cite Garthe et al. with a likely misattribution to the International Journal of Obesity. Answer B has meta filler at the start but keeps rate, deficit, and protein guidance accurate, sourced, and free of invented timeframes.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-very-low-intake",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both briefs invent the name \"Sam\", and both are cut off before they give a protein target. A also opens with meta-chatter (\"I'll research... Let me search\"), uses some weaker or unsourced sources (\"one source notes\" tripled amenorrhea risk), and makes a garbled claim that VLCDs under 1,200 kcal caused more lean mass loss. B is tighter and sticks to authoritative sources (NIH, NHS/CDC, NICE guidance on VLCDs, RED-S literature), and its 3-week estimate (0.7\u20131.4 kg) is more conservative and accurate than A's 2\u20133 kg; B also assumes she is female, but so does A. B is clearly the stronger brief, though both are truncated.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both briefs are truncated, both invent a name ('Sam') that isn't in the input, and both rely on fragment quotes without clear source names. A is tighter, cites NICE, NHS and CDC style guidance, and addresses VLCD risk, low energy availability with the spin classes, and fasted training. B opens with filler about doing a search, leans on vague 'one source notes' and blog-like quotes, and states 2\u20133 kg of fat in 3 weeks, which overstates realistic fat loss. Neither covers protein, but A is the more accurate and better-sourced brief.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

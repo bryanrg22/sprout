@@ -13,6 +13,11 @@ import Foundation
 ///  - a list of strings written as tagged lines in one string:
 ///    `"highlights": "\n<item>a</item>\n<item>b</item>\n"` (also `<li>`)
 ///    (claude-sonnet-5 on the progress recap, 3 of 75 calls, EVAL_REPORT 35).
+///  - a list of objects written as tool-call parameters in one string, one JSON object each:
+///    `"insights": "\n<parameter name=\"item\">{\"title\": …}</parameter>…"`
+///    (claude-sonnet-5 on the plan, EVAL_REPORT 39). Only when every chunk is a JSON object
+///    and the string holds nothing else; a fragment such as `<parameter name="tone">watch`
+///    has nothing to recover and is left for the decoder to reject.
 ///
 /// The repair is driven by the schema: only a property declared as an array or an object
 /// is looked at, so a string property is never touched however much it looks like JSON,
@@ -26,9 +31,13 @@ enum StructuredOutputRepair {
             guard let declared = properties[key] as? [String: Any],
                   let kind = declared["type"] as? String, kind == "array" || kind == "object",
                   let text = value as? String else { continue }
-            if kind == "array", (declared["items"] as? [String: Any])?["type"] as? String == "string",
-               let lines = taggedLines(text) {
+            let itemKind = (declared["items"] as? [String: Any])?["type"] as? String
+            if kind == "array", itemKind == "string", let lines = taggedLines(text) {
                 repaired[key] = lines
+                continue
+            }
+            if kind == "array", itemKind == "object", let objects = parameterObjects(text) {
+                repaired[key] = objects
                 continue
             }
             guard let parsed = parse(text) else { continue }
@@ -65,6 +74,25 @@ enum StructuredOutputRepair {
         return matches.compactMap { match in
             Range(match.range(at: 2), in: text).map { String(text[$0]).trimmingCharacters(in: .whitespacesAndNewlines) }
         }
+    }
+
+    /// The objects of a string made of nothing but `<parameter name="item">{…}` chunks (each
+    /// optionally closed by `</parameter>`), when every chunk is one JSON object; nil otherwise.
+    static func parameterObjects(_ text: String) -> [[String: Any]]? {
+        let marker = "<parameter name=\"item\">"
+        let parts = text.components(separatedBy: marker)
+        guard parts.count > 1, parts[0].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        var objects: [[String: Any]] = []
+        for part in parts.dropFirst() {
+            var chunk = part.trimmingCharacters(in: .whitespacesAndNewlines)
+            if chunk.hasSuffix("</parameter>") {
+                chunk = String(chunk.dropLast("</parameter>".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            guard chunk.hasPrefix("{"), let data = chunk.data(using: .utf8),
+                  let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return nil }
+            objects.append(object)
+        }
+        return objects
     }
 
     private static func parse(_ text: String) -> Any? {

@@ -1,0 +1,571 @@
+{
+ "task": "planBuild",
+ "run": "20261125-103455-PlanBuild",
+ "baseline": "anthropic:claude-opus-4-8",
+ "candidate": "anthropic:claude-haiku-5-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "14415651362d430062dfa42756453d11f779fb385e9175683b2af8ebbb9c0af6",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 30,
+ "pairs_skipped": [],
+ "cases": 15,
+ "candidate_wins": 5,
+ "baseline_wins": 20,
+ "ties": 5,
+ "both_bad": 0,
+ "orders_agree_share": 0.8333333333333334,
+ "net": -0.5,
+ "net_ci95_cases": [
+  -0.7333333333333333,
+  -0.26666666666666666
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 72,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.645,
+ "verdicts": [
+  {
+   "case": "build-alex-gaining-too-fast",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more specific and accurate: it names the real 3,500\u20134,100 kcal intake against the 2,875 target, cites the 1,480 kcal burger, 925 kcal milk and the gallon-a-week, and gives a coherent range that sits above maintenance. Answer A never mentions that intake runs about 3,800 kcal, so the 3,000\u20133,400 range comes without context. A also claims Alex will hit 172 'well before spring', which overstates things given the app's January 2027 projection. B has its own flaws: it calls 7 logged days an 'early read', and 2,900 is a fairly low floor given actual intake, but it remains a surplus near the app's target, so it still fits a gain goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers get the core right: they affirm the gain, slow the pace and use the person's real foods, streak and waist observation. Answer A is more concrete about the gap between intake (3,500\u20134,100) and the new range, and it targets the milk and burger calories directly. Answer B has a timeline error: it says \"you'll hit 172 well before spring\" at this pace, which conflicts with the input's January 2027 projection. B also suggests swapping fat for carbs at \"same calories\", which contradicts its own goal of cutting a large surplus. A is internally consistent and clearer, though its \"slow to 0.5\u20130.75\" pace fits a spring goal only loosely.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-gaining-too-fast",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is specific and warm, and its pacing claim holds up: 8 lb by spring at about 1 lb/week fits. It respects the 'eating is the work' framing, flags fat and water, and keeps the range sensibly above maintenance. Answer B has real errors: it says a gallon of milk a week is 900+ kcal/day when it is closer to about 340 kcal/day, and the 925 kcal milk entry contradicts that framing anyway. It also muddles the January 2027 point and its 0.5 lb/week math, since 8 lb at 0.5 lb/week is about 16 weeks, which may miss spring.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A has internal contradictions: it says January 2027 is past spring \"in a sense of lean,\" and claims a gallon of milk a week is ~900+ kcal/day, which is wrong because a gallon is about 2,400 kcal a week, roughly 340/day. It also proposes slowing to 0.5 lb/week yet says 8 lb comes in 4\u20135 months, which contradicts its own math (that would take ~16 weeks only at 0.5, actually fine) while calling the input's January 2027 projection irrelevant. Answer B is warm, honest that spring is reachable at ~1 lb/week (8 lb in ~2 months), quotes the person's own waist concern, gives a sensible surplus range, and catches the fat and water issues with real numbers. B's 2,900 floor is a bit close to the 2,875 target, but it is still a surplus, and B is clearer and more accurate overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-lifting-baseline",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B contradicts itself and the data: it calls protein a gap even though every day exceeds the 130 g target. It says calories land mostly inside its 2,500\u20132,700 band when most days are above it. Its lower range would slow a gain the timeframe already says is too slow. Answer A is coherent, honest about the timeline, and sets a sensible higher range, though it misreads the water figure as '~5 bottles short' and its insight places the old-target low day under 'nudge the ceiling into the floor', which is muddled.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A contradicts itself and the data: it calls protein a gap when Alex beats 130 g every day, and it advises both adding calories for a fall timeline and not adding any. Its 2,500\u20132,700 range sits below most of the week's intake, which would slow a gain that already needs to speed up. Answer B correctly sees protein as a strength, raises the range coherently to speed up the gain, and handles the timeframe honestly with specific foods from the log. B has small flaws ('mid-2027' and an overstated 'by next fall' changelog), but it is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-lifting-baseline",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A's range of 2,750\u20132,950 actually raises intake above the ~2,727 average to push the rate toward the 0.5 lb/wk target, and that is consistent with its own advice; it is specific, honest about the timeline and points out the water shortfall. Answer B's range of 2,550\u20132,800 contradicts its own advice to add 150\u2013200 kcal, since its midpoint sits below current intake. B also calls 0.3 lb/wk 'right where you want it' in the headline while the target is 0.5, and it opens with 'Early read' despite 28 days of logging. A has minor issues: it says the 140g day was above a 155g target, and its claim that dipping below 2,700 is what's been slowing the gain is a bit loose, but overall it is the better plan.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A's range of 2,550\u20132,800 kcal centres on what Alex already eats (avg ~2,727), which is producing only +0.3 lb/wk, so the ceiling doesn't support the extra 150\u2013200 kcal it recommends, and it opens with 'early read' despite 28 days of data. Answer B raises the range coherently to 2,750\u20132,950 to reach 0.5 lb/wk, ties advice to Alex's actual foods and low days, and covers water, though 'with dinner still coming' is a minor error since dinner is already logged. Neither ties advice to the stated Mon/Tue/Thu/Sat schedule, and both have small issues with the timeline, but B's plan is more internally consistent and more actionable for the goal.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-little-time",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A sets a floor at the 2,595 target, which fits a gain goal, but it calls Sat's 111g its highest protein day when yesterday's 120g was higher, and its timeline math (~1 year at 0.5 lb/wk for 13 lb is about 26 weeks, i.e. 6 months) is wrong. Answer B also gets the math wrong (13 lb in 26 weeks is 0.5 lb/week, so 6 months is feasible), contradicts itself by calling 0.2 lb/wk the right speed while saying the goal needs 0.5, and says dinner is still to come when dinner is already logged. B's floor of 2,450 sits below the stated target, slightly loosening the gain, but B hedges on limited data and gives a realistic milestone. Both have errors; A is more concise and has a better floor, while B is more structured but has more contradictions, so A edges it.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A's floor of 2,450 kcal sits below the existing 2,595 target on a gain goal. It also contradicts itself: it says six months is realistic for about 165 lb (0.5 lb/week puts 172 about 13\u201314 months out) yet still suggests a bit more intake could make six months closer, and it says 'dinner still to come' when dinner is already logged. Answer B sets the floor at the target (2,595), plainly says the realistic horizon is about a year, and names real days, foods and the water shortfall. B has a factual slip, calling Saturday's 111 g its highest-protein day when yesterday's 120 g was higher, but A's under-target floor and confused timeline are worse.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-little-time",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A is warmer and more specific, but it implies 0.5 lb/week reaches 172 in 6 months, which is false (that is about 12-13 lb, and 14 lb are needed). It also says protein was hit once this week, then concedes 120 g was the closest, which contradicts itself. Answer B plainly says the 6-month goal needs about 2 lb/week, gives the realistic 0.5 lb/week path, and hedges on only having 5 days of data, though it errs in saying 'dinner still open' when dinner was already logged and is less personal. On balance, B's honesty about the timeframe outweighs A's tone advantages.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is honest about the timeframe: 14 lb in 6 months needs about 2 lb/week, so it offers a realistic 0.5 lb/week (~12 lb) path. It hedges on the few logged days and gives accurate averages, though 'dinner still open' contradicts the dinner already logged. Answer B wrongly implies 0.5 lb/week reaches 172 within 6 months, and it contradicts itself ('hit 130g only once this week', then '120g was closest'), so its timeframe guidance is misleading. A is more accurate and more honest, despite its minor slip.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-maintain-half-marathon",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B has a formatting break: assessment and strategy content bleed together with stray tags, and the strategy section is left empty. It also frames Sunday's 3,200 kcal after an 11-mile run as something to watch, which nudges toward under-fueling for a person who lost 8 lb and felt flat last time. Answer A is specific, treats post-long-run eating as correct, and catches the fat/carb imbalance and low water, though it cites 1.6\u20131.8 g/kg without knowing his weight (a mild stretch). A is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A has a broken format: stray tags, the strategy content sits inside the assessment, and the Strategy section is empty. It also treats Sunday's 3,200 kcal as a concern for someone who lost 8 lb and felt flat last time, and it mislabels the run days (it says 'Tue, Thu, Sat' carbs while the logs differ). Answer B is warm and specific, frames higher intake after the long run as correct for a maintenance-while-training goal, and catches the high-fat/low-carb split today and the water gap, using the PT job well. B's '600\u20131,000+ kcal' burn estimate is general guidance rather than a claim about Alex, so overall B is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-maintain-half-marathon",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is concise, specific and accurate: the ~138g protein average is right, it flags fat high/carbs low, and the water tip ties to Alex's PT job; its one questionable line is suggesting easy days sit at the floor. Answer B makes factual errors: it says the weekly protein average is under target (it's ~135g, above 131) and calls Friday the lowest intake when Monday (2,600) was lower. It also calls 112g fat 'fine' against a 58g target and is long and dense for a phone. Neither notes that Alex's stated schedule doesn't match the logged runs, but A is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A states that the weekly protein average is under 131 g, but the actual average is about 135 g, so that claim is wrong. Its insights also contain errors: Friday was not the lowest day (Monday was), and its description of where today's carbs and fat came from is muddled. Answer B gets the protein average right (~138 g), ties the long run to the day's fuel, flags today's fat/carb flip and the low water, and uses the PT job. It has minor issues (it says \"before Thu\", which doesn't line up with the logged run days, and it rounds the range), but it is more accurate, warmer and more specific.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-poor-appetite",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B has a broken structure: the strategy content leaked into the assessment with stray tag text, leaving Strategy empty. It also makes an inconsistent claim that lunch was 'a big single item', and its 28-week math is muddled. Answer A is well-structured, specific (coffee as lunch, forgetting lunch, small appetite) and sets a sound gain range, though 'On track for 172' in the headline contradicts the downward trend and 'Protein's close' is mildly off. A is clearly the better, showable answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A has broken formatting (a stray </assessment> tag, the strategy in the wrong place, an empty Strategy section), and its changelog cites 6 days of logs while the assessment says 9. Its lunch insight is confused and contradicts the person's stated small appetite. Answer B has flaws too: an 'On track' headline that clashes with the downward trend, 'Protein's close' despite a 40 g gap, and 'eating like someone trying to lose' edges toward shaming. Still, B is coherent, specific (it notices that lunch was a coffee), respects the small appetite with calorie-dense options, and is warm, so it is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-alex-poor-appetite",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B invents facts: it says lunch was skipped until mid-afternoon and that the Ramen was eaten with dinner still to come. It also miscalculates (609 short of a 2,450 floor is wrong), its headline says 'gaining slowly' while the weight is drifting down, and it refers to Alex in the third person. Answer A is specific, honest about the downward drift, respects the small appetite with small, frequent meals and liquid calories, and sets a sensible surplus range. A's '1.6 g/kg' claim is mild and its headline 'on track' is slightly off, but B's invented facts and errors are worse.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are specific, respect the small appetite with smaller, frequent, calorie-dense eating, and set a surplus range. Answer A's 'today is 609 under the floor' mixes the 2,589 floor with its own 2,450 floor (the gap is about 470), it invents 'lunch skipped until mid-afternoon', and its timeframe math is muddled. Answer B's headline 'On track for 172' contradicts its own finding that the trend is drifting down, and calling 90g of 129g 'close' is a slight stretch. Still, B stays consistent with its own range and invents less, and its clock-anchored snacks and post-gym smoothie fit Alex's schedule well, so B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-ambitious-timeframe",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A gets the timeframe math right (34 lb in 6 weeks is impossible) and gives a concrete realistic target, but it says \"3 runs logged\" as if that were a week and calls 0.7\u20131 g per lb of goal weight guidance that doesn't quite match 129 g. Answer B miscomputes the timeframe (9 lb in 6 weeks misframes a 30-lb gap) and calls protein of 85\u201395 g against 129 g \"mostly close to target,\" which contradicts itself. B also claims three runs a week are on the calendar, when the logs show three runs over a week and a half. Both are specific and warm, but A's assessment is more honest and accurate, so A is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is plainer about the timeframe. It correctly works out that 158\u2192128 lb in 6 weeks means about 5 lb/week, says this isn't possible, and offers a concrete realistic July target. Answer A only frames the goal as 1.5 lb/week (about 9 lb) without making clear that 128 by July is unreachable. B is also warmer, uses Sam's sweet tooth and work-from-home routine well, and gives a specific dessert portion, though it has small slips (\"~5 bottles short\", \"most of the day gone\") and an optimistic 1 lb/week projection. A is accurate and specific but less decisive on the main honesty point, so B is slightly more useful overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-ambitious-timeframe",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is warm and specific to Sam: it names the 660 kcal dark chocolate, the protein gap and the water, and it stresses not dropping below the calorie floor. Its 6-week reframe is muddled, though: it says sustainable loss will happen 'by your trip' without giving a realistic number for that window, and 'kills cravings' is an overclaim. Answer B has more errors: it calls protein 'close to target' while it is ~40 g short, mentions an unexplained '9 lb' figure, says 3 runs a week when the logs show 3 runs over about a week and a half, and adds generic macro lecturing. Both are fit to show, but A's errors are milder and its tone is better for a phone.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A's timeframe check is muddled: it calls 9 lb the target when the real gap is 30+ lb. It also claims weekday intake when the data shows every day, and its protein guidance cites 0.7\u20131 g per lb, which doesn't match 129 g at a 128 lb goal. Answer B states plainly that 34 lb in 6 weeks isn't realistic, gives the 1\u20131.5 lb/week path, and ties protein and water to the sweet tooth, all warmly and specific to Sam. B has minor issues (the 34 lb figure is derived, 'by July' is fine), but it is clearer and more accurate overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use the real numbers and the given range, and both catch the protein gap, the 4pm dip and hydration. Answer A promises 145 \"by spring\" and \"comfortably before June\", which contradicts the input's February 2027 projection. That is a serious honesty fault, and A also calls the latte a solid anchor. Answer B is also confused: it calls February 2027 earlier than June and suggests slowing the pace, which would make things worse, but it at least cites the real projection, and its activity and latte insights are reasonable. Both mishandle the timeframe, but A's flat confident claim is more misleading, so B is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A gets the timeline badly wrong: it says February 2027 is earlier than June and advises easing the pace, which is incoherent and would mislead Sam. It also says the latte is calorie-heavy and proposes swapping it for 'a latte with milk', and it misses that today's 1,720 kcal is under the floor. Answer B also flubs the timeline by claiming Sam is ahead of June and will hit 145 'by spring', when the input projects February 2027, but it is more accurate elsewhere: it correctly flags the three sub-floor days, gives concrete protein fixes tied to the 4pm snack, and makes the water point well. Both share the timeline error, but B is otherwise more accurate, specific and actionable, so it is the better one to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both have factual slips. A says 'only Sun and Thu got close' to protein (fine), but calls 17 oz '~1 bottle' while the input says ~5 bottles. It also states 'by June is very realistic' while the input projects February 2027; given 1.1 lb/week and 15 lb left, June is plausible, but A contradicts the stated projection without explaining it. B claims Sun and Thu 'cleared the 130 g target' (false, 104 and 100), writes about Sam in the third person in the assessment, says February 2027 is 'ahead of a June target' (wrong), and invents '120\u2013160 g at Sam's size' plus 'Tue/Thu Pilates' as logged (the logs show Sun/Mon/Tue). A is more accurate, more concise, and phone-friendly, so its errors are smaller.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A has a contradiction: it says the projected February 2027 pace is \"ahead of a June target,\" which is muddled since Feb 2027 comes after June, though it echoes the input. It also wrongly says only Sun and Thu \"cleared\" 130 g when neither did, and it assumes Pilates on Tue/Thu. Answer B has errors too: it says today's 1,720 dipped under the floor when the input says it's in range (it is under the 1,756 floor numerically, but the input calls it a win), it misses Friday's dip, and it says \"~1 bottle\" for water where the input says ~5. Overall B is warmer and more concise, names the realistic June timeline, mentions the dog walks, and has a clearer protein insight, so it edges ahead despite its slips.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-empty-intake",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use Sam's real numbers, keep the given range, and flag the under-eating gently. B is the stronger one: it hedges openly about having only one day of food data, names Sam's actual foods (the yogurt and the burrito bowl) and mentions the 162\u2192159 change and the April 2027 date. A treats a day that is still in progress as the full picture, and its 'about 5 bottles short' is a slight misreading. B's Strategy is somewhat longer with generic macro filler, but its honesty and specificity outweigh that.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use the same correct range, name real numbers, and flag the under-floor intake and protein gap warmly. A openly hedges that there is only one logged day of food data, which the input warrants; B states \"on track\" confidently with no hedge and leans more on assumptions (e.g., \"tonight\", \"this afternoon\", \"workouts\" when no workouts are logged). B says \"5 bottles short\" when the input says the 81 oz goal is ~5 bottles total, a slight misstatement, while A's 162\u2192159 framing is grounded in the input.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-empty-intake",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B has visible tool-call markup leaking into the strategy text, and its 'Daily fuel' calorie range is missing from the header, so it is broken as displayed. It also claims 'a few logged days', which the input doesn't support, and 'the day mostly done', which is invented. Answer A is clean, specific (streak, trend, foods, water), sets the range correctly, and encourages eating to the floor warmly; its minor slip is calling 17 of 81 oz '~5 bottles behind'. A is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A hedges openly about having only one logged day, but it has visible markup leakage ('</strategy><parameter name=\"calorie_min\">1752'). It also invents details: it mentions 'training fuel' and 'recovery' for someone with no stated exercise, and says 'the day mostly done', which the input does not support. Answer B has small issues of its own: 'about 880 under' rounds the input's 882 rather than inventing a figure, 'you're doing great' on protein is a bit generous at 62 of 130 g, '~5 bottles behind' misreads the input, and it does not hedge about the sparse data. Even so, B is clean, warm, specific and on-goal, while A's broken output makes it less fit to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-first-day-no-logs",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the given range and protein, respect the shifting retail schedule and closing-night fast food, and hedge on early data. B states that 17 lb at 0.5 lb/week is roughly 34 weeks and that this fits summer. That claim is unsupported because the current date isn't given, and 34 weeks is likely longer than \"by summer,\" so B is not honest about the timeframe. A also claims \"on track by summer\" without checking, but hedges more lightly, and its prose is tighter and more phone-friendly with sharper insights (don't skip meals before a close, the floor matters). Both misread water slightly (A says \"about a bottle in\"; B echoes 5 bottles as if it were the current amount), but A is cleaner and more focused overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both plans use Sam's real numbers, retail closing shifts, fast food and walking goal, and both hedge as an early read. A miscalculates protein: it calls 132 g 'about 0.8 g per lb of goal weight' when it is about 0.9. It also asserts that 34 weeks fits a summer target without knowing the date. B's 'on track' headline overclaims, but its skip-meals-before-close insight reinforces the calorie floor. B is also tighter and warmer, so B edges ahead.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-first-day-no-logs",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the given range, hedge as an early read, use Sam's shifts, closing-night fast food and walking, and add no invented facts. B does the timeframe math honestly: 17 lb at 0.5 lb/week is about 34 weeks, which may not actually fit 'by summer', though B calls it 'plenty of room' without knowing the date. A confidently says 'on track for 145 by summer' without that check, and also claims chain grilled chicken gives ~30-40g protein, a generic figure rather than one about Sam. B is somewhat more practical (eat before the shift, pack a snack) but wordier; overall A is tighter and warmer, while B is more transparent, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both are specific to Sam: shifts, closing nights, fast food, walking, the range and the early-data hedge. Answer A computes 34 weeks for 17 lb and still says 'by summer' has plenty of room, an unverified claim since summer's date isn't known; B likewise asserts it fits by summer, with a headline saying 'on track'. B is warmer, frames the floor as protecting energy, and gives practical closing-night help without shaming fast food, though its '30\u201340g' chain figure is general food info rather than a fact about Sam. A's 'Logging today' and its fat-watch point are fine. B reads better for a phone and better teaches eating enough, so it is slightly better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-knee-injury",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is clear and honest: it ties the slow 0.2 lb/week trend to eating about 300 kcal over the ceiling, and its 5-month framing is roughly right (17 lb at ~1 lb/week is about 4 months). Its one wobble is calling 5 months 'aggressive', which slightly contradicts its own maths. Answer B has more errors: its headline says 'on track' while the assessment says the pace is too slow, its timeframe arithmetic is muddled, and it misreads Saturday as a pool day when the pool is open Mon/Wed/Fri. B also adds generic filler (protein g/kg guidance, hormone talk, 'second helping') that isn't about Sam. Both respect the knee injury and propose sound ranges, but A is more coherent and more specific to Sam.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A includes invented and inaccurate details. It says 'you're hitting Mon and Sat well' for swimming, even though the pool is open Mon/Wed/Fri. It also cites a 1.6\u20132.2 g/kg protein claim, and its timeframe math (0.5\u20131 lb/week, '2\u20134 more lb per month') is muddled. Answer B is tighter and phone-friendly, correctly names the ~300 kcal gap over the ceiling as the driver, and respects the knee constraint. However, its timeframe framing is inconsistent: its headline says 'not in 5 months' while its strategy says 4\u20135 months is doable, and it calls protein 'close' despite a ~40 g gap. On balance B is warmer, more specific and has fewer errors.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-knee-injury",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers use real data, respect the meniscus limit, and are honest about the 5-month timeframe. A is warmer and more concise, and it ties protein to the after-school snacking; its ~0.8 lb/week requirement is a reasonable derivation, not an invented fact. B is long and dense for a phone, calls Sam 'on track' in its headline while contradicting that, says protein is 'close' when it is about 40g short, and says 'aim for the floor', which nudges toward the low end. A is clearer, kinder and more actionable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers use the real numbers and respect the knee: swim Mon/Wed/Fri, no running. Answer A has problems: its headline says \"on track\" while it also says the timeframe needs a reset, it writes \"Mon/Wed/Fri-ish\", it tells Sam to \"aim for the floor\", and its changelog calls it a \"5-month plan\", which contradicts its own reset. A also lists generic macro guidance and runs long. Answer B is more honest and warmer: it names the realistic pace for 5 months (~0.8 lb/week), ties the protein advice to Sam's after-school grading snacks, uses a plausible ~88 g protein average, and is phone-friendly. One minor quibble is that B suggests jerky, though the hummus lunch doesn't establish that Sam is vegetarian.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-maintain-after-goal",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is accurate, warm and specific: it addresses Sam's fear of regaining, correctly notes they're eating below the floor, and encourages eating more without errors. Answer B has factual problems: it says \"today's 105 g with dinner still to finish\" when dinner is already logged, and it calls the long walk a \"Sunday walk\" while citing Saturday. It also gives a muddled claim that eating below maintenance would drive weight back up, and its 1.6 g/kg protein reasoning is unrequested padding. A is cleaner and more correct.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A has factual errors: it swaps the Saturday walk and Sunday gym days in its 'Sunday walk' insight, and claims eating below maintenance would 'drive weight back up', which is confusing. It also says 'dinner still to finish' when dinner is already logged. Answer B speaks directly to Sam's fear of regaining, uses accurate numbers, and warmly encourages eating more; its only slip is calling 98\u2013115 g of protein 'dialed in' when that is slightly under target, a minor fault next to A's errors.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-maintain-after-goal",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers correctly flag the under-eating and keep the range. A speaks more directly to Sam's fear of regaining weight, and it is warmer and more concise. It does say \"protein is rock solid\" when every day fell short of 119 g. B is more accurate on protein, but it has errors of its own: it says the Sunday walk was on Sunday when the log shows Saturday, and it calls Tue/Thu/Sun/yesterday full-body sessions when they were split sessions. B is also longer, with a generic macro lecture, and it speaks less to Sam's emotional concern. On balance A better serves Sam.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B speaks directly to Sam's fear of regaining, reassures them warmly with their own data, and gives concrete additions built on foods they already log. Answer A has an invented or wrong detail: it calls Tuesday, Thursday, Sunday and yesterday \"full-body work\", but the logs show split sessions. A also adds an unsourced g/kg claim and is wordier. B has a small slip in saying they \"lost the weight by eating ~1,700/day\" (an inference, not in the input) and calls 98 g protein \"rock solid\" against a 119 g target, but overall it is more personal and more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "A is warm and specific, but it says the 0.5 lb/week pace is right without ever giving Sam a realistic timeline for the 4-month goal, and its \"5 of the last 6\" logging claim is shaky. B says plainly that the pace points to January 2028 and offers a realistic 4-month checkpoint, uses Sam's real foods, water, shift times and off-day pattern, and hedges on 5 logged days. B has flaws: it calls a below-floor 1,951 day \"too much\", and its \"5\u20138 lb\" checkpoint figure overstates the ~5 lb that 0.3 lb/week gives over 4 months. Even so, B covers the timeframe honesty and the schedule-specific guidance more completely, so it is better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A contradicts itself, calling a 1,951-kcal day \"too much\" right after noting it is under the floor, and it never gives a clear realistic timeframe. B correctly flags that most days fell below the floor, names the leg session, and keeps the prose shorter and warmer for a phone. B's \"5 of the last 6\" logging claim is a slight stretch, and it is vaguer on the realistic timeline, but A's under-eating framing error is the bigger fault.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B contains invented or contradictory claims: it says Sam is 'logging every day' and 'logged five days in a row', while the input shows a 2-day streak with a gap on Fri Nov 20. Its realistic target is internally inconsistent (0.5 lb/week over 4 months is about 8 lb, so 152 lb, but it gives a range of 152\u2013154). It also calls the 3am vending chips 'dinner' timing loosely. Answer A is specific, accurate to the data, flags the under-floor days, gives an honest timeline and fits the night shifts, so A is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A invents facts: it says Sam logged \"every day this week\" and \"five days in a row\" when the streak is 2, and its realistic-target math (0.5 lb/week giving 6\u20138 lb by spring) is muddled. It also skips the under-floor days and says the vending dinner and sandwich had low protein in a confusing way. Answer B is accurate: it uses the 2-day streak, flags the real days below the floor (1,580 and 1,700), and gives an honest timeframe (about 1 lb/week needed versus 0.3) with a path forward that respects night shifts. B also has some flaws, like suggesting gains will compound through protein, but these are minor next to A's invented facts.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-vegetarian",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific to Sam: they keep the range, flag the protein gap of about 57 g against 130 g, respect the vegetarian diet and the dislike of protein powder, and give the realistic June 2027 timeline. B adds useful touches, such as the water insight and the high-fat note, but it states wrong figures about Sam. Reaching 145 lb by December would need about 3 lb/week over roughly five weeks, not ~1.5 lb/week, and the 152\u2013154 lb year-end checkpoint does not match the current pace (about 157\u2013158 lb). A's only slip is a mild gloss of \"in range nearly every day\" when several days fell under the floor, so it is the safer and more accurate plan.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers respect the vegetarian diet and the no-powder preference, flag the protein gap with real numbers, and say plainly that a year-end finish is unrealistic. A has accuracy slips: it says calories sat in range when 1,640 and 1,680 are below the 1,758 floor, it says 'remaining meals' when dinner is already logged, it invents a 0.75 lb/week projection to 'early 2027', and it adds resistance work the person never mentioned. B is warmer, ties advice to today's actual foods, and warns against under-eating, but it also overstates 'calories in range nearly every day' and omits water. On balance B is cleaner and better tailored, though neither notices the days below the floor.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-vegetarian",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A is specific and warm and respects the vegetarian, no-powder and work-cafeteria constraints, but it says every day landed inside the range when 1,640 and 1,700 are below the floor. Its timeframe note is also vague, never giving a realistic end-of-year target. Answer B gives a concrete realistic target (152\u2013153 lb by year end) and names the June 2027 pace, but has its own errors: it calls the pasta primavera a cafeteria lunch when it was dinner, and its 'five of seven' count is muddled. B is also much longer than suits a phone, though its honest timeframe reframe and firm-floor guidance edge out A's factual slip about the range.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A fits the vegetarian, no-powder and cafeteria constraints and gives a concrete realistic end-of-year figure, but it invents and garbles numbers: \"about 2 lb/week\" and \"152\u2013153 lb\" by year end do not follow from 160 lb at 0.5 lb/week over about five weeks, and \"five of seven days inside or just under the floor\" is muddled. Answer B is warmer and tighter, respects every constraint, and its insights catch protein, calories, the cafeteria lunch and water. B also has slips: it says every day was inside the range when 1,640 and 1,680 fell below the floor, \"nearly protein-free\" is an exaggeration, and it never gives a concrete realistic end-of-year target. B's errors are smaller than A's invented arithmetic, so B is the better answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-very-low-intake",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is specific and warm: it explains why eating more helps, ties Sam's tiredness and cold to the low intake, and states plainly what the 3 weeks will realistically deliver (~4 lb). It also stays true to the input. Answer B has several flaws: it claims the higher-protein days 'were not your biggest drops', which is invented since there is no daily weight data. It gives an inconsistent range (1,250\u20131,400 vs 1,246\u20131,396). Its timeframe advice is muddy and doesn't plainly say 145 won't be reached in 3 weeks, and it adds an unprompted cut to 3\u20134 spin sessions.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B states plainly that the 3-week goal of reaching 145 lb is unrealistic and gives the realistic version (~4 lb by the wedding). Answer A's timeframe line is muddled ('ambitious... ~1\u20131.5 lb/week is realistic') and never says 145 won't happen in 3 weeks. A also invents a pattern claim ('highest-protein days were not your biggest drops') that has no support in the input, and it contradicts the stated 1,246\u20131,396 range by saying '1,250\u20131,400'. B ties its points to the person's real routine (coffee until 2pm, 6am spin, cold and exhausted) with warm teaching and no shame, though its protein rationale is loose.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-very-low-intake",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A has factual slips: it says the remaining loss is ~17 lb, but from 158 to 145 it is 13 lb. It says \"5am classes\" when Sam said 6am. It mentions \"the dress\" without knowing what Sam will wear. Answer B gets the numbers right (158 to 145, ~4 lb/week, 4 lb lost since 162, a realistic 155\u2013156 lb by the wedding), hedges with \"early read\", and teaches warmly why eating more helps. B is somewhat longer, but it is accurate and specific, while A invents or misstates details.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers use the input's real numbers, set the same range, frame eating more warmly, and say plainly that 145 in three weeks is unrealistic. Answer B contradicts itself and the input: it says '5am classes' when the input says 6am, and it calls the black coffee 'fasting until 2pm' without noting the 228 kcal logged. Its 'in the dress' is also a small invented detail, since the input never says what Sam will wear. Answer A gives a concrete realistic wedding target (about 155\u2013156 lb) that follows from the stated trend, and stays accurate apart from a mild assumption that one 6am spin is five a week.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-weekend-pattern",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A's headline claims Sam is on track for 145 by August, but 158 to 145 is 13 lb in roughly 9 months, which is feasible at ~1 lb/week, so the claim is arguably reasonable. A's weekend math (2,000\u20132,200 on those nights) is concrete, though it misstates weekday protein as 'solid' and 'strong' when 90\u2013100g is well short of the 129g target. Answer B wrongly says 1 lb/week would only reach ~150 by August, which is a factual error that is too pessimistic, though it hedges well and flags protein more accurately. Both have flaws, but B's incorrect realism claim directly misleads Sam about his goal, while A's errors are smaller and its plan is actionable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B's headline claims Sam is \"on track for 145 by August\". That is dishonest: the input says the pace reaches the goal around April 2029, and 13 lb by August is a stretch. B also calls weekdays \"90\u2013100g protein\" solid when the target is 129g, and invents a \"late gym day\". Answer A is honest about the timeframe, gives a realistic August version (~150 lb), hedges on the limited data, keeps the nights out, and flags protein short of target, so it is clearly better despite minor issues.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-weekend-pattern",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's headline says \"On track\" even though the data show a 0.1 lb/week pace. Its claim that softening weekends \"roughly doubles\" the rate to about 0.9 lb/week is shaky arithmetic. It also says the 1,480\u20131,500 days dip under the floor, which is barely true, but its biggest problem is an invented fact: \"most of the day gone\" for water. Answer B is more honest about the timeframe, gives a realistic August target and hedges on the limited data. Its weekend math is slightly loose and its output leaks some malformed markup (\"</strategy><parameter...\"), but it is more accurate and honest, so it is the better answer overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is specific, honest about the 2029 pace, and offers a realistic August target of about 150\u2013152 lb; it contradicts itself slightly by saying 'most days' in range and carries a stray markup artifact. Answer B's headline 'On track for 145' contradicts the data, it implies reaching near goal by August (13 lb in about 8 months needs over 1.5 lb/week, so this is overpromising), and it invents a '~0.9 lb/week' figure while also calling protein 'solid'. B's floor-dipping insight is a nice catch but trivial, so A is more honest and accurate overall.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "build-sam-ambitious-timeframe",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-ambitious-timeframe",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-ambitious-timeframe",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-alex-little-time",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-alex-little-time",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-alex-little-time",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

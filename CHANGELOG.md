@@ -37,8 +37,13 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   copy in the coach's notes would go stale and be quoted back. The app now removes any such
   sentence before saving the notes, and the memory runs on the same cheaper, faster model as
   the short notes (EVAL_REPORT 36).
+- A plan whose insight cards came back in a broken but readable format now shows them
+  (EVAL_REPORT 39).
 - A meal estimate that comes back without its one-line note is still shown, instead of an
   error (EVAL_REPORT 37).
+- **Every AI feature now runs on the model that measured best for it** (EVAL_REPORT 39): the
+  morning brief, the insight line and Vita's memory on a stronger model, the checklist and
+  typed meals on a newer one, and the plan's research on a newer, cheaper one.
 - **Vita's chat and the chat suggestion chips run on a faster model**, about an eighteenth of
   the cost. In 30 test conversations its replies were judged better more often than not,
   especially at remembering what you said earlier (EVAL_REPORT 37, 38).

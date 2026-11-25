@@ -111,6 +111,18 @@ extension AIConfig {
             .anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 39"),
             .openai: AITaskDefault(model: "gpt-5.6-luna", evidence: "EVAL_REPORT 22"),
         ],
+        // The checklist: claude-sonnet-5-5 against claude-sonnet-5, rules equal (100%), a blind
+        // judge preferred it 23 to 9 (+0.29, 0.00 to +0.56), and it is a little cheaper and
+        // faster (EVAL_REPORT 39). claude-haiku-5-5 lost to claude-sonnet-5 (EVAL_REPORT 36).
+        .checklistPlan: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT 39")],
+        // A typed meal: on household measures (meal_describe/v4) claude-sonnet-5-5 is within 20%
+        // as often as claude-sonnet-5 (94% each) at about 30% less, and faster (EVAL_REPORT 39);
+        // claude-haiku-5-5 was worse (EVAL_REPORT 37).
+        .mealDescribe: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT 39")],
+        // The plan's web research: a blind judge preferred claude-opus-5-5's brief to
+        // claude-opus-4-8's 6 to 0 (+0.75, +0.38 to +1.00) on 8 cases, every brief searched,
+        // at about 15% less (EVAL_REPORT 39).
+        .planResearch: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 39")],
         // The recap: claude-sonnet-5 passed 88% against 80% for claude-haiku-5-5, whose failures
         // were mostly its own arithmetic on the person's figures (EVAL_REPORT 35). Kept, now
         // by measurement; accuracy of the numbers is the point of this card.

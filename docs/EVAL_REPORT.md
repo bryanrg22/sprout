@@ -48,6 +48,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 36 | Quality judged, not only rules: a pairwise judge, the memory fold's figures removed in code, nine tasks run | 2026-11-25 |
 | 37 | Three new datasets: meal photos from Nutrition5k, meals in household measures, and thirty coach conversations | 2026-11-25 |
 | 38 | Every task's model decided on the evidence: the chat and the chips move to the cheaper model | 2026-11-25 |
+| 39 | Every task tested: upward as well as down, the plan's three calls, and the two newest models | 2026-11-25 |
 
 ---
 
@@ -2326,4 +2327,119 @@ The gateway already allows `claude-haiku-5-5`. `AITaskModelTests` pins the new t
 - The 30 conversations were written by a model. The first real chats on the new model should
   be read; the field log (Settings, version tapped seven times) records each turn.
 - Nothing here was seen in the app on a phone.
+
+## 39. Every task tested: upward as well as down, the plan's three calls, and the two newest models (2026-11-25)
+
+**Approved by the owner** ("test for everything!", then "go ahead, run all of them"). **Spent:
+about $32.56**: $23.71 for the runs, $7.10 for the judge, and about $1.75 for 175 web searches,
+which the token prices do not include. **Spend to date: about $64.63.** Every run has 1 to 3
+repeats on committed trees (`f09fb30` and its parent). The judge and rule are as in sections
+36 and 38: the cheapest candidate whose interval does not favour the shipped model, unless
+its misses are the feature's point. A candidate that shows the person a visibly broken result
+at a non-trivial rate is not adopted.
+
+### 1. The short notes, compared upward
+
+Sections 35 and 36 compared `claude-haiku-5-5` only with the older `claude-haiku-4-5`. Against
+`claude-sonnet-5` (runs `100915`, `101653`, `101741`, `101905`, `102319`):
+
+| Task | Judge: `sonnet-5` / `haiku-5-5` / tie | net (95%) | Rules | Model now |
+|---|---|---|---|---|
+| Daily brief | 20 / 2 / 16 | **+0.47 (+0.24 to +0.70)** | 100% / 97% | **`claude-sonnet-5`** |
+| Insight line | 21 / 6 / 30 | **+0.26 (+0.05 to +0.47)** | equal | **`claude-sonnet-5`** |
+| Memory fold | 23 / 8 / 5 | **+0.42 (+0.06 to +0.75)** | equal | **`claude-sonnet-5`** |
+| Weekly note | 21 / 16 / 10 | +0.11 (−0.21 to +0.43) | 98% / 100% | `claude-haiku-5-5` |
+| Onboarding note | 12 / 13 / 14 | −0.03 (−0.28 to +0.26) | 87% / 96% | `claude-haiku-5-5` |
+
+What the judge's reasons show:
+- **Brief:** the cheaper model broke the brief's own format (two-sentence headlines, a
+  three-sentence body), once dropped a number, and once wrote "make up for", which the app's
+  guard caught.
+- **Memory:** `sonnet-5` wrote tighter catch-ups and cleaner retractions. It guessed a gender in
+  2 of 36 folds, against none; that is open.
+
+The three switched tasks run about once a day per person, so the cost is a few cents a month.
+
+### 2. The plan's three calls (`plan_build/v1`, 15 cases; `plan_review/v1`, 14; research on 8 build cases)
+
+The three evals:
+- **Build** runs the app's own prompt, schema and structured call without the live research
+  phase, so the authoring model is isolated.
+- **Review** runs `PlanService.review` itself.
+- **Research** runs the research call with its web-search tool.
+
+No eval touches `ResearchCache`. Where each differs from the app is stated in
+`SproutEvals/PlanEvals.swift`. The baseline is the shipped `claude-opus-4-8`.
+
+| | Build: rules / judge net | Review: rules / judge net | Research: judge net |
+|---|---|---|---|
+| `claude-opus-4-8` (shipped) | 100% | 89% (3 dropped network connections) | |
+| `claude-opus-5-5` | 40%: **17 of 30 cut off** at the app's 2,200-token cap (its thinking cannot be switched off) / +0.38 (−0.23 to +0.91) on the 13 usable pairs | 93% / +0.28 (−0.12 to +0.64) | **6 / 0 / 2, +0.75 (+0.38 to +1.00)** |
+| `claude-sonnet-5` | 53%: **12 of 30 plans had no insights** (below) / **−0.73 (−0.97 to −0.43)** | 93%, 2 without insights / −0.20 (−0.58 to +0.20) | −0.12 (−0.62 to +0.38) |
+| `claude-haiku-5-5` | 87%: a missing range or one below the safe floor in 4 / **−0.50 (−0.73 to −0.27)** | 82%: the same in 4 / 0.00 (−0.36 to +0.36) | **−0.75 (−1.00 to −0.38)** |
+
+Per 1,000 calls: build $51.87 / $52.99 / $22.34 / $1.16; review $37.42 / $42.01 / $16.97 /
+$0.94; research $442.75 / $376.77 / $187.32 / $8.29. Every research call used its five
+searches and read about 85,000 tokens of search results.
+
+**Decisions:**
+- **Research → `claude-opus-5-5`**: preferred beyond noise, and about 15% cheaper.
+- **Build stays on `claude-opus-4-8`**. The other two candidates are worse beyond noise, and
+  `claude-opus-5-5` is cut off by the app's token cap. Raising the cap for that model is a
+  follow-up worth measuring.
+- **Review stays on `claude-opus-4-8`**. The cheaper candidates are within noise on the judge,
+  but `claude-haiku-5-5` set a range below the safe floor or none at all, and `claude-sonnet-5`
+  left a plan without insights 7% of the time. Both are visible on the plan card, and the
+  shipped model did neither.
+
+**The plans without insights, a defect found and partly fixed.** `claude-sonnet-5` sometimes
+broke the forced tool call for `insights`:
+- **Most often:** a fragment such as `"\n<parameter name=\"tone\">watch"`, or the field
+  left empty with the calories at 0. Nothing in the reply can be recovered.
+- **3 times:** the list written as `<parameter name="item">{…}` chunks, one JSON object each.
+
+`StructuredOutputRepair` now reads the second shape, for any property the schema declares as
+a list of objects, but only when every chunk is one JSON object and the string holds nothing
+else. A fragment, a chunk that does not parse, or text around the chunks is still left for the
+decoder to reject. The earlier "leaked markup is not repaired" test still passes; two new
+tests. It is proven on the recorded shape, not regraded on those three replies: the records
+keep 4,000 characters of the reply, and those three were longer. Plans ship on
+`claude-opus-4-8`, which did neither.
+
+### 3. The two newest models on the strong tier
+
+`claude-sonnet-5-5` costs what `claude-sonnet-5` costs. It was run on every task now shipped
+on `claude-sonnet-5`, and `claude-opus-5-5` was run on meal photos too.
+
+| Task | Rules: `sonnet-5` / `sonnet-5-5` | Judge net for `sonnet-5-5` | Model now |
+|---|---|---|---|
+| Daily checklist (`105639`) | 100% / 100% | **+0.29 (0.00 to +0.56)** | **`claude-sonnet-5-5`** (a little cheaper and faster) |
+| Meal description, household (`110108`) | 94% / 94%, mean error similar | not judged | **`claude-sonnet-5-5`** (about 30% cheaper, faster) |
+| Food suggestions (`105440`) | 100% / **89%**: 6 of 54 gave one suggestion where the app requires two, so the card was blank | **+0.27 (+0.06 to +0.47)** | `claude-sonnet-5`: 11% blank cards |
+| Progress recap (`105912`) | 91% / 87%; invented a figure 3 times against once | +0.05 (−0.36 to +0.44) | `claude-sonnet-5`: its numbers are the point |
+| Meal photo (`110645`) | 43% / **29%** (−14%, −27% to −2%); `claude-opus-5-5` 31% | not judged | `claude-sonnet-5` |
+| Daily brief, insight line, memory fold | equal | +0.15, +0.02, −0.19, all within noise | `claude-sonnet-5`, which costs the same or less |
+
+Food is the case to revisit. `claude-sonnet-5-5`'s suggestions are judged better, and its only
+defect is answering with one suggestion. If the card accepted one, it would win outright. That
+is a product choice, left to the owner.
+
+`claude-sonnet-5-5` and `claude-opus-5-5` are added to the gateway's price table (prices from
+`Evals/prices.json`). The 58 gateway tests pass.
+
+### The table now
+
+| Model | Tasks |
+|---|---|
+| `claude-haiku-5-5` | Vita's chat, the chat chips, the weekly note, the onboarding note |
+| `claude-sonnet-5` | Food suggestions, the recap, meal photos, the daily brief, the insight line, the memory fold |
+| `claude-sonnet-5-5` | The daily checklist, a typed meal |
+| `claude-opus-4-8` | Plan build, plan review |
+| `claude-opus-5-5` | Plan research |
+
+### Not verified
+
+- The judge against a person: the owner's labels are still pending (1 of 45).
+- None of today's new defaults has been seen in the app on a phone.
+- The datasets are 8 to 30 cases, and the plan and coach datasets were written by a model.
 
