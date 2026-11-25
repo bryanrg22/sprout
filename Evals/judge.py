@@ -224,7 +224,7 @@ def main():
     ap.add_argument("run")
     ap.add_argument("--baseline", required=True)
     ap.add_argument("--candidate", required=True)
-    ap.add_argument("--repeats", default="0,1", help="repeat indices to judge (default 0,1)")
+    ap.add_argument("--repeats", default="0,1,2", help="repeat indices to judge (default 0,1,2)")
     ap.add_argument("--controls", type=int, default=2, help="cases given control pairs (default 2)")
     ap.add_argument("--dry-run", action="store_true", help="build the requests and stop; spends nothing")
     args = ap.parse_args()
