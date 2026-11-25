@@ -83,6 +83,25 @@ Caddy gets the HTTPS certificate on first start. Then set `AIGateway.address` in
 Update: `git pull && docker compose up -d --build`. Logs: `docker compose logs -f gateway`.
 Today's spend: `docker compose exec gateway node -e "const {DatabaseSync}=require('node:sqlite');console.log(new DatabaseSync('/data/gateway.sqlite').prepare('select key_id, usd, requests from spend where day=date()').all())"`.
 
+## Running it on a host that already serves other things (how it runs today)
+
+Deployed 2026-11-25 on the owner's droplet beside other services, where port 443 is taken
+and memory is short (1 vCPU, 1 GB, now with a 1 GB swap file), so without Docker:
+
+- Node 24 LTS in `/opt/sprout-gateway/node` (checksum-verified; the system Node is left alone),
+  the code in `/opt/sprout-gateway/src` (this repository), built there with `npm ci && npm run
+  build && npm prune --omit=dev`.
+- `sprout-gateway.service`: user `sproutgw`, `EnvironmentFile=/etc/sprout-gateway.env` (the
+  owner pastes the keys; mode 640), `HOST=127.0.0.1 PORT=8790`, data in
+  `/var/lib/sprout-gateway`, `MemoryMax=160M`, `CPUQuota=50%`, read-only system.
+- `sprout-caddy.service`: Caddy 2 (checksum-verified binary) as user `sproutcaddy`, HTTPS on
+  **port 8446** for `137-184-90-238.sslip.io` with a Let's Encrypt certificate (HTTP-01 on port
+  80), `MemoryMax=120M`, `CPUQuota=50%`.
+- The app's address: `https://137-184-90-238.sslip.io:8446` (`AIGateway.address`).
+
+Update: `cd /opt/sprout-gateway/src && git pull && cd server && PATH=/opt/sprout-gateway/node/bin:$PATH npm ci && npm run build && npm prune --omit=dev && systemctl restart sprout-gateway`.
+Logs: `journalctl -u sprout-gateway -f`. Health: `curl https://137-184-90-238.sslip.io:8446/health`.
+
 ## Developing
 
 ```bash

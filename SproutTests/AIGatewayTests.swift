@@ -138,6 +138,17 @@ final class AIGatewayTests: XCTestCase {
         }
     }
 
+    /// The deployed address carries a port; every URL built from it keeps the host and port.
+    func testTheDeployedAddressIsHTTPSWithItsPort() throws {
+        let base = try XCTUnwrap(AIGateway.baseURL)
+        XCTAssertEqual(base.scheme, "https")
+        XCTAssertEqual(base.host, "137-184-90-238.sslip.io")
+        XCTAssertEqual(base.port, 8446)
+        XCTAssertEqual(base.appending(path: "health").absoluteString, "https://137-184-90-238.sslip.io:8446/health")
+        XCTAssertEqual(base.appending(path: "anthropic/v1/messages").absoluteString,
+                       "https://137-184-90-238.sslip.io:8446/anthropic/v1/messages")
+    }
+
     func testTheSignedBytesAreMethodRouteTimestampThenTheBody() {
         let body = Data(#"{"a":1}"#.utf8)
         let data = AIGateway.clientData(route: "/anthropic/v1/messages", timestamp: "1764000000000", body: body)

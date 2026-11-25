@@ -15,8 +15,10 @@ import Foundation
 /// older hardware), and whenever a scoped runtime is in force (unit tests, evaluations, UI
 /// flows), so tests never reach it.
 enum AIGateway {
-    /// The gateway's address, set when it is deployed (`server/README.md`). Empty means off.
-    static let address = ""
+    /// The gateway's address (`server/README.md`). Empty means off. Deployed 2026-11-25 on the
+    /// droplet beside the phone-agent services: HTTPS on port 8446 (Caddy, Let's Encrypt;
+    /// port 443 belongs to another service there), the gateway itself on 127.0.0.1 only.
+    static let address = "https://137-184-90-238.sslip.io:8446"
 
     /// What a client carries instead of a key when the gateway adds the key.
     static let placeholderKey = "sprout-gateway"

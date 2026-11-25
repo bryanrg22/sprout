@@ -7,6 +7,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **The built-in AI is live**: the gateway runs at `137-184-90-238.sslip.io:8446` and the app
+  points at it, so a TestFlight build from here has AI again.
 - **Built-in AI: install and it works.** Nobody using Sprout needs an API key any more.
   The AI runs through a small gateway (`server/`) that holds the keys, answers only a
   genuine copy of the app on a real iPhone (Apple App Attest), pays only for the models
