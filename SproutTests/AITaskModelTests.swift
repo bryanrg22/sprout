@@ -32,13 +32,13 @@ final class AITaskModelTests: XCTestCase {
     }
 
     private let expected: [AITask: (anthropic: String, openai: String)] = [
-        .coachTurn:        ("claude-sonnet-5", "gpt-5.6-terra"),
+        .coachTurn:        ("claude-haiku-5-5", "gpt-5.6-terra"),          // Anthropic: EVAL_REPORT 37
         .mealPhoto:        ("claude-sonnet-5", "gpt-5.6-terra"),
         .mealDescribe:     ("claude-sonnet-5", "gpt-5.6-terra"),
         .foodSuggestions:  ("claude-sonnet-5", "gpt-5.6-terra"),
         .progressSummary:  ("claude-sonnet-5", "gpt-5.6-terra"),           // Anthropic: EVAL_REPORT 35 (kept by measurement)
         .checklistPlan:    ("claude-sonnet-5", "gpt-5.6-terra"),
-        .coachPrompts:     ("claude-sonnet-5", "gpt-5.6-terra"),
+        .coachPrompts:     ("claude-haiku-5-5", "gpt-5.6-terra"),          // Anthropic: EVAL_REPORT 36
         .planBuild:        ("claude-opus-4-8", "gpt-5.6-sol"),
         .planReview:       ("claude-opus-4-8", "gpt-5.6-sol"),
         .planResearch:     ("claude-opus-4-8", "gpt-5.6-sol"),

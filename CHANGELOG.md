@@ -39,6 +39,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   the short notes (EVAL_REPORT 36).
 - A meal estimate that comes back without its one-line note is still shown, instead of an
   error (EVAL_REPORT 37).
+- **Vita's chat and the chat suggestion chips run on a faster model**, about an eighteenth of
+  the cost. In 30 test conversations its replies were judged better more often than not,
+  especially at remembering what you said earlier (EVAL_REPORT 37, 38).
 - The built-in AI charges Sonnet 5 at its real price ($2 / $10 per million tokens, not
   $3 / $15), so a phone's daily allowance lasts as long as it should.
 

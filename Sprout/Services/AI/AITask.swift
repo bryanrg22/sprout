@@ -65,6 +65,17 @@ extension AIConfig {
     /// (not measured); add a row only together with the EVAL_REPORT section
     /// that justifies it, and `AITaskModelTests` pins every resolved value.
     static let measuredDefaults: [AITask: [AIProvider: AITaskDefault]] = [
+        // Vita's chat turn: over 30 multi-turn conversations run through CoachTurnEngine a blind
+        // judge preferred claude-haiku-5-5 to claude-sonnet-5, 50 to 15 (net +0.39, +0.20 to
+        // +0.58), with every reply usable and the right tool as often or more; on the first
+        // turn alone it chose the right tool 102/102 twice and 101/102 (EVAL_REPORT 10). About
+        // an eighteenth of the cost and twice as fast (EVAL_REPORT 37). Switched by the
+        // owner's decision before the judge was checked against the owner's labels (EVAL_REPORT 38).
+        .coachTurn: [.anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 37")],
+        // The chat chips: both 100% on the rules, and the judge leaned to claude-haiku-5-5 (25 to
+        // 13, +0.25, -0.04 to +0.54), an interval that does not favour the shipped model, at a
+        // twenty-first of the cost (EVAL_REPORT 36, decided in 38).
+        .coachPrompts: [.anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 36")],
         // 13 cases x 3 repeats, three runs: both pass every case at a fraction of the price of
         // the tier default (gpt-4.1-mini passed 77-92% and is deprecated; haiku-4-5 costs 7x).
         .dailyBrief: [

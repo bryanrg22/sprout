@@ -47,6 +47,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 35 | Five tasks measured on the current prompts: three move to the cheaper model, the recap keeps its own | 2026-11-24 |
 | 36 | Quality judged, not only rules: a pairwise judge, the memory fold's figures removed in code, nine tasks run | 2026-11-25 |
 | 37 | Three new datasets: meal photos from Nutrition5k, meals in household measures, and thirty coach conversations | 2026-11-25 |
+| 38 | Every task's model decided on the evidence: the chat and the chips move to the cheaper model | 2026-11-25 |
 
 ---
 
@@ -2290,4 +2291,39 @@ The switch waits for the owner's labels.
   preparation are covered by unit tests only.
 - `meal_photo/v1` is one cafeteria; `coach_conversations/v1` is 30 written cases, 3 to 5
   turns long, with no photo and no confirm or decline of a proposal.
+
+## 38. Every task's model decided on the evidence: the chat and the chips move to the cheaper model (2026-11-25)
+
+**The owner's decision** ("switch to the models you think are best due to the evals"). This
+sets aside the rule of sections 36 and 37 that a switch resting on the judge waits for the
+owner's labels. No model was called for this section.
+
+The rule applied to every task is the one used since section 35: **the cheapest candidate
+whose interval does not favour the shipped model, unless what it gets wrong is the point of
+the feature.**
+
+| Task | Model | Why |
+|---|---|---|
+| Vita's chat turn | **`claude-haiku-5-5`** (was `claude-sonnet-5`) | Judge 50 to 15, net +0.39 (+0.20 to +0.58), wholly in its favour. Every reply usable, and the expected tool 100% against 98.6% (section 37). On the first turn alone it chose the right tool 102/102, 102/102 and 101/102 against 102 each (section 10's runs). An eighteenth of the cost, twice as fast. |
+| Chat chips | **`claude-haiku-5-5`** (was `claude-sonnet-5`) | Both 100% on the rules. Judge 25 to 13, +0.25 (−0.04 to +0.54), not favouring the shipped model. A twenty-first of the cost (section 36). |
+| Food suggestions | `claude-sonnet-5`, unchanged | The interval holds zero (−0.11, −0.44 to +0.22), so the bare rule would switch. But the point estimate favours the shipped model, and the judge's reasons for it are the feature's purpose: chicken or whey suggested to a person whose every logged food is vegetarian, and a food already eaten today pitched again (section 36). The same exception as the recap. |
+| Daily checklist, progress recap, meal description, meal photo | `claude-sonnet-5`, unchanged | The cheaper model is worse beyond noise on each (sections 35 to 37). |
+| Daily brief, insight line, weekly note, onboarding note, memory fold | `claude-haiku-5-5`, unchanged | Sections 10, 35 and 36. |
+| Plan build, review, research | `claude-opus-4-8`, unchanged | No dataset. |
+
+**Is the evaluation of the chat the path that ships?** Yes, on two counts that were checked:
+- The eval drives `CoachTurnEngine.send`, the chat's own path.
+- The Anthropic client resolves the model it sends (`AIRuntime.resolve`) before it chooses
+  that model's thinking setting, so the scoped model of the eval got the settings it gets in
+  the app.
+
+The gateway already allows `claude-haiku-5-5`. `AITaskModelTests` pins the new table.
+
+**What is still open**, so that this can be reversed on evidence:
+- The judge has not been checked against a person: the owner's labels (1 of 45 so far) are
+  still the test of these two switches. `Evals/judge_agreement.py score` reports the
+  agreement; a low one reopens both.
+- The 30 conversations were written by a model. The first real chats on the new model should
+  be read; the field log (Settings, version tapped seven times) records each turn.
+- Nothing here was seen in the app on a phone.
 
