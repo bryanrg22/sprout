@@ -36,16 +36,16 @@ final class AITaskModelTests: XCTestCase {
         .mealPhoto:        ("claude-sonnet-5", "gpt-5.6-terra"),
         .mealDescribe:     ("claude-sonnet-5", "gpt-5.6-terra"),
         .foodSuggestions:  ("claude-sonnet-5", "gpt-5.6-terra"),
-        .progressSummary:  ("claude-sonnet-5", "gpt-5.6-terra"),
+        .progressSummary:  ("claude-sonnet-5", "gpt-5.6-terra"),           // Anthropic: EVAL_REPORT 35 (kept by measurement)
         .checklistPlan:    ("claude-sonnet-5", "gpt-5.6-terra"),
         .coachPrompts:     ("claude-sonnet-5", "gpt-5.6-terra"),
         .planBuild:        ("claude-opus-4-8", "gpt-5.6-sol"),
         .planReview:       ("claude-opus-4-8", "gpt-5.6-sol"),
         .planResearch:     ("claude-opus-4-8", "gpt-5.6-sol"),
         .dailyBrief:       ("claude-haiku-5-5", "gpt-6-luna"),            // EVAL_REPORT 10
-        .insightLine:      ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // Anthropic: tier default; OpenAI: EVAL_REPORT 22
-        .weeklyReflection: ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // Anthropic: tier default; OpenAI: EVAL_REPORT 22
-        .onboardingNote:   ("claude-haiku-4-5-20251001", "gpt-6-luna"),    // Anthropic: tier default; OpenAI: EVAL_REPORT 22
+        .insightLine:      ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
+        .weeklyReflection: ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
+        .onboardingNote:   ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
         .memoryFold:       ("claude-haiku-4-5-20251001", "gpt-5.6-luna"),  // Anthropic: tier default; OpenAI: EVAL_REPORT 22
     ]
 

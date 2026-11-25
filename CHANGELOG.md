@@ -28,6 +28,11 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   template. The prompt now uses words only (EVAL_REPORT 34).
 - **The progress recap no longer works out its own figures**: the prompt now says to use
   each figure exactly as given, the rule the app always held (EVAL_REPORT 34).
+- **Three short notes (the insight line, the weekly reflection, the onboarding note) now use
+  a model about seven times cheaper and faster**, measured as good or better on every case
+  (EVAL_REPORT 35). The progress recap keeps its model, which measured more accurate.
+- A recap whose highlights came back in an unexpected shape is now read instead of showing
+  an error (EVAL_REPORT 35).
 - The built-in AI charges Sonnet 5 at its real price ($2 / $10 per million tokens, not
   $3 / $15), so a phone's daily allowance lasts as long as it should.
 

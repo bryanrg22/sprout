@@ -16,6 +16,7 @@
 #   repeats   how many times each case runs per model (default 1; use 3 to see variance)
 #   limit     only the first N cases (a cheap pilot); omit for the whole dataset
 #   SPROUT_EVAL_CASES=id1,id2 in the environment runs only those cases (to chase one failure)
+#   SPROUT_EVAL_BASELINE=<provider:model> adds a paired comparison with that candidate to the summary
 #
 # THIS SPENDS MONEY on the keys in the environment (ANTHROPIC_API_KEY, OPENAI_API_KEY).
 # The keys are read from the environment only; they are never written to a record.
@@ -59,6 +60,12 @@ json.dump({
     "commit": sh("git", "rev-parse", "HEAD"), "branch": sh("git", "rev-parse", "--abbrev-ref", "HEAD"),
     "dirty_files": [l for l in sh("git", "status", "--porcelain").splitlines() if l],
     "xcode": sh("xcodebuild", "-version").replace("\n", " "),
+    # What the answers depend on, pinned: the app's code (its prompts), the harness and its
+    # graders, and the price table. Git tree ids, so equal ids mean byte-identical folders;
+    # they describe the commit, so read them together with dirty_files.
+    "app_tree": sh("git", "rev-parse", "HEAD:Sprout"),
+    "harness_tree": sh("git", "rev-parse", "HEAD:SproutEvals"),
+    "prices_sha256": hashlib.sha256(open("Evals/prices.json", "rb").read()).hexdigest(),
     "dataset_sha256": datasets,
 }, open(os.path.join(out, "manifest.json"), "w"), indent=1)
 PY
@@ -89,6 +96,7 @@ else
   tail -c 4000 "$OUT/xcodebuild.log" > "$OUT/xcodebuild-tail.log"; rm -f "$OUT/xcodebuild.log"
 fi
 
-python3 "$ROOT/Evals/summarize.py" "$OUT"
+# SPROUT_EVAL_BASELINE=<provider:model> compares every candidate with the model that ships.
+python3 "$ROOT/Evals/summarize.py" "$OUT" ${SPROUT_EVAL_BASELINE:+--baseline "$SPROUT_EVAL_BASELINE"}
 echo "xcodebuild exit: $STATUS"
 echo "records: $OUT"
