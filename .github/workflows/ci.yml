@@ -81,8 +81,8 @@ jobs:
       - name: Verify unit test counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1212 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1212
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1220 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1220
 
       - name: Coverage by target
         if: ${{ !cancelled() }}
@@ -109,7 +109,7 @@ jobs:
 
       - name: Verify evaluation self-test counts
         if: ${{ !cancelled() }}
-        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 102 --max-skipped 14
+        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 104 --max-skipped 14
 
       - name: Upload result bundles
         if: ${{ !cancelled() }}
@@ -240,6 +240,13 @@ jobs:
           cp Evals/datasets/meal_describe/v1.jsonl /tmp/v1.before
           python3 Evals/datasets/meal_describe/build_v1.py > /dev/null
           diff /tmp/v1.before Evals/datasets/meal_describe/v1.jsonl
+      - name: meal_describe/v3.jsonl is what its build script produces
+        run: |
+          cp Evals/datasets/meal_describe/v3.jsonl /tmp/v3.before
+          python3 Evals/datasets/meal_describe/build_v3.py > /dev/null
+          diff /tmp/v3.before Evals/datasets/meal_describe/v3.jsonl
+      - name: Judge scripts parse
+        run: python3 -m py_compile Evals/judge.py Evals/judge_agreement.py
 
   # The built-in AI gateway (server/): its App Attest checks, store and routes, in the
   # Node version the droplet runs.

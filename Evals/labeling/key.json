@@ -1,0 +1,362 @@
+{
+ "checklistPlan-alex-lifter-no-bio-no-notes": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-lifter-no-bio-no-notes",
+  "repeat": 0,
+  "run": "20261125-084645-ChecklistPlan",
+  "task": "checklistPlan"
+ },
+ "checklistPlan-alex-soccer-bio": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-soccer-bio",
+  "repeat": 0,
+  "run": "20261125-084645-ChecklistPlan",
+  "task": "checklistPlan"
+ },
+ "checklistPlan-sam-lifter-notes": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-lifter-notes",
+  "repeat": 0,
+  "run": "20261125-084645-ChecklistPlan",
+  "task": "checklistPlan"
+ },
+ "checklistPlan-sam-no-training-bio-only": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-no-training-bio-only",
+  "repeat": 0,
+  "run": "20261125-084645-ChecklistPlan",
+  "task": "checklistPlan"
+ },
+ "checklistPlan-sam-soccer-maintain": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-soccer-maintain",
+  "repeat": 0,
+  "run": "20261125-084645-ChecklistPlan",
+  "task": "checklistPlan"
+ },
+ "coachPrompts-alex-lifter-bio-and-notes": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-lifter-bio-and-notes",
+  "repeat": 0,
+  "run": "20261125-084559-CoachPrompts",
+  "task": "coachPrompts"
+ },
+ "coachPrompts-sam-lifter-notes": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-lifter-notes",
+  "repeat": 0,
+  "run": "20261125-084559-CoachPrompts",
+  "task": "coachPrompts"
+ },
+ "coachPrompts-sam-no-training-bio-only": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-no-training-bio-only",
+  "repeat": 0,
+  "run": "20261125-084559-CoachPrompts",
+  "task": "coachPrompts"
+ },
+ "coachPrompts-sam-walker-bio-and-notes": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-walker-bio-and-notes",
+  "repeat": 0,
+  "run": "20261125-084559-CoachPrompts",
+  "task": "coachPrompts"
+ },
+ "coachPrompts-unnamed-walker": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "unnamed-walker",
+  "repeat": 0,
+  "run": "20261125-084559-CoachPrompts",
+  "task": "coachPrompts"
+ },
+ "foodSuggestions-alex-maintain-dinner": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-maintain-dinner",
+  "repeat": 0,
+  "run": "20261125-084337-FoodSuggestions",
+  "task": "foodSuggestions"
+ },
+ "foodSuggestions-alex-vegan-dinner": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-vegan-dinner",
+  "repeat": 0,
+  "run": "20261125-084337-FoodSuggestions",
+  "task": "foodSuggestions"
+ },
+ "foodSuggestions-sam-breakfast-treats-logged-most": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-breakfast-treats-logged-most",
+  "repeat": 0,
+  "run": "20261125-084337-FoodSuggestions",
+  "task": "foodSuggestions"
+ },
+ "foodSuggestions-sam-dinner-protein-already-hit": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-dinner-protein-already-hit",
+  "repeat": 0,
+  "run": "20261125-084337-FoodSuggestions",
+  "task": "foodSuggestions"
+ },
+ "foodSuggestions-sam-lunch-nearby-no-category": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-lunch-nearby-no-category",
+  "repeat": 0,
+  "run": "20261125-084337-FoodSuggestions",
+  "task": "foodSuggestions"
+ },
+ "insightLine-fuel-up-late": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "fuel-up-late",
+  "repeat": 0,
+  "run": "20261125-083709-InsightLine",
+  "task": "insightLine"
+ },
+ "insightLine-hydration-streak-5": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "hydration-streak-5",
+  "repeat": 0,
+  "run": "20261125-083709-InsightLine",
+  "task": "insightLine"
+ },
+ "insightLine-streak-3": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "streak-3",
+  "repeat": 0,
+  "run": "20261125-083709-InsightLine",
+  "task": "insightLine"
+ },
+ "insightLine-streak-week-7": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "streak-week-7",
+  "repeat": 0,
+  "run": "20261125-083709-InsightLine",
+  "task": "insightLine"
+ },
+ "insightLine-well-fueled-gain": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "well-fueled-gain",
+  "repeat": 0,
+  "run": "20261125-083709-InsightLine",
+  "task": "insightLine"
+ },
+ "memoryFold-alex-first-fold": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-first-fold",
+  "repeat": 0,
+  "run": "20261125-084102-MemoryFold",
+  "task": "memoryFold"
+ },
+ "memoryFold-alex-notes-and-a-short-lived-plan": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-notes-and-a-short-lived-plan",
+  "repeat": 0,
+  "run": "20261125-084102-MemoryFold",
+  "task": "memoryFold"
+ },
+ "memoryFold-alex-takes-back-a-saved-note": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-takes-back-a-saved-note",
+  "repeat": 0,
+  "run": "20261125-084102-MemoryFold",
+  "task": "memoryFold"
+ },
+ "memoryFold-sam-notes-and-a-cancelled-booking": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-notes-and-a-cancelled-booking",
+  "repeat": 0,
+  "run": "20261125-084102-MemoryFold",
+  "task": "memoryFold"
+ },
+ "memoryFold-sam-with-a-summary": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-with-a-summary",
+  "repeat": 0,
+  "run": "20261125-084102-MemoryFold",
+  "task": "memoryFold"
+ },
+ "onboardingNote-alex-lean-gain-long-note": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-lean-gain-long-note",
+  "repeat": 0,
+  "run": "20261125-084008-OnboardingNote",
+  "task": "onboardingNote"
+ },
+ "onboardingNote-sam-relaxed-no-note": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-relaxed-no-note",
+  "repeat": 0,
+  "run": "20261125-084008-OnboardingNote",
+  "task": "onboardingNote"
+ },
+ "onboardingNote-sam-relaxed-note": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-relaxed-note",
+  "repeat": 0,
+  "run": "20261125-084008-OnboardingNote",
+  "task": "onboardingNote"
+ },
+ "onboardingNote-sam-steady-note": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-steady-note",
+  "repeat": 0,
+  "run": "20261125-084008-OnboardingNote",
+  "task": "onboardingNote"
+ },
+ "onboardingNote-unnamed-relaxed-note": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "unnamed-relaxed-note",
+  "repeat": 0,
+  "run": "20261125-084008-OnboardingNote",
+  "task": "onboardingNote"
+ },
+ "progressSummary-alex-drifting-down": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-drifting-down",
+  "repeat": 0,
+  "run": "20261125-084208-ProgressSummary",
+  "task": "progressSummary"
+ },
+ "progressSummary-alex-near-goal": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-near-goal",
+  "repeat": 0,
+  "run": "20261125-084208-ProgressSummary",
+  "task": "progressSummary"
+ },
+ "progressSummary-sam-dropping-fast": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-dropping-fast",
+  "repeat": 0,
+  "run": "20261125-084208-ProgressSummary",
+  "task": "progressSummary"
+ },
+ "progressSummary-sam-maintaining": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-maintaining",
+  "repeat": 0,
+  "run": "20261125-084208-ProgressSummary",
+  "task": "progressSummary"
+ },
+ "progressSummary-sam-weight-only": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-weight-only",
+  "repeat": 0,
+  "run": "20261125-084208-ProgressSummary",
+  "task": "progressSummary"
+ },
+ "weeklyReflection-alex-dropped-fast": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-dropped-fast",
+  "repeat": 0,
+  "run": "20261125-083857-WeeklyReflection",
+  "task": "weeklyReflection"
+ },
+ "weeklyReflection-alex-eased-down": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-eased-down",
+  "repeat": 0,
+  "run": "20261125-083857-WeeklyReflection",
+  "task": "weeklyReflection"
+ },
+ "weeklyReflection-alex-fresh-page": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-fresh-page",
+  "repeat": 0,
+  "run": "20261125-083857-WeeklyReflection",
+  "task": "weeklyReflection"
+ },
+ "weeklyReflection-alex-plateau": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "alex-plateau",
+  "repeat": 0,
+  "run": "20261125-083857-WeeklyReflection",
+  "task": "weeklyReflection"
+ },
+ "weeklyReflection-sam-quiet-week": {
+  "baseline": "anthropic:claude-haiku-4-5-20251001",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "sam-quiet-week",
+  "repeat": 0,
+  "run": "20261125-083857-WeeklyReflection",
+  "task": "weeklyReflection"
+ }
+}

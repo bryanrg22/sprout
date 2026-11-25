@@ -70,7 +70,11 @@ json.dump({
 }, open(os.path.join(out, "manifest.json"), "w"), indent=1)
 PY
 
+# The simulator sometimes refuses to launch the test runner ("Application failed preflight
+# checks") before any test starts. That attempt calls no model and writes no record, so it
+# is run once more; any other failure, or one after records were written, is not.
 set +e
+for ATTEMPT in 1 2; do
 TEST_RUNNER_SPROUT_EVAL_MODELS="$MODELS" \
 TEST_RUNNER_SPROUT_EVAL_REPEATS="$REPEATS" \
 TEST_RUNNER_SPROUT_EVAL_LIMIT="$LIMIT" \
@@ -86,14 +90,22 @@ xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -only-testing:"SproutEvals/LiveEvals/test${EVAL}" \
   > "$OUT/xcodebuild.log" 2>&1
 STATUS=$?
+if [ "$STATUS" -ne 0 ] && [ "$ATTEMPT" -eq 1 ] && ! ls "$OUT"/records-*.jsonl >/dev/null 2>&1 \
+   && grep -q "failed preflight checks" "$OUT/xcodebuild.log"; then
+  echo "the simulator refused to launch the test runner; trying once more"; continue
+fi
+break
+done
 set -e
 
 # The build log can echo the environment of the test runner; never keep it if it does.
-if grep -q -E 'sk-ant-|sk-proj-|sk-[A-Za-z0-9]{32,}' "$OUT/xcodebuild.log"; then
-  rm -f "$OUT/xcodebuild.log"
-  echo "xcodebuild.log contained a key-shaped string and was deleted"
-else
-  tail -c 4000 "$OUT/xcodebuild.log" > "$OUT/xcodebuild-tail.log"; rm -f "$OUT/xcodebuild.log"
+# Every key-shaped string is masked first, so the tail survives for diagnosis; a tail that
+# still holds one after masking is deleted.
+sed -E 's/sk-[A-Za-z0-9_-]{8,}/[key]/g' "$OUT/xcodebuild.log" | tail -c 4000 > "$OUT/xcodebuild-tail.log"
+rm -f "$OUT/xcodebuild.log"
+if grep -q -E 'sk-ant-|sk-proj-|sk-[A-Za-z0-9]{32,}' "$OUT/xcodebuild-tail.log"; then
+  rm -f "$OUT/xcodebuild-tail.log"
+  echo "the build log still held a key-shaped string after masking and was deleted"
 fi
 
 # SPROUT_EVAL_BASELINE=<provider:model> compares every candidate with the model that ships.

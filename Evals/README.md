@@ -12,6 +12,8 @@ dataset on every candidate model, and the numbers decide. Results are written up
 | `datasets/<task>/v<n>.jsonl` | Labelled cases, one JSON object per line. A released version is never edited: a change is a new `v<n+1>` file, so old results stay comparable. |
 | `datasets/meal_describe/fetch_usda.py`, `build_v1.py`, `build_v3.py` | How the meal dataset's ground truth is produced from USDA FoodData Central (cached in `usda_cache.json`; CI rebuilds `v1.jsonl` and diffs it). `build_v3.py` adds the label nutrients of the same records; `GraderTests` recomputes every v3 column from the cache. |
 | `run.sh` | Runs one live evaluation and leaves a record directory. **Spends money.** |
+| `regrade-text.sh` | Grades the text tasks' past answers again with the graders as they are now, and rebuilds what the app shows (`shown`) for the memory fold and the checklist. Calls no model. |
+| `judge.py`, `judge_rubrics.json`, `judge_agreement.py`, `labeling/` | The quality judge, its rubrics, and the check of the judge against the owner's labels (below). `judge.py` **spends money**. |
 | `regrade-avatars.sh` | Grades a past `Avatar` run's saved characters again with the graders as they are now, and writes `regrade-avatar.json` in that run. Calls no model and spends nothing. Only on the machine that made the run: the characters are never committed. |
 | `summarize.py` | Records → `summary.md` / `summary.json`: pass rate with a 95% Wilson interval, per-repeat spread, every score, latency, tokens, cost. |
 | `prices.json` | List prices read from the vendors' pricing pages, with the date. A model not listed gets no cost, never an estimate. |
@@ -22,7 +24,7 @@ dataset on every candidate model, and the numbers decide. Results are written up
 
 | Eval | Task | What runs | Pass rule |
 |---|---|---|---|
-| `MealDescribe` | `mealDescribe` | `FoodPhotoAnalyzer.analyze(description:)` on `meal_describe/v1` (v3, with the label nutrients, is not built yet) | total calories within 20% of the USDA total (the US labelling tolerance) |
+| `MealDescribe` | `mealDescribe` | `FoodPhotoAnalyzer.analyze(description:)` on `meal_describe/v3` (14: v1's cases with the label nutrients) | total calories within 20% of the USDA total (the US labelling tolerance) |
 | `CoachToolChoice` | `coachTurn` | `CoachContext.systemParts` + `CoachTools.schemas` + `chatWithTools`, then `CoachTools.parse` | the right decision (act or answer), the right action, the right value, as the app itself resolves the call |
 | `DailyBrief` | `dailyBrief` | `DailyBriefService.pick` + `rephrase` | every number kept, none invented, and no wrong-person pronoun |
 | `InsightLine` | `insightLine` | `DailyInsightEngine.bestInsight` + `InsightPhraser.rephrase` on `insight_line/v1` (19 cases) | the line is used (the sanitiser kept it), every number of the template is kept, none is added beyond the template and the observation, and no wrong-person pronoun |
@@ -40,8 +42,8 @@ sentence counts, and so on); `summary.md` lists them all.
 
 ### The eight wording and structure evaluations
 
-The last eight rows were added on 2026-11-23 and **have not been run against a model**. Their
-graders and datasets pass their offline tests (`GraderTests`); no pass rate exists yet.
+The last eight rows were added on 2026-11-23 and were first run on 2026-11-24 and 2026-11-25
+(EVAL_REPORT 35, 36). Their graders and datasets pass their offline tests (`GraderTests`).
 
 Every rule comes from the feature's own prompt, schema or sanitiser, and each grader states
 its rule beside it in `Graders.swift`. Three things hold for all eight:
@@ -86,13 +88,38 @@ for an ingredient, or the record does not match the description; see `build_v3.p
 graded. No v3 case has a `no_basis` label, because every v3 portion is a named food in
 grams; the score exists for a later version with vague descriptions.
 
-**v3 has to be built before the first run**, and was not when this was written: the USDA
-demo key was rate-limited. One request, then a build with no network:
+v3 was built on 2026-11-25 (EVAL_REPORT 36) with one request and then a build with no
+network; CI rebuilds it and diffs, as it does v1:
 
 ```bash
 python3 Evals/datasets/meal_describe/fetch_usda.py --details-only
 python3 Evals/datasets/meal_describe/build_v3.py
 ```
+
+## Judging quality (`judge.py`)
+
+The graders above check rules. Whether an answer is any good is judged by a model:
+`judge.py <run> --baseline <provider:model> --candidate <provider:model>` asks
+`claude-opus-5-5` (Batches API, half price; **spends money**, about $0.25 to $0.55 a task)
+which of two recorded answers to the same input is better, and writes `<run>/judge-<candidate>.json`.
+
+- Blind, and in both orders: a verdict that changes with the order counts as a tie.
+- `tie` and `both_bad` are allowed; the answers are passed as data; the verdict comes back
+  through a JSON schema, reasoning first.
+- The rubric per task is in `judge_rubrics.json`, written from the feature's own prompt.
+- Controls: a real answer against an empty one, "I don't know." and the answer to the most
+  different case. A task whose controls fail is not to be trusted.
+- It judges what the app **shows**: each record's `shown` field (a structured reply decoded
+  and cleaned, the memory as `parse` stores it), rebuilt for older runs by
+  `regrade-text.sh`. For the memory fold and the checklist the raw reply is not what the
+  person sees, and the judge refuses those without it.
+- `net` = (candidate wins − baseline wins) / pairs, with a 95% case-bootstrap interval.
+
+The judge is trusted only as far as it agrees with a person. `judge_agreement.py sample`
+draws pairs for the owner to label blind (`labeling/`: the page, the pairs, and the key that
+is never shown), and `judge_agreement.py score <labels.json>` reports the agreement. The target
+is the 80% two people reach in MT-Bench. A model switch that rests on the judge alone waits
+for that check.
 
 ## Running one
 
@@ -136,11 +163,9 @@ effort (`openai:gpt-6.1-terra@none`). Keys are read from `ANTHROPIC_API_KEY` and
 - The labels were written by reading the tool descriptions. They are the intended
   behaviour as understood on 2026-11-22 and should be reviewed by the owner.
 - The eight wording and structure evaluations are code-graded checks of format and
-  faithfulness: was the reply used, are the numbers the given ones, are the counts within the
-  schema, is it about the right person, does it avoid the phrases the feature itself bans.
-  **None of them measures whether the advice is good or the tone is right**: not whether a
-  weekly note is warm, a recap honest, a suggestion sensible for the meal, a chip personal, a
-  checklist useful, or a memory summary accurate. No model and no person judges an output.
+  faithfulness. Whether the advice is good or the tone right is judged by `judge.py`
+  (above), which a person has not yet checked: until the owner's labels are scored, its
+  verdicts are evidence, not a decision.
 - Their number rule is strict in ways a reader must know before trusting a failure. A figure
   the model worked out itself ("down 3.6 lb", from two weights in the snapshot) or rounded
   counts as not given. A number word used for something else ("the two of us") fails a weekly

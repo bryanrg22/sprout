@@ -45,6 +45,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 33 | Built-in AI, the code renamed Sprout, and personal content out of the repository | 2026-11-24 |
 | 34 | The evaluations audited: four grader defects, two prompt defects, a regrade of every past answer, and statistics by case | 2026-11-24 |
 | 35 | Five tasks measured on the current prompts: three move to the cheaper model, the recap keeps its own | 2026-11-24 |
+| 36 | Quality judged, not only rules: a pairwise judge, the memory fold's figures removed in code, nine tasks run | 2026-11-25 |
 
 ---
 
@@ -2034,3 +2035,146 @@ as failures: the run was made before the repair.
   can show", which the intervals state.
 - Still unmeasured on quality: the coach's turn, meal photo and description, food
   suggestions, checklist, chat chips and the plan (section 34, "Not done").
+
+## 36. Quality judged, not only rules: a pairwise judge, the memory fold's figures removed in code, nine tasks run (2026-11-25)
+
+**Approved by the owner** ("go for it", in reply to the plan and estimates at the end of
+section 35). **Spent: $6.07** ($1.96 for the nine runs below, $4.11 for the judge, its
+pilot included), against an estimate of about $12. **Spend to date: about $28.79.**
+
+### What the rule graders cannot see
+
+Sections 10 to 35 grade with code: was the reply used, are its numbers the given ones, are
+its counts within the schema, is it about the right person. None of that says whether an
+answer is any good. This section adds a judge for that, and runs it on every task that has a
+dataset of plain inputs.
+
+### The judge (`Evals/judge.py`)
+
+The standard of MT-Bench (Zheng et al. 2023) and of the Claude API's evaluation guide:
+
+- **Pairwise and blind**: the judge reads the input and two answers to it and says which is
+  better for the person, or `tie`, or `both_bad`. Model names are never shown.
+- **Both orders**: every pair is judged twice, the shipped model's answer once as A and
+  once as B. A verdict that changes with the order is a position effect and counts as a tie.
+  "Orders agree" below is how often it did not.
+- **The answers are data**: the system prompt says so and they are passed inside tags.
+- **A rubric of checkable claims per task** (`Evals/judge_rubrics.json`), written from the
+  feature's own system prompt; its hash and the system prompt's are in every result.
+- **Structured verdict**: a JSON schema (structured outputs), reasoning before verdict.
+- **Controls**: for two cases per task, a real answer against an empty one, against
+  "I don't know.", and against the answer to the most different case. The judge must pick
+  the real answer in both orders.
+- **Model**: `claude-opus-5-5` at effort `low`, through the Batches API (half price). It is
+  none of the models being compared.
+
+`net` = (wins of `claude-haiku-5-5` − wins of the shipped model) / pairs, with a 95%
+interval from a bootstrap over cases. Each run below has 3 repeats, all judged.
+
+**What the judge saw is what the app shows** (a defect found and fixed during this work).
+The first judging of the memory fold and the checklist read the raw replies. That is not
+what the person sees. The memory is stored after `CoachMemoryService.parse` (below). 16 of
+48 `claude-sonnet-5` checklists came back with the list wrapped in a string, which the
+app's repair unwraps before the card shows it. The judge marked those down, and one
+control failed because of it. Every record now carries `shown`, what the app shows, built by
+the app's own code. For runs made before that, `Evals/regrade-text.sh` rebuilds it. The
+judge reads `shown` when there is one and refuses to judge those two tasks without it. The
+first judgings are kept as `judge-*-raw-replies.json`. On what the app shows, the checklist
+result reversed (+0.15 → −0.44) and the memory fold's evened out (−0.17 → +0.03).
+
+### The memory fold: app-owned figures removed in code
+
+Section 35 left the memory fold to the owner: `claude-haiku-5-5` stored a figure the app owns
+in 12 of 60 folds, for example "Alex confirmed the current calorie target is 2,750 kcal a day".
+`CoachMemoryService.parse` now removes every sentence or bullet that states a calorie count
+or target, a body weight, a macro in grams or a step count (`removingAppOwnedFigures`). The
+rule was written from those 12 real cases and keeps times and counts ("after 7pm", "3x a
+week", "for 4 days") and years beside a weight word. A field left empty by it falls back to
+the prior memory rather than wiping it. Eight tests in `CoachMemoryTests`.
+
+Verified by regrading the four MemoryFold runs with no spend. With the guard, none of the
+cheaper model's 60 folds stores a figure. Every planted fact is still kept, and it writes no
+gendered pronoun (`claude-haiku-4-5`: 28%). Across all four runs and every model in them,
+every sentence the rule removes states one of those figures. One also carried an injury,
+which the notes keep. The cost: the cheaper model keeps small talk in 57% of folds against
+38%.
+
+### Results (runs `20261125-…`, 3 repeats, commit `0fe87fa` and its successors on this branch)
+
+| Task | Cases | Rule pass: shipped → `haiku-5-5` | Judge: `haiku-5-5` / shipped / tie | net (95%) | Orders agree | Controls | $ / 1k calls |
+|---|---|---|---|---|---|---|---|
+| Insight line (`083709`), vs `haiku-4-5` | 19 | 100% → 100% | 20 / 12 / 25 | +0.14 (−0.14 to +0.42) | 81% | 6/6 | 0.42 → 0.06 |
+| Weekly note (`083857`), vs `haiku-4-5` | 16 | 98% → 100% | 30 / 3 / 15 | **+0.56 (+0.33 to +0.77)** | 69% | 6/6 | 1.54 → 0.20 |
+| Onboarding note (`084008`), vs `haiku-4-5` | 15 | 96% → 98% | 20 / 10 / 12 | +0.24 (−0.12 to +0.60) | 86% | 6/6 | 0.90 → 0.13 |
+| Memory fold (`084102`), vs `haiku-4-5` | 12 | 92% → 100% | 16 / 15 / 5 | +0.03 (−0.36 to +0.42) | 89% | 6/6 | 2.10 → 0.35 |
+| Progress recap (`084208`), vs `sonnet-5` | 15 | 93% → 73% | 10 / 15 / 19 | −0.11 (−0.39 to +0.13) | 61% | 6/6 | 6.20 → 0.31 |
+| Food suggestions (`084337`), vs `sonnet-5` | 18 | 100% → 100% | 20 / 26 / 7 (1 both bad) | −0.11 (−0.44 to +0.22) | 87% | 6/6 | 7.13 → 0.37 |
+| Chat chips (`084559`), vs `sonnet-5` | 16 | 100% → 100% | 25 / 13 / 10 | +0.25 (−0.04 to +0.54) | 81% | 6/6 | 4.86 → 0.23 |
+| Daily checklist (`084645`), vs `sonnet-5` | 16 | 100% → 100% | 7 / 28 / 13 | **−0.44 (−0.69 to −0.17)** | 79% | 6/6 | 8.12 → 0.40 |
+| Meal description (`084842`), vs `sonnet-5` | 14 | 100% → 100% | not judged (a number task) | | | | 8.24 → 0.42 |
+
+The progress recap's rule result now excludes zero on its own: −20% (−40% to −2%), paired
+by case. Section 35's interval reached +1.3%.
+
+What the judge's reasons say, read for every pair it decided against `claude-haiku-5-5` on
+repeat 0:
+
+- **Checklist**: the cheaper model plans a second session on a day the log already shows
+  one (leg day twice, another run after today's run). It also writes titles the app cuts at
+  28 characters ("8 hours of sle"). Both are visible on the card.
+- **Food suggestions**: it proposes chicken, eggs or whey to a person whose every logged
+  food is vegetarian or vegan (twice), and re-pitches a food already eaten today. The
+  feature is never told a diet (section 34), so this is judgement the shipped model shows
+  and the cheaper one does not.
+
+### Meal description on v3
+
+The USDA demo key answered this time. `build_v3.py` produced `meal_describe/v3` (v1's 14
+cases with the label nutrients of the same records; v1 unchanged), and CI now rebuilds and
+diffs it as it does v1. The test that holds v3 to its source, idle until the detail was
+cached, then found that USDA record 171265 (whole milk) lists more sugars (5.05 g per
+100 g) than carbohydrate (4.8 g). The dataset keeps USDA's values, and that one case is
+named as an exception to the sanity bound. Both models pass every attempt, within about 2%
+of the true calories. `claude-sonnet-5` is closer on fiber, sugars and sodium, and its
+stated calorie range contained the truth in 100% of attempts against 88%. Every v3 portion is
+given in grams, so this measures arithmetic, not portion estimation (the Evals README says
+so). It cannot justify a switch.
+
+### Decisions
+
+- **Memory fold → `claude-haiku-5-5`**, now that the app removes the figures it stored.
+  Rules 100% against 92%, judge even. In `measuredDefaults`, citing this section.
+- **Insight line, weekly note, onboarding note: `claude-haiku-5-5` confirmed.** Switched in
+  section 35 on the rules. The judge does not favour the old model on any of them and clearly
+  prefers the new one on the weekly note.
+- **Progress recap and daily checklist: `claude-sonnet-5` stays**, each with an interval
+  wholly against the cheaper model (the recap on the rules, the checklist on the judge).
+- **Meal description: `claude-sonnet-5` stays.** v3 cannot separate the models (above).
+- **Food suggestions and chat chips: no change yet.** Chips lean towards the cheaper model
+  (+0.25, an interval that reaches −0.04) at a twenty-first of the cost. Food leans the other
+  way, with the defects above. Both rest on the judge alone, and **a switch that rests on the
+  judge waits until the judge is shown to agree with a person**. The owner labels 40 blind
+  pairs (5 per task, `Evals/labeling/`, published as a private page), and
+  `Evals/judge_agreement.py score` reports the agreement. The target is the 80% that two
+  people reach on such pairs in MT-Bench, without ties.
+
+### Also changed
+
+- `run.sh` and `regrade-text.sh` try once more when the simulator refuses to launch the
+  test runner ("Application failed preflight checks"), which happens before any test starts
+  and before any record is written. Seen once with its log in hand (a regrade). Three live
+  runs today also left no records on their first attempt and passed on the second, but
+  `run.sh` deleted their logs because they held a key-shaped string. That they had the same
+  cause is suspected, not verified. `run.sh` now masks the keys and keeps the tail.
+- `ChecklistPlanService.plan(fromToolInput:)` is the decode-and-clean half of `make`, pulled
+  out so the evaluation rebuilds what the card shows with the card's own code.
+
+### Not verified
+
+- The judge has not yet been checked against a person: the 40 labels are pending.
+- 12 to 19 cases per task, and every case is one first call. The coach's turn, multi-turn
+  conversations, the meal photo and the plan are still unmeasured on quality: they need
+  datasets this repository does not have yet (a conversation set, and Nutrition5k photos,
+  whose download is still to be approved with its size).
+- No new default has been seen in the app's UI.
+

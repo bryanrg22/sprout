@@ -8,12 +8,15 @@ import XCTest
 /// past answer before anyone pays for a new run (`Evals/regrade-text.sh`, EVAL_REPORT 34).
 ///
 /// Covered: the five short-writing tasks whose output is the whole answer (the daily brief,
-/// the insight line, the weekly reflection, the onboarding note, the progress recap). A record
+/// the insight line, the weekly reflection, the onboarding note, the progress recap), and the
+/// memory fold, whose recorded output is the model's whole reply, graded as the app's
+/// `CoachMemoryService.parse` stores it now. A record
 /// whose reply the app discarded or whose call failed is not regradable (there is no shown
 /// text to grade); it keeps its old result and says why.
 enum TextRegrade {
 
-    static let tasks: Set<String> = ["dailyBrief", "insightLine", "weeklyReflection", "onboardingNote", "progressSummary"]
+    static let tasks: Set<String> = ["dailyBrief", "insightLine", "weeklyReflection", "onboardingNote", "progressSummary",
+                                     "memoryFold", "checklistPlan"]
 
     struct Record: Decodable {
         let task: String
@@ -37,6 +40,9 @@ enum TextRegrade {
         let newScores: [String: Double]?
         /// Why it was not regraded, when it was not.
         let note: String?
+        /// What the app shows (or stores) from the recorded reply, rebuilt with the app's own
+        /// code; nil where the record's output already is that (see `EvalRecord.shown`).
+        var shown: String? = nil
     }
 
     struct Tally: Encodable {
@@ -79,8 +85,9 @@ enum TextRegrade {
             } else {
                 row = Row(caseID: record.caseID, candidate: record.candidate, repeatIndex: record.repeatIndex,
                           oldPass: record.pass, newPass: record.pass, newScores: nil,
-                          note: "not regradable: case \(record.caseID) is not in the dataset or does not map")
+                          note: "not regraded: no grader for this task here, or case \(record.caseID) is not in the dataset")
             }
+            row.shown = record.ok ? shown(task: first.task, raw: record.output) : nil
             rows.append(row)
             var t = tally[record.candidate, default: Tally()]
             t.attempts += 1
@@ -97,6 +104,32 @@ enum TextRegrade {
     }
 
     typealias Grade = (_ caseID: String, _ output: String) -> (scores: [String: Double], pass: Bool)?
+
+    /// What the app shows (or stores) from a recorded reply, through the app's own code: the
+    /// memory as `CoachMemoryService.parse` keeps it, and the checklist as the card shows it
+    /// (the client's repair, then `ChecklistPlanService.plan(fromToolInput:)`). Nil for a task
+    /// whose recorded output already is what is shown, or a reply the app could not read.
+    static func shown(task: String, raw: String) -> String? {
+        switch task {
+        case "memoryFold":
+            return CoachMemoryService.parse(raw, fallbackNotes: "", fallbackSummary: "").map(shown)
+        case "checklistPlan":
+            guard let object = EvalRunner.jsonObject(raw) else { return nil }
+            let repaired = StructuredOutputRepair.repair(object, schema: ChecklistPlanService.schema)
+            return (try? ChecklistPlanService.plan(fromToolInput: repaired)).map(shown)
+        default:
+            return nil
+        }
+    }
+
+    static func shown(_ memory: CoachMemoryService.Result) -> String {
+        "NOTES:\n\(memory.profileNotes)\n\nSUMMARY:\n\(memory.conversationSummary)"
+    }
+
+    static func shown(_ plan: ChecklistPlan) -> String {
+        "Tasks for today:\n" + plan.tasks.map { "- \($0.title)" }.joined(separator: "\n")
+            + "\n\nQuick-add chips: " + plan.chips.map(\.title).joined(separator: ", ")
+    }
 
     /// The current grader for `task`, closed over its dataset's cases.
     static func grader(task: String, datasetURL: URL) throws -> Grade {
@@ -137,6 +170,16 @@ enum TextRegrade {
             return { id, output in
                 guard let item = cases[id], let summary = progressSummary(fromRecorded: output) else { return nil }
                 return Graders.progressSummary(snapshot: item.snapshot, summary: summary, reader: item.reader)
+            }
+        case "checklistPlan":
+            // Not regraded (its grader needs the fixture's SwiftData models); only `shown` is
+            // rebuilt, for the judge.
+            return { _, _ in nil }
+        case "memoryFold":
+            let cases = try index(datasetURL, as: LiveEvals.MemoryCase.self, id: \.id)
+            return { id, output in
+                guard let item = cases[id] else { return nil }
+                return Graders.memoryFold(raw: output, expect: item.expectation)
             }
         default:
             throw XCTSkip("no text regrade for \(task)")

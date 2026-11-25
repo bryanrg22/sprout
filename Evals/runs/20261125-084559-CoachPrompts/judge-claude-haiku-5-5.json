@@ -1,0 +1,859 @@
+{
+ "task": "coachPrompts",
+ "run": "20261125-084559-CoachPrompts",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "anthropic:claude-haiku-5-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "b6140db6aac1537e61bb46adda2b5844084a9302aaca0d868794d018d6fa1ecf",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 48,
+ "pairs_skipped": [],
+ "cases": 16,
+ "candidate_wins": 25,
+ "baseline_wins": 13,
+ "ties": 10,
+ "both_bad": 0,
+ "orders_agree_share": 0.8125,
+ "net": 0.25,
+ "net_ci95_cases": [
+  -0.041666666666666664,
+  0.5416666666666666
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 108,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.4274,
+ "verdicts": [
+  {
+   "case": "alex-brand-new",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives four chips, not about three. Its weigh-in chip touches the scale, and its last chip is seven words, though the recovery question ties nicely to the goal. Answer B gives a clean three-chip mix: a check-in, a curiosity question and a vent starter, all short and in Alex's voice. Its \"feeling stuck on my gains\" chip is slightly presumptive with no trend data, but it is a mild vent starter rather than an invented figure, so B is cleaner overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three concise chips that fit the strength and lean-gain goal: a protein check-in, a post-workout question and a vent starter. \"I'm feeling stuck on my gains\" slightly implies progress data that doesn't exist, but it reads as a feeling rather than an invented figure. Answer B gives four chips instead of about three, \"Need motivation to start training today\" is long, and the weigh-in chip points toward the scale, which the brief forbids. A is cleaner and better matches the brief.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-brand-new",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A has four chips instead of about three, and its weigh-in chip edges toward the scale, though the input does encourage a first weigh-in. Its chips are short and specific: protein, water, and training fuel. Answer B has exactly three chips tied to protein and water, but two run longer than six words, and \"feel wiped after lifting\" assumes a symptom the input never mentions. On balance A's chips are tighter, better voiced and cover a better mix, while B's length and invented fatigue are comparable flaws, so A edges ahead slightly.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three chips: protein, water, and a vent starter. They are grounded in the input and mostly concise, though the first and third run to about eight words, over the six-word limit. Answer B gives four chips where about three were asked for, and \"Should I log my first weigh-in?\" centres the scale, which the feature says chips must never be about. The other B chips are short and specific, but the scale chip is a clear rule breach, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-brand-new",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives four chips, one more than the three asked for, and some run long (\"Thinking about logging my first weigh-in\"). \"Pumped to train, need fuel tips\" is a little generic, though A does use the real 129g protein figure. Answer B gives exactly three concise first-person chips in a clean mix: a protein check-in, a curiosity question about the first weigh-in, and a vent starter about feeling flat on training days. Neither answer invents data or touches restriction, but B follows the format better and has the more natural mix.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three chips that fit the data (protein, a first weigh-in, training) and mix a check-in, a question and a vent starter. Its weigh-in chip touches the scale, but the input explicitly asks for a gentle first weigh-in. Answer B has four chips where about three were asked for, and two are long (\"Thinking about logging my first weigh-in\" runs seven words). It also has no real vent starter, though its 129g protein figure does come from the input. A fits the format and the requested mix better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-bio-and-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's third chip awkwardly fuses the streak with a knee question that makes no sense for the coach to answer. Its chips are also mostly about legs and squats, so they lack variety. Answer B gives a clear mix: a check-in plus question, a protein help request that fits the 62/130g figure, and a sleep vent drawn from the notes. B's first chip runs slightly past six words, but it is natural and all of B's chips are specific and nothing is invented.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A's chips are all grounded in the input: today's strong leg day, protein at 62 of 130 g, and the noted sleep trouble after late shifts. Together they give a natural mix of question, check-in and vent, though the first chip runs slightly over six words. Answer B's third chip awkwardly ties the streak to \"how's my knee?\", which reads unnaturally and asks the coach something it can't really know. Its first chip is a statement with no clear conversation hook, but \"fuel up after squats\" is nicely supportive.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-bio-and-notes",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives five chips instead of about three. It also asserts \"Knee's cranky on deep squats again\", but today's data says squats felt strong, so that chip puts words in Alex's mouth. \"10 day streak, how's that helping?\" is awkward. Answer B gives three specific, warm, first-person chips (leg day, protein around shifts, the streak) that form a good mix, though the first is slightly over six words.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives exactly three specific, first-person chips covering a check-in, a question and an encouragement, all grounded in the data (leg day, shifts, protein, the 10-day streak). Its first chip is slightly over six words. Answer B gives five chips instead of about three. \"Need more fuel after squats?\" reads as the coach's voice rather than Alex's, and \"Knee's cranky... again\" asserts a fact the input doesn't support today, since squats felt strong.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-bio-and-notes",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives four chips where three were asked for. Its \"My knee's cranky on squats again\" states as current something that is not in today's data: today's note says squats felt strong, and the knee comes only from older notes. That is a mild invention. Answer B gives exactly three specific chips (legs session, protein for tonight, the 10-day streak) that fit the gain goal and the large intake gap, though its first chip runs slightly over six words.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three specific, first-person chips that work as a check-in/question, a protein-focused request suited to Alex's 62/130 g day, and a streak encouragement, all grounded in the input, though the first runs slightly over six words. Answer B gives four chips instead of about three. Its 'My knee's cranky on squats again' presents a remembered note as a fresh complaint today, when today's log says squats felt strong, so it puts words in Alex's mouth that may not be true. '10 day streak, right?' is awkward. A is cleaner and more accurate.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific and grounded in the input: leg day with strong squats, the 10-day streak, and the remaining calories and protein. A gives a clean mix of encouragement (squats), help with fueling (which suits the calorie gap without restriction) and a check-in question tied to the streak. B's \"How do I hit my protein tonight?\" is a good question, but its other two chips are both brag statements, so the mix is weaker. A uses the exact detail \"squats felt strong\" and keeps the mix more balanced, though both are good.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers draw on real data (leg day and squats, the 10-day streak, the remaining protein and fuel) and both stay supportive of eating more. A's \"How do I hit my protein tonight?\" is seven words, just over the limit, and its two statement chips give less of a mix. B's chips are short and natural, with an encouragement, a fueling check-in and a question. B is slightly better, though \"how am I doing?\" sits close to the existing \"How's my week?\" chip.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both use real data (legs/squats today, protein, 10-day streak) and avoid restriction. A's chips are short and mixed (vent/brag, protein need, curiosity question), though \"Need fuel to hit my protein\" is slightly awkward. B's first chip is seven words and slightly over length, but its mix is clear: \"How do I hit my protein tonight?\" is a natural question and the streak chip is warm encouragement. Both are fit to show and roughly equal, so this is a tie.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both draw on real data (leg day with strong squats, protein, 10-day streak) and avoid restriction. A gives a clearer mix: a training check-in, a practical protein question, and an encouragement starter, all natural in first person. B is also good, but its third chip awkwardly pairs the streak with \"what's next?\", and its mix is less distinct.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are specific and grounded in the input: the leg day with strong squats, the protein target and the 10-day streak, with nothing invented. A's chips are tighter and within the six-word limit, while B's first chip is six words and natural but slightly long. A's \"Help me hit 130g protein\" leans toward a number, though it's about eating enough, which suits a gain goal. Both are good and comparable, with B a bit more natural (\"I'm on a roll\") and A a bit punchier, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use real data: the leg day with strong squats, protein, and the 10-day streak, and neither invents facts or touches restriction. A's first chip is seven words, slightly over the limit, but it opens a question; its protein chip is a clear question and its streak line is a warm encouragement, so it gives a better mix. B is concise and specific (130g is in the input), but \"Squats felt strong today!\" is a statement with no hook, and its streak chip reads oddly as a question. Both are good, with A slightly more natural as conversation starters, though the difference is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-training-notes-only",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both use real data (10-day streak, notes) and invent nothing. A covers a check-in on eating more, a streak celebration and a gym-hunting question; all are six words or fewer, warm and on-goal. B is also specific (protein, commute vent), but \"Help me get more protein in today\" runs to seven words and \"Is my 10-day streak on track?\" is an awkward question. A is slightly tighter and more natural.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use real data and avoid restriction. A's first chip is seven words, slightly over the limit, and \"Is my 10-day streak on track?\" is an odd question because a streak is simply a fact. B stays within length, gives a clean mix (a food-ideas check-in, a streak celebration, a gym-hunting question drawn from the notes), and is warm and natural. B is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-training-notes-only",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers open with a protein check-in grounded in the data (62 of 130 g) and celebrate the 10-day streak. A's second chip connects two of Alex's notes (the long commute and not having a gym yet), which feels personal. B's second chip centres on the weight-gain rate, which leans toward the scale, something the brief tells chips to avoid. A is more personal and stays clear of the scale, though its chips are slightly awkward.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both chips use real data (protein gap, 10-day streak), but A's second chip, \"Is my 0.7 lb/week gain on track?\", leans into scale-number talk, which the input explicitly asks to avoid. A's chips also run past the six-word guideline. B's \"gym tips for my commute\" ties together two real notes (new job with a long commute, no gym found yet), making it personal and curiosity-driven, and all of B's chips are short and warm.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-training-notes-only",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A uses the gym note and the streak, but \"10-day streak, any gym tips?\" is an awkward mashup, and A's first and third chips cover similar ground without a clear encouragement chip. Answer B gives a protein check-in, a pace question grounded in real data (0.7 lb/week), and a warm streak celebration, but \"Is my 0.7 lb/week pace on track?\" runs a bit long and leans toward scale-number focus. Even so, it is about trend pace, which the goal context supports. B has the clearer mix and more natural voice, while A personalizes with the gym note but reads clunkier.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A uses real data (protein, the 0.7 lb/week pace, the 10-day streak) and gives a clear mix of check-in, question and encouragement, though the pace chip leans slightly toward the scale and runs a bit long. Answer B ties in the remembered gym search, which is personal, but two of its three chips are about the gym. Its \"10-day streak, any gym tips?\" also awkwardly fuses two ideas, and it has no real encouragement or vent starter. A's mix is better and its chips are all grounded in the data, so it serves Alex better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-nothing-logged-today",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B gives exactly three short chips that fit Alex's data: cooking for one, the 55-minute long run, and a vent starter about running, covering a question, a check-in and a vent. Answer A returns five chips when three were requested, and one runs past six words. A's 'Long run yesterday' also assumes a date the input doesn't confirm. A has nice touches like the water nudge, but B is cleaner and follows the brief.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three short, specific chips tied to the data: cooking solo, the 55-min long run, and a vent starter, though \"Tired of runs\" invents a feeling Alex never expressed. Answer B gives five chips instead of about three, and \"Long run yesterday\" is wrong because the long run was Monday and today has its own run. Answer B also has a chip over six words, though its chips are specific and warm, covering protein, water and recovery. Answer A follows the format better with no factual error, so it is the better pick overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-nothing-logged-today",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A's three chips are each six words or fewer, specific (protein, cooking solo, water at zero, today's run), warm, and in first person, with a reasonable mix of a request, a check-in and a question. Answer B's second chip is too long and oddly framed, since a run doesn't \"count toward recovery.\" Its third chip calls the long run recent, but that was Monday, not today, which is slightly off. B does include a vent starter, but A is tighter and more accurate overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A has a good cooking-for-one chip, but the second chip is awkward and too long, since a run doesn't really count toward recovery. Its 'long run' vent refers to Monday's run rather than today's, though it is still grounded in the data. Answer B's chips are specific (protein while cooking solo, water at zero, fuel after today's run), short, and in a natural voice, but they lean toward check-ins and lack a real vent or encouragement starter. On balance B is tighter and more useful, while A has a clunky chip.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-nothing-logged-today",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives five chips where about three were asked for, and \"Should I log my first weigh-in?\" leans toward the scale, which the brief says to avoid. Several of A's chips also run past six words. Answer B gives three specific chips that mix a question, a check-in and a vent, all grounded in Alex's data (cooking for one, today's 40-min run, the long run), though \"Fuel ideas for a cooking-for-one week\" is a bit long and B leaves out protein and water. Overall B fits the brief more closely.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three specific chips (cooking for one, today's 40-min run, the long run) in Alex's voice with a good mix, though the first is about seven words. Answer B gives five chips instead of about three, \"Help me hit 129g protein today\" leans toward number-counting, and the weigh-in chip edges toward the scale. Some of B's chips are good and specific, but A fits the brief more cleanly. A's \"recovery\" framing of a run is slightly odd, but it is grounded in the data.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-soccer-bio",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific to Alex: soccer, the 10-day streak, and fueling, with no invented figures and nothing about restriction or the scale. A's \"Fuel enough after soccer practice?\" ties directly to yesterday's practice and today's low intake, and its protein chip also matches the data. B's \"Did my soccer legs recover okay?\" asks the coach something it cannot know, and its streak chip runs to seven words. A covers the check-in, encouragement and question mix more cleanly, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific to Alex, drawing on soccer, the 10-day streak and fueling, and neither invents data or pushes restriction. A gives a clean mix of a recovery check-in, a fueling question and an encouragement, all in natural first-person voice within about six words. B's \"Fuel enough after soccer practice?\" is awkward and lacks a first-person subject, and its three chips lean toward two similar fueling questions. A is somewhat more natural and better balanced.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-soccer-bio",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives four chips when three were asked for, and \"Am I recovering enough this week?\" partly overlaps the existing \"How's my week?\" chip, though its streak and protein chips are specific and on-goal. Answer B's three chips are tightly tied to Alex's data and bio: soccer fueling, keeping speed while gaining size, and the real water shortfall (17 of 79 oz). B's chips run a bit past six words, and it lacks a clear encouragement chip. Even so, B is more personal and sticks to the requested format, so it edges ahead.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A's chips are tied to Alex's own goal of size without losing speed, to fuelling for soccer and to the low water intake, and they mix a check-in, a question and a vent starter, though the second chip runs to eight words. Answer B gives four chips instead of about three, and they are a bit more generic, though it does mention the streak and protein. B's \"Need more fuel after soccer\" is reasonable but less personal, and neither answer invents data or pushes restriction. A is more specific to Alex and sticks to the requested count.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-soccer-bio",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are specific, use the person's real data (soccer, the 10-day streak), and avoid any restriction. B's chips are clearer first-person conversation starters: a fueling check-in, an actionable protein question that fits being 68 g short today, and a natural encouragement line. A's \"Still building size without losing speed?\" reads awkwardly as the user's own voice, though it does echo the bio well. B also stays within about six words more cleanly and gives a better mix.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific (soccer, the streak, size versus speed), and both avoid restriction and scale talk. A's chips are well-formed first-person lines with a question, a check-in and an encouragement, all accurate to the data, though the streak chip is slightly over six words. B's second chip echoes Alex's own bio nicely, but \"Still building size without losing speed?\" reads awkwardly as the person's own voice, and \"Need more fuel after soccer practice\" is ambiguous. A is more natural and ties more directly to the protein gap, so A is somewhat better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-swimmer-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both draw on Alex's real data (swim, the 10-day streak, low water) and avoid restriction and the scale. Answer A's \"How's my water today?\" overlaps with the existing check-in chips, and \"Need more fuel after swim\" reads a little awkwardly. Answer B gives a clearer mix: a curiosity question about swim fuel, a celebration of the streak and an actionable water ask. B's \"Celebrate my 10-day logging streak\" runs slightly over six words, but overall B is more natural and complementary.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are grounded in Alex's real data (the swim, the 10-day streak, low water), avoid restriction, and stay first-person and short. A gives a cleaner mix: a curiosity question about fueling, a celebration starter and a water ask, though \"Celebrate my 10-day logging streak\" runs slightly long. B's \"Need more fuel after swim\" and \"10 days straight, feeling it\" are a bit ambiguous, and its water check-in overlaps with A's in function. A is slightly clearer and more natural overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-swimmer-maintain",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's \"Why am I drifting up lately?\" centres the scale trend and could invite restriction talk, which the goal rule says to avoid. That trend is also odd framing, since Alex is below goal. Answer B covers a check-in (fuel up today, matching the big gap under the floor), a swim-specific question, and an encouragement chip about the 10-day streak. B's chips are all warm and fit the rules, though one runs slightly long.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B's \"Why am I drifting up lately?\" puts the focus on the weight trend and the scale, which the brief forbids. That is especially out of place because Alex is at 159 lb against a 172 lb goal, so drifting up is actually fine. Answer A is specific (the fueling gap today, swim recovery, the 10-day streak), gives a good mix, and stays positive; \"swim recovery up\" reads a little awkwardly, but that is minor.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-swimmer-maintain",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives four chips rather than about three. \"Need more fuel after swim?\" reads like the coach asking, not Alex speaking, and \"Swim squad today, pumped\" claims a session today that the data doesn't show (the last swim was yesterday). Answer B has three chips, all in Alex's first-person voice, specific to the swimming, protein and the 10-day streak, with a good mix of check-in, question and encouragement. B's \"I'm proud of me\" is slightly over six words but still natural, so B is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three specific, first-person chips tied to Alex's data: a swim fueling check-in, a protein question, and a streak celebration, all within about six words and with no restriction framing. Answer B gives four chips when three were asked for. Its \"Swim squad today, pumped\" asserts a session today that the input doesn't show (the swim was yesterday). \"Need more fuel after swim?\" also reads awkwardly as a first-person line. A is the cleaner fit.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-brand-new",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Sam's data is sparse, with no workouts, no weigh-ins and nothing logged today. Answer A's chips fit that reality: start on water, ask about a first meal, and a nudge to begin logging. Answer B's \"after training\" assumes training that isn't in the input. Its \"discouraged\" vent is a fair starter, but it is generic, and A is better grounded and at least as varied.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A's \"after training\" chip assumes workouts that aren't in the input, and its vent chip, while giving the needed mix, is generic. Answer B ties closely to the real data (no water yet, nothing logged), but \"What should my first meal be?\" runs seven words and it lacks a feelings or encouragement starter. B's chips are more grounded and specific, while A's mix comes at the cost of an invented detail, so B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-brand-new",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers stay away from restriction and both open with a water chip. A is more grounded in Sam's actual data: zero water logged, a 132 g protein target, and nothing logged yet today. B's \"fuel training\" assumes training that isn't in the input, which is a small invention, and \"I'm feeling a bit off today\" is generic. A's chips are specific, varied (a check-in, a question and a motivation starter) and short, so A is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Sam's input has no training data, so A's \"fuel training\" chip assumes training that isn't in the input, and it runs about seven words. B ties to real data: water at zero, the 132 g protein target, and nothing logged yet. B's chips are all within about six words and give a good mix of check-in, question and motivation starter, with nothing about restricting.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-brand-new",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers draw on the real data: nothing logged yet, 0 water, a 132 g protein target and no weigh-ins. Answer A grounds in protein, water and logging, gives a clean check-in/question/encouragement mix, and keeps every chip about fuel. Answer B's weigh-in chip leans toward the scale, which the feature should avoid even though the input invites a gentle first weigh-in, and \"Feeling a bit stuck today\" is generic. A is safer and slightly more specific.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A's \"first weigh-in plan\" chip leans toward the scale, which the input frames gently but the chip rules disfavor; still, the input explicitly says to encourage a first weigh-in, so it's borderline acceptable. Answer B gives specific, data-grounded chips (protein, water, logging) with a good mix of check-in, question, and encouragement, and avoids the scale entirely. B's chips are within length and in natural first-person voice, while A's \"Feeling a bit stuck today\" is a decent vent starter but generic. B is cleaner and safer overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lifter-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use real data (leg day, 10-day streak) and avoid restriction. B adds the night-shift nurse note for a highly personal fueling question, though its first and third chips are both celebratory statements. A has a better mix with a water check-in and a question, but it is less personal. B's night-shift fuel chip is the standout and gives it a slight edge.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are grounded in the input, stay within about six words, and avoid restriction or scale talk. A uses the night-shift nurse note in a useful fueling question, which is very personal and supports the need to eat more today. B covers the low water intake (17/81 oz), which is also relevant, but it is less distinctive. Both mix share, question and celebration well; A's chip that uses the coach's memory makes it slightly more personal.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lifter-notes",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more personal: it draws on the night-shift nurse note for a fuel question and a vent starter, it opens with the leg-day win, and all three chips read naturally in Sam's voice. Answer A's first two chips are good and grounded in the data (squats, water). Its third chip, \"Why is 10-day streak working?\", is awkward and unnatural phrasing. B gives a better mix of check-in, question and vent, and all of its chips stay within about six words, so B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A ties all three chips to Sam's real life: leg day, fueling around night shifts, and a vent starter about shift fatigue. They make a good mix of encouragement, question and vent, though \"Legs day\" is slightly awkward and \"Tired from shifts, need a pep talk\" runs about seven words. Answer B is specific too (squats, water, streak), but \"Why is 10-day streak working?\" reads awkwardly, and it has no vent or encouragement-seeking starter. A is warmer and more natural overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lifter-notes",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives five chips when about three were asked for, but each one is specific, grounded in the input (squats, 10-day streak, water, leg day, night shifts) and short. Answer B gives exactly three: an encouragement, a question and a vent starter. B's chips are specific (legs, night shifts) and warm, though 'Tired from nights, need a pep talk' is close to the word limit and 'Legs day' is a little awkward. B follows the requested count and gives the asked-for mix, while A overshoots the count, so B is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives exactly three chips, all specific (leg day, night shifts), first person, within about six words, and well mixed: a celebration, a fueling question and a vent/pep-talk starter. Answer B's chips are also specific and grounded, but it gives five where three were asked for. B's \"Night shifts throw off my eating\" leans toward food struggle, though it isn't restrictive. A meets the brief more precisely.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-training-bio-only",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers ground their chips in real data: the 10-day streak, the protein gap, and in A's case the low water. A is concise, at five to six words per chip, and its three chips form a clear mix of encouragement, request and vent. B's chips run to seven words, slightly over the limit. B's \"Fitting workouts around two little kids\" draws nicely on the bio, but the input has no workout data, so B is a bit weaker on data specificity and brevity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers use real data: the 10-day streak, the protein gap, and in B the low water intake. A's third chip draws on Sam's bio about two kids, which is very personal and works as a vent or question starter. A's first chip runs seven words, slightly over the limit, and the bio's mention of the kids does not establish that Sam does workouts. B's chips are all short and natural, specific to the data, and give a good mix of encouragement, question and check-in, so B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-training-bio-only",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are grounded in Sam's real data (the 10-day streak, the protein gap) and avoid any restriction language. A touches three data points (streak, protein at dinner, low water) with short chips in Sam's voice. B ties a chip to Sam's bio about the kids, but 'Fitting in fuel around two little kids' is slightly awkward and two of its chips run past six words. A is tighter and covers more of the data, including the clear water gap.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are grounded in the real data (10-day streak, a protein gap, the kids, water) and avoid restriction. A's first chip is seven words and its third reads as a statement rather than a natural tap-to-start line. B's chips are tight, all within six words, and cover a mix of celebration, a fuel question and a water check-in, using more of Sam's specific data.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-training-bio-only",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate: the 10-day streak is in the input, protein is at 62 of 130 g, and water is at 17 of 81 oz, all of which A addresses. B's third chip draws on Sam's bio about two kids and encourages eating enough, which feels more personal. However, B's third chip is too long (eight words), and its other two are a little generic. A's chips are short and specific, and they span protein and water, but A only loosely meets the vent requirement through its water chip, and \"Need ideas to hit my protein today\" is seven words. Both are close; B's use of the kids detail and the mix of question and vent edges it over A's more data-specific chips, so overall this is roughly even and slightly favours B.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers celebrate the real 10-day streak and raise protein, and neither invents a figure. A's third chip ties into Sam's bio about two kids and encourages fueling up, which fits the 882 kcal under-floor gap, but at eight words it is long. B's chips are all short and specific, including the real low water (17/81 oz), though they miss the kids context and the under-eating. A is somewhat more personal and addresses fueling enough, but its length is a fault; overall the two are roughly comparable, with B slightly cleaner on length.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A has four chips instead of about three, and its weigh-in chip touches the scale, which the input explicitly says to keep out of the chips. Answer B's three chips are specific to Sam (swimming, hotel gyms, water at zero), short, first-person in feel, and mix a question, a check-in and a help starter. B is missing a clear encouragement chip, but A's scale chip is the bigger problem.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives exactly three specific chips (swim fueling, hotel gym, water) that are all grounded in the input, short, and in a good mix. Answer B has four chips where three are asked for, and \"Swam again yesterday, feeling strong\" is six words and fine. Its weigh-in chip touches the scale, which the guidance says to avoid, even though the input invites a gentle first weigh-in. A is tighter and fully compliant, though \"Water's been slow\" slightly overstates things when the data only shows none logged today.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A has four chips instead of three. \"Hotel gym has no pool\" assumes a fact not in the input, and \"swim streak\" and \"back-to-back swims\" misstate the data, since a cycle session came between the swims. Answer B's chips are specific (swim recovery, hotel gym travel, water), accurate, varied, and roughly within the length limit. The third chip is a slightly odd claim given zero water logged, but it is still a gentle check-in.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B invents facts: \"back-to-back swims\" is false (a cycle session sits between them), \"swim streak\" is shaky, and the claim that the hotel gym has no pool isn't in the input. B also gives four chips instead of three. Answer A is grounded in the input (swim yesterday, hotel gyms, water), short, and specific. A's third chip is slightly off, since no water is logged yet, but it reads fine as an intention.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "A's chips are specific to Sam: swimming, hotel gyms and zero water so far. \"Swim streak\" is a slight stretch with two swims in a week, but it's mostly fair. B's \"I finally showed up again\" invents a comeback story that isn't in the data. Its \"for this week\" also assumes this is a travel week, which isn't known. Both are safe and under six words, but A is more grounded and gives a cleaner mix of encouragement, question and check-in.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use real details like the swims and hotel gyms, and both stay within about six words. A's \"I finally showed up again\" implies a lapse the data doesn't show, and \"this week\" assumes a travel week, which only happens every other week. B's \"Swim streak\" is slightly loose, but it reflects consistent sessions, and \"Help me get water in today\" ties directly to the 0-oz water log while giving a real mix of encouragement, question and check-in. B is more grounded and more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-runner-bio",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific, accurate to the input (10-day streak, running, 10K goal) and free of restriction. Answer A ties fuel to the next run and celebrates today's run, which fits the data showing Sam is well under the floor after running, and it mixes a celebration, a question and a proud moment. Answer B is also good: it uses the 10K goal and the low water. Its first chip reads more like a command than a natural first-person line, and two chips are celebratory, so A edges it.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific, in Sam's first-person voice, and free of restriction; they use the 10-day streak and Sam's running, and invent nothing. A gives a fuller mix: a fuel request tied to the 10K goal, a streak celebration, and a water check-in that fits the low water intake today. B is warm, but two of its chips are similar celebrations and it leaves out water. A is slightly better on variety and on matching Sam's data.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-runner-bio",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific, first-person and short, and both avoid restriction; they reference the 10K, the 10-day streak and fuel. A ties fuel to today's run and the 882 kcal gap, giving a check-in, an emotional encouragement chip (\"feeling proud\") and a question linked to the 10K. B's chips are also good, and its protein question fits the 62/130 g gap, but \"Fuel my 10K training right\" reads more like a command and the streak chip is less warm. A has a slightly better mix and voice.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are specific, in first person, within the length limit, and free of restriction or scale talk. Each draws on real input: the 10K goal, the 10-day streak, and fuelling. B ties more closely to today's situation: Sam ran today and is about 880 kcal under the floor, so \"Need more fuel after that run\" and \"Am I eating enough for my 10K?\" fit the data better. A is good but slightly more generic, though its protein chip is relevant.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-runner-bio",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both sets are specific and safe, and they draw on the run, the 10K and the 10-day streak without inventing anything. A gives a clear mix: a fuel check-in, a streak celebration and a curiosity question about the 10K. B ties to protein, which is useful today (62 of 130 g), but \"Did I eat enough protein today?\" overlaps with the existing \"Review my day\" chip, and \"Fuel my 10K training\" reads more like a command than a natural line. A's question chip is a bit vague but still natural, and both sets are close in quality.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are specific: they reference the 10K, the 10-day streak, and fueling, with no invented facts and no restriction language. A's \"Did I eat enough protein today?\" runs to six words but ties to real data (62 of 130 g). B gives a cleaner mix of a fueling check-in, a celebration, and a curiosity or vent question about the training paying off. They are close, but A's protein chip adds data-specific value while B's chips are all warm and on-voice, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-soccer-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives five chips when about three were asked for, though each is specific to Sam (the streak, soccer fuel, the downward drift, water) and none suggests restriction. \"Why am I drifting down?\" is a fair curiosity question that fits the maintenance goal, but the chip count overshoots the brief. Answer B gives exactly three specific, natural chips covering a protein check-in, a streak celebration and a soccer vent, though it lacks a real question and \"Ten days logged, nice!\" reads oddly in first person. On balance, B follows the format and the requested mix better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives exactly three chips that are specific and grounded: protein, the ten-day streak, and soccer fatigue. Together they cover a check-in, an encouragement and a vent, and all are short and in Sam's voice. Answer B has good, specific chips (fuel after soccer, drifting down, water), but it gives five instead of about three, and \"Why am I drifting down?\" edges toward the scale. Both are grounded, but A follows the format and is cleaner, while B's soccer fuel and water chips are arguably more useful; on balance A fits the spec better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-soccer-maintain",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both use real data (soccer, 10-day streak) and avoid restriction. A's \"Why am I drifting down?\" asks about the weight trend, which leans toward the scale but is a legitimate maintenance concern and stays within six words. B's water chip is specific, but it is seven words and has a slightly self-critical framing, and its \"Hit 10 days, I'm proud of it\" also runs long. A is tighter and a bit more natural, though the difference is modest.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers use soccer and the 10-day streak, and both avoid restriction. A's water chip ties to real low water (17 of 81 oz), but at seven words it runs a bit long, and its self-critical framing is slightly negative. B's \"Why am I drifting down?\" ties to the real trend of drifting below maintenance and invites a conversation about eating enough, though it touches on weight. It's not a scale target, it's short, and B's chips are concise and natural throughout, so B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-soccer-maintain",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives five chips when about three were requested, and its \"Legs day was tough\" chip is stale because legs was Nov 19, not recent. Its \"drifting down\" question also edges toward the scale, though it is otherwise specific. Answer B has three chips, but \"tomorrow's soccer\" is invented, since no soccer is scheduled tomorrow (Thursday five-a-side has no known date relation), and \"Why am I drinking so little water?\" is slightly awkward. Both have flaws, but B fits the format better, and its invented detail is minor compared to A's overcount and stale reference.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three specific chips covering soccer fueling, the 10-day streak and water, but \"tomorrow's soccer\" is invented, since the input only says five-a-side is on Thursdays, not that there is a session tomorrow. Answer B gives five chips instead of about three, and \"Legs day was tough\" refers to a session from days ago, while \"Why am I drifting down lately?\" touches on the scale trend. Even so, B's drift question is useful for maintenance and not restrictive. A is tighter and closer to the requested format, but its \"10 days logged, let's keep it going!\" runs past six words, and B's overcount and stale reference make it slightly weaker overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-bio-and-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use real data: the 10-day streak, the protein gap and the stress-snacking note. A's \"Stressed, might snack tonight\" could frame snacking as something to avoid, and \"10 days streak\" is ungrammatical. B's lines are natural and warm, with a clear mix of a request, a curiosity question and a celebration, though the first chip runs slightly long. B is the better set overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both draw on real data: the 10-day streak, the protein gap and the evening stress snacking, and neither invents facts or repeats the existing chips. A's chips are natural first-person lines with a clear mix: a fuel check-in, a curiosity question about stress snacking, and a celebration. A's protein chip runs to seven words, slightly over the limit. B's \"10 days streak\" is awkward, and \"Stressed, might snack tonight\" frames snacking as something to confess, which edges toward a guilt framing the coach shouldn't prompt, whereas A's version is open and curious.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-bio-and-notes",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use real data, such as the 10-day streak and Sam's evening snacking, and neither invents facts or suggests restriction. Answer B's protein chip addresses the actual 68 g protein gap, and its savoury snack chip draws on the noted preference, though it runs a little long at seven words. Answer A's chips are short, but \"Walk count toward my goal?\" is ambiguous and could frame exercise as compensation, and its snack chip is more generic. On balance B is more specific to Sam and better aligned with fuelling.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more personalised: it pulls the protein gap (62 of 130 g), connects savoury preference with evening snacking, and celebrates the 10-day streak. Its first chip runs to seven words, slightly over the limit. Answer B is shorter but more generic, and \"Walk count toward my goal?\" is awkward and could invite exercise-as-compensation thinking. A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-bio-and-notes",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is specific to Sam: it names the real 10-day streak, a protein dinner idea that fits the 68 g still needed, and a stress-snacking vent drawn from the notes, all short and in first person. The vent chip frames snacking as a feeling to talk through rather than as restriction, which is acceptable. Answer B is solid but more generic, its first chip runs slightly long, and its 'savoury lunch boost' is a bit off because Sam's savoury preference is for breakfast and lunch is already logged. Overall A is warmer, a better mix, and more personal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is more specific: it names the real 10-day streak, gives a forward-looking dinner protein prompt that fits the large remaining room, and uses the note about evening stress snacking as a vent starter. That last chip is framed as a feeling rather than as restriction. Answer A is decent but more generic, and its 'savoury lunch boost' makes little sense since lunch is already logged and the savoury preference was about breakfast. A also has a chip slightly over six words.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-no-bio-no-notes",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers draw on real data from the input (the 10-day streak, low water, protein gap, walks) and neither strays into restriction. A's chips are short and in Sam's own voice; \"What should I eat tonight?\" supports eating enough to reach the range, and \"Need more water\" fits the water data. B's chips are more specific (protein, walking), but \"Help me get more protein in today\" runs past six words, and \"Is my walking enough for progress?\" leans toward exercise-as-compensation and weight anxiety. A is more concise and safer, while B is more data-specific, so this is close, with a slight edge to A.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers draw on real data: the 10-day streak, low protein (62 of 130 g) or low water (17 of 81 oz), and the walking workouts. A's chips are specific and well mixed (protein check-in, streak celebration, a question about walking), though 'Help me get more protein in today' and 'My 10-day logging streak feels great' run slightly past six words, and 'Is my walking enough for progress?' could edge toward compensation thinking but reads as a curiosity question. B's chips are short and natural, hit the streak, water and the room left to eat tonight, and its dinner chip supports eating enough. Both are good; A ties more closely to the training and protein data and B is crisper on length, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-no-bio-no-notes",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A has four chips, which is one more than the three asked for. It also invents a claim ('Walks feel easier lately') that the data doesn't support, though its water and fuel chips are specific and well grounded. Answer B gives exactly three short first-person chips tied to real data: protein at 62 of 130 g, room left for dinner, and the 10-day streak, with a sensible mix of check-in, question and celebration. B is cleaner and invents nothing, while A's walk claim is an invented fact.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Answer A gives exactly three chips: a protein check-in, a dinner question and a streak celebration, which is a good mix that is grounded in the data, though the dinner chip is somewhat generic. Answer B gives four chips, one more than the three requested. Its \"Walks feel easier lately\" claims a feeling that is not in the input, which edges toward invention. Even so, B covers water and walking, which are specific to Sam's data, so neither answer is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-no-bio-no-notes",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B gives exactly three short, specific chips in Sam's voice: protein, the 10-day streak, and walks. They form a clean mix of help request, celebration and curiosity question. Answer A has five chips where about three were asked for, and \"10 days logging straight, feeling good!\" runs a bit long. \"Walk streak\" also mildly overstates the data, since the sessions included yoga and had gaps.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three concise, specific chips (protein, 10-day streak, walks) that form a good mix of check-in, celebration and question, all in Sam's voice and grounded in the data. Answer B gives five chips where about three were asked for, and \"10 days logging straight, feeling good!\" is seven words. B does add a water chip, which is relevant since Sam is at 17 of 81 oz. Even so, A fits the format and mix better.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-walker",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use real data: the 10-day streak, the walks, the low water in A, and the protein gap in B. A's \"Why does walking help my trend?\" ties weight-loss trend to exercise, which edges toward the scale and compensating with exercise, and it runs over six words. B's chips are short and warm, with a celebration, a protein question that fits being 68g short, and a training check-in, and none of them touch the scale. B is cleaner and better fits the rules.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers use real data: the 10-day streak, the walks, and the gaps in water and protein. A's chips are all safe, but \"Walks are feeling easy lately\" claims a feeling the input never gives. B's \"Why does walking help my trend?\" ties exercise to the weight trend, which leans toward the scale and toward exercising to burn weight off, and its water chip is a bit awkward. A's protein chip points toward eating more, which matters here because the person is 882 kcal under their floor, so A is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-walker",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives five chips where about three were asked for, and \"Why is my pace so slow?\" frames a healthy pace negatively and leans toward the scale. Its other chips are specific (the 10-day streak, walks, water) and \"Should I eat more today?\" fits the data. Answer B gives three specific, varied chips (protein for tonight, the streak, walking as training) in a natural first-person voice, all within about six words and safe. B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives exactly three specific, warm chips: a protein check-in, a streak celebration and a question about walking. It has the requested mix and nothing restrictive. Answer B has five chips, more than the three asked for, and \"Why is my pace so slow?\" frames sustainable loss negatively around the scale. B's specifics (the 10-day streak, walks, water) are nice, but A fits the brief better.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-walker",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers use real data (the 10-day streak and low water), avoid restriction, and stay in the first-person voice. A's \"What should I eat tonight?\" fits today's real gap of 882 kcal under the floor and invites eating more, giving a curiosity question in a good mix. B's \"Help me fuel my walks better\" ties to the walks and is also a good question, but B's first chip is 6 words and slightly stiff. Both are well matched, though A's dinner question is a little more timely given the low intake.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use the real streak and the low water, and neither invents anything or suggests restriction. A adds \"Help me fuel my walks better,\" which ties into their actual walking routine and frames food as fuel. B's \"What should I eat tonight?\" is useful given the room left to eat but is more generic. A is slightly more personalized and has a better mix.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

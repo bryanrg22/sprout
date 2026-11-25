@@ -1,5 +1,20 @@
 {
  "almonds": {
+  "detail": {
+   "fdcId": 170567,
+   "per100g": {
+    "calcium_mg": 269.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 12.5,
+    "iron_mg": 3.71,
+    "potassium_mg": 733.0,
+    "saturated_fat_g": 3.802,
+    "sodium_mg": 1.0,
+    "sugars_g": 4.35,
+    "trans_fat_g": 0.015,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Nuts, almonds",
@@ -62,9 +77,59 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 170567,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 143.0,
+     "modifier": "cup, whole"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 92.0,
+     "modifier": "cup, sliced"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 108.0,
+     "modifier": "cup, slivered"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 95.0,
+     "modifier": "cup, ground"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 28.35,
+     "modifier": "oz (23 whole kernels)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 1.2,
+     "modifier": "almond"
+    }
+   ]
+  },
   "query": "Nuts, almonds"
  },
  "apple": {
+  "detail": {
+   "fdcId": 171689,
+   "per100g": {
+    "calcium_mg": 5.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 1.3,
+    "iron_mg": 0.07,
+    "potassium_mg": 90.0,
+    "saturated_fat_g": 0.021,
+    "sodium_mg": 0.0,
+    "sugars_g": 10.1,
+    "trans_fat_g": 0.0,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Apples, raw, without skin",
@@ -127,9 +192,49 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 171689,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 110.0,
+     "modifier": "cup slices"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 216.0,
+     "modifier": "large (3-1/4\" dia)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 161.0,
+     "modifier": "medium (3\" dia)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 132.0,
+     "modifier": "small (2-3/4\" dia)"
+    }
+   ]
+  },
   "query": "Apples, raw, with skin"
  },
  "avocado": {
+  "detail": {
+   "fdcId": 171705,
+   "per100g": {
+    "calcium_mg": 12.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 6.7,
+    "iron_mg": 0.55,
+    "potassium_mg": 485.0,
+    "saturated_fat_g": 2.126,
+    "sodium_mg": 7.0,
+    "sugars_g": 0.66,
+    "trans_fat_g": 0.0,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Avocados, raw, all commercial varieties",
@@ -192,9 +297,54 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 171705,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 150.0,
+     "modifier": "cup, cubes"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 230.0,
+     "modifier": "cup, pureed"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 146.0,
+     "modifier": "cup, sliced"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 201.0,
+     "modifier": "avocado, NS as to Florida or California"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 50.0,
+     "modifier": "NLEA Serving"
+    }
+   ]
+  },
   "query": "Avocados, raw, all commercial varieties"
  },
  "banana": {
+  "detail": {
+   "fdcId": 173944,
+   "per100g": {
+    "calcium_mg": 5.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 2.6,
+    "iron_mg": 0.26,
+    "potassium_mg": 358.0,
+    "saturated_fat_g": 0.112,
+    "sodium_mg": 1.0,
+    "sugars_g": 12.23,
+    "trans_fat_g": 0.0,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Bananas, raw",
@@ -257,9 +407,69 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 173944,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 225.0,
+     "modifier": "cup, mashed"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 150.0,
+     "modifier": "cup, sliced"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 81.0,
+     "modifier": "extra small (less than 6\" long)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 101.0,
+     "modifier": "small (6\" to 6-7/8\" long)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 118.0,
+     "modifier": "medium (7\" to 7-7/8\" long)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 136.0,
+     "modifier": "large (8\" to 8-7/8\" long)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 152.0,
+     "modifier": "extra large (9\" or longer)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 126.0,
+     "modifier": "NLEA serving"
+    }
+   ]
+  },
   "query": "Bananas, raw"
  },
  "bread_whole_wheat": {
+  "detail": {
+   "fdcId": 172688,
+   "per100g": {
+    "calcium_mg": 161.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 6.0,
+    "iron_mg": 2.47,
+    "potassium_mg": 254.0,
+    "saturated_fat_g": 0.722,
+    "sodium_mg": 455.0,
+    "sugars_g": 4.34,
+    "trans_fat_g": 0.02,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Bread, whole-wheat, commercially prepared",
@@ -322,9 +532,39 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 172688,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 32.0,
+     "modifier": "slice"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 28.35,
+     "modifier": "oz"
+    }
+   ]
+  },
   "query": "Bread, whole-wheat, commercially prepared"
  },
  "broccoli_cooked": {
+  "detail": {
+   "fdcId": 169967,
+   "per100g": {
+    "calcium_mg": 40.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 3.3,
+    "iron_mg": 0.67,
+    "potassium_mg": 293.0,
+    "saturated_fat_g": 0.079,
+    "sodium_mg": 41.0,
+    "sugars_g": 1.39,
+    "trans_fat_g": 0.0,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Broccoli, cooked, boiled, drained, without salt",
@@ -387,9 +627,54 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 169967,
+   "items": [
+    {
+     "amount": 0.5,
+     "gramWeight": 78.0,
+     "modifier": "cup, chopped"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 280.0,
+     "modifier": "stalk, large (11\"-12\" long)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 180.0,
+     "modifier": "stalk, medium (7-1/2\" - 8\" long)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 140.0,
+     "modifier": "stalk, small (5\" long)"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 37.0,
+     "modifier": "spear (about 5\" long)"
+    }
+   ]
+  },
   "query": "Broccoli, cooked, boiled, drained, without salt"
  },
  "chicken_breast_grilled": {
+  "detail": {
+   "fdcId": 171534,
+   "per100g": {
+    "calcium_mg": 5.0,
+    "cholesterol_mg": 104.0,
+    "fiber_g": 0.0,
+    "iron_mg": 0.45,
+    "potassium_mg": 391.0,
+    "saturated_fat_g": 0.992,
+    "sodium_mg": 52.0,
+    "sugars_g": 0.0,
+    "trans_fat_g": 0.01,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, cooked, grilled",
@@ -452,9 +737,38 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 171534,
+   "items": [
+    {
+     "amount": 3.0,
+     "gramWeight": 85.0,
+     "modifier": "oz"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 196.0,
+     "modifier": "piece"
+    }
+   ]
+  },
   "query": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, cooked, grilled"
  },
  "egg_hard_boiled": {
+  "detail": {
+   "fdcId": 173424,
+   "per100g": {
+    "calcium_mg": 50.0,
+    "cholesterol_mg": 373.0,
+    "fiber_g": 0.0,
+    "iron_mg": 1.19,
+    "potassium_mg": 126.0,
+    "saturated_fat_g": 3.267,
+    "sodium_mg": 124.0,
+    "sugars_g": 1.12,
+    "vitamin_d_mcg": 2.2
+   }
+  },
   "hits": [
    {
     "description": "Egg, whole, cooked, hard-boiled",
@@ -517,9 +831,41 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 173424,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 136.0,
+     "modifier": "cup, chopped"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 8.5,
+     "modifier": "tbsp"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 50.0,
+     "modifier": "large"
+    }
+   ]
+  },
   "query": "Egg, whole, cooked, hard-boiled"
  },
  "greek_yogurt_nonfat": {
+  "detail": {
+   "fdcId": 171312,
+   "per100g": {
+    "calcium_mg": 112.0,
+    "cholesterol_mg": 6.0,
+    "fiber_g": 0.2,
+    "iron_mg": 0.03,
+    "saturated_fat_g": 0.145,
+    "sodium_mg": 37.0,
+    "trans_fat_g": 0.009
+   }
+  },
   "hits": [
    {
     "description": "Yogurt, Greek, nonfat, plain, CHOBANI",
@@ -582,9 +928,27 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 171312,
+   "items": []
+  },
   "query": "Yogurt, Greek, plain, nonfat"
  },
  "milk_whole": {
+  "detail": {
+   "fdcId": 171265,
+   "per100g": {
+    "calcium_mg": 113.0,
+    "cholesterol_mg": 10.0,
+    "fiber_g": 0.0,
+    "iron_mg": 0.03,
+    "potassium_mg": 132.0,
+    "saturated_fat_g": 1.865,
+    "sodium_mg": 43.0,
+    "sugars_g": 5.05,
+    "vitamin_d_mcg": 1.3
+   }
+  },
   "hits": [
    {
     "description": "Milk, whole, 3.25% milkfat, with added vitamin D",
@@ -647,9 +1011,48 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 171265,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 244.0,
+     "modifier": "cup"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 30.5,
+     "modifier": "fl oz"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 15.0,
+     "modifier": "tbsp"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 976.0,
+     "modifier": "quart"
+    }
+   ]
+  },
   "query": "Milk, whole, 3.25% milkfat, with added vitamin D"
  },
  "oats_dry": {
+  "detail": {
+   "fdcId": 173904,
+   "per100g": {
+    "calcium_mg": 52.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 10.1,
+    "iron_mg": 4.25,
+    "potassium_mg": 362.0,
+    "saturated_fat_g": 1.11,
+    "sodium_mg": 6.0,
+    "sugars_g": 0.99,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Cereals, oats, regular and quick, not fortified, dry",
@@ -712,9 +1115,38 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 173904,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 81.0,
+     "modifier": "cup"
+    },
+    {
+     "amount": 0.33,
+     "gramWeight": 27.0,
+     "modifier": "cup"
+    }
+   ]
+  },
   "query": "Cereals, oats, regular and quick, not fortified, dry"
  },
  "olive_oil": {
+  "detail": {
+   "fdcId": 171413,
+   "per100g": {
+    "calcium_mg": 1.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 0.0,
+    "iron_mg": 0.56,
+    "potassium_mg": 1.0,
+    "saturated_fat_g": 13.808,
+    "sodium_mg": 2.0,
+    "sugars_g": 0.0,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Oil, olive, salad or cooking",
@@ -777,9 +1209,44 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 171413,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 13.5,
+     "modifier": "tablespoon"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 216.0,
+     "modifier": "cup"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 4.5,
+     "modifier": "tsp"
+    }
+   ]
+  },
   "query": "Oil, olive, salad or cooking"
  },
  "peanut_butter": {
+  "detail": {
+   "fdcId": 172470,
+   "per100g": {
+    "calcium_mg": 49.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 5.0,
+    "iron_mg": 1.74,
+    "potassium_mg": 558.0,
+    "saturated_fat_g": 10.325,
+    "sodium_mg": 17.0,
+    "sugars_g": 10.49,
+    "trans_fat_g": 0.075,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Peanut butter, smooth style, without salt",
@@ -842,9 +1309,39 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 172470,
+   "items": [
+    {
+     "amount": 2.0,
+     "gramWeight": 32.0,
+     "modifier": "tbsp"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 258.0,
+     "modifier": "cup"
+    }
+   ]
+  },
   "query": "Peanut butter, smooth style, with salt"
  },
  "potato_baked": {
+  "detail": {
+   "fdcId": 170093,
+   "per100g": {
+    "calcium_mg": 15.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 2.2,
+    "iron_mg": 1.08,
+    "potassium_mg": 535.0,
+    "saturated_fat_g": 0.034,
+    "sodium_mg": 10.0,
+    "sugars_g": 1.18,
+    "trans_fat_g": 0.0,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Potatoes, baked, flesh and skin, without salt",
@@ -907,9 +1404,48 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 170093,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 148.0,
+     "modifier": "NLEA serving"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 299.0,
+     "modifier": "potato large"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 173.0,
+     "modifier": "potato medium"
+    },
+    {
+     "amount": 1.0,
+     "gramWeight": 138.0,
+     "modifier": "potato small"
+    }
+   ]
+  },
   "query": "Potatoes, baked, flesh and skin, without salt"
  },
  "rice_white_cooked": {
+  "detail": {
+   "fdcId": 168878,
+   "per100g": {
+    "calcium_mg": 10.0,
+    "cholesterol_mg": 0.0,
+    "fiber_g": 0.4,
+    "iron_mg": 1.2,
+    "potassium_mg": 35.0,
+    "saturated_fat_g": 0.077,
+    "sodium_mg": 1.0,
+    "sugars_g": 0.05,
+    "vitamin_d_mcg": 0.0
+   }
+  },
   "hits": [
    {
     "description": "Rice, white, long-grain, regular, enriched, cooked",
@@ -972,9 +1508,33 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 168878,
+   "items": [
+    {
+     "amount": 1.0,
+     "gramWeight": 158.0,
+     "modifier": "cup"
+    }
+   ]
+  },
   "query": "Rice, white, long-grain, regular, enriched, cooked"
  },
  "salmon_cooked": {
+  "detail": {
+   "fdcId": 175168,
+   "per100g": {
+    "calcium_mg": 15.0,
+    "cholesterol_mg": 63.0,
+    "fiber_g": 0.0,
+    "iron_mg": 0.34,
+    "potassium_mg": 384.0,
+    "saturated_fat_g": 2.397,
+    "sodium_mg": 61.0,
+    "sugars_g": 0.0,
+    "vitamin_d_mcg": 13.1
+   }
+  },
   "hits": [
    {
     "description": "Fish, salmon, Atlantic, farmed, cooked, dry heat",
@@ -1037,6 +1597,21 @@
     }
    }
   ],
+  "portions": {
+   "fdcId": 175168,
+   "items": [
+    {
+     "amount": 3.0,
+     "gramWeight": 85.0,
+     "modifier": "oz"
+    },
+    {
+     "amount": 0.5,
+     "gramWeight": 178.0,
+     "modifier": "fillet"
+    }
+   ]
+  },
   "query": "Fish, salmon, Atlantic, farmed, cooked, dry heat"
  }
 }

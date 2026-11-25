@@ -257,4 +257,104 @@ final class CoachMemoryTests: XCTestCase {
                                  CoachMemoryService.notesCharBudget + 1, // +1 for the trailing …
                                  "overlong notes must be clamped to the budget")
     }
+
+    // MARK: - App-owned figures are not stored (EVAL_REPORT 36)
+
+    /// Sentences claude-haiku-5-5 wrote in the MemoryFold run of 2026-11-24 (Evals/runs/
+    /// 20261124-212339-MemoryFold): each states a figure the app owns and must not be stored.
+    func testSentencesThatStateAnAppOwnedFigureAreRemoved() {
+        let recorded = [
+            "Sam asked about the daily calorie range, which Vita gave as centred around 1,650 kcal.",
+            "Alex confirmed the current calorie target is 2,750 kcal a day.",
+            "Alex's current calorie target of 2,750 kcal/day was confirmed.",
+            "Sam logged a weight of 156.8 and the trend is easing down steadily.",
+            "Alex asked about the 3,000 kcal daily target, which is app-owned and was not stored here.",
+        ]
+        for sentence in recorded {
+            XCTAssertTrue(CoachMemoryService.statesAnAppOwnedFigure(sentence), sentence)
+            XCTAssertEqual(CoachMemoryService.removingAppOwnedFigures(sentence), "", sentence)
+        }
+        for sentence in ["Hit 10,000 steps on Sunday.", "Aims for 120 g of protein.", "Weighed 72.4 kg at the gym.",
+                         "Her calorie target is 2000.", "Down to 181 lbs.", "The scale said 160 this morning."] {
+            XCTAssertTrue(CoachMemoryService.statesAnAppOwnedFigure(sentence), sentence)
+        }
+    }
+
+    /// Lines from the same run that hold a number which is not the app's: times and counts.
+    func testTimesCountsAndYearsAreKept() {
+        let kept = [
+            "• Eats chicken and fish; tried vegetarian for 4 days but returned to including meat",
+            "- Has daycare pickup duty on weekdays; can't train before 7 PM on those days",
+            "- Salmon is favourite dinner; happy to eat 3x weekly",
+            "- Teacher; lunch at 11:30 during term",
+            "- Works at a bakery starting at 4 a.m.; in bed by 8 p.m.",
+            "Lost weight before the 2019 wedding and wants to again.",
+            "Works 12-hour shifts on the ward.",
+            "Lifting weights 3x a week for 1.5 hours.",
+        ]
+        for line in kept {
+            XCTAssertFalse(CoachMemoryService.statesAnAppOwnedFigure(line), line)
+            XCTAssertEqual(CoachMemoryService.removingAppOwnedFigures(line), line, line)
+        }
+    }
+
+    func testOnlyTheSentenceWithTheFigureGoes() {
+        let summary = "Alex works a 4 a.m. bakery shift. Alex confirmed the 2,750 kcal target stays in place. "
+            + "Soy is out of every plan."
+        XCTAssertEqual(CoachMemoryService.removingAppOwnedFigures(summary),
+                       "Alex works a 4 a.m. bakery shift. Soy is out of every plan.")
+    }
+
+    func testABulletKeepsItsMarkerOrGoesWhole() {
+        let notes = """
+        - Allergic to shellfish
+        - Target is 1,700 kcal a day
+        - Weighed 156.8 this week. Prefers walks to runs.
+        1. Calorie target 2,100. Likes oats.
+        """
+        XCTAssertEqual(CoachMemoryService.removingAppOwnedFigures(notes), """
+        - Allergic to shellfish
+        - Prefers walks to runs.
+        1. Likes oats.
+        """)
+    }
+
+    func testTheGuardIsIdempotentAndLeavesCleanTextByteForByte() {
+        let clean = "- Likes oats  \n•  Pilates Tue/Fri at 7am\n\nBusy term ahead."
+        XCTAssertEqual(CoachMemoryService.removingAppOwnedFigures(clean), clean)
+        let dirty = "Sam logged a weight of 156.8. Pilates is going well.\n- Target 1,650 kcal\n- Likes tea"
+        let once = CoachMemoryService.removingAppOwnedFigures(dirty)
+        XCTAssertEqual(once, "Pilates is going well.\n- Likes tea")
+        XCTAssertEqual(CoachMemoryService.removingAppOwnedFigures(once), once)
+    }
+
+    func testParseRemovesFiguresFromBothFields() {
+        let raw = #"{"notes": "- Likes tea\n- Target 1,650 kcal", "summary": "Sam weighed 156.8. Busy week."}"#
+        let result = CoachMemoryService.parse(raw, fallbackNotes: "", fallbackSummary: "")
+        XCTAssertEqual(result?.profileNotes, "- Likes tea")
+        XCTAssertEqual(result?.conversationSummary, "Busy week.")
+    }
+
+    /// A field that held nothing but a figure counts as not provided: the memory keeps its
+    /// prior value instead of being wiped, as it does for an empty field.
+    func testAFieldThatWasOnlyAFigureFallsBackNotWipes() {
+        let raw = #"{"notes": "New: allergic to soy.", "summary": "Alex confirmed the 2,750 kcal target."}"#
+        let result = CoachMemoryService.parse(raw, fallbackNotes: "old", fallbackSummary: "KEEP ME")
+        XCTAssertEqual(result?.profileNotes, "New: allergic to soy.")
+        XCTAssertEqual(result?.conversationSummary, "KEEP ME")
+        // Both fields only figures: the reply still counts (the batch is folded, not sent again),
+        // and the memory stays as it was.
+        let onlyFigures = CoachMemoryService.parse(#"{"notes": "Target 1,700 kcal.", "summary": "Weighed 150.2."}"#,
+                                                   fallbackNotes: "n", fallbackSummary: "s")
+        XCTAssertEqual(onlyFigures?.profileNotes, "n")
+        XCTAssertEqual(onlyFigures?.conversationSummary, "s")
+    }
+
+    /// The prior memory passed back as a fallback is held to the same rule: memory written
+    /// before the guard existed loses its figures the next time it is folded.
+    func testTheFallbackIsCleanedToo() {
+        let raw = #"{"notes": "Likes tea."}"#
+        let result = CoachMemoryService.parse(raw, fallbackNotes: "", fallbackSummary: "Goal check. Target is 1,700 kcal.")
+        XCTAssertEqual(result?.conversationSummary, "Goal check.")
+    }
 }

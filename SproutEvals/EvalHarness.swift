@@ -126,6 +126,14 @@ struct EvalRecord: Encodable {
     var calls: Int
     /// The parsed output, compact JSON or text, for reading failures by hand.
     var output: String
+    /// What the app gave the model: the last user message of the attempt's first request, as
+    /// the app built it (the data, not the system prompt). This is what a judge reads beside
+    /// the output (`Evals/judge.py`). Nil for an attempt that sent no request.
+    var given: String?
+    /// What the app shows (or stores) from the reply, when that differs from `output`: a
+    /// structured reply decoded and cleaned, the memory as `parse` keeps it. A judge reads
+    /// this when present, so it judges what the person would see, not the raw reply.
+    var shown: String?
 }
 
 /// Appends records to `<out>/records-<task>.jsonl`, safely from concurrent cases.
@@ -165,6 +173,8 @@ struct EvalOutcome {
     var scores: [String: Double]
     var pass: Bool
     var output: String
+    /// What the app shows from the reply, when that differs from `output` (see `EvalRecord.shown`).
+    var shown: String? = nil
 
     static func failed(_ error: Error) -> EvalOutcome { failed(error, output: "") }
 
@@ -195,13 +205,17 @@ final class ResponseRecorder: AITransport, @unchecked Sendable {
 
     init(around inner: any AITransport) { self.inner = inner }
 
+    private var requests: [Data] = []
+
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        if let body = request.httpBody { lock.withLock { requests.append(body) } }
         let (data, response) = try await inner.data(for: request)
         lock.withLock { bodies.append(data) }
         return (data, response)
     }
 
     var last: Data? { lock.withLock { bodies.last } }
+    var firstRequest: Data? { lock.withLock { requests.first } }
 }
 
 /// What a recorded call produced: the app's own result, and the model's reply behind it.
@@ -255,11 +269,14 @@ enum EvalRunner {
                 guard let job = iterator.next() else { return }
                 group.addTask {
                     let usage = UsageRecorder()
+                    // Every request of the attempt passes through this, so the record can say
+                    // what the model was given; `recording` wraps it in turn.
+                    let requests = ResponseRecorder(around: AIDefaultTransport())
                     let runtime = AIRuntime(provider: job.candidate.provider,
                                             apiKey: EvalEnv.key(for: job.candidate.provider),
                                             model: job.candidate.model,
                                             reasoningEffort: job.candidate.effort,
-                                            transport: nil,
+                                            transport: requests,
                                             onUsage: { usage.record($0) })
                     let started = Date()
                     let outcome = await AIRuntime.$current.withValue(runtime) { await attempt(job.item) }
@@ -279,7 +296,10 @@ enum EvalRunner {
                         thinkingTokens: calls.contains { $0.thinkingTokens != nil }
                             ? calls.reduce(0) { $0 + ($1.thinkingTokens ?? 0) } : nil,
                         stopReason: calls.last?.stopReason,
-                        calls: calls.count, output: outcome.output))
+                        calls: calls.count, output: outcome.output,
+                        given: requests.firstRequest.flatMap(givenText(inRequest:))
+                            .map { String($0.prefix(givenLimit)) },
+                        shown: outcome.shown))
                 }
             }
             for _ in 0..<EvalEnv.concurrency { addNext() }
@@ -290,6 +310,29 @@ enum EvalRunner {
 
     /// Longest reply kept in a record (the memory fold's two blocks can reach 2,500 characters).
     static let outputLimit = 4000
+    /// Longest input kept in a record (a memory-fold batch of messages is the longest).
+    static let givenLimit = 8000
+
+    /// The last user message of a request body, whichever wire format it is in: Anthropic
+    /// Messages and OpenAI Chat Completions (`messages`), OpenAI Responses (`input`). Text
+    /// parts only; an image is shown as "[image]". Nil for a body that is not JSON (an image
+    /// edit is multipart) or has no user message.
+    static func givenText(inRequest body: Data) -> String? {
+        guard let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] else { return nil }
+        let turns = (json["messages"] as? [[String: Any]]) ?? (json["input"] as? [[String: Any]]) ?? []
+        guard let user = turns.last(where: { ($0["role"] as? String) == "user" }) else {
+            return json["input"] as? String
+        }
+        if let text = user["content"] as? String { return text }
+        let parts = ((user["content"] as? [[String: Any]]) ?? []).compactMap { block -> String? in
+            switch block["type"] as? String {
+            case "text", "input_text": return block["text"] as? String
+            case "image", "input_image", "image_url": return "[image]"
+            default: return nil
+            }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: "\n")
+    }
 
     /// Runs `body`, which calls the app's real code path, with every provider response
     /// recorded. The runtime in force is kept as it is (provider, key, model, usage

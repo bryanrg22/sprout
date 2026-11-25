@@ -3,10 +3,10 @@
 #
 #   Evals/regrade-text.sh Evals/runs/<run> [Evals/runs/<run> ...]
 #
-# Covers the daily brief, insight line, weekly reflection, onboarding note and progress
-# recap. No model is called and nothing is spent. A run's records are not touched; the new
-# scores go to <run>/regrade-text.json, and a table of old against new pass counts per
-# candidate is printed. A reply the app discarded, or a failed call, keeps its old result.
+# Covers the daily brief, insight line, weekly reflection, onboarding note, progress
+# recap and memory fold. No model is called and nothing is spent. A run's records are not
+# touched; the new scores go to <run>/regrade-text.json, and a table of old against new
+# pass counts per candidate is printed. A reply the app discarded, or a failed call, keeps its old result.
 set -euo pipefail
 
 [ "$#" -ge 1 ] || { echo "usage: $0 Evals/runs/<run> [...]"; exit 1; }
@@ -20,7 +20,9 @@ LOG="$(mktemp)"
 cd "$ROOT"
 xcodegen generate >/dev/null
 
+# One more try when the simulator refuses to launch the test runner (see run.sh).
 set +e
+for ATTEMPT in 1 2; do
 TEST_RUNNER_SPROUT_EVAL_REGRADE_TEXT="$RUNS" \
 xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -destination "platform=iOS Simulator,name=$SIM" \
@@ -28,6 +30,9 @@ xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -only-testing:"SproutEvals/TextRegradeRun/testTextRegrade" \
   > "$LOG" 2>&1
 STATUS=$?
+[ "$STATUS" -ne 0 ] && [ "$ATTEMPT" -eq 1 ] && grep -q "failed preflight checks" "$LOG" && continue
+break
+done
 set -e
 if [ "$STATUS" -ne 0 ]; then
   tail -n 40 "$LOG"; rm -f "$LOG"

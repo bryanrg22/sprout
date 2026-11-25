@@ -544,12 +544,19 @@ final class GraderTests: XCTestCase {
         XCTAssertEqual(typed.map(\.id), try rows("meal_describe/v1.jsonl", as: Graders.MealTruth.self).map(\.id))
         for truth in typed {
             if let saturated = truth.saturated_fat_g { XCTAssertLessThanOrEqual(saturated, truth.fat_g + 0.2, truth.id) }
-            if let fiber = truth.fiber_g, let sugars = truth.sugars_g {
+            if let fiber = truth.fiber_g, let sugars = truth.sugars_g,
+               !Self.sugarsAboveCarbsInTheSource.contains(truth.id) {
                 XCTAssertLessThanOrEqual(fiber + sugars, truth.carbs_g + 0.5, truth.id)
             }
             XCTAssertNil(truth.no_basis, "\(truth.id): every v3 portion is a named food in grams")
         }
     }
+
+    /// Cases whose truth has more sugars than carbohydrate because the USDA record does:
+    /// 171265 ("Milk, whole, 3.25% milkfat, with added vitamin D") lists total sugars 5.05 g
+    /// per 100 g against carbohydrate (by difference) 4.8 g. The dataset keeps USDA's values;
+    /// only this sanity bound is waived, for the one case that is that milk alone.
+    private static let sugarsAboveCarbsInTheSource: Set<String> = ["milk-1cup"]
 
     /// The (record, column) pairs `build_v3.py` withholds, kept in step with its `WITHHELD`
     /// table: a value that is USDA's but does not describe the food the case names.
@@ -926,6 +933,39 @@ final class GraderTests: XCTestCase {
         XCTAssertEqual(EvalRunner.jsonObject(#"{"prompts":["a","b"]}"#)?["prompts"] as? [String], ["a", "b"])
         XCTAssertNil(EvalRunner.jsonObject("Hello."))
         XCTAssertNil(EvalRunner.jsonObject(nil))
+    }
+
+    /// What the judge reads for a checklist: the plan as the card shows it, rebuilt from the
+    /// recorded reply with the app's own repair and cleaning. claude-sonnet-5 sent 16 of 48
+    /// checklists (run 20261125-084645) with the list wrapped in a string, as below.
+    func testShownRebuildsWhatTheAppShows() {
+        let wrapped = #"{"chips":"{\"chips\":[{\"title\":\"Gym (Legs)\",\"icon\":\"dumbbell.fill\"},{\"title\":\"Walk\",\"icon\":\"figure.walk\"}]}","tasks":[{"title":"Leg day at the gym","icon":"not.a.symbol"}]}"#
+        XCTAssertEqual(TextRegrade.shown(task: "checklistPlan", raw: wrapped),
+                       "Tasks for today:\n- Leg day at the gym\n\nQuick-add chips: Gym (Legs), Walk")
+        let memory = #"{"notes": "- Likes tea\n- Target 1,650 kcal", "summary": "Sam weighed 156.8. Busy week."}"#
+        XCTAssertEqual(TextRegrade.shown(task: "memoryFold", raw: memory), "NOTES:\n- Likes tea\n\nSUMMARY:\nBusy week.")
+        XCTAssertNil(TextRegrade.shown(task: "checklistPlan", raw: "not json"))
+        XCTAssertNil(TextRegrade.shown(task: "insightLine", raw: "A line."), "its output already is what is shown")
+    }
+
+    /// What a record says the model was given: the last user message of the first request.
+    func testTheGivenInputIsReadFromEveryRequestFormat() throws {
+        func given(_ object: [String: Any]) throws -> String? {
+            EvalRunner.givenText(inRequest: try JSONSerialization.data(withJSONObject: object))
+        }
+        // Anthropic Messages, with string content and with blocks; the last user turn wins.
+        XCTAssertEqual(try given(["system": "S", "messages": [["role": "user", "content": "Facts."]]]), "Facts.")
+        XCTAssertEqual(try given(["messages": [["role": "user", "content": "old"], ["role": "assistant", "content": "a"],
+                                               ["role": "user", "content": [["type": "image", "source": [:]],
+                                                                            ["type": "text", "text": "What is this?"]]]]]),
+                       "[image]\nWhat is this?")
+        // OpenAI Responses (`input`, as a list or a plain string) and Chat Completions.
+        XCTAssertEqual(try given(["input": [["role": "user", "content": [["type": "input_text", "text": "Hi."]]]]]), "Hi.")
+        XCTAssertEqual(try given(["input": "Plain."]), "Plain.")
+        XCTAssertEqual(try given(["messages": [["role": "system", "content": "S"], ["role": "user", "content": "Chat."]]]), "Chat.")
+        // No user message, or a body that is not JSON (an image edit is multipart): nothing.
+        XCTAssertNil(try given(["messages": [["role": "assistant", "content": "a"]]]))
+        XCTAssertNil(EvalRunner.givenText(inRequest: Data("--boundary\r\n".utf8)))
     }
 
     func testRecordingKeepsTheReplyTheAppThrowsAway() async {
@@ -1554,7 +1594,12 @@ final class GraderTests: XCTestCase {
         let expect = memoryExpectation
         var graded = Graders.memoryFold(raw: memoryReply(notes: goodNotes + "\n- It was raining for days"), expect: expect)
         XCTAssertTrue(graded.pass); XCTAssertEqual(graded.scores["small_talk_not_kept"], 0)
+        // A stored figure fails the score, not the pass. "Weighed 161.2" is not stored at all
+        // since `CoachMemoryService.parse` removes such sentences (EVAL_REPORT 36); a figure
+        // the guard does not read (no unit, no weight word) is still caught by the score.
         graded = Graders.memoryFold(raw: memoryReply(notes: goodNotes + "\n- Weighed 161.2"), expect: expect)
+        XCTAssertTrue(graded.pass); XCTAssertEqual(graded.scores["no_app_owned_number_stored"], 1)
+        graded = Graders.memoryFold(raw: memoryReply(notes: goodNotes + "\n- Hopes to see 161.2 by spring"), expect: expect)
         XCTAssertTrue(graded.pass); XCTAssertEqual(graded.scores["no_app_owned_number_stored"], 0)
         graded = Graders.memoryFold(raw: memoryReply(notes: goodNotes, summary: "He shared an allergy."), expect: expect)
         XCTAssertTrue(graded.pass)
