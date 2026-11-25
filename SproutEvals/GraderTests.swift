@@ -2403,10 +2403,10 @@ final class GraderTests: XCTestCase {
             return String(test.name[range.upperBound...].dropLast())
         }
         for added in ["InsightLine", "WeeklyReflection", "OnboardingNote", "MemoryFold", "ProgressSummary",
-                      "FoodSuggestions", "CoachPrompts", "ChecklistPlan", "MealDescribeHousehold", "MealPhoto"] {
+                      "FoodSuggestions", "CoachPrompts", "ChecklistPlan", "MealDescribeHousehold", "MealPhoto", "CoachConversation"] {
             XCTAssertTrue(names.contains(added), "LiveEvals has no test\(added)")
         }
-        XCTAssertEqual(names.count, 14)
+        XCTAssertEqual(names.count, 15)
         for name in names {
             XCTAssertTrue(Graders.containsPhrase(usage, name), "Evals/run.sh does not list \(name) in its usage")
         }

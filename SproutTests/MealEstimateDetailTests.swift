@@ -287,6 +287,19 @@ final class MealEstimateDetailTests: XCTestCase {
         }
     }
 
+    /// The note is one sentence of prose and is shown only when present. A reply without it
+    /// (claude-haiku-5-5 sent one in 66 on 2026-11-25, EVAL_REPORT 37) keeps every number;
+    /// a missing number is still an error (the test above).
+    func testAMissingNoteKeepsTheEstimateOnEveryWire() async throws {
+        var noNote = estimate()
+        noNote["notes"] = nil
+        try await onEveryWire(noNote) { result, wire in
+            XCTAssertEqual(result.total_calories, 520, "\(wire)")
+            XCTAssertEqual(result.total_protein_g, 46, "\(wire)")
+            XCTAssertEqual(result.notes, "", "\(wire)")
+        }
+    }
+
     // MARK: - What is sent
 
     func testTheSchemaAsksForTheFourAsRequiredNullableNumbersOnEveryWire() async throws {

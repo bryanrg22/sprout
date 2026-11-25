@@ -1,0 +1,120 @@
+{
+ "run": "20261125-092648-MealDescribeHousehold",
+ "tasks": [
+  {
+   "task": "mealDescribe",
+   "dataset": "meal_describe/v4",
+   "cases": 22,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 66,
+     "usable": 64,
+     "passed": 55,
+     "pass_rate": 0.8333333333333334,
+     "ci95_cases": [
+      0.6818181818181818,
+      0.9545454545454546
+     ],
+     "ci95": [
+      0.7256918759242571,
+      0.9043051459080035
+     ],
+     "per_repeat_pass": [
+      0.7727272727272727,
+      0.8636363636363636,
+      0.8636363636363636
+     ],
+     "latency_p50_s": 1.968,
+     "latency_p95_s": 2.527,
+     "mean_uncached_input_tokens": 1580.9545454545455,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 507.04545454545456,
+     "mean_cost_usd": 0.0004116181818181818,
+     "scores": {
+      "carbs_abs_error_g": 1.8875000000000004,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 1.5296875,
+      "fiber_g_abs_error": 0.49375,
+      "fiber_g_answered": 1,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.09414594176128993,
+      "kcal_within_20pct": 0.859375,
+      "protein_abs_error_g": 2.0890625000000003,
+      "range_well_formed": 1,
+      "saturated_fat_g_abs_error": 0.30624999999999997,
+      "saturated_fat_g_answered": 1,
+      "sodium_mg_abs_error": 12.87758620689655,
+      "sodium_mg_answered": 1,
+      "sugars_g_abs_error": 0.37499999999999994,
+      "sugars_g_answered": 1,
+      "truth_in_stated_range": 0.765625
+     },
+     "errors": [
+      "decoding(\"DecodingError.keyNotFound: Key \\'notes\\' not found in keyed decoding container. Debug description: No value associated with key Key(stringValue: \\\"notes\\\", intValue: nil) (\\\"notes\\\").\")"
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 66,
+     "usable": 66,
+     "passed": 61,
+     "pass_rate": 0.9242424242424242,
+     "ci95_cases": [
+      0.8181818181818182,
+      1.0
+     ],
+     "ci95": [
+      0.834605945487485,
+      0.9672084459353918
+     ],
+     "per_repeat_pass": [
+      0.9090909090909091,
+      0.9545454545454546,
+      0.9090909090909091
+     ],
+     "latency_p50_s": 3.889,
+     "latency_p95_s": 5.129,
+     "mean_uncached_input_tokens": 1646.9545454545455,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 479.5,
+     "mean_cost_usd": 0.008088909090909091,
+     "scores": {
+      "carbs_abs_error_g": 1.1590909090909094,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.8757575757575761,
+      "fiber_g_abs_error": 0.1575757575757576,
+      "fiber_g_answered": 1,
+      "items_sum_to_total": 0.9848484848484849,
+      "kcal_pct_error": 0.05485677002864683,
+      "kcal_within_20pct": 0.9242424242424242,
+      "protein_abs_error_g": 1.6045454545454547,
+      "range_well_formed": 1,
+      "saturated_fat_g_abs_error": 0.21969696969696967,
+      "saturated_fat_g_answered": 1,
+      "sodium_mg_abs_error": 15.346666666666666,
+      "sodium_mg_answered": 1,
+      "sugars_g_abs_error": 0.28181818181818186,
+      "sugars_g_answered": 1,
+      "truth_in_stated_range": 0.8787878787878788
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-sonnet-5",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "shared_cases": 22,
+     "mean_difference": -0.09090909090909091,
+     "ci95": [
+      -0.19696969696969696,
+      -0.01515151515151515
+     ]
+    }
+   ]
+  }
+ ]
+}

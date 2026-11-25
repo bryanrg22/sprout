@@ -4,7 +4,8 @@
 #
 #   Evals/run.sh <eval> "<provider:model[@effort]>[,...]" [repeats] [limit]
 #
-#   eval      MealDescribe | MealDescribeHousehold | MealPhoto | CoachToolChoice | DailyBrief | Avatar
+#   eval      MealDescribe | MealDescribeHousehold | MealPhoto | CoachToolChoice | CoachConversation
+#             | DailyBrief | Avatar
 #             | InsightLine | WeeklyReflection | OnboardingNote | MemoryFold    (cheap-tier wording tasks)
 #             | ProgressSummary | FoodSuggestions | CoachPrompts | ChecklistPlan (structured tasks: a forced
 #               tool call, or the JSON-schema format on the models that refuse one, EVAL_REPORT 30)
