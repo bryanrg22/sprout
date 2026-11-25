@@ -76,18 +76,22 @@ extension AIConfig {
         // 13, +0.25, -0.04 to +0.54), an interval that does not favour the shipped model, at a
         // twenty-first of the cost (EVAL_REPORT 36, decided in 38).
         .coachPrompts: [.anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 36")],
-        // 13 cases x 3 repeats, three runs: both pass every case at a fraction of the price of
-        // the tier default (gpt-4.1-mini passed 77-92% and is deprecated; haiku-4-5 costs 7x).
+        // The daily brief: claude-haiku-5-5 and claude-sonnet-5 both keep the numbers (rules 97%
+        // and 100%), but a blind judge preferred claude-sonnet-5 20 to 2 (+0.24 to +0.70): the
+        // cheaper model broke the brief's own format and once dropped a number (EVAL_REPORT 39).
+        // About $1.40 per 1,000 briefs, one a day. OpenAI: EVAL_REPORT 10.
         .dailyBrief: [
-            .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 10"),
+            .anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 39"),
             .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 10"),
         ],
-        // Three short-writing tasks. Anthropic: claude-haiku-5-5 (thinking off, EVAL_REPORT 25)
+        // Short-writing tasks. Anthropic: claude-haiku-5-5 (thinking off, EVAL_REPORT 25)
         // passed as often as claude-haiku-4-5 or more, 5 repeats on the current prompts, at a
         // seventh of the cost and faster (EVAL_REPORT 35). OpenAI: each replaced the deprecated
         // gpt-4.1-mini with the cheapest candidate within noise of the best (EVAL_REPORT 22).
+        // The insight line moved up again: against claude-sonnet-5 the judge preferred it 21 to 6
+        // (+0.05 to +0.47) with the rules equal (EVAL_REPORT 39); one line a day.
         .insightLine: [
-            .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 35"),
+            .anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 39"),
             .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22"),
         ],
         .weeklyReflection: [
@@ -98,13 +102,13 @@ extension AIConfig {
             .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 35"),
             .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22"),
         ],
-        // The memory fold: claude-haiku-5-5 passes as often as claude-haiku-4-5 and writes no
-        // gendered pronoun (against 28%). The app-owned figures it stored in 20% of folds are
-        // now removed in code by `CoachMemoryService.parse`; regraded through it, none is
-        // stored (EVAL_REPORT 36). OpenAI: gpt-6-luna kept every planted fact in only 78% of
-        // runs (EVAL_REPORT 22).
+        // The memory fold: claude-sonnet-5. Against claude-haiku-5-5 the rules are equal (every
+        // fact kept, no app-owned figure stored, now removed in code, EVAL_REPORT 36) and a blind
+        // judge preferred its notes 23 to 8 (+0.06 to +0.75): tighter catch-ups, cleaner
+        // retractions. It guessed a gender in 2 of 36 folds (EVAL_REPORT 39). OpenAI: gpt-6-luna
+        // kept every planted fact in only 78% of runs (EVAL_REPORT 22).
         .memoryFold: [
-            .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 36"),
+            .anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 39"),
             .openai: AITaskDefault(model: "gpt-5.6-luna", evidence: "EVAL_REPORT 22"),
         ],
         // The recap: claude-sonnet-5 passed 88% against 80% for claude-haiku-5-5, whose failures

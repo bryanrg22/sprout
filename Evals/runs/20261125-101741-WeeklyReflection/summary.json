@@ -1,0 +1,102 @@
+{
+ "run": "20261125-101741-WeeklyReflection",
+ "tasks": [
+  {
+   "task": "weeklyReflection",
+   "dataset": "weekly_reflection/v1",
+   "cases": 16,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 48,
+     "usable": 48,
+     "passed": 48,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9258973488472576,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.605,
+     "latency_p95_s": 1.927,
+     "mean_uncached_input_tokens": 1076.8125,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 189.77083333333334,
+     "mean_cost_usd": 0.00020256666666666667,
+     "scores": {
+      "at_most_one_emoji": 1,
+      "name_used_once": 0.9791666666666666,
+      "no_list_or_header": 1,
+      "no_number_invented": 1,
+      "repeats_a_given_count": 1,
+      "three_to_five_sentences": 0.9791666666666666,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 48,
+     "usable": 47,
+     "passed": 47,
+     "pass_rate": 0.9791666666666666,
+     "ci95_cases": [
+      0.9375,
+      1.0
+     ],
+     "ci95": [
+      0.8910053086246883,
+      0.9963129840206002
+     ],
+     "per_repeat_pass": [
+      1.0,
+      0.9375,
+      1.0
+     ],
+     "latency_p50_s": 3.477,
+     "latency_p95_s": 4.533,
+     "mean_uncached_input_tokens": 1075.8125,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 201.3125,
+     "mean_cost_usd": 0.00416475,
+     "scores": {
+      "at_most_one_emoji": 1,
+      "name_used_once": 0.9787234042553191,
+      "no_list_or_header": 1,
+      "no_number_invented": 1,
+      "repeats_a_given_count": 0.9761904761904762,
+      "three_to_five_sentences": 0.7659574468085106,
+      "used": 0.9791666666666666,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "the sanitiser discarded the reply"
+     ]
+    }
+   ],
+   "baseline": "anthropic:claude-haiku-5-5",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "shared_cases": 16,
+     "mean_difference": -0.020833333333333336,
+     "ci95": [
+      -0.0625,
+      0.0
+     ]
+    }
+   ]
+  }
+ ]
+}

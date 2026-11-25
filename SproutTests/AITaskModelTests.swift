@@ -42,11 +42,11 @@ final class AITaskModelTests: XCTestCase {
         .planBuild:        ("claude-opus-4-8", "gpt-5.6-sol"),
         .planReview:       ("claude-opus-4-8", "gpt-5.6-sol"),
         .planResearch:     ("claude-opus-4-8", "gpt-5.6-sol"),
-        .dailyBrief:       ("claude-haiku-5-5", "gpt-6-luna"),            // EVAL_REPORT 10
-        .insightLine:      ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
+        .dailyBrief:       ("claude-sonnet-5", "gpt-6-luna"),             // Anthropic: EVAL_REPORT 39; OpenAI: 10
+        .insightLine:      ("claude-sonnet-5", "gpt-6-luna"),             // Anthropic: EVAL_REPORT 39; OpenAI: 22
         .weeklyReflection: ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
         .onboardingNote:   ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
-        .memoryFold:       ("claude-haiku-5-5", "gpt-5.6-luna"),          // EVAL_REPORT 36 / 22
+        .memoryFold:       ("claude-sonnet-5", "gpt-5.6-luna"),           // EVAL_REPORT 39 / 22
     ]
 
     func testEveryTaskHasAPinnedDefault() {
