@@ -89,6 +89,51 @@
   "run": "20261125-084559-CoachPrompts",
   "task": "coachPrompts"
  },
+ "coachTurn-no-tool-hypothetical-cake": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "no-tool-hypothetical-cake",
+  "repeat": 0,
+  "run": "20261125-093746-CoachConversation",
+  "task": "coachTurn"
+ },
+ "coachTurn-plateau-worry-gaining": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "plateau-worry-gaining",
+  "repeat": 0,
+  "run": "20261125-093746-CoachConversation",
+  "task": "coachTurn"
+ },
+ "coachTurn-tool-edit-burrito-bowl": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "tool-edit-burrito-bowl",
+  "repeat": 0,
+  "run": "20261125-093746-CoachConversation",
+  "task": "coachTurn"
+ },
+ "coachTurn-tool-step-goal-10k": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "B",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "tool-step-goal-10k",
+  "repeat": 0,
+  "run": "20261125-093746-CoachConversation",
+  "task": "coachTurn"
+ },
+ "coachTurn-vent-pizza-night": {
+  "baseline": "anthropic:claude-sonnet-5",
+  "baseline_is": "A",
+  "candidate": "anthropic:claude-haiku-5-5",
+  "case": "vent-pizza-night",
+  "repeat": 0,
+  "run": "20261125-093746-CoachConversation",
+  "task": "coachTurn"
+ },
  "foodSuggestions-alex-maintain-dinner": {
   "baseline": "anthropic:claude-sonnet-5",
   "baseline_is": "B",

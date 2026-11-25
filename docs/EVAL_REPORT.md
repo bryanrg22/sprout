@@ -46,6 +46,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 34 | The evaluations audited: four grader defects, two prompt defects, a regrade of every past answer, and statistics by case | 2026-11-24 |
 | 35 | Five tasks measured on the current prompts: three move to the cheaper model, the recap keeps its own | 2026-11-24 |
 | 36 | Quality judged, not only rules: a pairwise judge, the memory fold's figures removed in code, nine tasks run | 2026-11-25 |
+| 37 | Three new datasets: meal photos from Nutrition5k, meals in household measures, and thirty coach conversations | 2026-11-25 |
 
 ---
 
@@ -2177,4 +2178,116 @@ so). It cannot justify a switch.
   datasets this repository does not have yet (a conversation set, and Nutrition5k photos,
   whose download is still to be approved with its size).
 - No new default has been seen in the app's UI.
+
+## 37. Three new datasets: meal photos from Nutrition5k, meals in household measures, and thirty coach conversations (2026-11-25)
+
+**Approved by the owner** ("do this", for the three datasets proposed at the end of section 36,
+the Nutrition5k download included). **Spent: $3.28** ($2.49 for the runs, $0.80 for the judge),
+against about $13 estimated. **Spend to date: about $32.07.** Each run is `claude-sonnet-5`
+(shipped) against `claude-haiku-5-5`, 3 repeats, on committed trees (`530e800`, `0ab6b5d`).
+
+### Meal photos (`meal_photo/v1`, run `20261125-092930`)
+
+30 plates from Nutrition5k's test split (Thames et al., CVPR 2021, CC BY 4.0). Every plate
+was weighed ingredient by ingredient. The plates were screened for label noise (total equals
+the sum of the ingredients, 0.3–9 kcal per gram, 50–1,500 kcal) and spread across small to
+large (`build_v1.py`, fixed seed). Every photo was looked at: all show a whole plate. About
+13 MB was downloaded; 1.9 MB of JPEGs is committed with `ATTRIBUTION.md`. Each photo goes
+through the app's own preparation, now shared with `PhotoFoodFlow`
+(`UIImage.mealPhotoMaxEdge`, `mealPhotoUpload()`).
+
+| | `sonnet-5` | `haiku-5-5` |
+|---|---|---|
+| Within 20% of the weighed calories | **46%** (30–61%) | 19% (8–32%) |
+| Mean / median calorie error per plate | 35% / 21% | 56% / 38% |
+| Mean absolute error as a share of the mean plate (the paper's measure) | **31%** | 51% |
+| Truth inside the model's own range | 47% | 28% |
+| Over-estimates | 77% of plates, portions +16% (median) | 78%, portions +50% |
+| $ / 1,000 photos, p50 | 11.03, 5.7 s | 0.58, 3.0 s |
+
+Paired difference: −26.7% (−42.2% to −12.2%). For comparison, on this same split the paper
+reports 18.8% for a model trained on the dataset with depth, 26.1% from 2D video frames, and
+41–53% for people (its Figure 7). **Photos keep `claude-sonnet-5`.**
+
+**A finding to act on, not acted on here: both models over-estimate on more than three
+plates in four.** The prompt tells them to assume generous restaurant portions and to add
+hidden oil. That is right for a restaurant meal, but these are weighed cafeteria plates. For
+someone losing weight an over-estimate is harmless; for someone gaining it means eating less
+than they think. The prompt should not be tuned to one cafeteria's plates. A prompt change
+needs a dataset with restaurant meals too.
+
+### Meals in household measures (`meal_describe/v4`, run `20261125-092648`)
+
+v1 and v3 give every portion in grams, and both models passed every attempt (section 36). v4
+describes 22 meals the way people type them, with no weight: "a medium banana", "a cup of
+cooked white rice", "half a salmon fillet". The truth is USDA's own gram weight for that
+household measure of that record, times its per-100 g values (`build_v4.py`; nothing from
+memory). The build refuses a measure USDA does not list, and CI rebuilds and diffs it. One
+case was corrected before the run: USDA's record is a *peeled* apple, so the case says so.
+
+| | `sonnet-5` | `haiku-5-5` |
+|---|---|---|
+| Within 20% | **92%** (82–100%) | 83% (68–95%) |
+| Mean calorie error | 5.5% | 9.4% |
+| Truth inside its range | 88% | 77% |
+
+Paired: −9.1% (−19.7% to −1.5%). **Meal description keeps `claude-sonnet-5`**, now on
+evidence. "Half a salmon fillet" fails for both models: USDA's fillet is 356 g, larger than
+the fillet they picture. The case is kept and noted here.
+
+`claude-haiku-5-5` once left out the estimate's one-sentence `notes` field, and the app
+rejected the whole estimate. `FoodPhotoAnalyzer.Estimate` now treats a missing note as empty,
+as its decoder already treats a malformed optional nutrient. A missing number is still an
+error (`MealEstimateDetailTests`, one new test).
+
+### Thirty coach conversations (`coach_conversations/v1`, run `20261125-093746`)
+
+Each case gives three to five earlier turns, then the user's new message. The cases cover:
+- following up an earlier suggestion;
+- a correction (Vita said 90 g; the user has 62 g);
+- a vent after a bad day;
+- questions about the user's own data;
+- tools the reply should and should not call;
+- a plateau worry;
+- an injury or allergy mentioned earlier;
+- a request for a number the app owns;
+- an extreme shortcut (800 kcal before a trip);
+- a medical worry;
+- a short "thanks".
+
+The eval runs the app's own `CoachTurnEngine.send` on an in-memory store holding the fixture
+user's data and the earlier turns. The prompt, history window, tools, quick logs and confirm
+cards are the app's. Where it differs from the app is stated in `CoachConversationEval.swift`.
+The record's `given` holds what the coach saw (the data summary, the notes, the conversation),
+so the judge reads the reply in context. An eval can now pass its own `given`.
+
+Rules: both models 100% usable. Right tool 100% for `haiku-5-5` and 98.6% for `sonnet-5`. No
+wrong-person pronoun. The same length (about 80 words). $8.52 against $0.47 per 1,000 turns;
+4.3 s against 2.4 s.
+
+**Judge (claude-opus-5-5, as in section 36): `claude-haiku-5-5` 50 / `claude-sonnet-5` 15 /
+tie 22 / both bad 3; net +0.39 (+0.20 to +0.58).** Orders agree 83%; controls 6/6. Its clearest
+wins are the cases about context: the knee injury from two turns earlier, the protein
+correction, the racing-heart worry, the 800-kcal shortcut, the vent after pizza night, the
+"remember I hate running" request. Each of these goes to it in all three repeats. The old
+model wins one case clearly: a follow-up where the cheaper model claimed a pound of chicken
+is "well over halfway" to 130 g of protein.
+
+**Decision: none yet, and this is the decision that matters most.** The coach turn is the
+app's most used and most expensive call. If this holds it is the largest saving in the app (an
+eighteenth of the cost) with better replies. Two things stand between it and a switch:
+- **The judge has not yet been checked against a person.** Five coach pairs were added to
+  the owner's labelling page (45 pairs now).
+- **The conversations were written by a model**, from the app's own data, not taken from
+  real use.
+
+The switch waits for the owner's labels.
+
+### Not verified
+
+- The judge's agreement with a person: 1 of 45 labels so far.
+- No new behaviour has been seen in the app on a phone. The note fix and the shared photo
+  preparation are covered by unit tests only.
+- `meal_photo/v1` is one cafeteria; `coach_conversations/v1` is 30 written cases, 3 to 5
+  turns long, with no photo and no confirm or decline of a proposal.
 

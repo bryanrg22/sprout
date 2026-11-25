@@ -67,7 +67,7 @@ non-zero if a gate failed and writes the record either way.
 xcodegen generate
 xcodebuild test -project Sprout.xcodeproj -scheme Sprout \
   -destination 'platform=iOS Simulator,name=Sprout-Dev' -resultBundlePath /tmp/t.xcresult
-python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1220
+python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1221
 ```
 
 ### Verify a store

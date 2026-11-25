@@ -1,0 +1,114 @@
+{
+ "run": "20261125-093746-CoachConversation",
+ "tasks": [
+  {
+   "task": "coachTurn",
+   "dataset": "coach_conversations/v1",
+   "cases": 30,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 90,
+     "usable": 90,
+     "passed": 90,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9590629315783191,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.374,
+     "latency_p95_s": 3.805,
+     "mean_uncached_input_tokens": 1170.8555555555556,
+     "mean_cache_read_tokens": 13687.488888888889,
+     "mean_cache_write_tokens": 258.31111111111113,
+     "mean_output_tokens": 359.3222222222222,
+     "mean_cost_usd": 0.00046591044444444445,
+     "scores": {
+      "assistant_messages": 0.9333333333333333,
+      "fallback_shown": 0,
+      "reply_chars": 437.1111111111111,
+      "reply_non_empty": 0.9333333333333333,
+      "reply_sentences": 6.544444444444444,
+      "reply_words": 80.14444444444445,
+      "tool_applied_count": 0.18888888888888888,
+      "tool_as_expected": 1,
+      "tool_call_count": 0.25555555555555554,
+      "tool_called": 0.25555555555555554,
+      "tool_calls_dropped_by_app": 0,
+      "tool_invalid_count": 0,
+      "tool_proposed": 0.06666666666666667,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 90,
+     "usable": 90,
+     "passed": 90,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9590629315783191,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 4.263,
+     "latency_p95_s": 6.934,
+     "mean_uncached_input_tokens": 1159.7777777777778,
+     "mean_cache_read_tokens": 13770.066666666668,
+     "mean_cache_write_tokens": 259.8222222222222,
+     "mean_output_tokens": 279.9888888888889,
+     "mean_cost_usd": 0.008523013333333334,
+     "scores": {
+      "assistant_messages": 0.9888888888888889,
+      "fallback_shown": 0,
+      "reply_chars": 465.06666666666666,
+      "reply_non_empty": 0.9333333333333333,
+      "reply_sentences": 5.611111111111111,
+      "reply_words": 79.45555555555555,
+      "tool_applied_count": 0.17777777777777778,
+      "tool_as_expected": 0.9861111111111112,
+      "tool_call_count": 0.25555555555555554,
+      "tool_called": 0.25555555555555554,
+      "tool_calls_dropped_by_app": 0,
+      "tool_invalid_count": 0.011111111111111112,
+      "tool_proposed": 0.06666666666666667,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-sonnet-5",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "shared_cases": 30,
+     "mean_difference": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -81,8 +81,8 @@ jobs:
       - name: Verify unit test counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1220 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1220
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1221 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1221
 
       - name: Coverage by target
         if: ${{ !cancelled() }}
@@ -109,7 +109,7 @@ jobs:
 
       - name: Verify evaluation self-test counts
         if: ${{ !cancelled() }}
-        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 104 --max-skipped 14
+        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 108 --max-skipped 17
 
       - name: Upload result bundles
         if: ${{ !cancelled() }}

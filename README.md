@@ -83,8 +83,8 @@ Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output 
 | Progress recap, daily checklist | `claude-sonnet-5` | **measured**: the cheaper model is worse beyond noise, on the recap's numbers and on the checklist's plans as the judge reads them (EVAL_REPORT 35, 36) |
 | The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
 | Food suggestions, chat chips | `claude-sonnet-5` | measured, waiting: within noise of the cheaper model on rules and judge; a switch that rests on the judge waits until the judge is shown to agree with a person (EVAL_REPORT 36) |
-| Meal description | `claude-sonnet-5` | measured, not separable: both models are within 2% when portions are given in grams; a dataset of household portions is needed (EVAL_REPORT 36) |
-| Vita chat turn, meal photo | `claude-sonnet-5` | tier default; no quality dataset yet |
+| Meal description, meal photo | `claude-sonnet-5` | **measured**: from household measures it is within 20% on 92% of meals against 83%, and from photos of weighed plates on 46% against 19% (31% mean error, between people at 41-53% and models trained on the photos at 19-26%) (EVAL_REPORT 37) |
+| Vita chat turn | `claude-sonnet-5` | measured, waiting: over 30 multi-turn conversations a blind judge prefers the cheaper `claude-haiku-5-5` (50 to 15, an interval above zero) at an eighteenth of the cost; the switch waits until the judge is shown to agree with a person (EVAL_REPORT 37) |
 | Adaptive plan: build, review, web research | `claude-opus-4-8` | tier default (rare: a few calls per person); no dataset yet |
 
 The gateway allows exactly these models, and a unit test reads the gateway's price table and fails if any task resolves to a model it would refuse.

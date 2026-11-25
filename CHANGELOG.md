@@ -37,6 +37,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   copy in the coach's notes would go stale and be quoted back. The app now removes any such
   sentence before saving the notes, and the memory runs on the same cheaper, faster model as
   the short notes (EVAL_REPORT 36).
+- A meal estimate that comes back without its one-line note is still shown, instead of an
+  error (EVAL_REPORT 37).
 - The built-in AI charges Sonnet 5 at its real price ($2 / $10 per million tokens, not
   $3 / $15), so a phone's daily allowance lasts as long as it should.
 
@@ -48,6 +50,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   It judges what the app shows (every eval record now keeps the model's input and what the
   app shows), and its verdicts wait on the owner's 40 labels before they decide a model
   (`Evals/judge_agreement.py`, EVAL_REPORT 36).
+- **Three new evaluations** (EVAL_REPORT 37): meal photos on 30 weighed Nutrition5k plates,
+  meals described in household measures (`meal_describe/v4`, USDA's own portion weights), and
+  30 multi-turn coach conversations run through the app's own `CoachTurnEngine`.
 - `meal_describe/v3` (the label nutrients) is built from USDA data and the meal evaluation
   runs on it; CI rebuilds and diffs it. `run.sh` keeps a masked build log and retries once
   when the simulator refuses to launch the test runner.
