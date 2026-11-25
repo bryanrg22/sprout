@@ -258,6 +258,13 @@ enum ChecklistPlanService {
             maxTokens: 700          // bounded: a handful of short tasks + chips is well under this
         )
 
+        return try plan(fromToolInput: dict)
+    }
+
+    /// The plan the card shows for a tool call's input (already repaired by the client):
+    /// decoded, then cleaned. Pure, so an evaluation can rebuild what was shown from a
+    /// recorded reply.
+    static func plan(fromToolInput dict: [String: Any]) throws -> ChecklistPlan {
         let data = try JSONSerialization.data(withJSONObject: dict)
         let payload: Payload
         do { payload = try JSONDecoder().decode(Payload.self, from: data) }

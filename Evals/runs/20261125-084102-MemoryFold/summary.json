@@ -1,0 +1,122 @@
+{
+ "run": "20261125-084102-MemoryFold",
+ "tasks": [
+  {
+   "task": "memoryFold",
+   "dataset": "memory_fold/v1",
+   "cases": 12,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-4-5-20251001",
+     "attempts": 36,
+     "usable": 36,
+     "passed": 33,
+     "pass_rate": 0.9166666666666666,
+     "ci95_cases": [
+      0.8055555555555555,
+      1.0
+     ],
+     "ci95": [
+      0.7817298972308114,
+      0.9712519107287082
+     ],
+     "per_repeat_pass": [
+      0.8333333333333334,
+      1.0,
+      0.9166666666666666
+     ],
+     "latency_p50_s": 2.646,
+     "latency_p95_s": 3.114,
+     "mean_uncached_input_tokens": 955.4166666666666,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 228,
+     "mean_cost_usd": 0.0020954166666666664,
+     "scores": {
+      "all_facts_kept": 1,
+      "bare_json": 0,
+      "both_fields_returned": 1,
+      "existing_notes_kept": 1,
+      "facts_kept_share": 1,
+      "kept_allergy": 1,
+      "kept_injury": 1,
+      "kept_preference": 1,
+      "kept_schedule": 1,
+      "no_app_owned_number_stored": 1,
+      "no_gendered_pronoun": 0.6111111111111112,
+      "notes_chars": 394.0833333333333,
+      "notes_within_budget": 1,
+      "parses": 1,
+      "retracted_fact_absent": 0.9166666666666666,
+      "small_talk_not_kept": 0.5555555555555556,
+      "summary_chars": 437.25,
+      "summary_within_budget": 1,
+      "wrong_person_pronoun": 0.027777777777777776
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 36,
+     "usable": 36,
+     "passed": 36,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9035781695514236,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.346,
+     "latency_p95_s": 2.627,
+     "mean_uncached_input_tokens": 1352,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 426.0833333333333,
+     "mean_cost_usd": 0.0003482416666666667,
+     "scores": {
+      "all_facts_kept": 1,
+      "bare_json": 1,
+      "both_fields_returned": 1,
+      "existing_notes_kept": 1,
+      "facts_kept_share": 1,
+      "kept_allergy": 1,
+      "kept_injury": 1,
+      "kept_preference": 1,
+      "kept_schedule": 1,
+      "no_app_owned_number_stored": 1,
+      "no_gendered_pronoun": 0.9722222222222222,
+      "notes_chars": 537.4722222222222,
+      "notes_within_budget": 1,
+      "parses": 1,
+      "retracted_fact_absent": 1,
+      "small_talk_not_kept": 0.4444444444444444,
+      "summary_chars": 578.8611111111111,
+      "summary_within_budget": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-haiku-4-5-20251001",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "shared_cases": 12,
+     "mean_difference": 0.08333333333333333,
+     "ci95": [
+      0.0,
+      0.22222222222222224
+     ]
+    }
+   ]
+  }
+ ]
+}

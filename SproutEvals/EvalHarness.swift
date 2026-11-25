@@ -130,6 +130,10 @@ struct EvalRecord: Encodable {
     /// the app built it (the data, not the system prompt). This is what a judge reads beside
     /// the output (`Evals/judge.py`). Nil for an attempt that sent no request.
     var given: String?
+    /// What the app shows (or stores) from the reply, when that differs from `output`: a
+    /// structured reply decoded and cleaned, the memory as `parse` keeps it. A judge reads
+    /// this when present, so it judges what the person would see, not the raw reply.
+    var shown: String?
 }
 
 /// Appends records to `<out>/records-<task>.jsonl`, safely from concurrent cases.
@@ -169,6 +173,8 @@ struct EvalOutcome {
     var scores: [String: Double]
     var pass: Bool
     var output: String
+    /// What the app shows from the reply, when that differs from `output` (see `EvalRecord.shown`).
+    var shown: String? = nil
 
     static func failed(_ error: Error) -> EvalOutcome { failed(error, output: "") }
 
@@ -292,7 +298,8 @@ enum EvalRunner {
                         stopReason: calls.last?.stopReason,
                         calls: calls.count, output: outcome.output,
                         given: requests.firstRequest.flatMap(givenText(inRequest:))
-                            .map { String($0.prefix(givenLimit)) }))
+                            .map { String($0.prefix(givenLimit)) },
+                        shown: outcome.shown))
                 }
             }
             for _ in 0..<EvalEnv.concurrency { addNext() }

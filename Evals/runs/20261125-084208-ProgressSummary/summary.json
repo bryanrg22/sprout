@@ -1,0 +1,106 @@
+{
+ "run": "20261125-084208-ProgressSummary",
+ "tasks": [
+  {
+   "task": "progressSummary",
+   "dataset": "progress_summary/v1",
+   "cases": 15,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 45,
+     "usable": 45,
+     "passed": 33,
+     "pass_rate": 0.7333333333333333,
+     "ci95_cases": [
+      0.5777777777777777,
+      0.8666666666666667
+     ],
+     "ci95": [
+      0.5896088330282471,
+      0.8403525113994538
+     ],
+     "per_repeat_pass": [
+      0.8,
+      0.7333333333333333,
+      0.6666666666666666
+     ],
+     "latency_p50_s": 1.868,
+     "latency_p95_s": 2.134,
+     "mean_uncached_input_tokens": 1441.8666666666666,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 329.46666666666664,
+     "mean_cost_usd": 0.00030892,
+     "scores": {
+      "body_2_to_4_sentences": 1,
+      "headline_3_to_6_words": 1,
+      "highlights_3_to_8_words": 1,
+      "highlights_within_schema": 0.9777777777777777,
+      "names_a_given_figure": 1,
+      "no_banned_phrase": 0.9333333333333333,
+      "no_number_invented": 0.8222222222222222,
+      "states_a_derived_figure": 0.17777777777777778,
+      "states_a_figure_neither_given_nor_derived": 0,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 45,
+     "usable": 44,
+     "passed": 42,
+     "pass_rate": 0.9333333333333333,
+     "ci95_cases": [
+      0.8222222222222223,
+      1.0
+     ],
+     "ci95": [
+      0.8214312561135918,
+      0.977068383537853
+     ],
+     "per_repeat_pass": [
+      0.8666666666666667,
+      1.0,
+      0.9333333333333333
+     ],
+     "latency_p50_s": 3.882,
+     "latency_p95_s": 4.535,
+     "mean_uncached_input_tokens": 1507.8666666666666,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 318.6,
+     "mean_cost_usd": 0.006201733333333333,
+     "scores": {
+      "body_2_to_4_sentences": 1,
+      "headline_3_to_6_words": 0.9772727272727273,
+      "highlights_3_to_8_words": 1,
+      "highlights_within_schema": 1,
+      "names_a_given_figure": 1,
+      "no_banned_phrase": 1,
+      "no_number_invented": 0.9545454545454546,
+      "states_a_derived_figure": 0.045454545454545456,
+      "states_a_figure_neither_given_nor_derived": 0,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "decoding(\"DecodingError.keyNotFound: Key \\'highlights\\' not found in keyed decoding container. Debug description: No value associated with key CodingKeys(stringValue: \\\"highlights\\\", intValue: nil) (\\\"highlights\\\").\")"
+     ]
+    }
+   ],
+   "baseline": "anthropic:claude-sonnet-5",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "shared_cases": 15,
+     "mean_difference": -0.20000000000000004,
+     "ci95": [
+      -0.4,
+      -0.022222222222222233
+     ]
+    }
+   ]
+  }
+ ]
+}

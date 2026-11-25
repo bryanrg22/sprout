@@ -20,7 +20,9 @@ LOG="$(mktemp)"
 cd "$ROOT"
 xcodegen generate >/dev/null
 
+# One more try when the simulator refuses to launch the test runner (see run.sh).
 set +e
+for ATTEMPT in 1 2; do
 TEST_RUNNER_SPROUT_EVAL_REGRADE_TEXT="$RUNS" \
 xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -destination "platform=iOS Simulator,name=$SIM" \
@@ -28,6 +30,9 @@ xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -only-testing:"SproutEvals/TextRegradeRun/testTextRegrade" \
   > "$LOG" 2>&1
 STATUS=$?
+[ "$STATUS" -ne 0 ] && [ "$ATTEMPT" -eq 1 ] && grep -q "failed preflight checks" "$LOG" && continue
+break
+done
 set -e
 if [ "$STATUS" -ne 0 ]; then
   tail -n 40 "$LOG"; rm -f "$LOG"

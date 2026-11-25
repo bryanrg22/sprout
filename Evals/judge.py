@@ -41,6 +41,10 @@ JUDGE_EFFORT = "low"
 # Batches API: half the standard price (claude-opus-5-5: $4 / $20 per million tokens).
 BATCH_PRICE = {"claude-opus-5-5": (2.00, 10.00)}
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Tasks whose raw reply is not what the person sees: the memory is stored after
+# `CoachMemoryService.parse` removes app-owned figures, and a checklist is decoded, repaired
+# and cleaned before the card shows it.
+NEEDS_SHOWN = {"memoryFold", "checklistPlan"}
 
 SYSTEM = """You compare two answers that two AI models gave to the same input, for a feature \
 of Sprout, a calorie and weight tracking app with a coach named Vita. You judge which answer \
@@ -78,6 +82,22 @@ def load_records(run):
     return [json.loads(l) for l in open(os.path.join(run, files[0])) if l.strip()]
 
 
+def with_shown(run, records):
+    """Each record's `shown` (what the app shows or stores from the reply), from the record
+    itself or, for a run made before records carried it, from `regrade-text.json`, where
+    `Evals/regrade-text.sh` rebuilds it with the app's own code. The judge reads `shown`
+    when there is one, so it judges what the person would see, not the raw reply."""
+    path = os.path.join(run, "regrade-text.json")
+    rebuilt = {}
+    if os.path.exists(path):
+        for row in json.load(open(path))["rows"]:
+            if row.get("shown"):
+                rebuilt[(row["caseID"], row["candidate"], row["repeatIndex"])] = row["shown"]
+    for r in records:
+        r["judged_text"] = r.get("shown") or rebuilt.get((r["caseID"], r["candidate"], r["repeatIndex"])) or r["output"]
+    return records
+
+
 def usable(r):
     return r["ok"] and r["output"].strip() and r.get("given") and r["scores"].get("used", 1) != 0
 
@@ -96,7 +116,7 @@ def pairs_of(records, baseline, candidate, repeats):
             continue
         if usable(r) and usable(c):
             pairs.append({"case": case, "repeat": rep, "given": r["given"],
-                          "baseline": r["output"], "candidate": c["output"]})
+                          "baseline": r["judged_text"], "candidate": c["judged_text"]})
         else:
             skipped.append({"case": case, "repeat": rep,
                             "baseline_usable": bool(usable(r)), "candidate_usable": bool(usable(c))})
@@ -111,8 +131,14 @@ def controls_of(pairs, n_cases, seed):
     out = []
     for case in picked:
         p = min((x for x in pairs if x["case"] == case), key=lambda x: x["repeat"])
-        # The answer to a different input: a confident answer to the wrong question.
-        other = rng.choice([x for x in pairs if x["case"] != case] or [None])
+        # The answer to a different input: a confident answer to the wrong question. Taken from
+        # the case whose input shares the fewest words with this one, so that two near-identical
+        # fixture situations cannot make the "wrong" answer a fair one.
+        words = lambda t: set(t.lower().split())
+        others = [x for x in pairs if x["case"] != case]
+        other = min(others, key=lambda x: (len(words(x["given"]) & words(p["given"]))
+                                           / max(1, len(words(x["given"]) | words(p["given"]))), x["case"])) \
+            if others else None
         for kind, bad in (("empty", ""), ("dont_know", "I don't know."),
                           ("wrong_case", other["baseline"] if other else "")):
             out.append({"case": case, "kind": kind, "given": p["given"], "good": p["baseline"], "bad": bad})
@@ -229,8 +255,11 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="build the requests and stop; spends nothing")
     args = ap.parse_args()
 
-    records = load_records(args.run)
+    records = with_shown(args.run, load_records(args.run))
     task = records[0]["task"]
+    if task in NEEDS_SHOWN and not any(r.get("shown") for r in records) \
+            and not os.path.exists(os.path.join(args.run, "regrade-text.json")):
+        sys.exit(f"{task}: the raw reply is not what the app shows; run Evals/regrade-text.sh {args.run} first")
     rubrics = json.load(open(os.path.join(HERE, "judge_rubrics.json")))
     if task not in rubrics:
         sys.exit(f"no rubric for {task} in judge_rubrics.json")

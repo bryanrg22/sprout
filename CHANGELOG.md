@@ -33,11 +33,24 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   (EVAL_REPORT 35). The progress recap keeps its model, which measured more accurate.
 - A recap whose highlights came back in an unexpected shape is now read instead of showing
   an error (EVAL_REPORT 35).
+- **Vita's long-term memory never keeps a calorie target or a weight.** Those change, and a
+  copy in the coach's notes would go stale and be quoted back. The app now removes any such
+  sentence before saving the notes, and the memory runs on the same cheaper, faster model as
+  the short notes (EVAL_REPORT 36).
 - The built-in AI charges Sonnet 5 at its real price ($2 / $10 per million tokens, not
   $3 / $15), so a phone's daily allowance lasts as long as it should.
 
 ### For people building it
 
+- **Answer quality is now judged, not only checked against rules.** `Evals/judge.py`
+  compares two models' answers to the same input blind, in both orders, with ties allowed
+  and control pairs it must get right, through the Batches API at about $0.40 a task.
+  It judges what the app shows (every eval record now keeps the model's input and what the
+  app shows), and its verdicts wait on the owner's 40 labels before they decide a model
+  (`Evals/judge_agreement.py`, EVAL_REPORT 36).
+- `meal_describe/v3` (the label nutrients) is built from USDA data and the meal evaluation
+  runs on it; CI rebuilds and diffs it. `run.sh` keeps a masked build log and retries once
+  when the simulator refuses to launch the test runner.
 - **The evaluations were audited.** Four grader defects fixed (idioms, weeks, zero for
   "nothing", thousands written "8K"), every past answer graded again for free
   (`Evals/regrade-text.sh`), summaries now give an interval by case and a paired comparison

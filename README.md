@@ -79,11 +79,12 @@ Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output 
 
 | Task | Model | How it was chosen |
 |---|---|---|
-| Daily brief, insight line, weekly reflection, onboarding note | `claude-haiku-5-5` | **measured**: as good as or better than the previous model at about a seventh of the cost, and faster (EVAL_REPORT 10, 25, 35) |
-| Progress recap | `claude-sonnet-5` | **measured**: 88% against 80% for the cheaper candidate; the numbers on this card are the point (EVAL_REPORT 35) |
+| Daily brief, insight line, weekly reflection, onboarding note, memory fold | `claude-haiku-5-5` | **measured**: as good as or better than the previous model on the rules, at about a seventh of the cost, and faster; a blind judge read all but the daily brief and favoured the old model on none, the weekly note clearly the new one. The memory fold's one defect (storing a calorie target) is removed in code (EVAL_REPORT 10, 25, 35, 36) |
+| Progress recap, daily checklist | `claude-sonnet-5` | **measured**: the cheaper model is worse beyond noise, on the recap's numbers and on the checklist's plans as the judge reads them (EVAL_REPORT 35, 36) |
 | The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
-| Memory fold | `claude-haiku-4-5` | measured, undecided: the cheaper model is as accurate but stores app-owned numbers more often (EVAL_REPORT 35) |
-| Vita chat turn, meal photo and description, food suggestions, checklist, chat chips | `claude-sonnet-5` | tier default; their datasets check rules, not quality, so a cheaper model is not adopted until quality is measured |
+| Food suggestions, chat chips | `claude-sonnet-5` | measured, waiting: within noise of the cheaper model on rules and judge; a switch that rests on the judge waits until the judge is shown to agree with a person (EVAL_REPORT 36) |
+| Meal description | `claude-sonnet-5` | measured, not separable: both models are within 2% when portions are given in grams; a dataset of household portions is needed (EVAL_REPORT 36) |
+| Vita chat turn, meal photo | `claude-sonnet-5` | tier default; no quality dataset yet |
 | Adaptive plan: build, review, web research | `claude-opus-4-8` | tier default (rare: a few calls per person); no dataset yet |
 
 The gateway allows exactly these models, and a unit test reads the gateway's price table and fails if any task resolves to a model it would refuse.

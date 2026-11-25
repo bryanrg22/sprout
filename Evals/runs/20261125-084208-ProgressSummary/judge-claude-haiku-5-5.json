@@ -1,0 +1,802 @@
+{
+ "task": "progressSummary",
+ "run": "20261125-084208-ProgressSummary",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "anthropic:claude-haiku-5-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "9045e64304a22b2f03043fe609a7ca19866a17f93fe1415120ffef20739998a9",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 44,
+ "pairs_skipped": [
+  {
+   "case": "sam-ticking-up",
+   "repeat": 0,
+   "baseline_usable": false,
+   "candidate_usable": true
+  }
+ ],
+ "cases": 15,
+ "candidate_wins": 10,
+ "baseline_wins": 15,
+ "ties": 19,
+ "both_bad": 0,
+ "orders_agree_share": 0.6136363636363636,
+ "net": -0.11363636363636363,
+ "net_ci95_cases": [
+  -0.38636363636363635,
+  0.13333333333333333
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 100,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.37,
+ "verdicts": [
+  {
+   "case": "alex-drifting-down",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use only the snapshot's figures, with no invented or computed numbers, and both correctly flag that a -0.4 lb/wk trend runs against a gain goal while pointing to the calorie and protein lever. Answer A's body runs five sentences, over the two-to-four limit, and its headline and alarm emoji lean slightly toward alarm. Answer B stays within four sentences, credits the consistency honestly, and ties the lever to the marathon block running until March. B is the cleaner, better-balanced recap.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use only figures from the snapshot, with no computed numbers, and both correctly identify the fuel and protein gap as the lever for a gain goal. B's headline \"Slowing Your Gain\" is inaccurate, since the person is losing rather than gaining slowly, and \"5 workouts this week on top of marathon training\" slightly misframes the workouts as additional to training. A states the trend accurately (\"moving away from where you're headed\") and credits the consistency plainly, so it is cleaner and more precise.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-drifting-down",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers use only the given figures and invent nothing. A identifies the calorie gap as the main lever, which makes sense for a marathon trainer needing to gain, and it is warm and direct. Its body runs five sentences, slightly over the limit, and \"protein will likely follow\" is a mild hedge. B is accurate and concise, but it calls protein the first lever when the 730-calorie shortfall is what actually explains the loss, and \"about enough to explain\" is a vague hedge.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use only the given figures and compute nothing new. A's headline is accurate, but its body hedges ('about enough to explain') and names protein as the first lever, when the 730-cal-sized gap against a gain goal during marathon training is clearly the main lever. B's headline 'Slowing Your Gain' is slightly inaccurate since weight is falling, yet its body states the direction correctly, gives the clearer story and lever (close the calorie gap), and carries more motivating warmth. B's body also runs five sentences and A's four, so both are slightly imperfect, but B serves the user better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-drifting-down",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B computes a new figure (\"about 730 calories short per day\"), which is a serious fault under the rules. Answer A uses only the given figures, correctly flags the wrong-direction trend, ties it to marathon training, and names the calorie gap as the lever. A is direct and warm without inventing numbers.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A computes a new figure, the 730 calorie shortfall, which the snapshot never states; that counts as a serious fault. Answer B uses only figures from the snapshot and ties the fuel gap to the marathon training in the user's profile. B's headline 'Slowing Your Gain' is slightly inaccurate since the user is losing, but its body states the trend correctly. B is the better and safer answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-flat",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B computes \"about 440 calories under,\" a figure the snapshot never states, which is a serious fault. Both answers read the +0.1 lb/wk as gaining; the input says negative means losing, so positive means gaining, and that reading holds. Answer A uses only the given figures, though \"only 12.1 lb to go\" is a slightly odd phrasing and the step goal is weekly-average context. A is clean on figures, names the fuel lever, and is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A works out a figure the snapshot doesn't state ('about 440 calories under'), which is a serious fault. Answer B sticks to the given figures and covers the trend, the fuel gap, steps, workouts, streak and protein. It also gives a clear lever to lean into next. B's phrasing 'only 12.1 lb to go' is slightly awkward but not wrong.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-flat",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B computes a new figure (about 440 calories under), which is a serious fault, and it also says the trend is \"moving up\". Since a positive rate is gaining by the input's convention, that direction is actually correct. Answer A uses only the stated figures. Its phrasing \"barely moving because you're gaining\" is a bit garbled, but it names the real lever (calories and protein) clearly and invents nothing.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A computes a new figure (\"about 440 calories under\") that the snapshot does not state, which is a serious fault. Answer B uses only the given figures and names a clear lever: close the calorie gap and get protein in more consistently. B's line \"barely moving... because you're gaining\" is slightly awkward, but its reading is sound and it gives a concrete next step. B is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-flat",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both read the 0.1 lb/wk as gaining (the label says negative means losing, so positive is gaining), both use only figures from the snapshot, and neither computes a new number. A uses a \ud83d\udcc9 icon for a gain, which is confusing, and its body runs a bit long. B's headline points at protein while its body calls fuel the lever, which is slightly inconsistent, but B is clear, accurate and keeps the highlights consistent with the gain. B is marginally cleaner overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both read the 0.1 lb/wk as gaining. The input says negative means losing, so positive 0.1 is a gain, and both are accurate on that. Answer A's headline says protein is the issue, yet its body calls fuel the lever and then protein the most direct move, which muddles the message; it also uses 'tightening', which is odd wording for eating more. Answer B is clearer and more direct, with one coherent lever (close the calorie gap), all figures exact and no invented numbers; its '\ud83d\udcc9' icon is slightly off but minor.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-gaining-fast",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "The snapshot gives a weekly rate of +1.6 lb/wk, which is a gain, and the goal direction is gain, so Answer A reads the trend correctly. Answer A uses the real figures accurately and points to steps as the lever to push next, though its claim that more steps builds muscle is a stretch. Answer B invents a -1.6 lb/wk figure and wrongly tells the person they are losing weight. It also contradicts itself ('moving the right way' then 'a problem') and sends the user off to check their data for no reason, which is a serious fault.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "The snapshot gives a weekly rate of 1.6 lb/wk, positive, and says negative means losing, so the person is gaining as their goal requires. Answer A misreads this as -1.6 lb/wk, tells the person they are losing weight, and contradicts its own headline. That is a serious factual error that would confuse and alarm them. Answer B reads the data correctly, uses the exact figures, celebrates the real progress and names steps as the next lever, though linking steps to muscle building is a slight stretch.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-gaining-fast",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "The snapshot gives a weekly rate of 1.6 lb/wk with the note \"negative = losing\"; since the figure is positive, the person is gaining, which matches the gain goal. Answer A reads this correctly and grounds its story in real figures, though its steps remark is a little vague. Answer B misreads the rate as weight loss, contradicts itself (\"moving the right way\" yet \"losing\"), and advises closing the gap to 2750, which would mean cutting fuel and working against the gain goal. A is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "The snapshot says the rate is 1.6 lb/wk with \"negative = losing\"; the value is positive, so the person is gaining toward a gain goal, which is on track. Answer B reads this correctly and tells a coherent story, though calling the steps gap a \"consistency\" point is a little loose. Answer A misreads the trend as losing, contradicts itself, and then tells the person to cut intake toward 2750, which would actively hurt a gain goal. A's direction error is serious, so B is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-gaining-fast",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "The snapshot says the rate is 1.6 lb/wk with \"negative = losing\"; the value is positive, so the person is gaining, which is toward their goal. Answer A reads this correctly, but it writes \"+1.6\", a sign the snapshot does not show, and it says protein \"landed at 150g\" when the data only says the target was reached. Answer B wrongly says the person is losing weight, contradicts itself (\"moving in the right direction\" yet \"losing\"), and raises a false alarm, which is a serious misreading. A is grounded and actionable on steps, while B is confused and wrong.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "The snapshot is ambiguous. The rate is listed as 1.6 lb/wk with the note \"negative = losing\", so a positive value means gaining, and gaining matches the goal. Answer A wrongly says the person is losing weight, which contradicts the data, and its headline also contradicts its own body, so it is confusing and alarming. Answer B reads the direction correctly, cites the figures accurately (though \"+1.6\" adds a sign that is consistent with the data), and gives a concrete lever in steps.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-near-goal",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both read the +0.4 lb/wk rate correctly as gaining and invent no figures. Answer A overstates the step average of 8,300 as \"clearing 8,000 daily\", and its \"closes fast\" conflicts with the stated Dec 2026 projection. Answer B quotes every figure exactly and frames the calorie surplus as fuel for the gain, though it is weaker on a concrete next step. B's accuracy edges out A's slightly better coaching.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use the figures accurately. The 0.4 lb/wk is positive, and under the stated convention that means gaining, so both read it correctly. Answer A is accurate but mostly restates the data and offers no concrete next step. Answer B gives a clear lever (keep protein locked in every day) and mentions steps. Its claim that steps are 'clearing 8,000 daily' slightly overstates an average, and its 'closes fast' line clashes with a December 2026 projection, but it better fulfills the recap's purpose.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-near-goal",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers read the positive 0.4 lb/wk correctly as a gain toward the 172.0 lb goal and quote only figures from the snapshot, with no invented numbers. Answer A ends on one concrete lever to lean into next: keep calories and protein consistent to close out the last 0.8 lb. Answer B tells the story accurately but gives no forward-looking action. That gap makes A the more useful recap for this motivated reader.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use only figures from the snapshot and correctly read the positive 0.4 lb/wk as gaining. A has a four-sentence body, but it offers no concrete next step, and \"slightly ahead of plan\" is vague. B's body runs five sentences, over the limit, but it names a clear lever (keep calories and protein consistent), which is a core requirement. The lever outweighs the length, so B is better for the user.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-near-goal",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers use only figures from the snapshot, correctly read the +0.4 lb/wk trend as gaining toward a gain goal, and compute no new numbers. Answer A gives the sharper lever (hit protein every day). However, its claim that the goal \"closes fast\" sits awkwardly against the stated Dec 7, 2026 projection. Answer B reports that projection faithfully and explains why the gain is happening, but its next step is vaguer, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers use the snapshot figures correctly and read the 0.4 lb/wk trend as a gain toward the goal, with no invented numbers. Answer A states the projected goal date exactly as given and adds the 5 workouts. Answer B's claim that 'this goal closes fast' is not supported by the snapshot's Dec 7, 2026 projection, and it shortens the goal to '172'. B's next step (protein every day) is somewhat more concrete, but A is more faithful to the data overall, so A edges it.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-trend-yet",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers use only figures from the snapshot, invent nothing, and give the same lever: more weigh-ins and consistent logging. A says it plainly in its body with a confident tone, though 'right on track' slightly overstates three days of data. B's body is a little flatter and its last sentence ('get consistent data') is vaguer, but its highlights cover fuel accurately. They are essentially equivalent in quality.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers use only the figures from the snapshot, compute nothing new, and point to more weigh-ins as the lever. A is slightly more precise: it ties the streak and protein target (150g) to the data and states plainly that intake is close to plan. B is equally accurate, and its highlights cover workouts rather than repeating fuel, but its next step (\"more weigh-ins and more logged days\") is a bit more generic and its \"right on track\" leans toward reassurance. The differences are minor and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-trend-yet",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use only the figures in the snapshot and invent nothing. B is more honest: it notes that intake is running under the fuel target, while A just calls it \"looks good\". B also points at the real lever, getting more weigh-ins, though A's \"keep logging daily\" is a lever too. A slightly misframes the situation by tying the missing weight trend to having only 3 days logged, when the snapshot says it is weigh-ins that are lacking.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both use the figures accurately and invent nothing. A honestly notes intake is running slightly under the fuel target, but its body stops at more weigh-ins without giving a lever. B says the logged days look good, which glosses over the gap, though it does name a concrete next step: log daily and weigh in. B ties weigh-ins vaguely to the logging streak and A's honesty about the gap is better, but neither is clearly superior overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-trend-yet",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use only the snapshot's figures and compute nothing new. Answer A misreads the data: it blames the missing weight trend on only 3 days logged, when the cause is too few weigh-ins, so its 'first thing to fix' points at the wrong lever. Answer B correctly says weigh-ins are what's missing and directs the person to log them. B's 'protein hit 150g' is a slight stretch of 'goal reached', but overall B is accurate, warm and gives the right next action.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use only the given figures accurately and invent nothing. Answer A pins the missing trend on weigh-ins, which is the right lever, but it pads with \"so you're close to the intake you've set\" and adds a vague \"next few weeks.\" Answer B conflates the missing weight trend with the number of days of food logging (\"Only 3 days logged\u2026 that's the first thing to fix\"), which misdiagnoses the cause, since the missing trend comes from too few weigh-ins. B's lever, daily food logging, therefore doesn't address the missing trend, while A's concrete weigh-in highlight does.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-on-track",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both read the weekly rate correctly: it is positive 0.5 lb/wk, so this is a gain, which matches the gain goal. Both use only figures from the snapshot, and neither computes a new number. Answer A's body has three sentences, within the 2\u20134 limit, and it names steps as the lever clearly. Answer B's body has four long sentences, adds a speculative claim about recovery and appetite, and spends a highlight on calories, so it is wordier without adding anything; A is tighter and stays within the format.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "The weekly rate of 0.5 lb/wk is positive, meaning gaining, so both answers read the direction correctly and invent no figures. Answer A's body runs to four sentences and is heavier, with a speculative claim about steps helping appetite and recovery. Answer B is tighter, stays within the sentence limit, and its highlights cover more distinct wins (streak, workouts) rather than repeating the body. B is cleaner and more direct, though A also names a concrete action.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-on-track",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers use the snapshot's figures exactly as given and invent no new numbers. Both correctly read the positive 0.5 lb/wk as gaining toward a gain goal, and both name steps as the lever to pull next. B's body runs past four sentences, which breaks the format, but B includes the projected date and gives a more concrete action (a short walk on lifting-off days). A is tighter and also strong, though its claim that steps help 'your lifts plus recovery' is vaguer, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers read the 0.5 lb/wk rate as gaining, since the snapshot marks negative as losing and the goal is a gain. Both use only figures from the snapshot, invent nothing and name steps as the lever. Answer B is tighter and more confident, and it credits the 34-day streak, while Answer A's body runs long and pads with the projected date. Answer B's 'right on fuel target' for 2790 vs 2750 is a fair reading, so B is somewhat better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-on-track",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both get the direction right: a positive 0.5 lb/wk rate means gaining toward 172.0 lb, and neither invents a figure. A has a shaky causal claim (protein \"driving\" the workouts), offers no concrete next step, and its body runs past four sentences. B also runs long at five sentences, and its claim that walking helps add quality weight is questionable. Still, B is fully grounded, names the goal date and remaining 10.2 lb exactly as given, and gives one concrete lever.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both read the data correctly: the person is gaining at 0.5 lb/wk toward a gain goal. Neither invents a new figure. Answer A runs well over the 2-4 sentence body limit and its steps lever is shaky, since it claims walking helps add quality weight. Answer B is tighter, names the 4 workouts and the streak, but it explicitly gives no lever to lean into, saying steps are not a priority, and its 'exactly what's driving' is a slight overclaim; on balance B fits the format and tone better while A's length is a clear fault.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-weight-only",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers read the positive 0.3 lb/wk correctly as gaining toward the gain goal, use only figures given in the snapshot, and point at the same lever: daily food logging to fuel the gain. A is tighter and more direct, and its highlights carry concrete figures, including the 11.6 lb still to go. B is wordier, and its fourth highlight restates the advice rather than adding a figure. The difference is modest, but A is the cleaner recap.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Weekly rate 0.3 is positive, so with the note \"negative = losing\" the user is gaining, and both answers read that correctly. Both use the figures exactly as given. B adds the stated 11.6 lb still to go, and it frames the gain as \"right direction, just slow\", which is honest feedback. Its \"up to 160.4 lb\" and \"11,200/day\" are faithful enough. B is somewhat tighter and more complete, and A's body is a bit longer than ideal, but the difference is modest.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-weight-only",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both read the positive 0.3 lb/wk correctly as gaining toward a gain goal and use the given figures. A says \"0 days nutrition logged\" (a fair restatement), but \"You're up to 160.4 lb\" implies a gain the snapshot doesn't establish. B is accurate and includes the projected date. B runs to four sentences and its lever is weaker, though its \"log today\" highlight covers it. A's mention of the 1-day streak is fine, so both are sound and B is slightly more precise and grounded.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers read the +0.3 lb/wk rate correctly as gaining toward the 172.0 lb goal and use the snapshot figures accurately. Answer A mostly restates the data, and its body offers no concrete next step; its 'restart your streak' also misreads the active 1-day streak. Answer B tells a clearer story: it links the missing nutrition logs to the gain goal and gives a concrete lever, daily logging this week. B's '0 days nutrition logged' is a fair restatement of 'nothing logged', not an invented figure.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-weight-only",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both read the 0.3 lb/wk as gaining (the input says negative = losing, so positive = gaining), and that reading is correct for both. Answer A says \"you're up to 160.4 lb\", which implies a rise the snapshot doesn't confirm, though it is minor. A's \"0 nutrition logs\" restates the given fact, and its \"starting today's 1-day streak\" is a little awkward. Answer B is grounded, mentions the projection date, gives a concrete next move and adds no unstated framing, though it doesn't say the pace is slow; overall B is slightly cleaner and more complete.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers read the data correctly: the user is gaining 0.3 lb/wk toward a 172.0 lb goal, has strong steps and has logged no nutrition. Neither invents a figure. B is tighter and more direct: it says plainly that the pace is slow, frames the missing logs as not knowing whether they are fuelling enough, and ties the step consistency to the next action. A is accurate but spends space on a hedgy caveat about the projection's reliability, so B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dropping-fast",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use only the snapshot's figures accurately and flag the under-fueling and the low protein. A says the 8.1 lb \"won't take long,\" which conflicts with the stated Dec 20, 2026 projection, and its body runs a bit long. B cites the projected date faithfully and is tighter, though its closing lever (\"closing that gap\") is slightly less concrete than A's. B's \"well on pace\" is mild, but on balance B is cleaner and more grounded.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use only snapshot figures accurately and name the under-fueling and protein gap as the lever. Answer A's 'well on pace' highlight cheers a 2.1 lb/wk loss on 1180 calories without nuance. Answer B ties the fueling fix to keeping the loss sustainable and makes the next step more concrete (closer to 1700, protein more often), though its body runs a bit long. B frames the lever better and avoids uncritically celebrating an aggressive rate driven by under-eating.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dropping-fast",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use only the given figures accurately and correctly flag the low fuel and protein as the lever. Answer A's body is a bit run-on, its headline \"Low Fuel Risk\" leans toward alarm, and \"unsustainable\" is harsher, though it does give a concrete action (protein at every meal). Answer B is cleaner and warmer: it celebrates the pace, workouts and streak plainly, names the goal and date, and frames the gap as a lever without alarm, though its action is a little less concrete. On balance B fits the tone and structure better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use only the figures in the snapshot and invent nothing. A says 'well on pace' and 'doing their job,' which praises a 2.1 lb/wk loss driven by eating well under target. B names the under-fueling as unsustainable and gives a concrete lever: eat closer to 1700 with protein at every meal. B's 'that gap is unsustainable' is slightly alarm-tinged and its body is a bit long, but it is the more honest and more actionable recap.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dropping-fast",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers use the snapshot figures accurately, compute nothing new, and correctly flag under-fueling and the protein gap as the lever. Answer A's body runs to three sentences that are a bit long-winded but punchy, and it names a concrete daily action (hit 1700 and 115g). Answer B is equally accurate and also includes the projected date and weigh-ins, but it misses an emoji-semantics nuance, which is minor, and its lever is slightly less concrete. Both are good and the differences are marginal, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both use only the snapshot's figures accurately, flag under-fueling as the lever, and stay kind and direct. Answer A's body runs four sentences and includes the goal date, but its closing lever (\"closing that gap\") is less concrete. Answer B names the exact action (hit 1700 and 115g daily) and frames calories as fuel tied to the workouts, though it is three dense sentences. The differences are minor, and both are fit to show, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-flat",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B computes a new figure (\"about 110 above\"), which the snapshot doesn't state, so it violates the no-new-figures rule. That is a serious fault. Answer A uses only given figures, tells the flat story honestly, and names concrete levers (calories toward 1700, protein), though \"dial calories back\" leans slightly toward budget framing. A is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A computes \"about 110 above,\" a figure the snapshot does not state, which is a serious fault. Answer B uses only the given figures and names a concrete lever: bring calories toward 1700 and get protein up. B's \"the scale will start moving\" is slightly overconfident, but it is not an invented figure, and B is direct and grounded.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-flat",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B computes a new figure ('about 110 above'), which is a serious fault under the rules. Answer A uses only the given figures, explains the flat trend honestly and names a concrete lever (calories toward 1700 plus daily protein). B is otherwise good and ties into the lunch walks, but the derived figure tips it.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A computes a new figure (\"about 110 above\") that the snapshot does not state, which is a serious fault. Its body also runs past four sentences, and its next step (\"build on lunch walks\") is vague. Answer B uses only the given figures, names the flat trend kindly, and points to a concrete lever: bring calories toward 1700 and prioritize protein.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-flat",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B computes 'about 110 above,' a figure the snapshot does not state, which is a serious fault. B also uses five sentences in the body. Answer A runs to five sentences as well, but every figure it uses comes straight from the snapshot, and it gives a clear lever to pull and an honest reading of the flat week. A is better despite slight padding.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A computes \"about 110 above,\" a figure the snapshot does not state, which is a serious fault. Answer B uses only the given figures, names the flat trend honestly, and gives a concrete lever to pull. B's \"scale will start moving\" is slightly overconfident, but it is still clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintaining",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A claims steps cleared goal \"every day,\" which the snapshot does not support since only an average is given, so it is an invented fact. Answer B stays grounded, names the figures accurately and gives a concrete lever (protein). B's body runs to four sentences, which is within limits, and its \"one protein day you missed\" follows directly from 6 of 7. B is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B claims steps 'cleared goal every day', but the snapshot gives only a 7-day average, so that is an unsupported invented fact. Answer A stays grounded, though its body runs five sentences and slightly exceeds the length spec, and it reformats 10150 as 10,150, which is minor. Both point to the same protein lever, but B's fabrication is the more serious fault.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintaining",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use correct figures and give the same protein lever. A's body runs five sentences, over the two-to-four limit, and its closing claim that this 'stays effortless' adds mild filler. B stays within four sentences, cites figures precisely (including the 110g target), credits the 4 workouts, and gives a clear next move. B is cleaner and better fits the format.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use the snapshot figures accurately and compute no new ones. B's body runs five sentences, past the two-to-four limit, and calling it \"a complete week\" right after noting 6 of 7 protein days is slightly contradictory; \"stays effortless\" is a bit of an overclaim. A's body also runs five sentences, but it is more precise, adds the workouts, and gives a clear next step. A is somewhat cleaner overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintaining",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both use accurate figures without invented math. A gives a concrete next lever (push protein to 7 of 7), while B has no forward action, which the feature explicitly asks for. B's phrasing 'protein hit 110g' is slightly imprecise but fine. A's body is within four sentences and its highlights are tight, so A better tells the full story including what to lean into next.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers use accurate figures without inventing any numbers. Answer A's body runs to four sentences, which is within the limit, but it never gives a concrete next step to lean into. Answer B tells the same story concisely and adds a concrete lever (push protein to 7 of 7), which fits what the feature asks for. B's only minor flaw is formatting 10150 as 10,150, which is negligible.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-trend-yet",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A claims they step past the goal \"daily\", but the snapshot gives only a 7-day average, so that is an unsupported claim. A also computes \"remaining 2 days\" (6\u22124), a derived figure, and its body runs longer than four sentences. Answer B states every figure exactly as given, stays within four sentences and names a concrete next step (more weigh-ins), though it leans a little on reassurance.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B claims they are \"stepping past your goal daily,\" which isn't supported: only the 9050 average is given, not daily figures. B also derives \"remaining 2 days\" (6\u22124), a new computed figure. Answer A sticks to the stated figures and gives a concrete next step (more weigh-ins), though it is slightly less punchy. A is grounded and free of invented claims, so it is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-trend-yet",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use only figures given and compute nothing new. A's next step is \"keep the logging streak alive,\" which is vague and sidesteps the actual gap; B names the concrete lever, logging more weigh-ins to unlock a trend. A's \"crushing goal\" is a bit hyped, while B is direct and grounded, though slightly repetitive. B is better on the concrete-next-step criterion.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use only figures from the snapshot, and neither invents a number. A gives a clear, concrete next step (log more weigh-ins), and its tone is direct and plain. B is warmer and mentions the streak, but its next step is vaguer: 'keep the streak alive' paired with a passive 'once weigh-ins catch up'. B's 'crushing goal' slightly oversells. A's actionable lever on the missing weight trend makes it a bit better, though the two are close.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-trend-yet",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A computes \"other 2 days\" (6\u22124), a derived figure not stated in the snapshot, and its body runs five sentences, over the limit. Answer B uses figures exactly as given, includes workouts, and names a sensible lever: more weigh-ins to establish a trend. B's body is also slightly over length, but it has no computed figures and is accurate.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use the figures accurately, though B's \"other 2 days\" is a small derived number (6-4). It is trivial but technically new, and A computes nothing new. A runs five sentences, over the four-sentence limit, but its next step (more weigh-ins) addresses the real gap. B has four sentences, a sharper headline and a concrete protein lever, which is better coaching. Since B's derived figure is borderline and A breaks the length limit, B is slightly better on tone and lever, while A's derivation-free accuracy is weighed lightly.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-on-track",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A stays within 2-4 sentences and uses accurate figures, but its claim that hitting protein will let the rate \"pick up\" is a dubious causal promise. Answer B has five body sentences, exceeding the limit, and \"the other two days\" is a derived figure, though trivial; its framing of protein for lean mass is more accurate, and it notes the projected date. Both are grounded, but A's format compliance and concise directness give it the edge despite the slight overclaim.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A's body runs four sentences and uses only figures from the snapshot, with protein named as the concrete next step; its one oddity is calling 1640 against 1700 'fueling a bit under plan', which is accurate. Answer B is tight, grounded and also names steps, but it claims locking in protein will make the rate 'pick up', an unsupported causal promise. B also writes '145' rather than '145.0', a minor imprecision. Both are solid, but A's lever is more honestly framed while B overpromises.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-on-track",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use accurate figures without inventing new ones. A claims that hitting protein on all 7 days means the rate 'has room to pick up', which overstates what protein does for loss rate. B's rationale, muscle retention, is accurate, and B covers more of the real story: what's left to go, the projected date, and weigh-in consistency. B's 'Averaged 1640 of 1700 fuel target' is slightly budget-like and 'deficit doing its job' is a mild inference, but overall B is more grounded and complete.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use the snapshot's figures accurately and invent nothing. A has a few small problems: \"Averaged 1640 of 1700 fuel target\" treats calories like a budget, \"the deficit doing its job\" is slightly off, and its body runs long. B is tighter, celebrates the habits plainly and names protein as the clear lever, though \"this rate has room to pick up\" is a mildly speculative claim. Overall B fits the brief better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-on-track",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use accurate figures and pick protein as the lever. A claims protein to 7/7 will let the rate 'accelerate,' a shaky causal promise, and 'down to' plus '-0.6' reads a bit awkwardly. B adds the remaining 11.4 lb and the goal date and frames calories as fuel well, though 'no gaps' is a mild embellishment. B is slightly more grounded and complete.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers use the snapshot figures accurately, compute no new numbers, and point to protein as the next lever. B claims hitting protein 7/7 would let the loss rate \"accelerate\", an unsupported causal promise, and its \"-0.6 lb/wk\" alongside \"losing\" is slightly awkward. A's \"down to\" is mildly loose, but it is grounded, includes the goal date, and stays honest. A is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-streak-broken",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A claims calories landed under target \"both days\", but the snapshot gives only a 1520 average, so that claim is invented. A also runs to five body sentences and leans on \"crawl\" and \"long wait\", which is harsh. Answer B uses the figures exactly as given, flags the low intake honestly, and offers a concrete protein-first lever suited to shift days, though \"down steadily\" is slightly generous. B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B says calories landed under the 1700 target \"both days,\" but the snapshot gives only a 1520 average, so that per-day claim is invented. B also calls the loss \"a crawl\" and \"a long wait,\" which tips toward discouragement. Answer A uses only the figures as given, ties the advice to the shift-work profile, and names one clear lever. Its body runs past four sentences, but it is accurate and grounded.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-streak-broken",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use the figures accurately and compute nothing new. A says 'down to 155.6' and claims logging will 'likely speed that rate up', a shaky causal claim, and it calls 1520 vs 1700 'on point', which glosses the gap. B honestly flags undereating and gives a concrete fuel lever, though 'training-light days' is odd and its body runs long. B is more honest and actionable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers use the figures correctly, and neither invents a number. Answer B mislabels 1520 vs 1700 as \"on point\", but Answer A tells the user to eat up toward 1700, which is a reasonable fuel framing. Answer A has its own flaws: \"training-light days\" is odd (it would make more sense to push fuel on heavier days), and it reads as a list of facts. Answer B ties the logging lever to the user's rotating shifts, notes how thin two logged days is, and points to a clearer next step, so it is a bit better for the person despite the \"on point\" slip.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-streak-broken",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use only figures from the snapshot, and neither computes anything new. Answer A calls the trend 'thin data', which mixes up the 2 logged days with the 15 weigh-ins behind the weight trend. It does tie the logging advice to the rotating shifts. Answer B is more complete (goal weight, projected date) and states plainly that eating under fuel is worth noting, though 'losing steadily' is a bit generous at 0.3 lb/wk and it skips the profile. Both make logging the lever; B is slightly more accurate and grounded, while A's shift-aware nudge is good but its framing is slightly misleading.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use the figures accurately and compute nothing new. A says \"Losing steadily,\" which oversells -0.3 lb/wk with a goal date in 2027. A also frames eating under target neutrally and gives a generic logging lever. B is honest that progress is slow and the data is thin, ties the lever to the user's rotating shifts, and stays direct and warm; its claim that the trend runs on thin data slightly conflates weekly logging with 15 weigh-ins, but this is minor.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-ticking-up",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "The weekly rate is 0.4 lb/wk, and since negative means losing, a positive 0.4 means gaining. Answer A reads this correctly. Answer B claims the person is losing 0.4 lb/wk, which misreads the core trend. A is honest and specific and names a lever, though choosing logging over protein or calories is debatable, whereas B's central story is factually wrong.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "The snapshot says the weekly rate is 0.4 lb/wk and that negative means losing, so a positive 0.4 means gaining. Answer B reads this correctly and tells the honest story: the trend runs against the goal, it is driven by the calorie surplus, and it names one lever to pull. Answer A misreads the trend as a loss and frames it as \"steady loss,\" which misrepresents the data. B is accurate, direct and actionable, and it uses no invented figures (4 logged days is given).",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-ticking-up",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A computes a new figure, \"350 cal over target\", which is a serious fault. Its \"Stalled\" headline also misreads a real if slow loss, and the line about turning the trend around fast oversells. Answer B uses only the given figures accurately and names a clear lever in protein, though it has five highlights against the limit of four and its headline reads a bit like a budget. B's flaw is minor compared with A's computed number.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B works out a new figure (\"350 cal over target\"), which is a serious fault; it also calls the trend \"stalled\" and \"too slow to call real progress,\" which is harsh and misreads a real loss. Answer A gives every figure exactly as stated, credits the downward trend honestly, flags the intake gap, and names protein as the lever. A has five highlights, one over the two-to-four limit, but that is a minor fault next to B's computed figure.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-weight-only",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use correct figures, though A's '0 days nutrition logged this week' is a restatement rather than an invention; B states the full projected date exactly. A says 'down to 157.0' and urges a faster pace than the May 2027 finish, which edges toward pushing a faster loss. B says 'rebuild' the 3-day streak, which is slightly confusing, but it is clear and accurate and gives a concrete lever: log daily starting today. B is slightly cleaner and more grounded.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use the given figures, and the input itself is contradictory: a 3-day logging streak alongside nothing logged in 7 days. Answer A notes the gap but says \"rebuild\" the streak, which is slightly odd. Answer B says \"keep it going faster than a May 2027 finish,\" which implies pushing the pace, and \"0 days nutrition logged this week\" is a mild restatement. Answer A is clearer, states the exact projected date, and gives a concrete lever without pushing speed, so A is somewhat better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-weight-only",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use the figures exactly as given and invent nothing. Answer A builds on the 3-day logging streak while also saying nothing was logged in 7 days, which is confusing. Its 'speed it up' framing and the 'all the way out' remark on the goal date also lean toward judging the pace. Answer B is clear and direct, and it names one concrete lever (food logging), though 'consistently' is a slight stretch, so B is the better answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use only figures from the input. A's \"consistently\" is a mild unsupported claim, and it ignores the streak. B celebrates the 3-day streak, gives a concrete lever, and names the 145.0 goal, but \"speed it up\" and \"all the way out\" add slight pressure. B also juxtaposes a 3-day logging streak with no nutrition logged in 7 days, which could confuse, though both facts come from the input; overall B is more specific and actionable.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-weight-only",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers use the snapshot's figures accurately. Answer A has wording problems: \"trending down -0.5 lb/wk\" is a double negative, and it says the weight might be \"stalling at your May 2, 2027 projection\", which misreads what a projected goal date means. Answer B has a logical inconsistency: it tells the user to \"restart\" a streak that is currently active at 3 days. B also gives no clear next step in its body, but the gap-and-fix framing is still clear. Both are usable, and A's misreading of the projection is arguably the worse of the two flaws, but neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers use the snapshot figures accurately and invent nothing, and both flag the nutrition gap alongside the steady weight loss. Answer A's highlight '3-day logging streak: restart it today' contradicts itself, since a current streak needs no restarting; its body also runs a little long and plain. Answer B is punchier and better frames the 3-day streak as the lever to lean into, though 'stalling at your May 2, 2027 projection' is slightly muddled phrasing. On balance B tells the story more coherently and gives a clearer next step.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "alex-on-track",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-on-track",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-on-track",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-gaining-fast",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-gaining-fast",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-gaining-fast",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

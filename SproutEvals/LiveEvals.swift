@@ -557,7 +557,8 @@ final class LiveEvals: XCTestCase {
         let stored = tap.value ?? nil
         return EvalOutcome(ok: stored != nil, error: stored == nil ? "the reply did not parse as {notes, summary}" : nil,
                            scores: graded.scores, pass: stored != nil && graded.pass,
-                           output: String(raw.prefix(EvalRunner.outputLimit)))
+                           output: String(raw.prefix(EvalRunner.outputLimit)),
+                           shown: stored.map(TextRegrade.shown))
     }
 
     // MARK: - progressSummary: the Progress tab recap, from the factual snapshot
@@ -887,7 +888,8 @@ final class LiveEvals: XCTestCase {
             let shown = "tasks: " + plan.tasks.map(\.title).joined(separator: " | ")
                 + "\nchips: " + plan.chips.map(\.title).joined(separator: " | ")
             return EvalOutcome(ok: true, error: nil, scores: graded.scores, pass: graded.pass,
-                               output: String((tap.raw ?? shown).prefix(EvalRunner.outputLimit)))
+                               output: String((tap.raw ?? shown).prefix(EvalRunner.outputLimit)),
+                               shown: TextRegrade.shown(plan))
         }
     }
 }

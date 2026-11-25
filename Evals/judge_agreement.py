@@ -43,9 +43,11 @@ def sample(args):
     rubrics = json.load(open(os.path.join(HERE, "judge_rubrics.json")))
     rng = random.Random(args.seed)
     pairs, key = [], {}
+    sys.path.insert(0, HERE)
+    from judge import with_shown
     for run in args.runs:
         j = judged(run)
-        recs = {(r["caseID"], r["repeatIndex"], r["candidate"]): r for r in records(run)}
+        recs = {(r["caseID"], r["repeatIndex"], r["candidate"]): r for r in with_shown(run, records(run))}
         pool = [v for v in j["verdicts"] if v["repeat"] == 0 and v["outcome"] is not None]
         for v in rng.sample(pool, min(args.per_task, len(pool))):
             base = recs[(v["case"], 0, j["baseline"])]
@@ -54,7 +56,7 @@ def sample(args):
             baseline_is_a = rng.random() < 0.5
             a, b = (base, cand) if baseline_is_a else (cand, base)
             pairs.append({"id": pid, "task": j["task"], "taskLabel": TASK_LABELS.get(j["task"], j["task"]),
-                          "rubric": rubrics[j["task"]], "given": base["given"], "a": a["output"], "b": b["output"]})
+                          "rubric": rubrics[j["task"]], "given": base["given"], "a": a["judged_text"], "b": b["judged_text"]})
             key[pid] = {"run": os.path.basename(os.path.normpath(run)), "task": j["task"], "case": v["case"],
                         "repeat": 0, "baseline_is": "A" if baseline_is_a else "B",
                         "baseline": j["baseline"], "candidate": j["candidate"]}
