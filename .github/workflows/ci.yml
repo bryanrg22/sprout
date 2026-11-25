@@ -245,6 +245,13 @@ jobs:
           cp Evals/datasets/meal_describe/v3.jsonl /tmp/v3.before
           python3 Evals/datasets/meal_describe/build_v3.py > /dev/null
           diff /tmp/v3.before Evals/datasets/meal_describe/v3.jsonl
+      - name: meal_describe/v4.jsonl and meal_photo/v1.jsonl are what their build scripts produce
+        run: |
+          cp Evals/datasets/meal_describe/v4.jsonl /tmp/v4.before
+          python3 Evals/datasets/meal_describe/build_v4.py > /dev/null
+          diff /tmp/v4.before Evals/datasets/meal_describe/v4.jsonl
+          test "$(wc -l < Evals/datasets/meal_photo/v1.jsonl)" -eq 30
+          python3 -c "import json,os; rows=[json.loads(l) for l in open('Evals/datasets/meal_photo/v1.jsonl')]; missing=[r['photo'] for r in rows if not os.path.exists('Evals/datasets/meal_photo/'+r['photo'])]; assert not missing, missing"
       - name: Judge scripts parse
         run: python3 -m py_compile Evals/judge.py Evals/judge_agreement.py
 

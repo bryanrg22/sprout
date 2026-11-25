@@ -277,8 +277,8 @@ struct PhotoFoodFlow: View {
     private func append(_ picked: [UIImage]) {
         for image in picked {
             guard images.count < maxPhotos else { break }
-            let scaled = image.downscaled(maxEdge: 1024)
-            guard let data = scaled.jpegData(compressionQuality: 0.7) else { continue }
+            let scaled = image.downscaled(maxEdge: UIImage.mealPhotoMaxEdge)
+            guard let data = scaled.mealPhotoUpload() else { continue }
             images.append(scaled)
             jpegs.append(data)
         }
@@ -479,6 +479,13 @@ struct PhotoLibraryPicker: UIViewControllerRepresentable {
 // MARK: - Helpers
 
 extension UIImage {
+    /// A meal photo is sent at most this long on its longest edge.
+    static let mealPhotoMaxEdge: CGFloat = 1024
+
+    /// The bytes the meal estimate is sent for this (already scaled) photo: JPEG at 0.7.
+    /// One place, so the meal-photo evaluation sends exactly what the app sends.
+    func mealPhotoUpload() -> Data? { jpegData(compressionQuality: 0.7) }
+
     /// Returns a copy scaled so its longest edge is at most `maxEdge` points.
     func downscaled(maxEdge: CGFloat) -> UIImage {
         let longest = max(size.width, size.height)

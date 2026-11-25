@@ -552,6 +552,25 @@ final class GraderTests: XCTestCase {
         }
     }
 
+    /// `meal_describe/v4` describes every portion in household words, never a weight, and each
+    /// row's truth is the sum of its USDA parts (the sources name the grams `build_v4.py` took
+    /// from USDA's own portion list).
+    func testMealDatasetV4StatesNoWeightsAndAddsUp() throws {
+        let cases = try rows("meal_describe/v4.jsonl", as: Graders.MealTruth.self)
+        XCTAssertEqual(cases.count, 22)
+        XCTAssertEqual(Set(cases.map(\.id)).count, cases.count)
+        let weight = try NSRegularExpression(pattern: #"\d\s*(g|grams?|kg|ml)\b"#, options: [.caseInsensitive])
+        for c in cases {
+            XCTAssertNil(weight.firstMatch(in: c.description, range: NSRange(c.description.startIndex..., in: c.description)),
+                         "\(c.id): v4 gives no weight")
+            XCTAssertTrue(c.source.hasPrefix("FDC "), c.id)
+            XCTAssertGreaterThan(c.kcal, 20, c.id)
+            // Calories from the macros (4/4/9) land near the stated total, as on a label.
+            let fromMacros = 4 * c.protein_g + 4 * c.carbs_g + 9 * c.fat_g
+            XCTAssertEqual(fromMacros, c.kcal, accuracy: 0.2 * c.kcal + 10, c.id)
+        }
+    }
+
     /// Cases whose truth has more sugars than carbohydrate because the USDA record does:
     /// 171265 ("Milk, whole, 3.25% milkfat, with added vitamin D") lists total sugars 5.05 g
     /// per 100 g against carbohydrate (by difference) 4.8 g. The dataset keeps USDA's values;
@@ -2384,10 +2403,10 @@ final class GraderTests: XCTestCase {
             return String(test.name[range.upperBound...].dropLast())
         }
         for added in ["InsightLine", "WeeklyReflection", "OnboardingNote", "MemoryFold", "ProgressSummary",
-                      "FoodSuggestions", "CoachPrompts", "ChecklistPlan"] {
+                      "FoodSuggestions", "CoachPrompts", "ChecklistPlan", "MealDescribeHousehold", "MealPhoto"] {
             XCTAssertTrue(names.contains(added), "LiveEvals has no test\(added)")
         }
-        XCTAssertEqual(names.count, 12)
+        XCTAssertEqual(names.count, 14)
         for name in names {
             XCTAssertTrue(Graders.containsPhrase(usage, name), "Evals/run.sh does not list \(name) in its usage")
         }
