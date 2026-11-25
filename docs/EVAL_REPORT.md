@@ -50,6 +50,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 38 | Every task's model decided on the evidence: the chat and the chips move to the cheaper model | 2026-11-25 |
 | 39 | Every task tested: upward as well as down, the plan's three calls, and the two newest models | 2026-11-25 |
 | 40 | The plan moves to claude-opus-5-5 once it has room to think; food moves to claude-sonnet-5-5 once one suggestion is shown | 2026-11-25 |
+| 41 | OpenAI measured on every task: nine tasks move to OpenAI, each task now picks its vendor, and the gateway is live | 2026-11-25 |
 
 ---
 
@@ -2502,4 +2503,94 @@ gateway as the plan tier's default; no task resolves to it.
 - The judge against a person: the owner's labels are still pending.
 - How often `claude-opus-5-5` answers blank in use: once in 30 builds and 28 reviews here.
 - Seen in the app on a phone: none of it.
+
+## 41. OpenAI measured on every task: nine tasks move to OpenAI, each task now picks its vendor, and the gateway is live (2026-11-25)
+
+**Why.** Sections 35 to 40 compared Claude models only. The move to one vendor in section 33
+was a simplification, not a measurement, and the owner asked for OpenAI to be measured too ("we
+should"). **Spent: about $18.40** ($11.63 runs, $5.27 judge, about $1 of web searches, and the
+pilots). **Spend to date: about $91.**
+
+Each task was run against the OpenAI model at the same price as its shipped Claude model, with
+3 repeats (2 for the plan, 1 on 8 cases for research), and judged as before:
+
+| Claude tier | OpenAI at the same price |
+|---|---|
+| `claude-haiku-5-5` ($0.10 / $0.50) | `gpt-6-luna` |
+| `claude-sonnet-5` and `claude-sonnet-5-5` ($2 / $10) | `gpt-6.2-sol` |
+| `claude-opus-5-5` ($4 / $20) | `gpt-6.2-sol` (half the price), and `gpt-5.6-sol` for research (the OpenAI model with web search; promotional price until 2026-11-30) |
+
+### Results (runs `20261125-1346…` to `1439…`)
+
+| Task | Claude / OpenAI | Rules: Claude / OpenAI | Judge: OpenAI / Claude / tie | net (95%) | $ per 1,000 | Model now |
+|---|---|---|---|---|---|---|
+| Food suggestions | `sonnet-5-5` / `gpt-6.2-sol` | 100% / 100% | **34 / 5 / 15** | **+0.54 (+0.30 to +0.74)** | 6.49 / 3.36 | **`gpt-6.2-sol`** |
+| Daily checklist | `sonnet-5-5` / `gpt-6.2-sol` | 100% / 100% | **29 / 11 / 8** | **+0.38 (+0.02 to +0.69)** | 7.11 / 3.46 | **`gpt-6.2-sol`** |
+| Plan review | `opus-5-5` / `gpt-6.2-sol` | 96% / 100% | **21 / 3 / 4** | **+0.64 (+0.32 to +0.89)** | 44.09 / 7.47 | **`gpt-6.2-sol`** |
+| Plan research | `opus-5-5` / `gpt-5.6-sol` | 100% / 100% | **7 / 0 / 1** | **+0.88 (+0.62 to +1.00)** | 377.99 / 113.03 | **`gpt-5.6-sol`** |
+| Plan build | `opus-5-5` / `gpt-6.2-sol` | 93% / 100% | 8 / 11 / 9 | −0.11 (−0.48 to +0.29) | 57.31 / 9.50 | **`gpt-6.2-sol`** |
+| Progress recap | `sonnet-5` / `gpt-6.2-sol` | 93% / 100% | 12 / 15 / 18 | −0.07 (−0.38 to +0.24) | 6.20 / 2.84 | **`gpt-6.2-sol`** |
+| Meal photo | `sonnet-5` / `gpt-6.2-sol` | 47% / 51% within 20%; mean error 36% / 28%; truth in range 48% / 76% | not judged | | 11.03 / 4.86 | **`gpt-6.2-sol`** |
+| Onboarding note | `haiku-5-5` / `gpt-6-luna` | 96% / 100% | 11 / 14 / 18 | −0.07 (−0.30 to +0.14) | 0.13 / 0.07 | **`gpt-6-luna`** |
+| Weekly note | `haiku-5-5` / `gpt-6-luna` | 100% / 100% | 14 / 15 / 19 | −0.02 (−0.25 to +0.21) | 0.20 / 0.13 | **`gpt-6-luna`** |
+| Vita's chat | `haiku-5-5` / `gpt-6-luna` | equal | 13 / **51** / 23 | **−0.42 (−0.60 to −0.24)** | | `claude-haiku-5-5` |
+| Chat chips | `haiku-5-5` / `gpt-6-luna` | equal | 12 / **25** / 11 | **−0.27 (−0.50 to −0.02)** | | `claude-haiku-5-5` |
+| Daily brief | `sonnet-5` / `gpt-6.2-sol` | equal | 3 / **15** / 21 | **−0.31 (−0.54 to −0.08)** | | `claude-sonnet-5` |
+| Insight line | `sonnet-5` / `gpt-6.2-sol` | equal | 4 / **20** / 33 | **−0.28 (−0.49 to −0.07)** | | `claude-sonnet-5` |
+| Memory fold | `sonnet-5` / `gpt-6.2-sol` | 97% / **28%** | 12 / 15 / 8 | −0.09 | | `claude-sonnet-5`: OpenAI's notes run to about 400 characters and drop planted facts in 26 of 36 folds |
+| Typed meal (household) | `sonnet-5-5` / `gpt-6.2-sol` | 92% / 86%; mean error 4.8% / 6.8% | not judged | | 5.68 / 2.90 | `claude-sonnet-5-5`: the numbers are the point |
+
+Where the judge cannot separate the two, the cheaper candidate whose interval does not favour
+the shipped model is chosen, as in every section since 35. That rule moves the plan build, the
+recap, the onboarding note and the weekly note. For the plan build and the recap the OpenAI
+model is also the more reliable on the rules: `claude-opus-5-5` gave one blank plan and one cut
+off in 30. Controls passed 6/6 on every judgement.
+
+### Each task now picks its vendor
+
+`AIConfig.provider(for:)` replaces the one global provider. In order:
+1. a scoped runtime's provider (tests, evaluations);
+2. else the vendor the task measured best on (`AIConfig.measuredProviders`);
+3. else Anthropic, when that vendor is unavailable here: the gateway's `/health` reports no
+   OpenAI key, or has not answered yet. The feature then runs on its measured Anthropic model
+   rather than going dark.
+
+Every call site names its task (`AIClient.make(for:)`, `AIConfig.hasKey(for:)`). The no-argument
+factories remain for tests and evaluations, which pin the provider themselves. Tests check:
+- the vendor table;
+- the scoped override and the fallback;
+- that every task resolves, on its vendor and on Anthropic, to a model the gateway allows.
+
+### The gateway
+
+Deployed on the owner's droplet (server/README):
+- HTTPS on port 8446 (port 443 belongs to another service there), the gateway on 127.0.0.1 only;
+- memory and CPU capped;
+- both keys pasted by the owner.
+
+Checked from outside:
+- `/health` reports both keys;
+- an unsigned request is refused (401);
+- the gateway's own port is not reachable.
+
+The OpenAI text routes removed in section 33 are back (`/openai/v1/responses`,
+`/openai/v1/chat/completions`), with:
+- the same App Attest checks, model allowlist and spend caps as the Anthropic route;
+- each web search charged at $0.01;
+- `background` and premium `service_tier` refused (they would bill without a usage the
+  gateway can count).
+
+70 gateway tests. Two things are open:
+- **Cache writes:** OpenAI's 30-minute cache writes are priced at the input rate. The usage
+  field that reports written tokens is not confirmed, so the gateway may undercharge them by up
+  to a quarter of the input price.
+- **Searches per call:** the number of searches is limited only when the app sends
+  `max_tool_calls`.
+
+### Not verified
+
+- Seen in the app on a phone: nothing yet. A real App Attest registration needs the owner's
+  iPhone.
+- The judge against a person: the owner chose not to label.
+- `gpt-5.6-sol`'s price after its promotion ends on 2026-11-30.
 

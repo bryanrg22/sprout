@@ -1,0 +1,219 @@
+{
+ "task": "planResearch",
+ "run": "20261125-141028-PlanResearch",
+ "baseline": "anthropic:claude-opus-5-5",
+ "candidate": "openai:gpt-5.6-sol",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "b25317d01c157a5ab524f2be27aa0c5e9f60777da68930727b79abe73ee7127c",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 8,
+ "pairs_skipped": [],
+ "cases": 8,
+ "candidate_wins": 7,
+ "baseline_wins": 0,
+ "ties": 1,
+ "both_bad": 0,
+ "orders_agree_share": 0.875,
+ "net": 0.875,
+ "net_ci95_cases": [
+  0.625,
+  1.0
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 28,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.2784,
+ "verdicts": [
+  {
+   "case": "build-sam-ambitious-timeframe",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A covers the person's specifics in depth, including the evening sweet tooth, weekend drift and Couch to 5K injury and dropout risk, but it has serious problems. It invents the name 'Sam', which is not in the input. Its quotes are fragmentary and some are sourced only vaguely ('secondary source', 'one source'). It also cites a dubious '2026 Health Psychology' study, and it is long, with essay-like filler. Answer B is tight and factual, with concrete figures and units, reputable inline sources (CDC, NIDDK, PubMed), sound safety framing on VLCDs, and a timing check, though its situation-specific coverage is thinner. Given A's invented name and loose sourcing, B is the better fit to show on the plan card.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is a tight, accurate brief with concrete figures (CDC 1\u20132 lb/week, 0.5\u20131%/week, 1.2\u20131.6 g/kg protein, 500\u2013750 kcal deficit, resistance training twice weekly), cites reputable sources, addresses the sweet tooth and running, and flags the date inconsistency. Answer B invents a name ('Sam') and a date not in the input, has broken quote formatting, leans on weak sources (Examine, GSSI, unnamed 'one source', 'secondary source'), and runs long with tangential material. B has some useful situation-specific evidence, but A is cleaner, better sourced and closer to what a coach would look up first.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A invents details that are not in the input: the name \"Sam\" and a \"late November\" start date, from which it computes 27 weeks. It also leans on Examine.com, Precision Nutrition and a clinic blog, and its odd line breaks around quoted fragments read as messy. Answer B sticks to the input, names its assumption about the date, and cites strong sources (NIDDK, the VA guideline, the US physical activity guidelines, a USDA systematic review) for rate, calorie deficit, protein and the person's specific habits, without overstating the evidence. B is tighter, better sourced and free of invented details.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B invents a name (\"Sam\") and a start date (\"late November\"), neither of which is in the input, and it cites weak sources like Examine.com, Precision Nutrition and a clinic blog; its quotes are also broken by awkward line breaks. Answer A assumes June 2027 but flags that as an assumption, cites reputable bodies (NIDDK, the VA guideline, the DGAC review, ODPHP), gives accurate figures, and is tighter. B covers the 4pm snack more specifically, but its invented details and weaker sourcing outweigh that. A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-first-day-no-logs",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A invents details that are not in the input: the name \"Sam\" and a specific date (\"late November 2026\"), and it says summer is 26\u201330 weeks away, which is inconsistent. It also cites Examine.com, a non-primary source, and is long and fragmented, with quote-shards attached to sources of unclear reputability. Answer B is tight and cites reputable bodies (CDC, VA/DoD, NIDDK, the Physical Activity Guidelines, the FDA) with correct figures, and it handles shift work and fast food with appropriate caveats, though its \"June 2027\" assumption is also speculative. Overall B is more accurate, more concise and better sourced.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B invents a name ('Sam') and a current date, cites Examine.com (not a primary source), and has formatting problems: quote fragments break mid-sentence. It also says 0.5 kg/week over 6 months is \u224813 kg, which is wrong (0.5 \u00d7 26 \u2248 13 kg is right only at 26 weeks, but it labels this inline as if quoted) and sets an unrealistic expectation. It is also long and padded. Answer A is tight and sourced from reputable bodies (CDC, VA/DoD, NIDDK, the Physical Activity Guidelines), addresses shifts and fast food sensibly, and is honest about missing data, though it assumes a June 2027 date and its 0.5\u20132 lb range is loose.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-knee-injury",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is detailed and well cited for this person: it gives figures per kg with sources, adds the meniscus-specific guidance on swimming strokes (avoid the breaststroke kick, use a pull buoy) and cites trials on an afternoon protein snack for the snacking-while-grading problem. Its faults are that it names the person 'Sam', which is not in the input, cites MacroFactor and Examine.com (not top-tier sources), and runs long. Answer B is tighter and covers calorie guidance, but its citations look questionable (a '2026 ISSN position stand', a DOI and PMC IDs that seem fabricated, and the same DOI reused for NIDDK snack advice), and its situation-specific evidence is thinner. A is better overall despite the invented name.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is tight, clearly organized and cites reputable bodies (CDC, NIDDK, VA/DoD, ISSN). Its figures are sound and it covers the meniscus limits and the after-school snacking window without filler. Answer B is richer in specifics but invents the name \"Sam,\" which is not in the input, has broken quote formatting, leans on a brand (MacroFactor) and Examine.com, and its knee advice (avoid breaststroke kick, cross-legged sitting) goes beyond what the physio said. B is also much longer and essay-like, so A better fits the brief format.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-maintain-after-goal",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both briefs correctly flag the core issue: the person is probably still in a deficit, and the 2025 study gives no support for a slow reverse diet. Both also give sound protein figures (1.4\u20132.0 g/kg, anchored near 1.6) and activity guidance. Answer A invents a name (\"Sam\") not given in the input, leans on MacroFactor (a brand) as a source, and is long with broken quote formatting. Answer B is tighter, names reputable sources inline (ADA, NIDDK, ISSN, US activity guidelines), and sensitively addresses the person's fear of eating more, so it is the better brief.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is a tight, accurate brief that cites reputable sources (ADA, NIDDK, ISSN, PMC). It covers maintenance calories, the evidence against reverse dieting, protein at 1.6 g/kg, activity guidelines, and the fear of regain. Answer B is richer and more applied, but it invents a name ('Sam') that is not in the input, cites MacroFactor (a brand) and 'practical guides', has broken quote formatting, and invents the estimate that lifting plus the walk totals 3\u20134 hours. A is cleaner, better sourced and has no invented details.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A invents a name (\"Sam\"), cites dubious or possibly fabricated sources (an ACSM 2026 Position Stand, SWIFt eBioMedicine 2025 with specific figures), leans on non-reputable sources (Examine.com, the FitChef site), and its inline quote snippets are malformed; it is also long and essay-like. Answer B is tighter, uses reputable sources (VA/DoD, ADA, ACSM, ODPHP, NIOSH, CDC), gives concrete figures with units, and covers the night-shift specifics without overstating the evidence. B's 8\u201330 lb range is broad but hedged, and its protein range of 1.2\u20131.6 g/kg is conservative but defensible. B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B invents the name \"Sam\" and cites blogs and brands (Examine.com, FitChef, a secondary summary). It also has garbled quote formatting, and its 2.4 g/kg upper range and some citations rely on athlete data. Answer A is tight and accurate, cites reputable bodies (CDC, NIOSH, VA/DoD, ACSM, PAG), and covers the night-shift specifics without overstating the evidence. B has some useful extra content (sleep, SWIFt), but the invented name and weak sourcing are serious faults, and it is much longer than a tight brief should be.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-vegetarian",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A uses the name \"Sam\", which isn't in the input, has broken quote formatting, and claims 0.5\u20131%/week (about 2.5\u20135% over 5 weeks) is supported, which is aggressive and leans on athlete studies. It also states that a 550 kcal/day deficit gives about 0.5 kg/week, which is wrong: 550 kcal/day matches roughly 0.5 lb/week, not 0.5 kg. Answer B is cleaner and cites NIDDK, CDC/ODPHP and the Academy of Nutrition and Dietetics, giving conservative, accurate figures (0.25\u20130.5 kg/week, 1.2\u20131.6 g/kg) and practical vegetarian protein sources. B is the more accurate, safer and better-sourced brief, though its specific date assumption is slightly invented.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B invents the name \"Sam\" and asserts a date-based \"5 weeks\" window that the input never gives. It also has broken quote formatting, gives a wrong figure (roughly 550 kcal/day for 0.5 kg/week, when ~3,500 kcal per lb means 500 kcal/day for 1 lb, about 0.45 kg), and spends space on holiday-weight and athlete-trial findings that add little. Answer A also invents a date (November 25, 2026), but otherwise it is accurate, well sourced and on point: a realistic rate, a calorie deficit, protein in g/kg with worked examples, vegetarian specifics including the lunch bottleneck, and the gap from having no resistance training. A is cleaner and has fewer faults, though it is somewhat long.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-very-low-intake",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both briefs flag the 900 kcal intake plus five spin classes as unsafe and give rates and protein targets. A has a serious fault: it invents the name \"Sam\", which is not in the input. It also leans on a hospital blog and Healthline, and its own energy-availability estimate makes it messier. B is tighter, cites NIDDK, NICE and the IOC, and gives accurate figures with no invented details.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is a tight, accurately sourced brief (NIDDK, NICE NG246, IOC REDs) that addresses the 900 kcal plus spin danger, a realistic rate, a deficit range and protein, with no filler. Answer B invents the name \"Sam\", which is not in the input, and leans on weak sources such as a hospital blog, Healthline and Examine. It also has broken quote formatting and is padded, though it does include useful energy-availability content. A is cleaner, better sourced and free of invented details.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

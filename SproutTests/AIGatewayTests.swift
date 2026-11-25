@@ -105,12 +105,14 @@ final class AIGatewayTests: XCTestCase {
 
     // MARK: - Which requests go to the gateway
 
-    func testTheGatewayServesClaudeAndTheCharacterPictureOnly() {
+    func testTheGatewayServesClaudeOpenAITextAndTheCharacterPictureOnly() {
         XCTAssertEqual(AIGateway.route(for: URL(string: "https://api.anthropic.com/v1/messages")!), "/anthropic/v1/messages")
         XCTAssertEqual(AIGateway.route(for: URL(string: "https://api.openai.com/v1/images/edits")!), "/openai/v1/images/edits")
-        // OpenAI text is evaluation-only (a scoped runtime with its own key); the app never sends it.
-        XCTAssertNil(AIGateway.route(for: URL(string: "https://api.openai.com/v1/chat/completions")!))
-        XCTAssertNil(AIGateway.route(for: URL(string: "https://api.openai.com/v1/responses")!))
+        // The OpenAI text routes, for the tasks that measured best there (EVAL_REPORT 41).
+        XCTAssertEqual(AIGateway.route(for: URL(string: "https://api.openai.com/v1/responses")!), "/openai/v1/responses")
+        XCTAssertEqual(AIGateway.route(for: URL(string: "https://api.openai.com/v1/chat/completions")!),
+                       "/openai/v1/chat/completions")
+        XCTAssertNil(AIGateway.route(for: URL(string: "https://api.openai.com/v1/embeddings")!))
         XCTAssertNil(AIGateway.route(for: URL(string: "https://api.anthropic.com/v1/models")!))
         XCTAssertNil(AIGateway.route(for: URL(string: "https://example.com/v1/messages")!))
     }
@@ -306,14 +308,21 @@ final class AIGatewayTests: XCTestCase {
     }
 
     func testEveryModelTheAppSendsIsOneTheGatewayAllows() throws {
-        let allowed = try serverAllowlist("ANTHROPIC_MODELS")
-        XCTAssertTrue(allowed.contains("claude-sonnet-5"), "the parser found the table: \(allowed)")
-        // Every task, as the shipped app resolves it (Anthropic: there is no other provider).
+        let anthropic = try serverAllowlist("ANTHROPIC_MODELS")
+        let openai = try serverAllowlist("OPENAI_MODELS")
+        XCTAssertTrue(anthropic.contains("claude-sonnet-5"), "the parser found the table: \(anthropic)")
+        XCTAssertTrue(openai.contains("gpt-6.2-sol"), "the parser found the table: \(openai)")
+        // Every task on the vendor it measured best on, and on Anthropic, which it falls back to
+        // when that vendor is unavailable (`AIConfig.provider(for:)`).
         for task in AITask.allCases {
-            let model = AIConfig.model(for: task, provider: AIConfig.provider)
-            XCTAssertTrue(allowed.contains(model), "\(task.rawValue) sends \(model), which server/src/pricing.ts refuses")
+            let measured = AIConfig.measuredProviders[task] ?? .anthropic
+            for provider in Set([measured, .anthropic]) {
+                let model = AIConfig.model(for: task, provider: provider)
+                let allowed = provider == .anthropic ? anthropic : openai
+                XCTAssertTrue(allowed.contains(model),
+                              "\(task.rawValue) on \(provider) sends \(model), which server/src/pricing.ts refuses")
+            }
         }
-        XCTAssertEqual(AIConfig.provider, .anthropic)
         // The character picture: the one image model, at the one quality.
         let pricing = try String(contentsOf: URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent()

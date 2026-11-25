@@ -13,7 +13,8 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   The AI runs through a small gateway (`server/`) that holds the keys, answers only a
   genuine copy of the app on a real iPhone (Apple App Attest), pays only for the models
   the app uses, and gives each phone a daily allowance; when it is used up, Vita says
-  so and is back the next day. Every text task runs on Claude; OpenAI only draws the
+  so and is back the next day. Each AI feature runs on the model that measured best for it,
+  from Anthropic or OpenAI (EVAL_REPORT 41); OpenAI also draws the
   character picture (EVAL_REPORT 33).
 
 ### Removed
@@ -47,6 +48,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   (EVAL_REPORT 39).
 - A meal estimate that comes back without its one-line note is still shown, instead of an
   error (EVAL_REPORT 37).
+- **OpenAI measured on every feature too** (EVAL_REPORT 41): food ideas, the checklist, the
+  recap, meal photos and the whole plan now run on OpenAI, which was better or as good at about
+  half the cost (a sixth for the plan); Vita's chat, the morning brief, the insight line and
+  Vita's memory stay on Claude, which was clearly better there.
 - **Every AI feature now runs on the model that measured best for it** (EVAL_REPORT 39): the
   morning brief, the insight line and Vita's memory on a stronger model, the checklist and
   typed meals and food suggestions on a newer one, and the whole plan on the newest Opus.

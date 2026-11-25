@@ -317,7 +317,7 @@ final class CoachTurnEngine {
 
     private func attempt(_ call: Call) async -> Next {
         guard let context, let profile else { return .done }
-        let provider = AIConfig.provider
+        let provider = AIConfig.provider(for: .coachTurn)
         // Snapshot the prompt and the schemas here, on the main actor, so no model object
         // crosses to the network call.
         let data = CoachDataSnapshot.fetch(from: context)
@@ -336,7 +336,7 @@ final class CoachTurnEngine {
 
         do {
             let turn = try await AIFailureRecorder.$current.withValue(recorder) {
-                let client = try AIClient.makeFull()
+                let client = try AIClient.makeFull(for: .coachTurn)
                 return try await client.chatWithTools(system: system.volatile,
                                                       messages: messages, tools: tools,
                                                       model: AIConfig.model(for: .coachTurn),
@@ -595,7 +595,7 @@ final class CoachTurnEngine {
     func noteUnansweredMessageIfAny() {
         guard let context, !isSending, pendingTool == nil, failure == nil else { return }
         guard let newest = newestConversationRow(in: context), newest.isUser else { return }
-        fail(.interrupted, provider: env.runtime?.provider ?? AIConfig.provider, call: nil)
+        fail(.interrupted, provider: env.runtime?.provider ?? AIConfig.provider(for: .coachTurn), call: nil)
     }
 
     private func newestConversationRow(in context: ModelContext) -> ChatMessage? {

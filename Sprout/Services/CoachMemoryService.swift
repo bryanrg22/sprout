@@ -9,7 +9,7 @@ import Foundation
 /// Cost & safety design (mirrors `InsightPhraser`):
 /// - ONE call on the cheap "insight"-tier model — this is background summarization, not the
 ///   live coach reply, so it doesn't need the strong model.
-/// - Provider-aware: uses `AIClient.make()` so it follows the user's chosen vendor, and
+/// - Provider-aware: uses `AIClient.make(for: .memoryFold)`, the vendor this task measured best on, and
 ///   `AIConfig.insightModel` for that vendor's cheap tier.
 /// - No key → no-op (returns `nil`). It also never throws to the caller and never blocks the
 ///   user-visible reply; the caller runs it in a detached/background `Task`.
@@ -152,7 +152,7 @@ enum CoachMemoryService {
         // Nothing to fold → nothing to do.
         guard !olderMessages.isEmpty else { return nil }
         // No key for the active provider → skip silently (matches InsightPhraser's gate).
-        guard AIConfig.hasActiveKey else { return nil }
+        guard AIConfig.hasKey(for: .memoryFold) else { return nil }
 
         let transcript = olderMessages.map { snap in
             let who = snap.role == "user" ? (profileName.isEmpty ? "Friend" : profileName) : "Vita"
@@ -173,7 +173,7 @@ enum CoachMemoryService {
         """
 
         do {
-            let client = try AIClient.make()
+            let client = try AIClient.make(for: .memoryFold)
             let reply = try await client.chat(
                 system: system,
                 messages: [ChatTurnMsg(role: "user", text: user)],

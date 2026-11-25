@@ -108,7 +108,7 @@ xcodebuild test -project Sprout.xcodeproj -scheme Sprout \
   -destination 'platform=iOS Simulator,name=Sprout-Dev' \
   -resultBundlePath /tmp/t.xcresult
 # NEVER trust the pipe's exit code — read the counts out of the bundle:
-python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1227
+python3 tooling/check_xcresult.py /tmp/t.xcresult --min-tests 1229
 # The evaluation harness's offline self-tests (its own scheme; 3 live evals skip without a key):
 xcodebuild test -project Sprout.xcodeproj -scheme SproutEvals \
   -destination 'platform=iOS Simulator,name=Sprout-Dev' -resultBundlePath /tmp/e.xcresult

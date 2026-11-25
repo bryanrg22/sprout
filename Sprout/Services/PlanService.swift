@@ -30,7 +30,7 @@ enum PlanService {
         let points = loggedDayCount(foods: foods, weights: weights)
 
         let coaching = coachingNote(profile: profile, foods: foods, weights: weights)
-        let client = try AIClient.makeFull()
+        let client = try AIClient.makeFull(for: .planBuild)
 
         // PHASE 1 — ground the heavy BUILD in current, cited evidence via a live web search,
         // on whichever provider is active. Best-effort: if the key's plan doesn't allow web
@@ -128,7 +128,7 @@ enum PlanService {
         // so the review turns them into encouraging, results-focused insights — never warnings.
         let coaching = coachingNote(profile: profile, foods: foods, weights: weights)
 
-        let client = try AIClient.makeFull()
+        let client = try AIClient.makeFull(for: .planReview)
         let result = try await client.structured(
             system: reviewSystemPrompt(profile: profile),
             userContent: reviewUserContent(plan: existing, dataSummary: dataSummary, daysSince: elapsed, about: profile.onboardingNote) + coaching,
@@ -258,7 +258,7 @@ enum PlanService {
         let system = researchSystemPrompt(profile: profile)
         let user = researchUserContent(profile: profile, intake: intake)
         let research: (text: String, usedSearch: Bool)?
-        switch AIConfig.provider {
+        switch AIConfig.provider(for: .planResearch) {
         case .anthropic:
             research = try? await AnthropicClient().research(system: system, userContent: user,
                                                              model: AIConfig.model(for: .planResearch))

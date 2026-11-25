@@ -4,7 +4,7 @@ import Foundation
 /// over the user's last 7 days + onboarding note, shown as a dashboard card.
 ///
 /// Mirrors `OnboardingCoachMessage` / `InsightPhraser`'s safety model EXACTLY:
-/// - Optional: only calls the LLM when an API key exists (`AIConfig.hasActiveKey`);
+/// - Optional: only calls the LLM when an API key exists (`AIConfig.hasKey(for: .weeklyReflection)`);
 ///   otherwise returns a warm, direction-aware TEMPLATED note. The dashboard NEVER waits
 ///   on or depends on the network, and this never throws — there is always a note.
 /// - Cheap + rare: one short call on the cheap model (`AIConfig.insightModel`), gated to
@@ -55,7 +55,7 @@ enum WeeklyReflection {
     /// the gate and the data the note is built from stay in lockstep.)
     static func make(_ inputs: Inputs) async -> String {
         let fallback = template(for: inputs)
-        guard AIConfig.hasActiveKey else { return fallback }
+        guard AIConfig.hasKey(for: .weeklyReflection) else { return fallback }
         return await written(inputs) ?? fallback
     }
 
@@ -63,7 +63,7 @@ enum WeeklyReflection {
     /// Either way `make` shows the template, so both mean "not used".
     static func written(_ inputs: Inputs) async -> String? {
         do {
-            let client = try AIClient.make()
+            let client = try AIClient.make(for: .weeklyReflection)
             let reply = try await client.chat(
                 system: system,
                 messages: [ChatTurnMsg(role: "user", text: userPrompt(inputs))],

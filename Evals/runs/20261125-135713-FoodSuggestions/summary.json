@@ -1,0 +1,110 @@
+{
+ "run": "20261125-135713-FoodSuggestions",
+ "tasks": [
+  {
+   "task": "foodSuggestions",
+   "dataset": "food_suggestions/v1",
+   "cases": 18,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-sonnet-5-5",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 3.502,
+     "latency_p95_s": 4.793,
+     "mean_uncached_input_tokens": 1813.1296296296296,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 286.3888888888889,
+     "mean_cost_usd": 0.0064901481481481485,
+     "scores": {
+      "at_least_two_shown": 0.9629629629629629,
+      "avoided_foods_absent": 0.9166666666666666,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.8888888888888888,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 0.9814814814814815,
+      "one_emoji_each": 0.9629629629629629,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 0.9259259259259259,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 54,
+     "usable": 54,
+     "passed": 54,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9335841332189981,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 3.861,
+     "latency_p95_s": 4.702,
+     "mean_uncached_input_tokens": 1022,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 131.25925925925927,
+     "mean_cost_usd": 0.0033565925925925924,
+     "scores": {
+      "at_least_two_shown": 1,
+      "avoided_foods_absent": 1,
+      "details_one_sentence": 1,
+      "model_count_within_schema": 1,
+      "names_a_logged_food": 0.9444444444444444,
+      "nearby_pick_names_the_place": 1,
+      "nearby_rule_kept": 1,
+      "no_banned_phrase": 1,
+      "nothing_eaten_today_in_a_title": 1,
+      "one_emoji_each": 1,
+      "shown_within_schema": 1,
+      "titles_2_to_5_words": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-sonnet-5-5",
+   "paired": [
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "shared_cases": 18,
+     "mean_difference": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    }
+   ]
+  }
+ ]
+}

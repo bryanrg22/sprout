@@ -97,8 +97,8 @@ enum AIConfig {
     // gateway would refuse. Tests and evaluations still pick a provider, key and model
     // through a scoped `AIRuntime`.
 
-    /// The vendor for text tasks: Anthropic, unless a scoped runtime (tests, evals) says
-    /// otherwise.
+    /// The scoped runtime's vendor (tests, evals), else Anthropic. A feature asks for its own
+    /// task's vendor instead (`provider(for:)`, measured per task, EVAL_REPORT 41).
     static var provider: AIProvider { AIRuntime.effective?.provider ?? .anthropic }
 
     enum ModelTier: String { case coach, insight, plan }
@@ -240,8 +240,9 @@ protocol ToolCapableClient: LLMClient {
 /// Factory for "the active provider's client," so switching providers in Settings
 /// just works across every AI feature.
 enum AIClient {
-    /// Build the active provider's `LLMClient` (plain-text chat only). Throws
-    /// `AIConfig.AIError.missingKey` when that provider has no key stored yet.
+    /// The client of the scoped runtime's provider, else Anthropic: for tests and evaluations,
+    /// which pin the provider themselves. App code names its task (`make(for:)`), so each
+    /// feature runs on the vendor it measured best on.
     static func make() throws -> LLMClient {
         switch AIConfig.provider {
         case .anthropic: return try AnthropicClient()
@@ -249,9 +250,26 @@ enum AIClient {
         }
     }
 
-    /// Build the active provider's full client (chat + structured + tool use).
+    /// The full client of the scoped runtime's provider, else Anthropic (see `make()`).
     static func makeFull() throws -> any ToolCapableClient {
         switch AIConfig.provider {
+        case .anthropic: return try AnthropicClient()
+        case .openai:    return try OpenAIClient()
+        }
+    }
+
+    /// The plain-text client of the vendor `task` runs on (`AIConfig.provider(for:)`). Throws
+    /// `AIConfig.AIError.missingKey` when AI is unavailable here.
+    static func make(for task: AITask) throws -> LLMClient {
+        switch AIConfig.provider(for: task) {
+        case .anthropic: return try AnthropicClient()
+        case .openai:    return try OpenAIClient()
+        }
+    }
+
+    /// The full client (chat + structured + tool use) of the vendor `task` runs on.
+    static func makeFull(for task: AITask) throws -> any ToolCapableClient {
+        switch AIConfig.provider(for: task) {
         case .anthropic: return try AnthropicClient()
         case .openai:    return try OpenAIClient()
         }

@@ -362,20 +362,237 @@ describe("OpenAI", () => {
   it("is off without a key", async () => {
     const a = app({ openaiKey: undefined })
     await register(a)
-    const res = await a.request("/openai/v1/images/edits", signed("/openai/v1/images/edits", "{}"))
-    expect(res.status).toBe(503)
-    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("provider_disabled")
-  })
-
-  it("serves no OpenAI text route: every text task runs on Anthropic", async () => {
-    const a = app()
-    await register(a)
-    for (const path of ["/openai/v1/chat/completions", "/openai/v1/responses"]) {
-      const body = JSON.stringify({ model: "gpt-5.6-terra", max_tokens: 300, messages: [] })
-      const res = await a.request(path, signed(path, body))
-      expect(res.status).toBe(404)
+    for (const path of ["/openai/v1/responses", "/openai/v1/chat/completions", "/openai/v1/images/edits"]) {
+      const res = await a.request(path, signed(path, "{}"))
+      expect(res.status).toBe(503)
+      expect(((await res.json()) as { error: { code: string } }).error.code).toBe("provider_disabled")
     }
     expect(sent).toHaveLength(0)
+  })
+
+  const responsesOk = (body: Record<string, unknown>) =>
+    new Response(JSON.stringify({ id: "resp_1", object: "response", status: "completed", ...body }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    })
+  /** A Responses body the way `OpenAIClient.responsesBody` builds it, with one function tool. */
+  const responsesRequest = (extra: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      model: "gpt-6.2-sol",
+      input: [{ type: "message", role: "user", content: [{ type: "input_text", text: "hi" }] }],
+      max_output_tokens: 700,
+      prompt_cache_key: "vita-coach",
+      prompt_cache_options: { mode: "explicit", ttl: "30m" },
+      reasoning: { effort: "low" },
+      tools: [{ type: "function", name: "log_weight", description: "x", parameters: { type: "object" } }],
+      ...extra,
+    })
+  const responses = async (body: string, a = app()) => {
+    await register(a)
+    return a.request("/openai/v1/responses", signed("/openai/v1/responses", body))
+  }
+
+  it("forwards a Responses call unchanged with the server's bearer key and prices gpt-6.2-sol", async () => {
+    upstreamReply = () =>
+      responsesOk({
+        model: "gpt-6.2-sol",
+        output: [{ type: "message", content: [{ type: "output_text", text: "hi" }] }],
+        usage: {
+          input_tokens: 3000,
+          input_tokens_details: { cached_tokens: 1000 },
+          output_tokens: 400,
+          output_tokens_details: { reasoning_tokens: 100 },
+        },
+      })
+    const res = await responses(responsesRequest())
+    expect(res.status).toBe(200)
+    expect(((await res.json()) as { id: string }).id).toBe("resp_1")
+    expect(sent).toHaveLength(1)
+    expect(sent[0]!.url).toBe("https://api.openai.com/v1/responses")
+    expect(sent[0]!.headers.authorization).toBe(`Bearer ${SERVER_OPENAI_KEY}`)
+    expect(sent[0]!.headers["x-api-key"]).toBeUndefined()
+    expect(Object.keys(sent[0]!.headers).some((h) => h.startsWith("x-sprout") || h.startsWith("anthropic"))).toBe(false)
+    expect(Buffer.from(sent[0]!.body).toString()).toBe(responsesRequest())
+    // 2,000 uncached × $2 + 1,000 cached × $0.10 + 400 out (reasoning included) × $10 (per M)
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.0081, 8)
+  })
+
+  it("charges each completed web_search_call of the plan's research at $0.01", async () => {
+    upstreamReply = () =>
+      responsesOk({
+        model: "gpt-5.6-sol",
+        output: [
+          { type: "reasoning", id: "rs_1", summary: [] },
+          { type: "web_search_call", id: "ws_1", status: "completed", action: { type: "search", query: "a" } },
+          { type: "web_search_call", id: "ws_2", status: "completed", action: { type: "search", query: "b" } },
+          { type: "web_search_call", id: "ws_3", status: "failed" },
+          { type: "web_search_call", id: "ws_4", status: "completed", action: { type: "open_page" } },
+          { type: "message", content: [{ type: "output_text", text: "sources…", annotations: [] }] },
+        ],
+        usage: { input_tokens: 5000, input_tokens_details: { cached_tokens: 0 }, output_tokens: 1000 },
+      })
+    // `OpenAIClient.research`'s body.
+    const body = JSON.stringify({
+      model: "gpt-5.6-sol",
+      instructions: "research",
+      input: "the person",
+      tools: [{ type: "web_search" }],
+      max_output_tokens: 1800,
+      reasoning: { effort: "low" },
+    })
+    const res = await responses(body)
+    expect(res.status).toBe(200)
+    // 5,000 in × $4 + 1,000 out × $20 (per M) = $0.04, + 3 completed searches × $0.01 (the failed one is free)
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.04 + 0.03, 8)
+  })
+
+  it("prices gpt-6-luna at its own rate", async () => {
+    upstreamReply = () => responsesOk({ model: "gpt-6-luna", usage: { input_tokens: 10_000, output_tokens: 2000 } })
+    expect((await responses(responsesRequest({ model: "gpt-6-luna" }))).status).toBe(200)
+    // 10,000 × $0.10 + 2,000 × $0.50 (per M)
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.002, 8)
+  })
+
+  it("forwards Chat Completions for an allowlisted model and prices cached input", async () => {
+    const a = app()
+    await register(a)
+    upstreamReply = () =>
+      new Response(
+        JSON.stringify({ model: "gpt-6-luna", usage: { prompt_tokens: 2000, prompt_tokens_details: { cached_tokens: 1000 }, completion_tokens: 100 } }),
+        { status: 200 },
+      )
+    // The shape `OpenAIClient.chat` builds for a reasoning model on Chat Completions.
+    const body = JSON.stringify({
+      model: "gpt-6-luna",
+      messages: [{ role: "user", content: "hi" }],
+      max_completion_tokens: 300,
+      tools: [{ type: "function", function: { name: "log_weight", parameters: { type: "object" } } }],
+    })
+    const res = await a.request("/openai/v1/chat/completions", signed("/openai/v1/chat/completions", body))
+    expect(res.status).toBe(200)
+    expect(sent[0]!.url).toBe("https://api.openai.com/v1/chat/completions")
+    expect(sent[0]!.headers.authorization).toBe(`Bearer ${SERVER_OPENAI_KEY}`)
+    // 1,000 uncached × $0.10 + 1,000 cached × $0.01 + 100 out × $0.50 (per M)
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBeCloseTo(0.00016, 10)
+  })
+
+  it("refuses a model that is not allowlisted, on either text route", async () => {
+    const a = app()
+    await register(a)
+    const cases: [string, string][] = [
+      ["/openai/v1/responses", responsesRequest({ model: "gpt-4.1-mini" })],
+      ["/openai/v1/chat/completions", JSON.stringify({ model: "gpt-4.1-mini", max_tokens: 300, messages: [] })],
+      ["/openai/v1/responses", responsesRequest({ model: "gpt-5.6-terra" })],
+      ["/openai/v1/responses", responsesRequest({ model: "gpt-6.2-astra" })],
+      // An Anthropic model on an OpenAI route, and an OpenAI model on the Anthropic route.
+      ["/openai/v1/responses", responsesRequest({ model: "claude-sonnet-5" })],
+      ["/anthropic/v1/messages", message({ model: "gpt-6.2-sol" })],
+    ]
+    for (const [path, body] of cases) {
+      const res = await a.request(path, signed(path, body))
+      expect(res.status).toBe(400)
+      expect(await errorType(res)).toBe("not_allowed")
+    }
+    expect(sent).toHaveLength(0)
+  })
+
+  it("refuses what it cannot price or bound", async () => {
+    const a = app()
+    await register(a)
+    const refusedBodies = [
+      responsesRequest({ max_output_tokens: undefined }), // no output cap
+      responsesRequest({ max_output_tokens: 8193 }),
+      responsesRequest({ stream: true }),
+      responsesRequest({ background: true }),
+      responsesRequest({ service_tier: "priority" }),
+      responsesRequest({ tools: [{ type: "web_search_preview" }] }),
+      responsesRequest({ tools: [{ type: "code_interpreter", container: { type: "auto" } }] }),
+      responsesRequest({ tools: [{ type: "web_search" }], max_tool_calls: 50 }),
+    ]
+    for (const body of refusedBodies) {
+      const res = await a.request("/openai/v1/responses", signed("/openai/v1/responses", body))
+      expect(res.status).toBe(400)
+      expect(await errorType(res)).toBe("not_allowed")
+    }
+    const chatBodies = [
+      JSON.stringify({ model: "gpt-6-luna", messages: [] }), // no output cap
+      JSON.stringify({ model: "gpt-6-luna", max_completion_tokens: 9000, messages: [] }),
+      // Web search is paid for on Responses only.
+      JSON.stringify({ model: "gpt-6-luna", max_completion_tokens: 300, messages: [], tools: [{ type: "web_search" }] }),
+    ]
+    for (const body of chatBodies) {
+      const res = await a.request("/openai/v1/chat/completions", signed("/openai/v1/chat/completions", body))
+      expect(res.status).toBe(400)
+      expect(await errorType(res)).toBe("not_allowed")
+    }
+    const notJson = await a.request("/openai/v1/responses", signed("/openai/v1/responses", "not json"))
+    expect(await errorType(notJson)).toBe("bad_request")
+    expect(sent).toHaveLength(0)
+    // A bounded web search is fine.
+    const ok = await a.request(
+      "/openai/v1/responses",
+      signed("/openai/v1/responses", responsesRequest({ tools: [{ type: "web_search" }], max_tool_calls: 5 })),
+    )
+    expect(ok.status).toBe(200)
+  })
+
+  it("refuses a body over the limit", async () => {
+    const res = await responses(responsesRequest({ pad: "x".repeat(2000) }), app({ maxBodyBytes: 1000 }))
+    expect(res.status).toBe(413)
+    expect(await errorType(res)).toBe("too_large")
+    expect(sent).toHaveLength(0)
+  })
+
+  it("stops at the caps with the same error, in OpenAI's error shape", async () => {
+    const a = app({ deviceDailyCapUsd: 0.5 })
+    await register(a)
+    store.addSpend(utcDay(NOW), device.keyIdB64, 0.5)
+    const anthropic = await a.request("/anthropic/v1/messages", signed("/anthropic/v1/messages", message()))
+    const anthropicJson = (await anthropic.json()) as { type: string; error: { type: string; message: string } }
+    for (const path of ["/openai/v1/responses", "/openai/v1/chat/completions"]) {
+      const res = await a.request(path, signed(path, responsesRequest()))
+      expect(res.status).toBe(429)
+      expect(res.headers.get("retry-after")).toBe(String(12 * 3600))
+      // `AIHTTPFailure` and `AIGatewayTransport.errorType` read `error.type` in either shape.
+      expect(await res.json()).toEqual({ error: { type: "daily_limit", code: "daily_limit", message: anthropicJson.error.message } })
+    }
+    expect(anthropicJson.error.type).toBe("daily_limit")
+
+    const b = app({ totalDailyCapUsd: 0.5 })
+    store.addSpend(utcDay(NOW), "some-other-device", 0.5)
+    const res = await b.request("/openai/v1/responses", signed("/openai/v1/responses", responsesRequest()))
+    expect(res.status).toBe(429)
+    expect(await errorType(res)).toBe("service_limit")
+    expect(sent).toHaveLength(0)
+  })
+
+  it("checks the signature: unsigned, signed for the other text route, another body, a replay", async () => {
+    const a = app()
+    await register(a)
+    upstreamReply = () => responsesOk({ usage: { input_tokens: 1, output_tokens: 1 } })
+    const unsigned = await a.request("/openai/v1/responses", { method: "POST", body: responsesRequest() })
+    expect(await errorType(unsigned)).toBe("unauthenticated")
+    const otherRoute = await a.request("/openai/v1/responses", signed("/openai/v1/chat/completions", responsesRequest()))
+    expect(await errorType(otherRoute)).toBe("assertion_rejected")
+    const swapped = signed("/openai/v1/responses", responsesRequest({ model: "gpt-5.6-sol" }), { signBody: Buffer.from(responsesRequest()) })
+    expect(await errorType(await a.request("/openai/v1/responses", swapped))).toBe("assertion_rejected")
+    const req = signed("/openai/v1/responses", responsesRequest())
+    expect((await a.request("/openai/v1/responses", req)).status).toBe(200)
+    expect(await errorType(await a.request("/openai/v1/responses", req))).toBe("assertion_rejected")
+    expect(sent).toHaveLength(1)
+  })
+
+  it("passes an OpenAI error through and counts nothing", async () => {
+    upstreamReply = () =>
+      new Response(JSON.stringify({ error: { message: "Slow down", type: "requests", code: "rate_limit_exceeded" } }), {
+        status: 429,
+        headers: { "content-type": "application/json", "retry-after": "3" },
+      })
+    const res = await responses(responsesRequest())
+    expect(res.status).toBe(429)
+    expect(res.headers.get("retry-after")).toBe("3")
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("rate_limit_exceeded")
+    expect(store.spentToday(utcDay(NOW), device.keyIdB64)).toBe(0)
   })
 
   function imageForm(fields: Record<string, string>) {

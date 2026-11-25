@@ -1,0 +1,539 @@
+{
+ "task": "planReview",
+ "run": "20261125-140629-PlanReview",
+ "baseline": "anthropic:claude-opus-5-5",
+ "candidate": "openai:gpt-6.2-sol",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "f42e704b368125f35fe3c17ac48b42deadf4dc4abcae0e67031f4613ebbeae41",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 28,
+ "pairs_skipped": [],
+ "cases": 14,
+ "candidate_wins": 21,
+ "baseline_wins": 3,
+ "ties": 4,
+ "both_bad": 0,
+ "orders_agree_share": 0.8571428571428571,
+ "net": 0.6428571428571429,
+ "net_ci95_cases": [
+  0.32142857142857145,
+  0.8928571428571429
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 68,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.4976,
+ "verdicts": [
+  {
+   "case": "review-alex-comeback-after-gap",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the numbers unchanged, name the real figures, and treat the 9-day gap as missing data. A's changelog lines (\"40 days ago: Plan created\", \"25 days ago: No change\") are invented, since the input only says the plan was written 25 days ago; B repeats the same invented lines. B's 'today' line says it kept targets and refreshed insights, which is accurate, and B asks rather than assumes about today's intake. A is somewhat longer, but its content is solid, and its 'No change needed \u2014 on track' matches unchanged numbers, so neither answer clearly wins.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the range and protein unchanged, cite the real figures, and treat the 9-day gap as missing data. B's changelog uses the required 'No change needed \u2014 on track' line, while A's line describes refreshed insights, which is acceptable but less on-spec. B has five insights (allowed), keeps the progressive overload advice, and gives a hedged path forward, though it is longer. Its '35\u201340 g across 4 meals' is derived arithmetic, not invented data, so B is slightly better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-comeback-after-gap",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the numbers unchanged with a correct 'no change' line, treat the gap as missing data, and cite the real figures. A has five insights, but its 'Protein was your strength before the break' claim relies on old-plan data rather than current data. Its water 'running low' line also pressures a morning figure, and its 'nudge up 100' rule adds churn. B is tighter, honestly notes there's no fresh intake read, and asks 'already eaten?' as the input requests, so it's slightly better for a returning user.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the numbers unchanged and correctly log 'No change needed \u2014 on track.' Both also treat the 9-day gap as missing data and welcome Alex back. A is concise and accurate, with no invented figures. B adds useful specifics like the July 2027 projection and water, but it changes the headline despite claiming no change, tells Alex to get water in 'before the afternoon' without knowing the time of day, and is wordier for a phone.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-gaining-too-fast",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A raises the range to 2,900\u20133,100 when the gain is already running too fast, which contradicts its own goal of pulling back. Its maintenance math is also wrong: an average of ~3,415 kcal with a 1.2 lb/wk gain implies maintenance near 2,800 only by loose arithmetic. Answer B keeps the range, explains plainly that intake ran above the ceiling every day, and gives a concrete trim. Its changelog accurately says the numbers were kept and the guidance updated.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A correctly sees that the range was never tested, since all seven days sat above the ceiling, and keeps it unchanged with an accurate changelog line and concrete, data-grounded nudges. Answer B raises the range on data that shows overeating, which the data does not support. Its maintenance math is also shaky: 3,415 kcal minus about 600 for 1.2 lb/week gives roughly 2,800, but it then adds a surplus. It also contradicts itself ('ease back' while raising the range), and its '~2 months to 172' figure conflicts with the January 2027 projection in the input. A is shorter, consistent and correct.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-gaining-too-fast",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A raises the range even though Alex is gaining too fast on intake above the old ceiling. That change runs against the data and would likely keep the gain fast. Its maintenance math also doesn't hold up: a 1.2 lb/week gain on ~3,400 kcal implies maintenance near 2,800, so a 0.5 lb/week pace points to roughly 3,050 kcal, which sits inside the old range. Answer B keeps the range, names the real figures, says plainly that intake is the problem, gives a concrete path back and a recheck point, and its changelog accurately describes the unchanged numbers.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Intake runs over the ceiling and the gain is too fast, so the right call is to keep the range and help Alex get back into it. Answer A does that, with correct figures and a correct changelog. Answer B raises the range while the gain is already too fast, which the data does not support; its maintenance math is also wrong (~3,400 kcal at 1.2 lb/week implies maintenance near 2,800, so a 250 kcal surplus would be ~3,050, but the logic is muddled), and it makes the odd claim of 'seven straight logged days' alongside a 21-day streak. A has small flaws (it calls 3,000 the 'soft ceiling', and its changelog wording is slightly off), but it is clearly the better answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-on-track",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers correctly hold the plan, with unchanged numbers and the \"No change needed \u2014 on track\" changelog line. Answer A refreshes its insights with specific, accurate data: the ~2,740 average, the rest-day figures, the fat/carb split and the water gap. However, its \"4 lifting days\" and \"0.9 g/lb\" figures are loose (150/160 is about 0.94), and its insight count of five is at the limit. Answer B's \"6 of 7 days\" protein claim is accurate since Mon was 148, but it mostly recycles the old insights with light updates. A is more useful and data-driven without serious faults.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the numbers unchanged with a correct 'No change needed \u2014 on track' line, and both ground the review in the real figures. A's claim of 150 g on '6 of 7 days' is accurate (Mon was 148), but its insights are mostly carried over from the old plan with little new from the latest data. B's figures check out: the ~2,740 average is correct, protein averages ~155, rest days Thu/Sat/yesterday came in at 2,740\u20132,800, and fat at 105 vs 58 g is real. B also refreshes the insights with useful new points (macro split, water, a clear threshold for adjusting the pace), though it runs longer and its '4 lifting days' is a little loose; overall it gives a more specific, data-driven review.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-on-track",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the plan unchanged with correct 'no change' lines and cite real figures, and both have an unsupported changelog history ('28 days ago' and '14 days ago' entries are not in the input). A's fat/carb insight uses real data and is useful and specific, but its 'tomorrow's workout' assumes a schedule the input doesn't give; its averages (~2,740 kcal, ~155 g protein) check out. B's figures are accurate (six of seven days over 150 g, one at 148), but it repeats the old insights with little refresh and has two overlapping wins. A's insights are more specific to the latest data, so A is somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the plan unchanged with correct 'No change needed' lines and real figures. B says 'no misses' on protein while Mon was 148 g, and its 'tomorrow's workout' is assumed. Still, B adds a useful, data-based watch on fat crowding out carbs (105 g vs 58 g target) and a clear trigger for future adjustment. A is accurate about protein (six of seven, 2 g short) but less insightful, so on balance B is slightly better despite the small slip.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-plan-written-today",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The input calls 0.3 lb/week \"right where we want it\" and the plan was written today, so changing the range is churn the data does not clearly support. Answer A raises the range +100 anyway and also invents a \"late spring 2027\" projection that is not in the input. Answer B keeps the numbers, uses accurate figures (avg ~2,727, the 2,590/2,620 days below the floor) and refreshes the insights sensibly. Its changelog line doesn't use the exact \"No change needed \u2014 on track\" wording, but its numbers really are unchanged, so B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The plan was written today and the data calls the 0.3 lb/week gain 'right where we want it', with intake averaging about 2,730 kcal, inside the range. A same-day calorie bump is churn the data does not clearly warrant. Answer A keeps the numbers, cites accurate figures (the 2,590 and 2,620 days, 156 g protein average) and refreshes the insights sensibly, though its changelog line is not the standard 'No change needed \u2014 on track'. Answer B raises the range without strong support, adds an invented 'late spring 2027' estimate, and is longer than a phone screen needs.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-plan-written-today",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The plan was written today, the trend is a steady 0.3 lb/wk lean gain with protein on point, and five of seven days sit inside the range, so raising calories after hours of data is churn the data does not clearly warrant. Answer A also says \"four days sat at or below 2,700\" while counting days inside the range, and calls today a \"low day\" though today hit the target. Answer B keeps the numbers, names the real figures (two days below the floor at 2,590 and 2,620; protein at 150 g or more on five of seven days), and refreshes the insights. B's changelog line is not the exact \"No change needed \u2014 on track\" wording, but it honestly says nothing changed.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The plan was written today, and the input itself calls 0.3 lb/week \"right where we want it,\" so changing the range the same day is churn the data does not clearly support. Answer B also contains errors: it claims protein hit 148\u2013170 g on 6 of 7 days, but Fri was 148, below the 150 target, and its \"about six months out\" at 0.5 lb/week is wrong (13 lb would take about 26 weeks, so roughly right, but borderline). Answer A keeps the targets, names the real figures accurately, and gently nudges toward the floor. Its protein count of five of seven days is correct, so A is the better answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-stalled-gain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the range and protein target, correctly treating sub-floor intake as an execution gap rather than a reason to change the plan. Answer A invents figures: a 'mid-May' date, 'three weeks of data' for what is a single logged week, and four or five insights including a redundant second watch. Answer B's figures check out (the six prior days average about 2,389 kcal and 118 g protein), its advice is specific, and its changelog accurately states what changed and why. B is more grounded and concise.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the range and protein correctly and cite real figures, but B goes past the input. It states 'mid-May' as a date, though no current month or year is given (the data shows Nov, so mid-May is about 24 weeks off at 0.5 lb/week, which is roughly consistent but extrapolated). It also asserts maintenance is ~2,400, an inference from a flat trend that is reasonable but presented as fact, and its shake figure of about 600 kcal and 35 g is an estimate. B is also longer, while A is tighter, accurate, keeps advice specific, and has a proper changelog line, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-stalled-gain",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the range and protein, correctly diagnosing an intake gap below the floor, and both changelog lines accurately describe insight changes. Answer A calls it a 3-week flat stall, but the input gives no such history, and its line that the drift is 'not your metabolism' overreaches; it also says '28 days ago' while the plan was written 21 days ago (B copies the same changelog line). B is tighter, uses today's actual foods and the 349 kcal gap, and its figures check out (six prior days average ~2,390). A is wordier with five insights and slightly more invented framing, so B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the range and protein correctly and diagnose under-eating below the floor using real figures. B invents figures: a shake of about 600 kcal and 35 g protein, 0.9 g per lb, and \"held flat for about 3 weeks\" (no history is given). Its claim that maintenance is near 2,380 is also shaky, though partly supported, and it runs long and has five insights. A is tighter and avoids invented specifics; its 2,390 average is close enough, though \"up 2 lb ... short of pace\" is fine and its changelog is accurate.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-wrong-direction",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the range and protein unchanged, correctly refuse to lower anything with intake below the floor, and say what changed in the changelog. Answer A invents figures: \"four training days\" restates the old plan, but the claim that the trend \"went from gaining\" and the ~2,400 maintenance estimate are shaky, and its product calorie and protein estimates are unsupported. Answer B is accurate: 160 is up 2 lb from 158 but now down 0.6 lb/week. It also uses the logged sandwich and today's gap correctly and keeps the prose tighter. B is more faithful to the data, though its headline goes unrefreshed.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the range and protein unchanged, cite the real averages (~2,084 kcal, ~104 g), and fold in the commute. Answer B's headline replaces the goal headline, and it has invented-ish figures: chocolate milk and jerky adding ~500 kcal, a maintenance estimate of ~2,400, and 'gaining' before the decline. Its prose is also longer for a phone. Answer A is accurate and concise, though its lunch advice ignores that the About You says they skip lunch while a lunch sandwich was logged, a minor point.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-alex-wrong-direction",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the range and protein target and correctly push Alex to reach the floor. A, however, invents figures: a ~2,400 maintenance estimate (and calls it confirmed) and a 'gaining' prediction. B sticks to the given data: the 2,084 average, 160 vs 158 lb, the 0.6 lb/week drift and today's 599 kcal gap. B also folds in the commute and skipped-lunch constraint and gives a clear changelog, so it is the more trustworthy answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the range and protein unchanged, correctly flag intake below the floor, and say what changed in the changelog. B invents a derived maintenance figure (~2,400) and claims 'four weekly sessions', which isn't in the latest data, and has five insights with more verbose prose. A sticks to real figures and folds in the commute and skipped-lunch constraint, though it slightly mislabels the gas station sandwich as a skipped lunch. A is tighter and avoids B's unsupported figures.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-losing-too-fast",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Intake sits below the floor, so the guidance says not to lower the range and to help them reach it. B keeps the range, explains that the logs haven't tested it yet, and gives a concrete path back. A raises the range even though Sam isn't reaching the current floor, which is churn the data doesn't warrant, and its \"~1 lb/week\" projection is invented. B's changelog line accurately says what was kept and why, and its insights are specific and concise, so B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Intake sat below the floor every day, so the guidance is to keep the range and help Sam reach the floor rather than change it. Answer A does exactly that: it keeps the range, uses the real figures, and says it will revisit after two weeks of eating in range. Answer B raises the range even though the existing one was never tested, which is a change the data does not support. B also adds speculative projections (~1 lb/week, food protein figures), so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-losing-too-fast",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Intake sits below the floor, so the guidance is to keep the range and help Sam reach it rather than move it; Answer B does exactly that and plans to revisit upward only once the range is actually being met. Answer A raises the range to 1,600\u20131,800 even though Sam never reached the old floor, a change the data doesn't clearly support. A also says the pre-run banana 'is working', which the data doesn't show. B names the real figures, folds in the late-lunch constraint, and its changelog accurately says the targets were kept, so B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Sam is eating 1,151\u20131,300 kcal every day, below the 1,450 floor, so the right move is to help them reach the existing range rather than raise it. Answer A does this, keeps the numbers, and correctly says the range can be revisited only after consistent intake in range. Answer B raises the range to 1,600\u20131,800 while intake hasn't reached even the old floor, which is churn the data doesn't yet support. B also claims the pre-run banana is 'working' without any evidence and runs five insights in longer prose, while A's figures are accurate and its changelog matches the unchanged numbers.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-maintain-drifting-up",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the 1,850\u20132,050 kcal range and 110 g protein, correctly flag the 0.5 lb/week drift, and accurately compute the ~2,310 kcal weekly average. Answer A presents today's 92 g of fat as a weekly average ('averaging ~92 g fat'), but the input has no weekly fat data, so the fat-driven diagnosis behind its main strategy is invented. Answer B stays within the data, explains the drift plainly, gives practical portion and protein fixes, and is shorter for a phone.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the targets unchanged, correctly name the ~2,312 kcal average and the 0.5 lb/week drift, and give a kind path back into the range. Answer B presents 92 g of fat as a daily average and calls fat 'the main driver', but 92 g is only today's figure. The weekly fat isn't in the input, so that figure is invented. Answer A stays within the data, with concrete meal and protein tips and a sensible check-in.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-maintain-drifting-up",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the range and protein unchanged, correctly name the 147 lb trend, the +0.5 lb/week drift, and the ~2,310 kcal average with every day over the ceiling, and give a kind path back. Answer A adds a shaky maintenance derivation and compares one day's fat to the target, but it stays grounded in real figures and gives concrete meal-specific fixes. Answer B is more concise and careful, notes today's partial log, warns against undercutting the floor, and adds a sensible recheck. Both are sound and B's restraint balances A's specificity, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the range and protein unchanged, correctly flag the drift with real figures, and write accurate changelog lines. B is more specific and teaches well (the surplus math, naming the pasta and the burrito bowl), but it is longer. Its \"about 260 over the ceiling every day\" is loose, since Mon was 2,180. It also adds a fifth insight on water using today's partial figure, which is somewhat weak. A is concise and accurate, but B's specificity and clear path back make it slightly more useful without any serious fault.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-new-constraint",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A trims the range even though the trend is still moving down at a sustainable pace that the input calls totally fine. It also says all 7 days were in range when Sat was 1,720, invents a 'locked' framing, and suggests 'lactose-free Greek yogurt' and 'lactose-free protein powder', which is borderline given the new intolerance. Answer B keeps the numbers, correctly notes that 6 of 7 days were in range and that protein is the real gap, folds in the dairy-free and 6am constraints, and its changelog accurately reflects what was kept. B is the better, safer answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the range, correctly makes protein the priority, drops the yogurt and three-session advice, and fits training around the 6am start. However, it says six of seven days were in range when Sat's 1,720 was over, and its changelog line is reasonable. Answer B trims the range on a gentle but sustainable 0.3 lb/wk loss that the data calls fine, wrongly claims 7/7 in range, and suggests Greek yogurt despite the stated lactose intolerance. B also invents macro claims about the latte swap, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-new-constraint",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A lowers the range even though intake is consistently in range and the trend is still moving down gently. That change the data doesn't clearly need also breaks the old 1,550 floor. A also suggests \"lactose-free Greek yogurt,\" which is risky for someone told no yogurt. Answer B keeps the numbers, cites accurate figures (7-day average about 77 g, 58 g protein from the bowl and wrap, six of seven days in range), drops the yogurt and three-session advice, and has an accurate changelog line.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B lowers the range even though Sam is eating in range and losing a sustainable 0.3 lb/week, which the data labels fine, so the change isn't warranted. B also has five insights with some loose figures, such as \"~150\u2013200 kcal\". Answer A keeps the numbers, folds in the lactose intolerance and the new schedule, and its insights are specific to the latest data. A's claim of six of seven days in range checks out: only Sat was over, at 1,720 kcal.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-on-track",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the numbers unchanged and correctly read the data: 159 lb trend at 0.5 lb/week with intake in range. Answer A's changelog uses the specified 'No change needed \u2014 on track' line, and its insights are richer, closing the loop on the old 4pm watch with real figures. A has a small inaccuracy, calling every day 'in range' when 1,711 slightly exceeds 1,700, though it does hedge with 'in or right at the range'. Answer B is precise about the 11 kcal over but keeps a headline ('early summer') that contradicts its own May 2027 projection, and its changelog line deviates from the expected wording.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the numbers unchanged and read the data correctly. Answer B uses the correct 'No change needed \u2014 on track' changelog line and nicely closes the loop on the old 4pm-dip watch with real figures. It does say 'all in range' when one day was 1,711, though it hedges elsewhere with 'in or right at'. Answer A is accurate and concise but keeps a headline promising 'early summer' while stating May 2027, a contradiction, and its changelog line is not the standard no-change phrasing.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-on-track",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the numbers unchanged with a correct 'No change needed' line and an accurate data read. A has some loose claims: '7 for 7 in range' despite the 1,711 day, 'about 1 of 5 bottles' (17 oz is roughly 1 of ~5), and 'late spring' when the input says May 2027. B is accurate and concise, though it keeps the stale 'early summer' headline against a May 2027 projection and refreshes the insights less thoroughly. B's fidelity to the data edges out A's richer but slightly inaccurate framing.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the numbers unchanged, end on the correct 'No change needed \u2014 on track' line, and report the real figures (159 lb trend, 0.5 lb/week, 105 g protein, 1,711 day 11 over the ceiling). Answer B changed the headline to 'late spring' without the data calling for it, calls 7 days 'in range' while noting one was over, and is longer. Its 4pm-dip follow-up ties back nicely to the old plan, but its 'about 1 of 5 bottles' figure is slightly off. Answer A is accurate, concise and refreshes its insights properly, though it drops continuity with the old insights; on balance A is cleaner and better suited to a phone.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-plan-below-floor",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use the real figures correctly: trend 157 lb, 0.4 lb/week, average about 1,142 kcal, and the coffee mislog. The old plan's 1,100 floor was arguably unsafe and intake sits below the floor, so the right move is to hold the floor and help Sam reach it rather than lower it. Answer B does exactly that: it adopts the app's 1,200\u20131,250 range, hedges on incomplete logs, and states the change and the reason in the changelog. Answer A raises the range to 1,250\u20131,400 even though Sam is not reaching the existing floor and the trend is on pace, a change the data doesn't clearly support that adds churn, and it is also longer for a phone.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Intake sits below the floor, so the trap is lowering the range, and raising it is a change the data does not support when Sam already isn't reaching the current floor. Answer B raises the range to 1,250\u20131,400 and stays long, adding a water insight and a third claim about coffee being ~5 kcal. Answer A moves to the app's 1,200\u20131,250 range, which is effectively lifting the old 1,100 floor to the safe one, explains why, and helps Sam reach the floor while hedging about incomplete logs. A's figures are accurate and its prose is tighter, so it is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-plan-below-floor",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both raise the 1,100 floor to 1,200 and keep protein at 100 g, which the data supports since intake sits below the floor. A goes further and invents a 1,350 ceiling, though a modest upward nudge is defensible; its \"below the old plan's 1,100\u20131,250 midpoint\" line is muddled, and its catch on the mislabeled coffee entry is a useful, specific touch. B keeps the app's 1,200\u20131,250 range, uses the real figures accurately (five of six completed days under the floor, 53 g protein from two meals), hedges on logging completeness, and its changelog states the change and the reason correctly. B is cleaner and better grounded, with less churn.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A uses the input's 1,200\u20131,250 range. Its arithmetic checks out (five of six completed days under 1,200, 53 g protein from fish plus chicken, 5 lb down). It explains the change accurately and hedges on whether the logs are complete. Answer B raises the ceiling to 1,350 with only modest justification and misstates 1,142 as below the 1,100\u20131,250 midpoint (the midpoint is 1,175, so that part is fine), but its stated ~71 g protein average is its own computation and roughly right; still, A is more grounded and B's ceiling change is less supported, though B's catch of the black-coffee entry at 288 kcal is a nice touch.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-sparse-logging",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the targets, cite the real figures, and hedge on sparse logs. A's assessment hedges, but its insight then says the swings \"likely explain\" the slowdown from only two days of data, which overreaches. It also asserts the range fits a 0.5 lb/week pace without support, and it is long for a phone. B is concise and accurate, treats the two logs as insufficient data rather than a cause, and its changelog honestly states what was kept and refreshed.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the targets, cite the real figures and hedge on sparse data. B overreaches in places: it claims the swings \"likely explain\" the slowdown even though the two days average inside the range. It also treats the logging gap as a fix, lists five insights with long prose, and asserts that the range fits a 0.5 lb/week pace without support. A is concise, accurate and appropriately hedged, and its changelog clearly states what was kept.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-sparse-logging",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the targets unchanged appropriately, cite the real figures (158, 0.2 lb/week, 2,100/1,500, 71/95 g), and hedge on thin logging. A adds an invented ~25 g per protein item and pushes a 'middle' target. It also runs longer, with five insights including a water nudge. B is tighter and phone-friendly, and its 'don't go below the floor to offset Friday' insight is well judged. B's changelog line is slightly vague ('updated the timeline') but accurate enough, so B is cleaner overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the targets and treat the sparse logging as missing data, but A's changelog claims it \"updated the timeline\" when nothing actually changed. B names the real figures, explains its hold clearly, and gives a concrete path back, though it is longer and its water nudge is slightly off-focus. B's \"~25 g each\" for the protein foods is a mild invented figure, but its changelog is accurate and its insights are more specific to the latest data.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-stalled",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A leaves the strategy and insights empty, and its changelog wrongly says \"Plan created\" today rather than giving a review line, so it is incomplete and unfit to show. Answer B uses the real figures (four of seven days over 1,650, protein 85\u201397 g, water 17 of 81 oz). It keeps the range sensibly, refreshes the insights, and its changelog accurately notes the insights were refreshed while the numbers stayed the same. The \"28 days ago\" changelog entry conflicts with the input's 21 days, but both answers share that error.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A uses real figures throughout: four of seven days above 1,650, protein of 85\u201397 g, and water at 17 of 81 oz. It keeps the range and protein unchanged, gives a kind path back, and its changelog line accurately describes refreshed insights with numbers unchanged. Answer B has a decent assessment but empty strategy and insights sections and a wrong changelog line ('Plan created'), so it is broken. A's '28 days ago' changelog entry slightly mismatches the 21 days in the input, but A is still clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-stalled",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the range and protein unchanged, which is right, and both correctly note that 4 of 7 days ran over the ceiling. A's headline goes against the 'reassure' framing, but its insights are specific: a ~1,670 average (which checks out), protein never reaching 100 g, and carbs about 30 g over target. A's claim that low water can 'mask fat loss on the scale' is shaky, and its '4 gym sessions in the last 9 days' is roughly supportable. B is calmer and accurate, keeps the reassuring headline, avoids invented claims, and includes a good caution not to drop below the floor, though its insights are a bit thinner; overall it is the slightly safer and cleaner answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the targets unchanged, which is right, and both correctly count 4 of 7 days over the ceiling. Their changelogs say the plan was created 28 days ago, though the input says 21, an error they share. B is more specific and grounded: a 7-day average (~1,670, which matches the data), protein ranging 85\u201397 g, the carb overage, and concrete swaps. A says yogurt would add about 8 g of protein, a figure with no basis in the input, while B's 'low water can mask fat loss' is a mild but reasonable claim. Overall B answers 'is it working' more clearly with the real figures.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-wrong-direction",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the targets, cite the real intake (1,980\u20132,400 kcal, protein 71\u201390 g, trend 158, up 0.4 lb/week), and write accurate changelog lines. Answer A is weaker on a few points: 'Cut ~500/day' and the 250\u2013300 kcal burrito savings are invented estimates, the 'back to basics/crunch time' framing is a bit heavier, and the prose is longer. Answer B is accurate, ties the advice to late work nights, stays concise and kind, and invents no figures. B is the better answer for the person.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the targets, correctly name that every logged day ran above range, and change only the insights, with accurate changelog lines. B's averages (~2,200 kcal, ~80 g protein) check out, but it invents figures not in the input: a ~150\u2013250 kcal serving of chips, a 250\u2013300 kcal saving from a burrito bowl, and 15\u201320 g of protein from yogurt. It is also longer and runs to five insights. A stays within the given data, folds in the late-night work context, and is concise, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "review-sam-wrong-direction",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A raises the range even though the data doesn't support it: intake runs over the ceiling and the trend is rising, so a higher range rewards the drift. It also invents a maintenance estimate (~2,050). Answer B keeps the targets, names the real figures, and gives concrete swaps with a sensible reassess point. Its changelog line accurately says what changed and why.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Intake is above the ceiling and the trend is rising, so the data doesn't support raising the range. B raises it anyway and invents a maintenance estimate (~2,050) and food figures (~500 kcal, 35 g). A keeps the targets, names the real figures plainly and gives a concrete path back. A's changelog accurately says what it updated and why.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "review-alex-wrong-direction",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "review-alex-wrong-direction",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "review-alex-wrong-direction",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "review-alex-on-track",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "review-alex-on-track",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "review-alex-on-track",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

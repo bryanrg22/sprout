@@ -33,14 +33,14 @@ final class AITaskModelTests: XCTestCase {
 
     private let expected: [AITask: (anthropic: String, openai: String)] = [
         .coachTurn:        ("claude-haiku-5-5", "gpt-5.6-terra"),          // Anthropic: EVAL_REPORT 37
-        .mealPhoto:        ("claude-sonnet-5", "gpt-5.6-terra"),
+        .mealPhoto:        ("claude-sonnet-5", "gpt-6.2-sol"),             // OpenAI: EVAL_REPORT 41
         .mealDescribe:     ("claude-sonnet-5-5", "gpt-5.6-terra"),         // Anthropic: EVAL_REPORT 39
-        .foodSuggestions:  ("claude-sonnet-5-5", "gpt-5.6-terra"),         // Anthropic: EVAL_REPORT 40
-        .progressSummary:  ("claude-sonnet-5", "gpt-5.6-terra"),           // Anthropic: EVAL_REPORT 35 (kept by measurement)
-        .checklistPlan:    ("claude-sonnet-5-5", "gpt-5.6-terra"),         // Anthropic: EVAL_REPORT 39
+        .foodSuggestions:  ("claude-sonnet-5-5", "gpt-6.2-sol"),           // EVAL_REPORT 40 / 41
+        .progressSummary:  ("claude-sonnet-5", "gpt-6.2-sol"),             // EVAL_REPORT 35 / 41
+        .checklistPlan:    ("claude-sonnet-5-5", "gpt-6.2-sol"),           // EVAL_REPORT 39 / 41
         .coachPrompts:     ("claude-haiku-5-5", "gpt-5.6-terra"),          // Anthropic: EVAL_REPORT 36
-        .planBuild:        ("claude-opus-5-5", "gpt-5.6-sol"),             // Anthropic: EVAL_REPORT 40
-        .planReview:       ("claude-opus-5-5", "gpt-5.6-sol"),             // Anthropic: EVAL_REPORT 40
+        .planBuild:        ("claude-opus-5-5", "gpt-6.2-sol"),             // EVAL_REPORT 40 / 41
+        .planReview:       ("claude-opus-5-5", "gpt-6.2-sol"),             // EVAL_REPORT 40 / 41
         .planResearch:     ("claude-opus-5-5", "gpt-5.6-sol"),             // Anthropic: EVAL_REPORT 39
         .dailyBrief:       ("claude-sonnet-5", "gpt-6-luna"),             // Anthropic: EVAL_REPORT 39; OpenAI: 10
         .insightLine:      ("claude-sonnet-5", "gpt-6-luna"),             // Anthropic: EVAL_REPORT 39; OpenAI: 22
@@ -48,6 +48,34 @@ final class AITaskModelTests: XCTestCase {
         .onboardingNote:   ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
         .memoryFold:       ("claude-sonnet-5", "gpt-5.6-luna"),           // EVAL_REPORT 39 / 22
     ]
+
+    /// The vendor each task runs on, measured per task (EVAL_REPORT 41).
+    func testEachTaskRunsOnTheVendorItMeasuredBestOn() {
+        let openai: Set<AITask> = [.foodSuggestions, .checklistPlan, .progressSummary, .mealPhoto, .planBuild,
+                                   .planReview, .planResearch, .onboardingNote, .weeklyReflection]
+        XCTAssertEqual(Set(AIConfig.measuredProviders.filter { $0.value == .openai }.keys), openai)
+        XCTAssertTrue(AIConfig.measuredProviders.values.allSatisfy { $0 == .openai }, "a task absent runs on Anthropic")
+    }
+
+    /// A scoped runtime (tests, evaluations) decides the vendor; without one, a task whose
+    /// measured vendor is unavailable here falls back to Anthropic rather than going dark.
+    func testTheVendorFallsBackToAnthropicWhenOpenAIIsUnavailable() {
+        AIRuntime.$current.withValue(AIRuntime(provider: .openai, apiKey: "k")) {
+            XCTAssertEqual(AIConfig.provider(for: .coachTurn), .openai, "a scoped runtime wins")
+            XCTAssertEqual(AIConfig.model(for: .planBuild), "gpt-6.2-sol")
+        }
+        AIRuntime.$current.withValue(AIRuntime(provider: .anthropic, apiKey: "k")) {
+            XCTAssertEqual(AIConfig.provider(for: .foodSuggestions), .anthropic)
+            XCTAssertEqual(AIConfig.model(for: .foodSuggestions), "claude-sonnet-5-5")
+        }
+        // No runtime, as in a unit test on the Simulator: the gateway cannot sign (no App Attest)
+        // and no OpenAI key is stored, so an OpenAI task falls back to its Anthropic model.
+        if AIConfig.key(for: .openai) == nil {
+            XCTAssertEqual(AIConfig.provider(for: .planBuild), .anthropic)
+            XCTAssertEqual(AIConfig.model(for: .planBuild), "claude-opus-5-5")
+        }
+        XCTAssertEqual(AIConfig.provider(for: .coachTurn), .anthropic, "a Claude task never moves")
+    }
 
     func testEveryTaskHasAPinnedDefault() {
         XCTAssertEqual(Set(expected.keys), Set(AITask.allCases),
@@ -97,7 +125,7 @@ final class AITaskModelTests: XCTestCase {
 
     func testActiveProviderResolutionFollowsTheScopedProvider() {
         AIRuntime.$current.withValue(AIRuntime(provider: .openai)) {
-            XCTAssertEqual(AIConfig.model(for: .planBuild), "gpt-5.6-sol")
+            XCTAssertEqual(AIConfig.model(for: .planBuild), "gpt-6.2-sol")   // measured, EVAL_REPORT 41
             XCTAssertEqual(AIConfig.planModel, "gpt-5.6-sol")
             XCTAssertEqual(AIConfig.coachModel, "gpt-5.6-terra")
         }

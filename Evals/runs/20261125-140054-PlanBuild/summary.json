@@ -1,0 +1,135 @@
+{
+ "run": "20261125-140054-PlanBuild",
+ "tasks": [
+  {
+   "task": "planBuild",
+   "dataset": "plan_build/v1",
+   "cases": 15,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "attempts": 30,
+     "usable": 28,
+     "passed": 28,
+     "pass_rate": 0.9333333333333333,
+     "ci95_cases": [
+      0.8333333333333334,
+      1.0
+     ],
+     "ci95": [
+      0.7867618227892791,
+      0.9815233646723066
+     ],
+     "per_repeat_pass": [
+      0.9333333333333333,
+      0.9333333333333333
+     ],
+     "latency_p50_s": 25.524,
+     "latency_p95_s": 29.904,
+     "mean_uncached_input_tokens": 2904.2,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2284.4666666666667,
+     "mean_cost_usd": 0.057306133333333335,
+     "scores": {
+      "about_you_written": 1,
+      "assessment_words": 83.5,
+      "calorie_min_at_or_above_floor": 1,
+      "changelog_note_written": 1,
+      "has_range": 1,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 5,
+      "insight_tones_valid_as_written": 1,
+      "insights_three_to_five": 1,
+      "logged_days": 17.285714285714285,
+      "no_number_outside_the_input": 0,
+      "numbers_outside_that_are_sums_or_differences": 7.928571428571429,
+      "numbers_outside_the_input": 11.357142857142858,
+      "prose_present": 1,
+      "protein_g_per_lb": 0.8146428571428571,
+      "protein_in_sane_band": 1,
+      "protein_set": 1,
+      "range_contains_app_target": 0.5357142857142857,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -29.071428571428573,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 196.42857142857142,
+      "strategy_words": 122.85714285714286,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "decoding(\"the answer was cut off at 2200 tokens\")",
+      "decoding(\"the plan came back empty\")"
+     ]
+    },
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 30,
+     "usable": 30,
+     "passed": 30,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.8864829086095221,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 15.943,
+     "latency_p95_s": 18.169,
+     "mean_uncached_input_tokens": 1612.7333333333333,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 627.1666666666666,
+     "mean_cost_usd": 0.009497133333333333,
+     "scores": {
+      "about_you_written": 1,
+      "assessment_words": 66.53333333333333,
+      "calorie_min_at_or_above_floor": 1,
+      "changelog_note_written": 1,
+      "has_range": 1,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 3.966666666666667,
+      "insight_tones_valid_as_written": 1,
+      "insights_three_to_five": 1,
+      "logged_days": 17.066666666666666,
+      "no_number_outside_the_input": 0,
+      "numbers_outside_that_are_sums_or_differences": 4.133333333333334,
+      "numbers_outside_the_input": 5.166666666666667,
+      "prose_present": 1,
+      "protein_g_per_lb": 0.8063333333333333,
+      "protein_in_sane_band": 1,
+      "protein_set": 1,
+      "range_contains_app_target": 0.5666666666666667,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -13.666666666666666,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 177.73333333333332,
+      "strategy_words": 76.2,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-opus-5-5",
+   "paired": [
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "shared_cases": 15,
+     "mean_difference": 0.06666666666666667,
+     "ci95": [
+      0.0,
+      0.16666666666666666
+     ]
+    }
+   ]
+  }
+ ]
+}

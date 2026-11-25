@@ -1,0 +1,118 @@
+{
+ "run": "20261125-141250-MealDescribeHousehold",
+ "tasks": [
+  {
+   "task": "mealDescribe",
+   "dataset": "meal_describe/v4",
+   "cases": 22,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-sonnet-5-5",
+     "attempts": 66,
+     "usable": 66,
+     "passed": 61,
+     "pass_rate": 0.9242424242424242,
+     "ci95_cases": [
+      0.8030303030303031,
+      1.0
+     ],
+     "ci95": [
+      0.834605945487485,
+      0.9672084459353918
+     ],
+     "per_repeat_pass": [
+      0.9545454545454546,
+      0.9090909090909091,
+      0.9090909090909091
+     ],
+     "latency_p50_s": 3.045,
+     "latency_p95_s": 4.742,
+     "mean_uncached_input_tokens": 1482.1818181818182,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 271.92424242424244,
+     "mean_cost_usd": 0.005683606060606061,
+     "scores": {
+      "carbs_abs_error_g": 1.1106060606060606,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0.846969696969697,
+      "fiber_g_abs_error": 0.28030303030303033,
+      "fiber_g_answered": 1,
+      "items_sum_to_total": 0.8939393939393939,
+      "kcal_pct_error": 0.04826292480904459,
+      "kcal_within_20pct": 0.9242424242424242,
+      "protein_abs_error_g": 1.3833333333333333,
+      "range_well_formed": 1,
+      "saturated_fat_g_abs_error": 0.2163636363636363,
+      "saturated_fat_g_answered": 1,
+      "sodium_mg_abs_error": 17.10833333333333,
+      "sodium_mg_answered": 1,
+      "sugars_g_abs_error": 0.25757575757575757,
+      "sugars_g_answered": 1,
+      "truth_in_stated_range": 0.8636363636363636
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 66,
+     "usable": 66,
+     "passed": 57,
+     "pass_rate": 0.8636363636363636,
+     "ci95_cases": [
+      0.7272727272727273,
+      1.0
+     ],
+     "ci95": [
+      0.7607018517959349,
+      0.9265676265665311
+     ],
+     "per_repeat_pass": [
+      0.8636363636363636,
+      0.8636363636363636,
+      0.8636363636363636
+     ],
+     "latency_p50_s": 4.373,
+     "latency_p95_s": 5.86,
+     "mean_uncached_input_tokens": 582.9090909090909,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 173.04545454545453,
+     "mean_cost_usd": 0.0028962727272727274,
+     "scores": {
+      "carbs_abs_error_g": 0.5424242424242418,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 1.4590909090909092,
+      "fiber_g_abs_error": 0.24696969696969698,
+      "fiber_g_answered": 1,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0.06794080404441764,
+      "kcal_within_20pct": 0.8636363636363636,
+      "protein_abs_error_g": 2.0348484848484847,
+      "range_well_formed": 1,
+      "saturated_fat_g_abs_error": 0.2756060606060606,
+      "saturated_fat_g_answered": 1,
+      "sodium_mg_abs_error": 3.753333333333332,
+      "sodium_mg_answered": 0.75,
+      "sugars_g_abs_error": 0.21060606060606063,
+      "sugars_g_answered": 1,
+      "truth_in_stated_range": 0.8484848484848485
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-sonnet-5-5",
+   "paired": [
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "shared_cases": 22,
+     "mean_difference": -0.0606060606060606,
+     "ci95": [
+      -0.2121212121212121,
+      0.060606060606060615
+     ]
+    }
+   ]
+  }
+ ]
+}

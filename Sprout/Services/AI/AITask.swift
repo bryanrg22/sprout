@@ -114,7 +114,8 @@ extension AIConfig {
         // The checklist: claude-sonnet-5-5 against claude-sonnet-5, rules equal (100%), a blind
         // judge preferred it 23 to 9 (+0.29, 0.00 to +0.56), and it is a little cheaper and
         // faster (EVAL_REPORT 39). claude-haiku-5-5 lost to claude-sonnet-5 (EVAL_REPORT 36).
-        .checklistPlan: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT 39")],
+        .checklistPlan: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT 39"),
+                         .openai: AITaskDefault(model: "gpt-6.2-sol", evidence: "EVAL_REPORT 41")],
         // A typed meal: on household measures (meal_describe/v4) claude-sonnet-5-5 is within 20%
         // as often as claude-sonnet-5 (94% each) at about 30% less, and faster (EVAL_REPORT 39);
         // claude-haiku-5-5 was worse (EVAL_REPORT 37).
@@ -125,20 +126,29 @@ extension AIConfig {
         // its way on reviews (17 to 7) with the rules at 100% against 96%; the cost is within a few
         // per cent. One blank answer in 30 builds is refused before anything is stored
         // (PlanService.requireUsable). EVAL_REPORT 40.
-        .planBuild: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 40")],
-        .planReview: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 40")],
+        .planBuild: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 40"),
+                     .openai: AITaskDefault(model: "gpt-6.2-sol", evidence: "EVAL_REPORT 41")],
+        .planReview: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 40"),
+                      .openai: AITaskDefault(model: "gpt-6.2-sol", evidence: "EVAL_REPORT 41")],
+        // A meal photo: gpt-6.2-sol within 20% on 51% of weighed plates against 47% for
+        // claude-sonnet-5, mean error 28% against 36%, its own range holding the truth 76% of
+        // the time against 48%, at under half the cost (EVAL_REPORT 41).
+        .mealPhoto: [.openai: AITaskDefault(model: "gpt-6.2-sol", evidence: "EVAL_REPORT 41")],
         // Food suggestions: once the card shows a single suggestion (it showed none when a model
         // gave one), claude-sonnet-5-5 was usable every time, leaned ahead of claude-sonnet-5 on
         // the judge (22 to 12) and costs about 10% less. EVAL_REPORT 40.
-        .foodSuggestions: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT 40")],
+        .foodSuggestions: [.anthropic: AITaskDefault(model: "claude-sonnet-5-5", evidence: "EVAL_REPORT 40"),
+                           .openai: AITaskDefault(model: "gpt-6.2-sol", evidence: "EVAL_REPORT 41")],
         // The plan's web research: a blind judge preferred claude-opus-5-5's brief to
         // claude-opus-4-8's 6 to 0 (+0.75, +0.38 to +1.00) on 8 cases, every brief searched,
         // at about 15% less (EVAL_REPORT 39).
-        .planResearch: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 39")],
+        .planResearch: [.anthropic: AITaskDefault(model: "claude-opus-5-5", evidence: "EVAL_REPORT 39"),
+                        .openai: AITaskDefault(model: "gpt-5.6-sol", evidence: "EVAL_REPORT 41")],
         // The recap: claude-sonnet-5 passed 88% against 80% for claude-haiku-5-5, whose failures
         // were mostly its own arithmetic on the person's figures (EVAL_REPORT 35). Kept, now
         // by measurement; accuracy of the numbers is the point of this card.
-        .progressSummary: [.anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 35")],
+        .progressSummary: [.anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 35"),
+                           .openai: AITaskDefault(model: "gpt-6.2-sol", evidence: "EVAL_REPORT 41")],
     ]
 
     /// Rows of a defaults table that do not say which EVAL_REPORT section measured them.
@@ -165,6 +175,28 @@ extension AIConfig {
         return model(for: provider, tier: task.tier)
     }
 
-    /// The model a task runs on for the ACTIVE provider.
-    static func model(for task: AITask) -> String { model(for: task, provider: provider) }
+    /// The vendor each task measured best on (EVAL_REPORT 41). A task absent here runs on
+    /// Anthropic.
+    static let measuredProviders: [AITask: AIProvider] = [
+        .foodSuggestions: .openai, .checklistPlan: .openai, .progressSummary: .openai, .mealPhoto: .openai,
+        .planBuild: .openai, .planReview: .openai, .planResearch: .openai,
+        .onboardingNote: .openai, .weeklyReflection: .openai,
+    ]
+
+    /// The vendor a task runs on: a scoped runtime's (tests, evaluations), else the one it
+    /// measured best on when that vendor is available here, else Anthropic. The fallback
+    /// keeps a feature working when the gateway has no OpenAI key (its `/health` says so) or
+    /// has not answered yet: the task then runs on its measured Anthropic model.
+    static func provider(for task: AITask) -> AIProvider {
+        if let scoped = AIRuntime.effective?.provider { return scoped }
+        let measured = measuredProviders[task] ?? .anthropic
+        if measured != .anthropic, key(for: measured) == nil { return .anthropic }
+        return measured
+    }
+
+    /// The model a task runs on, on the vendor it runs on.
+    static func model(for task: AITask) -> String { model(for: task, provider: provider(for: task)) }
+
+    /// Whether `task` can run here: the gate each optional AI feature uses.
+    static func hasKey(for task: AITask) -> Bool { key(for: provider(for: task)) != nil }
 }

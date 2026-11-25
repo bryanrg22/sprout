@@ -45,7 +45,7 @@ struct SmartSuggestionsView: View {
     var body: some View {
         // No AI on this device (it cannot do App Attest): the section is left out, as the
         // Progress recap does. There is nothing the person could do about it.
-        if !AIConfig.hasActiveKey {
+        if !AIConfig.hasKey(for: .foodSuggestions) {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: Theme.Space.sm) {

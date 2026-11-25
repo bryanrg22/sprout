@@ -164,7 +164,7 @@ struct FoodPhotoAnalyzer {
 
     /// Shared call + decode for both the photo and text paths.
     private static func run(task: AITask, system: String, content: [[String: Any]]) async throws -> Estimate {
-        let client = try AIClient.makeFull()
+        let client = try AIClient.makeFull(for: task)
         let dict = try await client.structured(
             system: system,
             userContent: content,

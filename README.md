@@ -79,13 +79,16 @@ Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output 
 
 | Task | Model | How it was chosen |
 |---|---|---|
-| Vita chat turn, chat chips | `claude-haiku-5-5` | **measured**: over 30 multi-turn conversations a blind judge preferred it to `claude-sonnet-5` (50 to 15, beyond noise), with the right tool as often, at an eighteenth of the cost (EVAL_REPORT 37, 38) |
-| Weekly note, onboarding note | `claude-haiku-5-5` | **measured**: as good as `claude-sonnet-5` on a blind judge, and better on the rules for the onboarding note (EVAL_REPORT 35, 39) |
-| Daily brief, insight line, memory fold | `claude-sonnet-5` | **measured**: a blind judge preferred it to `claude-haiku-5-5` beyond noise on all three (the brief 20 to 2); each runs about once a day (EVAL_REPORT 39) |
-| Progress recap, meal photo | `claude-sonnet-5` | **measured**: the cheaper models were worse beyond noise; `claude-sonnet-5-5` invented recap figures more often and was less accurate on photos (EVAL_REPORT 35-39) |
-| Daily checklist, a typed meal, food suggestions | `claude-sonnet-5-5` | **measured**: as good or better than `claude-sonnet-5` (the checklist and food preferred by the judge), cheaper and faster (EVAL_REPORT 39, 40) |
-| Plan build, review and web research | `claude-opus-5-5` | **measured**: a blind judge preferred its plans to `claude-opus-4-8`'s 21 to 3 once it had room to think, and its research 6 to 0; the cheaper models set unsafe ranges or wrote worse plans (EVAL_REPORT 39, 40) |
+| Vita chat turn, chat chips | `claude-haiku-5-5` | **measured**: a blind judge preferred it to `claude-sonnet-5` (50 to 15) and to `gpt-6-luna` at the same price (51 to 13) (EVAL_REPORT 37, 41) |
+| Daily brief, insight line, memory fold | `claude-sonnet-5` | **measured**: preferred to `claude-haiku-5-5` and to `gpt-6.2-sol` beyond noise; `gpt-6.2-sol` dropped facts from the coach's memory (EVAL_REPORT 39, 41) |
+| A typed meal | `claude-sonnet-5-5` | **measured**: within 20% on 92% of meals described in household measures, against 86% for `gpt-6.2-sol` (EVAL_REPORT 39, 41) |
+| Food suggestions, daily checklist, progress recap, meal photo | `gpt-6.2-sol` | **measured**: preferred to the Claude model beyond noise on food (34 to 5) and the checklist (29 to 11), as good or better on the recap and photos, at about half the cost (EVAL_REPORT 41) |
+| Plan build and review | `gpt-6.2-sol` | **measured**: reviews preferred 21 to 3 over `claude-opus-5-5`, builds within noise and never blank, at a sixth of the cost (EVAL_REPORT 41) |
+| Plan web research | `gpt-5.6-sol` | **measured**: preferred 7 to 0 over `claude-opus-5-5`, at about a third of the cost (EVAL_REPORT 41) |
+| Weekly note, onboarding note | `gpt-6-luna` | **measured**: as good as `claude-haiku-5-5`, at about half the (tiny) cost (EVAL_REPORT 41) |
 | The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
+
+Each task runs on the vendor it measured best on and falls back to its Claude model when that vendor is unavailable (`AIConfig.provider(for:)`).
 
 The gateway allows exactly these models, and a unit test reads the gateway's price table and fails if any task resolves to a model it would refuse.
 
