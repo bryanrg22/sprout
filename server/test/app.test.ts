@@ -32,6 +32,7 @@ let logs: Record<string, unknown>[]
 function app(overrides: Partial<Config> = {}) {
   config = {
     port: 0,
+    host: "127.0.0.1",
     appIds: [APP_ID],
     allowDevelopment: true,
     anthropicKey: SERVER_ANTHROPIC_KEY,

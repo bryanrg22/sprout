@@ -87,7 +87,7 @@ Today's spend: `docker compose exec gateway node -e "const {DatabaseSync}=requir
 
 ```bash
 npm ci
-npm test          # 58 tests: App Attest checks, the store, every route
+npm test          # 61 tests: App Attest checks, the store, every route, the config
 npm run typecheck
 ```
 
