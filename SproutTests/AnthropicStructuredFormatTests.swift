@@ -114,6 +114,23 @@ final class AnthropicStructuredFormatTests: XCTestCase {
         }
     }
 
+    /// A model whose thinking cannot be switched off gets room to think on top of what the
+    /// call asked for (EVAL_REPORT 40); every other model is sent exactly what was asked.
+    func testAModelThatAlwaysThinksGetsHeadroomAndNoOtherDoes() async throws {
+        let reply = #"{"chips":[{"label":"Egg","calories":78},{"label":"Toast","calories":80}]}"#
+        for (model, expected) in [("claude-opus-5-5", 400 + AnthropicModelProfile.thinkingHeadroom),
+                                  ("claude-fable-5-2", 400 + AnthropicModelProfile.thinkingHeadroom),
+                                  ("claude-sonnet-5-5", 400)] {
+            let t = ScriptedTransport([.json(200, textReply(reply))])
+            _ = try await call(model, t)
+            XCTAssertEqual(t.body()["max_tokens"] as? Int, expected, model)
+        }
+        XCTAssertEqual(AnthropicModelProfile.maxTokens(2200, for: "claude-opus-5-5-20261101"), 2200 + 4096, "a dated snapshot")
+        XCTAssertEqual(AnthropicModelProfile.maxTokens(2200, for: "claude-opus-5"), 2200, "another model is not matched by prefix")
+        XCTAssertEqual(AnthropicModelProfile.maxTokens(2200, for: "claude-haiku-5-5"), 2200)
+        XCTAssertEqual(AnthropicModelProfile.maxTokens(2200, for: "claude-opus-4-8"), 2200)
+    }
+
     func testARefuserIsAskedForTheFormatAndItsTextIsTheAnswer() async throws {
         let t = ScriptedTransport([.json(200, textReply(#"{"chips":[{"label":"Greek yogurt","calories":100},{"label":"Egg","calories":78}]}"#))])
         let out = try await call("claude-sonnet-5-5", t)

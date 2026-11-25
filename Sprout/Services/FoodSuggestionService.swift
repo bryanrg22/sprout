@@ -128,7 +128,7 @@ struct FoodSuggestionService {
         "properties": [
             "suggestions": [
                 "type": "array",
-                "minItems": 2,
+                "minItems": 1,   // one good suggestion is shown rather than none (EVAL_REPORT 40); the prompt asks for 2–3
                 "maxItems": 3,
                 "items": [
                     "type": "object",

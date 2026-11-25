@@ -1139,7 +1139,7 @@ final class GraderTests: XCTestCase {
         XCTAssertFalse(Graders.hasListOrHeader("Great week - really.\nKeep going."))
 
         XCTAssertEqual(Graders.itemBounds(ProgressSummaryService.schema, "highlights"), 2...4)
-        XCTAssertEqual(Graders.itemBounds(FoodSuggestionService.schema, "suggestions"), 2...3)
+        XCTAssertEqual(Graders.itemBounds(FoodSuggestionService.schema, "suggestions"), 1...3)   // one is shown since EVAL_REPORT 40
         XCTAssertEqual(Graders.itemBounds(CoachPromptService.schema, "prompts"), 2...5)
         XCTAssertEqual(Graders.itemBounds(ChecklistPlanService.schema, "tasks"), 3...5)
         XCTAssertEqual(Graders.itemBounds(ChecklistPlanService.schema, "chips"), 4...8)
@@ -1958,12 +1958,14 @@ final class GraderTests: XCTestCase {
         let wrap = pick(.idea, "Turkey wrap upgrade", "Roll three slices of turkey into a wrap with spinach.", "🌯")
         let good = Graders.foodSuggestions([pick(), wrap], rawCount: 2, expect: foodExpectation())
         XCTAssertTrue(good.pass)
-        XCTAssertEqual(good.scores, ["shown_within_schema": 1, "nearby_rule_kept": 1, "wrong_person_pronoun": 0,
+        XCTAssertEqual(good.scores, ["shown_within_schema": 1, "at_least_two_shown": 1, "nearby_rule_kept": 1, "wrong_person_pronoun": 0,
                                      "no_banned_phrase": 1, "details_one_sentence": 1, "titles_2_to_5_words": 1,
                                      "one_emoji_each": 1, "names_a_logged_food": 1, "nothing_eaten_today_in_a_title": 1,
                                      "model_count_within_schema": 1])
-        // The schema's own bounds: 2 to 3.
-        XCTAssertFalse(Graders.foodSuggestions([pick()], rawCount: nil, expect: foodExpectation()).pass)
+        // The schema's own bounds: 1 to 3 (one is shown since EVAL_REPORT 40; the prompt asks for 2 to 3).
+        let one = Graders.foodSuggestions([pick()], rawCount: nil, expect: foodExpectation())
+        XCTAssertTrue(one.pass); XCTAssertEqual(one.scores["at_least_two_shown"], 0)
+        XCTAssertFalse(Graders.foodSuggestions([], rawCount: nil, expect: foodExpectation()).pass)
         XCTAssertTrue(Graders.foodSuggestions([pick(), wrap, pick()], rawCount: nil, expect: foodExpectation()).pass)
         XCTAssertFalse(Graders.foodSuggestions([pick(), wrap, pick(), wrap], rawCount: nil, expect: foodExpectation()).pass)
         XCTAssertFalse(Graders.foodSuggestions([pick(), pick(.add, "Egg whites", "Add a cup of egg whites.", " ")],
@@ -2013,7 +2015,8 @@ final class GraderTests: XCTestCase {
         XCTAssertNil(scores(pick())["model_count_within_schema"])
         XCTAssertEqual(scores(pick(), rawCount: 3)["model_count_within_schema"], 1)
         XCTAssertEqual(scores(pick(), rawCount: 4)["model_count_within_schema"], 0)
-        XCTAssertEqual(scores(pick(), rawCount: 1)["model_count_within_schema"], 0)
+        XCTAssertEqual(scores(pick(), rawCount: 1)["model_count_within_schema"], 1)
+        XCTAssertEqual(scores(pick(), rawCount: 0)["model_count_within_schema"], 0)
         // A diet the logged foods show: a score, never the pass.
         XCTAssertNil(scores(pick())["avoided_foods_absent"], "the case shows no diet")
         XCTAssertEqual(scores(pick(), avoid: ["chicken", "egg"])["avoided_foods_absent"], 1)
@@ -2097,10 +2100,12 @@ final class GraderTests: XCTestCase {
         XCTAssertTrue(outcome.pass, "the feature is told no diet, so this is recorded and does not fail the case")
         XCTAssertEqual(outcome.scores["avoided_foods_absent"], 0)
 
-        // One suggestion left after the service drops an empty row: shown, and under the schema's minimum.
+        // One suggestion left after the service drops an empty row: shown, and within the schema
+        // since one is enough (EVAL_REPORT 40); fewer than the prompt asks for is recorded.
         outcome = await scripted([toolReply(["suggestions": [lentil, suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
-        XCTAssertTrue(outcome.ok); XCTAssertFalse(outcome.pass)
-        XCTAssertEqual(outcome.scores["shown_within_schema"], 0)
+        XCTAssertTrue(outcome.ok); XCTAssertTrue(outcome.pass)
+        XCTAssertEqual(outcome.scores["shown_within_schema"], 1)
+        XCTAssertEqual(outcome.scores["at_least_two_shown"], 0)
         // Four returned, three shown: the app's cap makes it showable; the model's own count is recorded.
         outcome = await scripted([toolReply(["suggestions": [lentil, tofu, lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertTrue(outcome.pass)

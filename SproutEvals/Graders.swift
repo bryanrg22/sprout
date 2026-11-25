@@ -948,6 +948,8 @@ extension Graders {
 
         var scores: [String: Double] = [
             "shown_within_schema": flag(schemaKept),
+            // The prompt asks for 2 to 3; one is shown since EVAL_REPORT 40, and counted here.
+            "at_least_two_shown": flag(suggestions.count >= 2),
             "nearby_rule_kept": flag(nearbyRule),
             "wrong_person_pronoun": flag(wrongPerson),
             "no_banned_phrase": flag(noBan),
