@@ -46,7 +46,7 @@ final class AITaskModelTests: XCTestCase {
         .insightLine:      ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
         .weeklyReflection: ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
         .onboardingNote:   ("claude-haiku-5-5", "gpt-6-luna"),            // Anthropic: EVAL_REPORT 35; OpenAI: 22
-        .memoryFold:       ("claude-haiku-4-5-20251001", "gpt-5.6-luna"),  // Anthropic: tier default; OpenAI: EVAL_REPORT 22
+        .memoryFold:       ("claude-haiku-5-5", "gpt-5.6-luna"),          // EVAL_REPORT 36 / 22
     ]
 
     func testEveryTaskHasAPinnedDefault() {

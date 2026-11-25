@@ -87,11 +87,15 @@ extension AIConfig {
             .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 35"),
             .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22"),
         ],
-        // The memory fold stays on the Anthropic tier default: claude-haiku-5-5 passes as often
-        // but stores a number the app owns in 20% of folds, against a gendered pronoun in 28%
-        // for claude-haiku-4-5; which defect is worse is the owner's call (EVAL_REPORT 35).
-        // OpenAI: gpt-6-luna kept every planted fact in only 78% of runs (EVAL_REPORT 22).
-        .memoryFold: [.openai: AITaskDefault(model: "gpt-5.6-luna", evidence: "EVAL_REPORT 22")],
+        // The memory fold: claude-haiku-5-5 passes as often as claude-haiku-4-5 and writes no
+        // gendered pronoun (against 28%). The app-owned figures it stored in 20% of folds are
+        // now removed in code by `CoachMemoryService.parse`; regraded through it, none is
+        // stored (EVAL_REPORT 36). OpenAI: gpt-6-luna kept every planted fact in only 78% of
+        // runs (EVAL_REPORT 22).
+        .memoryFold: [
+            .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 36"),
+            .openai: AITaskDefault(model: "gpt-5.6-luna", evidence: "EVAL_REPORT 22"),
+        ],
         // The recap: claude-sonnet-5 passed 88% against 80% for claude-haiku-5-5, whose failures
         // were mostly its own arithmetic on the person's figures (EVAL_REPORT 35). Kept, now
         // by measurement; accuracy of the numbers is the point of this card.

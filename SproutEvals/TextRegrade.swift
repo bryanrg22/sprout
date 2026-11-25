@@ -8,12 +8,15 @@ import XCTest
 /// past answer before anyone pays for a new run (`Evals/regrade-text.sh`, EVAL_REPORT 34).
 ///
 /// Covered: the five short-writing tasks whose output is the whole answer (the daily brief,
-/// the insight line, the weekly reflection, the onboarding note, the progress recap). A record
+/// the insight line, the weekly reflection, the onboarding note, the progress recap), and the
+/// memory fold, whose recorded output is the model's whole reply, graded as the app's
+/// `CoachMemoryService.parse` stores it now. A record
 /// whose reply the app discarded or whose call failed is not regradable (there is no shown
 /// text to grade); it keeps its old result and says why.
 enum TextRegrade {
 
-    static let tasks: Set<String> = ["dailyBrief", "insightLine", "weeklyReflection", "onboardingNote", "progressSummary"]
+    static let tasks: Set<String> = ["dailyBrief", "insightLine", "weeklyReflection", "onboardingNote", "progressSummary",
+                                     "memoryFold"]
 
     struct Record: Decodable {
         let task: String
@@ -137,6 +140,12 @@ enum TextRegrade {
             return { id, output in
                 guard let item = cases[id], let summary = progressSummary(fromRecorded: output) else { return nil }
                 return Graders.progressSummary(snapshot: item.snapshot, summary: summary, reader: item.reader)
+            }
+        case "memoryFold":
+            let cases = try index(datasetURL, as: LiveEvals.MemoryCase.self, id: \.id)
+            return { id, output in
+                guard let item = cases[id] else { return nil }
+                return Graders.memoryFold(raw: output, expect: item.expectation)
             }
         default:
             throw XCTSkip("no text regrade for \(task)")

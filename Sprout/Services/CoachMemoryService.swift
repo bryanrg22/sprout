@@ -14,7 +14,8 @@ import Foundation
 /// - No key → no-op (returns `nil`). It also never throws to the caller and never blocks the
 ///   user-visible reply; the caller runs it in a detached/background `Task`.
 /// - Numbers stay code-owned: the system prompt forbids storing weights, calories, macros,
-///   or targets in memory. Those are computed live and authoritatively by `CoachContext`.
+///   or targets in memory, and `parse` removes any sentence that states one anyway
+///   (`removingAppOwnedFigures`). Those are computed live and authoritatively by `CoachContext`.
 enum CoachMemoryService {
 
     /// The result of a consolidation pass: the new durable notes + rolling summary to persist.
@@ -203,15 +204,105 @@ enum CoachMemoryService {
         }
         // Treat an empty-after-trim field as "not provided" so the model can never accidentally
         // wipe good durable memory by returning "" — we keep the prior value in that case.
-        let notes = nonEmpty((obj["notes"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines))
-        let summary = nonEmpty((obj["summary"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines))
+        let writtenNotes = nonEmpty((obj["notes"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines))
+        let writtenSummary = nonEmpty((obj["summary"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines))
         // If the model returned neither usable field, treat as a failure (don't clobber memory).
-        guard notes != nil || summary != nil else { return nil }
+        guard writtenNotes != nil || writtenSummary != nil else { return nil }
+        // The app-owned figures come out next. A field that held nothing else falls back to the
+        // prior value rather than wiping the memory; the reply still counts, so the batch is
+        // folded and not sent again.
+        let notes = writtenNotes.map(removingAppOwnedFigures).flatMap(nonEmpty)
+        let summary = writtenSummary.map(removingAppOwnedFigures).flatMap(nonEmpty)
 
         return Result(
-            profileNotes: clamp(notes ?? fallbackNotes, to: notesCharBudget),
-            conversationSummary: clamp(summary ?? fallbackSummary, to: summaryCharBudget)
+            profileNotes: clamp(notes ?? removingAppOwnedFigures(fallbackNotes), to: notesCharBudget),
+            conversationSummary: clamp(summary ?? removingAppOwnedFigures(fallbackSummary), to: summaryCharBudget)
         )
+    }
+
+    // MARK: - App-owned figures
+
+    /// The text with every sentence (or bullet line) that states a figure the app owns taken
+    /// out: a calorie count or target, a body weight, a macro in grams, a step count. The
+    /// prompt forbids storing these, and a model that is asked to confirm a target still
+    /// writes "Alex confirmed the 2,750 kcal target" into the summary (EVAL_REPORT 36). A
+    /// stored figure goes stale the day the target changes and Vita would quote it, so this
+    /// is enforced in code rather than left to the prompt.
+    ///
+    /// What is kept: times ("after 7pm", "lunch at 11:30"), counts ("3x a week", "for 4 days"),
+    /// and any figure without one of the units or words below. A line left empty is dropped;
+    /// the rest of the text is unchanged. Idempotent.
+    static func removingAppOwnedFigures(_ text: String) -> String {
+        var lines: [String] = []
+        for line in text.components(separatedBy: "\n") {
+            // A bullet's marker ("- ", "• ", "1. ") is set aside, so it is not read as a sentence
+            // and stays on the line when the line's first sentence goes.
+            let marker = line.range(of: #"^\s*([-•*–]|\d+[.)])\s+"#, options: .regularExpression)
+                .map { String(line[$0]) } ?? ""
+            let body = String(line.dropFirst(marker.count))
+            let sentences = sentences(in: body)
+            let kept = sentences.filter { !statesAnAppOwnedFigure($0) }
+            if kept.count == sentences.count { lines.append(line); continue }
+            let rebuilt = kept.joined().trimmingCharacters(in: .whitespaces)
+            // A line whose every sentence went is gone, marker and all.
+            if !rebuilt.isEmpty { lines.append(marker + rebuilt) }
+        }
+        return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// A number (commas allowed) directly followed by a unit the app owns.
+    private static let figureWithUnit = try! NSRegularExpression(
+        pattern: #"\b\d[\d,]*(\.\d+)?\s*(kcal|cals?|calories|lbs?|pounds?|kgs?|kilos?|kilograms?|steps|g|grams?)\b"#,
+        options: [.caseInsensitive])
+    /// A calorie, weight or target word in the same sentence as a figure of the size such a
+    /// value has: a decimal, or three or more digits ("a weight of 156.8", "the target is
+    /// 1,700"). A time such as 11:30 has a colon and is not read as one. Beside a weight or
+    /// target word a year ("lost weight before the 2019 wedding") is not such a figure; beside
+    /// a calorie word it is, because 2000 is a common calorie target.
+    private static let calorieWord = try! NSRegularExpression(
+        pattern: #"\b(calorie|calories)\b"#, options: [.caseInsensitive])
+    private static let weightOrTargetWord = try! NSRegularExpression(
+        pattern: #"\b(weigh|weighs|weighed|weighing|weight|weigh-in|weigh-ins|scale|target|targets)\b"#,
+        options: [.caseInsensitive])
+    private static let sizedFigure = try! NSRegularExpression(
+        pattern: #"(?<![\d:.,])(\d{1,3}(,\d{3})+|\d{3,}|\d+\.\d+)(?![\d:])"#, options: [])
+
+    static func statesAnAppOwnedFigure(_ sentence: String) -> Bool {
+        let range = NSRange(sentence.startIndex..., in: sentence)
+        if figureWithUnit.firstMatch(in: sentence, range: range) != nil { return true }
+        let figures = sizedFigure.matches(in: sentence, range: range).compactMap { Range($0.range, in: sentence) }
+            .map { String(sentence[$0]) }
+        guard !figures.isEmpty else { return false }
+        if calorieWord.firstMatch(in: sentence, range: range) != nil { return true }
+        guard weightOrTargetWord.firstMatch(in: sentence, range: range) != nil else { return false }
+        return figures.contains { !isYear($0) }
+    }
+
+    private static func isYear(_ figure: String) -> Bool {
+        figure.count == 4 && (figure.hasPrefix("19") || figure.hasPrefix("20")) && Int(figure) != nil
+    }
+
+    /// The line cut into sentences, each keeping the space that follows it, so joining them
+    /// gives the line back. A sentence ends at . ! or ? followed by a space and a capital
+    /// letter, so "starts at 4 a.m. at a bakery" stays one sentence.
+    private static func sentences(in line: String) -> [String] {
+        var result: [String] = []
+        var current = ""
+        let chars = Array(line)
+        var i = 0
+        while i < chars.count {
+            current.append(chars[i])
+            if ".!?".contains(chars[i]), i + 2 < chars.count, chars[i + 1] == " ", chars[i + 2].isUppercase {
+                current.append(" ")
+                result.append(current)
+                current = ""
+                i += 2
+                continue
+            }
+            i += 1
+        }
+        if !current.isEmpty { result.append(current) }
+        return result
     }
 
     /// `nil` for nil/empty input, otherwise the string — so empty fields fall back to prior memory.

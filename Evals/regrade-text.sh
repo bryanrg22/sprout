@@ -3,10 +3,10 @@
 #
 #   Evals/regrade-text.sh Evals/runs/<run> [Evals/runs/<run> ...]
 #
-# Covers the daily brief, insight line, weekly reflection, onboarding note and progress
-# recap. No model is called and nothing is spent. A run's records are not touched; the new
-# scores go to <run>/regrade-text.json, and a table of old against new pass counts per
-# candidate is printed. A reply the app discarded, or a failed call, keeps its old result.
+# Covers the daily brief, insight line, weekly reflection, onboarding note, progress
+# recap and memory fold. No model is called and nothing is spent. A run's records are not
+# touched; the new scores go to <run>/regrade-text.json, and a table of old against new
+# pass counts per candidate is printed. A reply the app discarded, or a failed call, keeps its old result.
 set -euo pipefail
 
 [ "$#" -ge 1 ] || { echo "usage: $0 Evals/runs/<run> [...]"; exit 1; }
