@@ -89,11 +89,13 @@ STATUS=$?
 set -e
 
 # The build log can echo the environment of the test runner; never keep it if it does.
-if grep -q -E 'sk-ant-|sk-proj-|sk-[A-Za-z0-9]{32,}' "$OUT/xcodebuild.log"; then
-  rm -f "$OUT/xcodebuild.log"
-  echo "xcodebuild.log contained a key-shaped string and was deleted"
-else
-  tail -c 4000 "$OUT/xcodebuild.log" > "$OUT/xcodebuild-tail.log"; rm -f "$OUT/xcodebuild.log"
+# Every key-shaped string is masked first, so the tail survives for diagnosis; a tail that
+# still holds one after masking is deleted.
+sed -E 's/sk-[A-Za-z0-9_-]{8,}/[key]/g' "$OUT/xcodebuild.log" | tail -c 4000 > "$OUT/xcodebuild-tail.log"
+rm -f "$OUT/xcodebuild.log"
+if grep -q -E 'sk-ant-|sk-proj-|sk-[A-Za-z0-9]{32,}' "$OUT/xcodebuild-tail.log"; then
+  rm -f "$OUT/xcodebuild-tail.log"
+  echo "the build log still held a key-shaped string after masking and was deleted"
 fi
 
 # SPROUT_EVAL_BASELINE=<provider:model> compares every candidate with the model that ships.
