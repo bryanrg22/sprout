@@ -1,0 +1,11 @@
+-- 10 · Two tables and a setting
+--
+-- A good day: at least the profile's daily step goal AND at least 7 hours asleep. List the
+-- good days, oldest first: the Los Angeles day, the steps, the hours asleep rounded to two
+-- decimals. Read the goal from the profile; don't type 8000.
+--
+-- Tables: ZSTEPSENTRY (ZDATE, ZCOUNT), ZSLEEPENTRY (ZDATE, ZASLEEPMINUTES), ZUSERPROFILE (ZDAILYSTEPGOAL)
+-- Hint: both tables store a day as that day's local midnight, so their ZDATE values match.
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 10
+

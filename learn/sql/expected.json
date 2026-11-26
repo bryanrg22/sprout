@@ -1,0 +1,72 @@
+{
+  "01": {
+    "columns": 1,
+    "ordered": true,
+    "rows": 20,
+    "sha256": "cd2c4abebe22904be46d056e3c1d5504984057a3ca41041c5ba6e1d78b8257b9",
+    "sha256_any_order": "cd2c4abebe22904be46d056e3c1d5504984057a3ca41041c5ba6e1d78b8257b9"
+  },
+  "02": {
+    "columns": 3,
+    "ordered": true,
+    "rows": 12,
+    "sha256": "62ab929f5eff8d286cf0964f924abe597a6a93b36bcb43a86c5379eb6d09b2a9",
+    "sha256_any_order": "f90dacd8d6f282353b57c92a09f9c181c5feab21b6ecdee7981b8532e91573c9"
+  },
+  "03": {
+    "columns": 2,
+    "ordered": true,
+    "rows": 28,
+    "sha256": "f85bcc13f8baa0f90782cf6d451cce6527f38b008ab0b845bc31b3cd78dd4d64",
+    "sha256_any_order": "f85bcc13f8baa0f90782cf6d451cce6527f38b008ab0b845bc31b3cd78dd4d64"
+  },
+  "04": {
+    "columns": 3,
+    "ordered": false,
+    "rows": 3,
+    "sha256": "3f5349fbf1560a3f333ab8a03426e183ad05a78f04eece186c028c6742a33aee",
+    "sha256_any_order": "3f5349fbf1560a3f333ab8a03426e183ad05a78f04eece186c028c6742a33aee"
+  },
+  "05": {
+    "columns": 2,
+    "ordered": true,
+    "rows": 4,
+    "sha256": "2ce6d6457406434e31cb882dfadea23d092ed89111ed5e9444dadc5f935ba17f",
+    "sha256_any_order": "55e32c2ca60a6e592bd676d2fede3fa477b027ef024e93dc46a32d5297edc34b"
+  },
+  "06": {
+    "columns": 1,
+    "ordered": false,
+    "rows": 1,
+    "sha256": "6a13ffb845bba53eddd5d0d28041a209501d61445916b68b8574fc92e646478c",
+    "sha256_any_order": "6a13ffb845bba53eddd5d0d28041a209501d61445916b68b8574fc92e646478c"
+  },
+  "07": {
+    "columns": 4,
+    "ordered": true,
+    "rows": 4,
+    "sha256": "ea01c5b382cc7d5a1b024be405d89a663607f8508507cee48460068d42f428a5",
+    "sha256_any_order": "ea01c5b382cc7d5a1b024be405d89a663607f8508507cee48460068d42f428a5"
+  },
+  "08": {
+    "columns": 3,
+    "ordered": true,
+    "rows": 11,
+    "sha256": "75dcc476b9f1790fae007557660da85a9bfa9e647af3f005e1974ead2faffb47",
+    "sha256_any_order": "ca3acaa4e6ca71f0d0d5c28b8693cbf2146978d3cf3bdf1dca94c4c4eca4c46a"
+  },
+  "09": {
+    "columns": 3,
+    "ordered": true,
+    "rows": 28,
+    "sha256": "6863885aae9c3251170d6672bda7d117970319fc5f9a3fc5a8584757a33ae8f8",
+    "sha256_any_order": "6863885aae9c3251170d6672bda7d117970319fc5f9a3fc5a8584757a33ae8f8"
+  },
+  "10": {
+    "columns": 3,
+    "ordered": true,
+    "rows": 2,
+    "sha256": "a97d3dad7e7102d5aa144ce390dc241187c14dd57dae60b8e16dc1fa52ee268c",
+    "sha256_any_order": "a97d3dad7e7102d5aa144ce390dc241187c14dd57dae60b8e16dc1fa52ee268c"
+  }
+}

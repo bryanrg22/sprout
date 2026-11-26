@@ -17,6 +17,13 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   from Anthropic or OpenAI (EVAL_REPORT 41); OpenAI also draws the
   character picture (EVAL_REPORT 33).
 
+- **An SQL course on Sprout's own database** (`learn/sql/`): how SwiftData lays out the
+  SQLite file and why (CloudKit's rules: no unique indexes, no foreign keys, copies on
+  purpose), fourteen exercises from a first `SELECT` to indexes and data tests, a checker
+  that never reveals an answer and tests itself in CI, and a timing lab. The demo store is
+  built from the app's real schema with fictional data; `SQLStoreShapeTests` keeps the
+  guide's claims true.
+
 ### Removed
 
 - **The AI settings.** Settings → AI, the "paste your key" card on Today, the key step in

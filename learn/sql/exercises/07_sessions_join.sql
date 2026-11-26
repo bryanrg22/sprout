@@ -1,0 +1,13 @@
+-- 07 · Joining on a UUID
+--
+-- A gym session and its exercises are linked by a UUID, not by a relationship:
+-- ZEXERCISEENTRY.ZSESSIONID holds the session's ZWORKOUTSESSION.ZID (16 bytes, a BLOB).
+-- For every session, oldest first: its Los Angeles day, its type, how many exercise rows it
+-- has, and its volume (the sum of weight × reps × sets; 0 when it has none). Every session
+-- must appear, even one with no exercises.
+--
+-- Tables: ZWORKOUTSESSION (ZID, ZDATE, ZTYPERAW), ZEXERCISEENTRY (ZSESSIONID, ZWEIGHTLBS, ZREPS, ZSETS)
+-- Hint: which JOIN keeps a session with no matching rows? What does SUM give for none?
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 07
+

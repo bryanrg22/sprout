@@ -183,6 +183,7 @@ flowchart TD
 * **UI flows (XCUITest)**: onboarding in every order, logging, the chat with a scripted model, mode switching, each with an accessibility audit.
 * **Evaluations**: every model choice is measured on a dataset, recorded in a numbered, append-only report, with the raw run records committed under `Evals/runs/`.
 * **The gateway**: 58 tests, including Apple's nine attestation checks against a test certificate authority, replay, tampering, the caps and the allowlist.
+* **The store, by SQL**: [`learn/sql/`](learn/sql/README.md) explains the SQLite file SwiftData writes (tables, types, why there are no foreign keys or unique indexes), with exercises marked by a self-tested checker; a unit test keeps its claims true.
 * **Records**: [`docs/EVAL_REPORT.md`](docs/EVAL_REPORT.md) (what was measured and decided), [`SproutTests/LEDGER.md`](SproutTests/LEDGER.md) (what each test file proves and does not), [`CHANGELOG.md`](CHANGELOG.md).
 * **Field diagnostics**: tap the version number 7 times for a shareable log of every AI call (with token counts), sync outcome and lifecycle event.
 
@@ -200,6 +201,7 @@ SproutEvals/       the live evaluation harness (its own scheme; calls real model
 Evals/             evaluation datasets, scripts, prices and committed run records
 server/            the AI gateway (Node, TypeScript, SQLite, Docker + Caddy)
 tooling/           CloudKit schema checks, evidence capture
+learn/sql/         an SQL course on the app's own database: 14 exercises, a checker, a demo store
 docs/              developer guide, release, evaluation report, feature specs, diagrams
 project.yml        XcodeGen spec (Sprout.xcodeproj is generated from it)
 ```

@@ -1,0 +1,12 @@
+-- 11 · An index for a real query (performance)
+--
+-- The strength chart asks for one machine's history, in date order:
+--     SELECT ZWEIGHTLBS, ZDATE FROM ZEXERCISEENTRY WHERE ZMACHINEKEY = 'leg_press' ORDER BY ZDATE
+-- Run it with EXPLAIN QUERY PLAN in front. "SCAN" means SQLite reads every row; "USE TEMP
+-- B-TREE FOR ORDER BY" means it sorts afterwards. Write the CREATE INDEX statement(s) after
+-- which it does neither. Only CREATE INDEX belongs here; the checker runs it on a copy.
+--
+-- Hint: an index on two columns is sorted by the first, then the second.
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 11
+

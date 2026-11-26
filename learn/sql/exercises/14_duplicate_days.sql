@@ -1,0 +1,11 @@
+-- 14 · Another data test
+--
+-- The app keeps one steps row per day, but nothing in the database enforces it (no UNIQUE:
+-- CloudKit can't keep one). Return the Los Angeles day of every day that has more than one
+-- steps row. The checker plants a duplicate on a random day and expects exactly that day.
+--
+-- Tables: ZSTEPSENTRY
+-- Hint: GROUP BY ... HAVING
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 14
+
