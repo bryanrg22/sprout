@@ -21,6 +21,12 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   gone. A phone that cannot use the built-in AI (very old hardware) keeps every other
   feature and says so plainly (EVAL_REPORT 33).
 
+### Changed
+
+- **The Home | Gym switch looks like ChatGPT's Chat | Work switch**: two equal segments in a
+  Liquid Glass capsule, with a soft pill that slides to the one you pick (a thin frosted capsule
+  on iOS 18 to 25).
+
 ### Fixed
 
 - **The weekly note is shown more often.** Its prompt contained a "7" and the app throws
