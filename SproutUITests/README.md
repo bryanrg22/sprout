@@ -16,7 +16,7 @@ xcodegen generate
 xcodebuild test -project Sprout.xcodeproj -scheme SproutUITests \
   -destination 'platform=iOS Simulator,name=Sprout-Dev' \
   -resultBundlePath /tmp/ui.xcresult
-python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 31
+python3 tooling/check_xcresult.py /tmp/ui.xcresult --min-tests 33
 ```
 
 The scheme is separate, so `-scheme Sprout` (the unit suite) neither builds nor runs
@@ -45,6 +45,7 @@ passed (`UITestHooksTests`).
 | `--ui-test-scripted-ai=<name>` | Needs `--ui-testing`. Every model call in the app is answered by the named script instead of the network, and the app behaves as if a key were present. An unknown name stops the launch with the list of known names. |
 | `--ui-test-fresh-defaults` | Needs `--ui-testing`. The app's own defaults are cleared before anything reads them: the stored mode, the provider choice and every once-a-day cache of that install on that simulator. `launch` passes it on a flow's first launch and not on a relaunch, so a flow never sees what an earlier flow (or a person using the simulator) left, and a relaunch still sees what the flow itself stored. The app group's defaults are not touched. |
 | `--ui-test-store-failure` | Needs `--ui-testing`. The launch behaves as if the on-disk store had failed to open, so a flow can check that it shows "Sprout couldn't open your data" and never onboarding. |
+| `--ui-test-voiceover-layout` | Needs `--ui-testing`. The chat lays its rows out as it does with VoiceOver on (a plain stack, read in the order drawn; EVAL_REPORT 43), since a flow cannot turn VoiceOver on. |
 | `--demo-long-chat <n>`, `--chat-debug-do hold` / `arrive:<seconds>` | DEBUG builds. A conversation of n seeded messages, each with "(#i)" in its text; `hold` stops "Load earlier messages" from loading on its own, so a flow can load each page from rest; `arrive:<seconds>` makes a coach message arrive on its own after that long, as one from another device would, and `arrive:away` once the reader has scrolled up and stayed there two seconds (an event, so a slow runner cannot land it early). Used by `ChatPagingFlowTests`. |
 
 The Home or Gym choice lives in UserDefaults, which outlives the in-memory store. A flow

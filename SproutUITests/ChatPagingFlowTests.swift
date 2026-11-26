@@ -39,14 +39,75 @@ final class ChatPagingFlowTests: SproutUITestCase {
 
     private func rest() { RunLoop.current.run(until: Date().addingTimeInterval(1.5)) }
 
+    /// What assistive technologies are given, in order: the seeded messages by their "(#n)"
+    /// number, the input bar as -1, with each element's top on screen. XCUITest reads the same
+    /// container order VoiceOver walks (issue #7).
+    private func readingOrder() -> [(n: Int, minY: CGFloat)] {
+        app.descendants(matching: .any).allElementsBoundByIndex.compactMap { element -> (Int, CGFloat)? in
+            let id = element.identifier
+            if id == AccessibilityID.Coach.input { return (-1, element.frame.minY) }
+            guard id == AccessibilityID.Coach.userMessage || id == AccessibilityID.Coach.assistantMessage,
+                  let text = element.value as? String,
+                  let r = text.range(of: #"\(#(\d+)\)"#, options: .regularExpression),
+                  let n = Int(text[r].dropFirst(2).dropLast()) else { return nil }
+            return (n, element.frame.minY)
+        }
+        .map { (n: $0.0, minY: $0.1) }
+    }
+
+    /// VoiceOver reads the chat as it is drawn: oldest to newest down the screen, then the
+    /// input bar. The rows are declared newest first for the flip (issue #7).
+    /// `--ui-test-voiceover-layout` gives the layout the chat uses with VoiceOver on, which a
+    /// UI flow cannot turn on itself.
+    func testVoiceOverReadsTheChatInTheOrderItIsDrawn() {
+        app.launchArguments = ["--ui-testing", "--ui-test-fresh-defaults", "--seed-demo", "--demo-gain",
+                               "--demo-tab", "coach", "--demo-long-chat", "201", "--chat-debug-do", "hold",
+                               "--ui-test-voiceover-layout"]
+        app.launch()
+        XCTAssertTrue(messages.firstMatch.waitForExistence(timeout: 20), "the conversation appeared")
+        rest()
+        let order = readingOrder()
+        print("CHAT-ORDER " + order.map { "\($0.n)@\(Int($0.minY))" }.joined(separator: " "))
+        let numbers = order.map(\.n).filter { $0 >= 0 }
+        XCTAssertGreaterThan(numbers.count, 2, "messages are exposed")
+        XCTAssertEqual(numbers, numbers.sorted(), "oldest to newest")
+        let tops = order.filter { $0.n >= 0 }.map(\.minY)
+        XCTAssertEqual(tops, tops.sorted(), "top to bottom")
+        guard let input = order.firstIndex(where: { $0.n == -1 }),
+              let last = order.lastIndex(where: { $0.n >= 0 }) else {
+            return XCTFail("the input bar is exposed")
+        }
+        // Known defect: the input bar is a bottom safe-area inset (the fix for the freeze on
+        // send), and no sort priority changed its place (tried +1 on the conversation with a
+        // container around it and the inset, and -1 on the inset without one).
+        XCTExpectFailure("""
+            The input bar is still read before the conversation: it sits in a safe-area inset, \
+            which sort priorities did not reach (issue #7).
+            """, strict: true) {
+            XCTAssertGreaterThan(input, last, "the input bar after the conversation")
+        }
+    }
+
     func testLoadingEarlierMessagesKeepsTheTopMessageInPlace() throws {
+        try loadingEarlierKeepsTheTopMessageInPlace()
+    }
+
+    /// The same in the layout VoiceOver gets: a plain stack instead of the lazy one (issue #7).
+    /// One page: XCUITest reads every row of a plain stack, so three took 239 s locally and the
+    /// UI job ran past its time limit on CI.
+    func testLoadingEarlierMessagesKeepsTheTopMessageInPlaceInTheVoiceOverLayout() throws {
+        try loadingEarlierKeepsTheTopMessageInPlace(pages: 1, extraArguments: ["--ui-test-voiceover-layout"])
+    }
+
+    private func loadingEarlierKeepsTheTopMessageInPlace(pages: Int = 3, extraArguments: [String] = []) throws {
         app.launchArguments = ["--ui-testing", "--ui-test-fresh-defaults", "--seed-demo", "--demo-gain",
                                "--demo-tab", "coach", "--demo-long-chat", "201", "--chat-debug-do", "hold"]
+            + extraArguments
         app.launch()
         wait("the conversation") { self.messages.count > 0 }
 
         var shifts: [CGFloat] = []
-        for page in 1...3 {
+        for page in 1...pages {
             var swipes = 0
             while !(loadEarlier.exists && loadEarlier.isHittable), swipes < 40 {
                 app.swipeDown(velocity: .fast)
@@ -136,10 +197,13 @@ final class ChatPagingFlowTests: SproutUITestCase {
         XCTAssertTrue(jumpToLatest.waitForExistence(timeout: 5), "offered once away from the newest message")
         XCTAssertFalse(onScreen().contains { $0.n == newest.n }, "the newest message is off screen")
         jumpToLatest.tap()
-        rest()
+        // Read where it lands once it has stopped moving, as at the open: on a CI runner a fixed
+        // 1.5 s wait read the newest message 81 pt short, still rising into place (PR #13).
+        let landed = try! XCTUnwrap(settledNewest(), "a message on screen after the jump")
         let back = onScreen()
+        print("CHAT-JUMP opened at maxY \(newest.frame.maxY), landed at \(landed.frame.maxY)")
         XCTAssertEqual(back.last?.n, newest.n, "back at \(newest.n), got \(back.map(\.n))")
-        XCTAssertEqual(back.last!.frame.maxY, newest.frame.maxY, accuracy: 2, "at the same place as when the chat opened")
+        XCTAssertEqual(landed.frame.maxY, newest.frame.maxY, accuracy: 2, "at the same place as when the chat opened")
         wait("the button goes") { !self.jumpToLatest.exists }
     }
 

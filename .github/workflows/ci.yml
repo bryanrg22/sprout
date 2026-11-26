@@ -81,8 +81,8 @@ jobs:
       - name: Verify unit test counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1232 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1232
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1234 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1234
 
       - name: Coverage by target
         if: ${{ !cancelled() }}
@@ -127,7 +127,9 @@ jobs:
   # here cannot hide a unit-test result.
   ui-tests:
     runs-on: macos-26
-    timeout-minutes: 40
+    # The UI flows took about 37 of 40 minutes, and the job ran out of time once the VoiceOver
+    # flows were added (EVAL_REPORT 43).
+    timeout-minutes: 50
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
     steps:
@@ -157,8 +159,8 @@ jobs:
       - name: Verify UI flow counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/ui.xcresult" --min-tests 31 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/ui.xcresult" --min-tests 31
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/ui.xcresult" --min-tests 33 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/ui.xcresult" --min-tests 33
       - name: Upload the result bundle
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

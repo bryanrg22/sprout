@@ -154,9 +154,16 @@ A fast swipe moves the same distance as on the unflipped list (four swipes from 
 of 201 messages: to #179 flipped, #181 unflipped), and pages load ahead of the finger: a
 121-message conversation reaches "Beginning of your conversation" by swiping alone.
 
-**Open:** VoiceOver order. The rows are now declared newest first (the flip), and
-VoiceOver may follow that order, so swiping through messages could go upward. Not checked:
-no run with VoiceOver on.
+**VoiceOver order (issue #7, EVAL_REPORT 43).** The flip declares rows newest first, and the
+accessibility tree followed that: input bar, then #200, #199, #198 down to #194 (measured).
+`accessibilitySortPriority` on each row did nothing in the `LazyVStack` (same order with the
+container on the stack or on the scroll view) and put the rows right in a plain `VStack`
+(#161 to #200, top to bottom). So with VoiceOver on, the rows go in a plain stack
+(`CoachView.chatStack`); without it the lazy stack stays, since the plain one measured slower
+to open and heavier (section 1's table; with VoiceOver on, 400–409 ms against 256–274 ms and
+72 MB against 43 MB at 40 rows). Pages still move 0, 0, 0 pt in both. Still open: the
+input bar is read first; it is a safe-area inset and no priority tried moved it. Checked
+through the tree XCUITest reads, not with VoiceOver running.
 
 ## 2. Selecting text
 
@@ -394,8 +401,10 @@ being retried into, and an exhausted account is not retried at all.
   VoiceOver offers in the Actions rotor
   ([accessibilityAction(named:)](https://developer.apple.com/documentation/swiftui/view/accessibilityaction(named:_:)),
   [UIAccessibilityCustomAction](https://developer.apple.com/documentation/uikit/uiaccessibilitycustomaction)).
-  "Load earlier messages" is a button, so it does not depend on scrolling. Not verified
-  with VoiceOver running: no test here turns it on.
+  "Load earlier messages" is a button, so it does not depend on scrolling. The rows are
+  read oldest to newest, as drawn, through a plain stack while VoiceOver runs (section 1);
+  the input bar is still read before them. Not verified with VoiceOver running: no test here
+  turns it on, and a UI flow takes the VoiceOver layout through `--ui-test-voiceover-layout`.
 - **Dynamic Type.** The reply text view builds its fonts from `preferredFont` for the
   environment's size category and rebuilds when it changes
   ([UIFontMetrics](https://developer.apple.com/documentation/uikit/uifontmetrics),
