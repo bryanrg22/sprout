@@ -1,0 +1,347 @@
+{
+ "task": "coachPrompts",
+ "run": "20261125-134828-CoachPrompts",
+ "baseline": "anthropic:claude-haiku-5-5",
+ "candidate": "openai:gpt-6-luna",
+ "judge": {
+  "model": "gpt-5.6-sol",
+  "effort": "low",
+  "answered_by": [
+   "gpt-5.6-sol"
+  ],
+  "rubric_sha256": "b6140db6aac1537e61bb46adda2b5844084a9302aaca0d868794d018d6fa1ecf",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 16,
+ "pairs_skipped": [],
+ "cases": 16,
+ "candidate_wins": 7,
+ "baseline_wins": 7,
+ "ties": 2,
+ "both_bad": 0,
+ "orders_agree_share": 0.875,
+ "net": 0.0,
+ "net_ci95_cases": [
+  -0.4375,
+  0.4375
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 44,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.3233,
+ "verdicts": [
+  {
+   "case": "alex-brand-new",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A better matches the requested mix: a protein check-in, a logging question, and an encouragement starter. Answer B is specific to strength and water, but its weigh-in chip violates the rule that chips should never be about the scale. A\u2019s lifting reference is a slight assumption, though it is reasonably aligned with Alex\u2019s strength-building goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more grounded in Alex\u2019s actual data, referencing strength gains, the missing first weigh-in, and today\u2019s unlogged water. Its weigh-in wording is slightly awkward and the set lacks much emotional variety, but Answer B invents that Alex \u201cstarted lifting\u201d and is less specific overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-bio-and-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is more natural and useful: it reflects today\u2019s strong leg session, Alex\u2019s protein target, and the real impact of shift work on sleep. It also provides a clear mix of training check-in, practical question, and vent starter. Answer B includes an awkwardly phrased squat prompt and focuses on gain pace, making it less conversational and less varied.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is more natural, specific, and varied: it references today\u2019s strong leg session, Alex\u2019s protein goal, and the real challenge of sleep after shifts. It provides a useful check-in, a practical question, and a relatable vent starter. Answer A celebrates the streak well, but \u201cHow are my strong squats feeling?\u201d is awkward and asks the coach to infer Alex\u2019s physical state.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are personalized and safe, but B is more consistently concise and ties directly to Alex\u2019s 10-day streak, steady gain pace, strong squats, and recovery focus. A\u2019s protein prompt is useful and natural, though its last chip runs slightly beyond the preferred length and the set has less variety in conversational purpose.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B feels more natural in Alex\u2019s voice and covers three distinct, personalized themes: strong leg training, tonight\u2019s protein, and the 10-day streak. It also offers a clearer mix of curiosity, practical check-in, and encouragement, while Answer A\u2019s \u201cWhy is my gain pace steady?\u201d sounds less conversational.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-training-notes-only",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B is more consistently short, first-person, and personalized to Alex\u2019s 10-day streak, batch-cooked chili, lifting goal, and commute. It also provides the requested mix of check-in, curiosity, and encouragement. A includes an unsupported assumption that Alex is hungry and its first chip is too long and awkwardly phrased.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays grounded in Alex\u2019s actual streak, chili preference, strength goal, and commute, while offering a useful mix of check-in, curiosity, and encouragement. Answer B invents that Alex is hungry, which is not supported by the input, and its gym-near-commute prompt is less naturally actionable without location context.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-nothing-logged-today",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is grounded in Alex\u2019s actual 40-minute run, running history, and strength goal, while offering a useful mix of recovery check-in, fueling help, and encouragement. Answer A is personalized to cooking for one and the long run, but it invents that today\u2019s run was tough, which the data does not say.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is grounded in Alex\u2019s recent 40-minute run, running routine, and strength goal, while offering a useful mix of recovery check-in, fueling help, and encouragement. Answer B nicely uses the cooking-for-one detail, but it invents that today\u2019s run was tough, which is not supported by the input.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-soccer-bio",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more natural and polished while staying specific to Alex\u2019s soccer, size-and-speed goal, and 10-day streak. It also clearly provides the requested mix of a recovery check-in, a curiosity question, and encouragement. Answer A is relevant, but \u201cDid my soccer load need more fuel?\u201d sounds awkward, and \u201cbulking\u201d is less aligned with Alex\u2019s own phrasing.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both are personalized and offer a useful mix, but A sounds more natural and closely mirrors Alex\u2019s own phrasing about adding size without losing speed. Its recovery prompt also fits the recent soccer practice and stated focus on training and recovery, while B\u2019s \u201cDid my soccer load need more fuel?\u201d feels awkwardly phrased and \u201cbulking\u201d is less aligned with Alex\u2019s voice.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-swimmer-maintain",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A uses Alex\u2019s actual protein data, masters swim squad, and 10-day logging streak while providing a clear question, vent starter, and encouragement. Answer B\u2019s \u201cswim streak\u201d is not supported by the input, which only shows several recent swim sessions. Although one chip in A is slightly over the approximate six-word target, it is still concise and natural.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B offers a stronger mix: a protein check-in, a swim-specific vent starter, and celebration of the 10-day logging streak. All three are concise, first-person, and grounded in Alex\u2019s data. Answer A\u2019s \u201cswim streak\u201d is not actually established by the input and overlaps somewhat with its other consistency-focused chip.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-brand-new",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A better reflects Sam\u2019s current situation: no water logged, no weigh-ins yet, and some possible hesitation about getting started. It also provides the requested mix of practical check-in, curiosity, and emotional support without implying unsupported history. Answer B\u2019s \u201cease back into logging\u201d assumes Sam logged before, which is not in the input.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is more grounded in Sam\u2019s actual data: no water logged, no weigh-ins yet, and a potentially daunting fresh start. It also offers a strong mix of action, curiosity, and an emotional check-in. Answer A\u2019s \u201cease back into logging\u201d assumes Sam previously logged, which the input does not establish.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lifter-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more natural in Sam\u2019s first-person voice and gives a stronger mix of check-in, curiosity, and encouragement. It specifically reflects the strong leg session and 10-day logging streak, while the fueling question supports training without promoting restriction. Answer A is also personalized, especially with the night-shift vent, but \u201cLegs day felt really strong today\u201d is less natural phrasing.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more polished and ties directly to both today\u2019s strong leg session and Sam\u2019s 10-day logging streak. It also provides a clear check-in, fuel question, and encouragement starter. Answer B adds a useful night-shift vent, but \u201cLegs day\u201d sounds slightly unnatural and it misses the notable streak.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-training-bio-only",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is more natural, useful, and well matched to Sam\u2019s life: it covers protein, celebrates the 10-day streak, and offers a relatable water vent tied to parenting. Answer B\u2019s burrito-bowl prompt is oddly framed, its trend question feels unnatural and weight-focused, and \u201ckept my 10-day streak with kids\u201d is awkward phrasing.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "B is more natural and useful: it combines a protein check-in, streak celebration, and a relatable water vent tied to life with two young kids. A\u2019s burrito-bowl prompt is awkwardly framed, and \u201cWhy is my trend moving gently?\u201d does not sound like Sam\u2019s natural voice.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is more personalized and varied: it references yesterday\u2019s swim, swim-day fueling, and Sam\u2019s recurring hotel-gym constraint, with a natural mix of question and vent starter. Answer B invents an ongoing streak even though nothing is logged today, and \u201cHow did my swim feel?\u201d is an awkward prompt for the coach since Sam, not the coach, knows how it felt.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is more grounded in Sam\u2019s actual life, referencing yesterday\u2019s swim, swim-day fueling, and hotel gyms. It offers a useful mix of training curiosity, fueling support, and a vent starter. Answer A incorrectly implies an existing logging streak and includes the awkward prompt \u201cHow did my swim feel?\u201d directed at the coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-runner-bio",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A uses more of Sam\u2019s specific context: run fueling, first-10K training, and the 10-day logging streak. It also offers a stronger mix of check-in, curiosity, and celebration, while staying focused on adequate fuel rather than restriction. Answer B is good, but \u201csteady progress\u201d is less personal and misses the notable streak.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is more personalized, directly reflecting Sam\u2019s run, first 10K training, and 10-day logging streak. It also offers a strong mix of fueling check-in, training curiosity, and encouragement, all in short first-person language without promoting restriction.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-soccer-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B offers the strongest mix of a personalized check-in, curiosity question, and encouragement, while tying directly to Sam\u2019s soccer, downward maintenance trend, and 10-day streak. Its trend wording avoids focusing on a specific scale number and is especially relevant because Sam is drifting below maintenance. Answer A is also solid, but \u201cget more protein in\u201d is less specific to the current data and \u201csoccer legs are wrecked\u201d assumes soreness that wasn\u2019t stated.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays grounded in Sam\u2019s soccer, documented downward trend, and 10-day streak while offering a good mix of check-in, curiosity, and celebration. Answer B is natural and protein-specific, but \u201cSoccer legs are wrecked today\u201d invents soreness that is not in the input.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-bio-and-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A feels more natural and personally grounded, using Sam\u2019s protein progress, stress snacking pattern, and 10-day logging streak. It also offers a clearer mix of practical help, reflection, and celebration. Answer B references walking and the streak, but \u201cafter lunch walking\u201d is awkward, and asking the coach how Sam feels after walks is less useful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B feels more natural and personally relevant, using Sam\u2019s protein progress, stress-related evening snacking, and 10-day streak. It also provides a stronger mix of practical help, curiosity, and encouragement. Answer A is somewhat awkwardly phrased, especially \u201cafter lunch walking,\u201d and two chips feel less conversational.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-no-bio-no-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more grounded in Sam\u2019s actual data: two consecutive walking days, the 10-day logging streak, and today\u2019s walk. It also supports adequate fueling without suggesting restriction. Answer A invents that Sam feels \u201cflat lately,\u201d which is not supported by the input.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is grounded in Sam\u2019s actual data: two consecutive walking days, a 10-day logging streak, and today\u2019s walk with room for more fuel. Its prompts are brief, first-person, varied, and avoid restriction or scale focus. Answer B invents that Sam feels \u201cflat lately,\u201d which is not supported by the input.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-walker",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more specific to the person\u2019s recent activity and 10-day logging streak, while also offering a good mix of encouragement, curiosity, and celebration. Its prompts are natural, first-person, and safely focused on training and fuel. Answer A is acceptable, but \u201cIs walking enough for my training?\u201d may invite unnecessary doubt, and its protein prompt is less personalized.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more specifically grounded in the recent activity and exact 10-day streak, while offering a clear mix of celebration, fuel curiosity, and encouragement. Its question about fueling walks is supportive of eating enough and avoids judgment. Answer B is also personalized, but \u201cIs walking enough\u201d can sound self-critical and less warm, and its streak chip omits the specific milestone.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

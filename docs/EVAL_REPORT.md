@@ -51,6 +51,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 39 | Every task tested: upward as well as down, the plan's three calls, and the two newest models | 2026-11-25 |
 | 40 | The plan moves to claude-opus-5-5 once it has room to think; food moves to claude-sonnet-5-5 once one suggestion is shown | 2026-11-25 |
 | 41 | OpenAI measured on every task: nine tasks move to OpenAI, each task now picks its vendor, and the gateway is live | 2026-11-25 |
+| 42 | A judge from the other family: Claude's wins were the Claude judge's taste; four more tasks move to OpenAI; the flaky UI flows fixed | 2026-11-25 |
 
 ---
 
@@ -2595,4 +2596,83 @@ Two follow-ups, settled the same day:
   iPhone.
 - The judge against a person: the owner chose not to label.
 - `gpt-5.6-sol`'s price after its promotion ends on 2026-11-30.
+
+## 42. A judge from the other family: Claude's wins were the Claude judge's taste; four more tasks move to OpenAI; the flaky UI flows fixed (2026-11-25)
+
+**Why.** Every verdict in sections 36 to 41 came from one judge, `claude-opus-5-5`. In section
+41 it compared Claude's answers with OpenAI's, which is where a judge's preference for its own
+family would show. The owner declined to label pairs, so the standard substitute was used: a
+second judge from the other family, and the verdict of the two together (a panel).
+
+**How.** Section 41's runs were judged again, repeat 0 only, the same way:
+- blind, in both orders, the same rubric and the same controls;
+- by `gpt-5.6-sol`, which is a candidate in none of these comparisons. A judge never judges its
+  own answers; `judge.py --judge` now refuses it.
+- plan research by `gpt-6.2-astra`, since `gpt-5.6-sol` is a candidate there.
+
+The panel's verdict for a pair is the mean of the two judges'. Its interval comes from the same
+bootstrap over cases. **Spent: about $3.50.**
+
+| Task | Claude judge (section 41) | OpenAI judge | Panel: net (95%) | Judges agree on |
+|---|---|---|---|---|
+| Food suggestions | OpenAI +0.54 | OpenAI +0.83 | +0.64 (+0.36 to +0.86) | 67% of 18 |
+| Daily checklist | OpenAI +0.38 | OpenAI +0.69 | +0.59 (+0.25 to +0.88) | 88% of 16 |
+| Plan review | OpenAI +0.64 | OpenAI +0.93 | +0.79 (+0.57 to +1.00) | 86% of 14 |
+| Vita's chat | **Claude** −0.42 | OpenAI +0.23 (within noise) | -0.15 (-0.33 to +0.03) | 37% of 30 |
+| Chat chips | **Claude** −0.27 | even 0.00 | -0.25 (-0.59 to +0.09) | 44% of 16 |
+| Daily brief | **Claude** −0.31 | even 0.00 | -0.23 (-0.62 to +0.12) | 46% of 13 |
+| Insight line | **Claude** −0.28 | OpenAI +0.32 (within noise) | +0.00 (-0.26 to +0.26) | 26% of 19 |
+
+Plan research by `gpt-6.2-astra`: 8 to 0 for `gpt-5.6-sol`, but that judge passed only 2 of
+its 6 controls, so its research verdict is not used. Section 41's 7 to 0 by the Claude judge
+stands.
+
+**What it shows.** Where both judges agree, OpenAI's wins hold: food, the checklist and the plan
+review, with agreement of 67% to 88% and panel intervals well above zero. Every task where Claude
+"won" in section 41 was won in the Claude judge's eyes only: the OpenAI judge saw a tie or leaned
+the other way. The two agree on only 26% to 46% of those cases, and the panel's intervals all
+hold zero. **Each judge leans to its own family.** A single judge is not trusted for a comparison
+across vendors again; `judge.py --judge` makes the second one a flag away.
+
+**Decisions.** The rule since section 35 applies to the panel: the cheapest candidate whose
+interval does not favour the shipped model.
+- Vita's chat → `gpt-6-luna`: about 40% cheaper ($0.31 against $0.53 per 1,000 turns) and faster
+  (1.9 s against 2.5 s). It also matched the rules: every reply usable, the expected tool 100%, no
+  invalid tool call. Its replies are shorter (about 44 words against 80), which suits a chat bubble.
+- Chat chips → `gpt-6-luna`: $0.12 against $0.23 per 1,000.
+- Daily brief → `gpt-6.2-sol`: $0.95 against $1.39 per 1,000.
+- Insight line → `gpt-6.2-sol`: $0.78 against $1.14 per 1,000.
+
+The chat's panel point estimate still leans to Claude (−0.15). The interval reaches +0.03, so by
+the rule it is a tie. The chat is the feature to watch in use. The field log names the provider of
+every turn, so moving it back is one line in `AIConfig.measuredProviders`.
+
+Claude keeps two tasks: the memory fold (OpenAI failed it on the rules: facts dropped in 26 of
+36 folds) and a typed meal (Claude more accurate on the rules, 92% against 86%). Neither depended
+on the judge.
+
+### The flaky UI flows
+
+`main`'s UI flows failed after the merges of #8, #9 and #10, each time on a different flow; each
+pull request had passed. Four flows, each with a cause found and fixed:
+1. **A message arriving while reading further up.** It arrived on a 12-second timer, so a slow
+   runner could land it while the reader was still at the bottom, where it is not counted as new.
+   It failed in 3 of the last 4 runs. A new debug step, `arrive:away`, makes it arrive only once
+   the reader has left the bottom for two seconds: an event, not a timer.
+2. **Deleting one of two logged foods.** A long press on a slow runner sometimes never opened the
+   menu. The press is now retried, up to three times, only while no menu is open (an open menu
+   covers the row).
+3. **Vita's Undo.** The banner left after 5 seconds, sooner than a slow runner could find, settle
+   and tap it. The UI flows now get 15 seconds (`CoachTurnEngine.undoWindow`); the app keeps 5,
+   pinned by a unit test.
+4. **Jump to latest.** The reference position was read before the layout below the newest
+   message had finished appearing (163 pt off). It is now read once the position has held for a
+   second.
+
+Each flow passes locally. Whether CI is steady is shown only by repeated runs on `main`.
+
+### Not verified
+
+- The panel is two models, not a person.
+- Vita on OpenAI has not yet been used on a phone.
 

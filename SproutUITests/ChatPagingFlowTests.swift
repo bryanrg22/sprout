@@ -91,6 +91,19 @@ final class ChatPagingFlowTests: SproutUITestCase {
         .map { (n: $0.0, frame: $0.1) }
     }
 
+    /// The newest message on screen once its position has held for a second (at most 15 s).
+    private func settledNewest() -> (n: Int, frame: CGRect)? {
+        var last = onScreen().last
+        let deadline = Date().addingTimeInterval(15)
+        while Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(1))
+            let now = onScreen().last
+            if let a = last, let b = now, a.n == b.n, abs(a.frame.maxY - b.frame.maxY) < 0.5 { return b }
+            last = now
+        }
+        return last
+    }
+
     private func launchLongChat(messages count: Int = 201) {
         app.launchArguments = ["--ui-testing", "--ui-test-fresh-defaults", "--seed-demo", "--demo-gain",
                                "--demo-tab", "coach", "--demo-long-chat", "\(count)"]
@@ -114,7 +127,10 @@ final class ChatPagingFlowTests: SproutUITestCase {
     /// Far up the conversation, "jump to latest" returns to the same newest message.
     func testJumpToLatestReturnsToTheNewestMessage() {
         launchLongChat()
-        let newest = try! XCTUnwrap(onScreen().last)
+        // The reference is taken once the layout has stopped moving: on a slow runner the
+        // newest message was read 163 pt lower than where the chat rests, before something
+        // below it finished appearing (main, 2026-11-25).
+        let newest = try! XCTUnwrap(settledNewest())
         for _ in 0..<8 { app.swipeDown(velocity: .fast) }
         rest()
         XCTAssertTrue(jumpToLatest.waitForExistence(timeout: 5), "offered once away from the newest message")
@@ -166,7 +182,7 @@ final class ChatPagingFlowTests: SproutUITestCase {
     /// reading; it is counted on "jump to latest" instead.
     func testAMessageArrivingWhileReadingFurtherUpMovesNothing() throws {
         app.launchArguments = ["--ui-testing", "--ui-test-fresh-defaults", "--seed-demo", "--demo-gain",
-                               "--demo-tab", "coach", "--demo-long-chat", "201", "--chat-debug-do", "arrive:12"]
+                               "--demo-tab", "coach", "--demo-long-chat", "201", "--chat-debug-do", "arrive:away"]
         app.launch()
         wait("the conversation") { !self.onScreen().isEmpty }
         for _ in 0..<3 { app.swipeDown() }

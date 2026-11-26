@@ -79,13 +79,12 @@ Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output 
 
 | Task | Model | How it was chosen |
 |---|---|---|
-| Vita chat turn, chat chips | `claude-haiku-5-5` | **measured**: a blind judge preferred it to `claude-sonnet-5` (50 to 15) and to `gpt-6-luna` at the same price (51 to 13) (EVAL_REPORT 37, 41) |
-| Daily brief, insight line, memory fold | `claude-sonnet-5` | **measured**: preferred to `claude-haiku-5-5` and to `gpt-6.2-sol` beyond noise; `gpt-6.2-sol` dropped facts from the coach's memory (EVAL_REPORT 39, 41) |
-| A typed meal | `claude-sonnet-5-5` | **measured**: within 20% on 92% of meals described in household measures, against 86% for `gpt-6.2-sol` (EVAL_REPORT 39, 41) |
-| Food suggestions, daily checklist, progress recap, meal photo | `gpt-6.2-sol` | **measured**: preferred to the Claude model beyond noise on food (34 to 5) and the checklist (29 to 11), as good or better on the recap and photos, at about half the cost (EVAL_REPORT 41) |
-| Plan build and review | `gpt-6.2-sol` | **measured**: reviews preferred 21 to 3 over `claude-opus-5-5`, builds within noise and never blank, at a sixth of the cost (EVAL_REPORT 41) |
+| Vita chat turn, chat chips, weekly note, onboarding note | `gpt-6-luna` | **measured**: a tie with `claude-haiku-5-5` once judges from both families were pooled (the Claude judge alone preferred Claude; the OpenAI judge did not), at about half the cost; the right tool every time (EVAL_REPORT 41, 42) |
+| Food suggestions, daily checklist, progress recap, meal photo, daily brief, insight line | `gpt-6.2-sol` | **measured**: preferred beyond noise by both judges on food (panel +0.64) and the checklist (+0.59); a tie at lower cost on the rest (EVAL_REPORT 41, 42) |
+| Plan build and review | `gpt-6.2-sol` | **measured**: reviews preferred by both judges (panel +0.79); builds a tie and never blank, at a sixth of the cost (EVAL_REPORT 41, 42) |
 | Plan web research | `gpt-5.6-sol` | **measured**: preferred 7 to 0 over `claude-opus-5-5`, at about a third of the cost (EVAL_REPORT 41) |
-| Weekly note, onboarding note | `gpt-6-luna` | **measured**: as good as `claude-haiku-5-5`, at about half the (tiny) cost (EVAL_REPORT 41) |
+| Memory fold | `claude-sonnet-5` | **measured**: `gpt-6.2-sol` dropped planted facts in 26 of 36 folds (EVAL_REPORT 39, 41) |
+| A typed meal | `claude-sonnet-5-5` | **measured**: within 20% on 92% of household-measure meals against 86% (EVAL_REPORT 39, 41) |
 | The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
 
 Each task runs on the vendor it measured best on and falls back to its Claude model when that vendor is unavailable (`AIConfig.provider(for:)`).

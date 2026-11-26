@@ -1,0 +1,219 @@
+{
+ "task": "planResearch",
+ "run": "20261125-141028-PlanResearch",
+ "baseline": "anthropic:claude-opus-5-5",
+ "candidate": "openai:gpt-5.6-sol",
+ "judge": {
+  "model": "gpt-6.2-astra",
+  "effort": "low",
+  "answered_by": [
+   "gpt-6.2-astra"
+  ],
+  "rubric_sha256": "b25317d01c157a5ab524f2be27aa0c5e9f60777da68930727b79abe73ee7127c",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 8,
+ "pairs_skipped": [],
+ "cases": 8,
+ "candidate_wins": 8,
+ "baseline_wins": 0,
+ "ties": 0,
+ "both_bad": 0,
+ "orders_agree_share": 1.0,
+ "net": 1.0,
+ "net_ci95_cases": [
+  1.0,
+  1.0
+ ],
+ "controls_correct": 2,
+ "controls": 6,
+ "judge_calls": 28,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.7915,
+ "verdicts": [
+  {
+   "case": "build-sam-ambitious-timeframe",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B is the stronger brief: it gives calorie and protein ranges without pretending to know the person\u2019s maintenance intake, and explains why evening sweets need not be eliminated. A invents the name \u201cSam,\u201d treats weekend eating as a likely problem without evidence, and makes numerous claims that are hard to trace. Both introduce an unsupported current date, and B should cite the sports-nutrition rate and the 2024 protein meta-analysis directly rather than leaving readers to infer which source supports each figure.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A gives a tighter brief: it states a weekly loss range, distinguishes a calorie deficit from a personal calorie target, and gives protein guidance in g/kg without assuming the person\u2019s weight. It addresses Couch to 5K and dessert without promising visible change or treating weekends as the problem; B does both, invents the name \u201cSam,\u201d and leaves several claims attributed only to \u201cone source\u201d or \u201ca secondary source.\u201d A still needs citation fixes: the CDC link does not establish the percentage-based rate, and the claimed 2024 protein meta-analysis needs its own identifiable citation. Both answers assert a current date not supplied in the input; they could simply use the stated six-week horizon.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B gives a guideline-based six-month benchmark, a calorie-deficit range and a protein range, with direct citations and a clear distinction between general guidance and a personal target. It connects the evidence to breakfast skipping, dog walks and Pilates without assuming breakfast is necessary or the walks are brisk. A offers useful research on afternoon snacking, but invents the name \u201cSam,\u201d omits a calorie target and turns findings into a prescriptive checklist. B should still drop its June 2027 countdown: the six-month benchmark is useful without assuming a start date or year.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A gives a guideline-based six-month weight-loss benchmark, a calorie-deficit range and a protein range in g/kg/day, with direct citations and no invented personal calorie target. It also distinguishes what is known about the dog walks and Pilates from what depends on their intensity. A needlessly assumes June 2027, but B also assumes a November start, invents the name Sam and never quantifies a calorie deficit. B\u2019s afternoon-snack evidence is relevant, but it leans on athlete studies and commercial sources for its weight-loss rate and ends with a plan rather than findings.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-first-day-no-logs",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B gives usable rate, calorie-deficit and protein ranges while explaining why a personal calorie target needs more information. It addresses closing-night fast food without treating a 10 p.m. finish as overnight work or prescribing a fasting schedule. A invents the name \u201cSam,\u201d projects a 13 kg loss from an assumed timeline, and presents study-specific step counts as targets without traceable citations. B still has citation gaps: the FDA link supports menu labeling, not the self-monitoring claim, and the relative timeline to June 2027 is unsupported.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A gives linked sources for the weekly loss rate, calorie deficit and protein range, and explains why a personal calorie target needs more information. It treats closing-night fast food as a recurring calorie and convenience issue without assuming that eating after 10 p.m. is itself the problem. A should leave the summer date open, and its FDA link supports menu labeling but not the adjacent claim about self-monitoring. B invents the name Sam, offers few traceable citations, and presents 8,500 steps a day and a 1.0 g/kg protein floor as firmer targets than its evidence supports.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-knee-injury",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B gives a clear calorie-deficit range and protein target without inventing a personal intake, and it connects the evidence to grading-time snacks and swimming without prescribing knee movements. A invents the name Sam, leans heavily on athlete research, and gives stroke-specific injury advice without traceable citations. B\u2019s citations still need tightening: the CDC link supports the pounds-per-week figure, not the percentage range, and the grading-snack citation does not link to the named NIDDK source.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A gives a clear calorie-deficit range, protein target and weekly loss rate without inventing a personal calorie goal or promising a five-month result. It connects grading-time snacking to adherence and leaves swimming technique to the physiotherapist, whereas B invents the name Sam and gives specific knee advice without identifiable sources. B also relies heavily on athlete studies and miscalculates its projection: 0.5% weekly for 21 weeks is about 10%, not 8%. A\u2019s citations still need tighter matching: its grading-snack bullet attributes advice to NIDDK but links to a different source.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-maintain-after-goal",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B identifies the right target\u2014a roughly flat multiweek weight trend\u2014and explains how that trend informs calorie needs without assuming the person is still losing. It gives a lifting-relevant protein anchor of about 1.6 g/kg/day, though it should cite the meta-analysis for that figure directly. B also distinguishes strength training from aerobic activity and accurately frames the reverse-dieting trial as preliminary. A invents a name and workout duration, predicts a specific water-weight jump without enough information, and turns the findings into a daily-weighing and exercise plan.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A identifies the maintenance target as a flat multiweek weight trend, explains why a calorie target depends on recent intake and weight change, and gives a relevant protein anchor of about 1.6 g/kg/day for someone who lifts. It links its findings and accurately frames the reverse-dieting trial as preliminary, though it does not directly cite the protein meta-analysis. B invents the name \u201cSam\u201d and a weekly exercise duration, then uses that estimate to infer an activity gap. Its prediction of a 1\u20132 kg water-weight bump and prescription for daily weighing are more definite than its evidence supports, especially for someone already anxious about regain.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B gives a moderate calorie-deficit range without inventing a personal calorie target, and its 1.2\u20131.6 g/kg/day protein range is better suited to a novice than A\u2019s athlete-derived floor of 1.6 g/kg/day. For the nurse\u2019s 3 a.m. grazing, B distinguishes evidence about glucose handling from evidence about long-term fat loss rather than implying an overnight fast is necessary. A invents the name \u201cSam,\u201d relies partly on secondary summaries, and drifts into a training plan. B\u2019s main weakness is presenting 8\u201330 lb as a realistic four-month outcome without knowing starting weight; the weekly guidance is more defensible.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A gives a moderate calorie-deficit range and a protein target without pretending to know the nurse\u2019s individual calorie needs. It connects the 3 a.m. grazing to calorie intake and distinguishes evidence on overnight glucose handling from evidence on long-term fat loss. Its 8\u201330 lb projection is too broad to be useful without a starting weight, but B has larger faults: it invents the name Sam, treats athlete-oriented protein guidance as a minimum, and uses a secondary summary to imply that one fasting schedule is superior. B also moves beyond the requested findings into a training prescription.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-vegetarian",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B gives more traceable sources for its calorie and protein ranges and better reflects the person\u2019s routine: it identifies vegetarian protein sources that don\u2019t require powder and makes the cycling estimate conditional on commute frequency and intensity. Its serious flaw is asserting November 25, 2026 without a supplied date; the deadline alone does not justify a five-week weight-loss forecast. A makes the same timing assumption, invents the name \u201cSam,\u201d and gives holiday weighing more attention than the core calorie guidance.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A gives a usable calorie deficit relative to maintenance, a protein range in g/kg, and vegetarian food sources that fit the person\u2019s dislike of powders. Its citations are easier to follow, and it qualifies its conclusions about cafeteria lunches and cycling intensity rather than treating them as known. Both answers wrongly assume five weeks remain; the weekly rate is useful, but the year-end projection is unsupported. B also invents the name \u201cSam,\u201d devotes substantial space to holidays on the strength of that timing assumption, and treats yoga as categorically excluding strength work.",
+    "error": null
+   }
+  },
+  {
+   "case": "build-sam-very-low-intake",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B uses NICE and IOC guidance to explain why 900 kcal/day with five weekly spin classes is concerning and why persistent cold and exhaustion warrant clinical assessment. It gives citable calorie, protein and weekly weight-change ranges without A\u2019s speculative calculation based on an assumed class burn and fat-free mass. B would be safer if it framed the deficit and three-week loss figures strictly as population benchmarks, not targets to pursue while symptomatic.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A uses directly linked NICE and IOC guidance to explain why 900 kcal/day with five weekly spin classes is concerning and why persistent cold and exhaustion warrant clinical assessment. It gives usable protein and calorie guidance and distinguishes scale change from fat loss, though its 3\u20136 lb range would be better framed as general context rather than a wedding target. B invents the name \u201cSam,\u201d relies on weaker or untraceable citations, and uses hypothetical class expenditure and body composition to imply a level of bone risk that cannot be inferred for this person.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "empty",
+   "correct": false,
+   "verdicts": [
+    "A",
+    "both_bad"
+   ]
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "dont_know",
+   "correct": false,
+   "verdicts": [
+    "both_bad",
+    "both_bad"
+   ]
+  },
+  {
+   "case": "build-sam-night-shifts",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "empty",
+   "correct": false,
+   "verdicts": [
+    "both_bad",
+    "B"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "dont_know",
+   "correct": false,
+   "verdicts": [
+    "both_bad",
+    "both_bad"
+   ]
+  },
+  {
+   "case": "build-sam-desk-job-baseline",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

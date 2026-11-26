@@ -54,10 +54,13 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   (EVAL_REPORT 39).
 - A meal estimate that comes back without its one-line note is still shown, instead of an
   error (EVAL_REPORT 37).
+- **Checked by a second judge from the other company** (EVAL_REPORT 42): where Claude had
+  "won", only the Claude judge thought so. Vita's chat, the chips, the morning brief and the
+  insight line now also run on OpenAI, which is as good there at about half the cost. Claude
+  keeps Vita's memory and typed meals, where it measured better.
 - **OpenAI measured on every feature too** (EVAL_REPORT 41): food ideas, the checklist, the
   recap, meal photos and the whole plan now run on OpenAI, which was better or as good at about
-  half the cost (a sixth for the plan); Vita's chat, the morning brief, the insight line and
-  Vita's memory stay on Claude, which was clearly better there.
+  half the cost (a sixth for the plan); Vita's memory and typed meals stay on Claude.
 - **Every AI feature now runs on the model that measured best for it** (EVAL_REPORT 39): the
   morning brief, the insight line and Vita's memory on a stronger model, the checklist and
   typed meals and food suggestions on a newer one, and the whole plan on the newest Opus.

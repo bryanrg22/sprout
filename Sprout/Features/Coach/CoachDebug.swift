@@ -316,6 +316,7 @@ extension ChatDebug {
     @MainActor
     static func runScript(engine: CoachTurnEngine, transcript: ChatTranscript,
                           center: AskVitaCenter?, scrollToTop: @escaping () -> Void,
+                          isAtBottom: @escaping () -> Bool = { true },
                           arrive: @escaping (String) -> Void) {
         let steps = self.steps.filter { $0 != "hold" }
         guard !steps.isEmpty else { return }
@@ -324,6 +325,17 @@ extension ChatDebug {
             for step in steps {
                 if step == "top" {
                     scrollToTop()
+                } else if step == "arrive:away" {
+                    // A message arrives once the reader has left the bottom and stayed away for
+                    // two seconds, however long the test took to get there: an event, not a
+                    // timer, so a slow runner cannot land it while the reader is still at the
+                    // bottom (where it is not counted as new). Gives up after 60 seconds.
+                    var awayFor = 0
+                    for _ in 0..<240 where awayFor < 8 {
+                        try? await Task.sleep(for: .milliseconds(250))
+                        awayFor = isAtBottom() ? 0 : awayFor + 1
+                    }
+                    if awayFor >= 8 { arrive("A message that arrived while you were reading (#9999)") }
                 } else if step.hasPrefix("arrive:"), let seconds = Double(step.dropFirst(7)) {
                     // A message arrives on its own after a while (another device, a late
                     // reply), so a test can be reading further up when it lands.

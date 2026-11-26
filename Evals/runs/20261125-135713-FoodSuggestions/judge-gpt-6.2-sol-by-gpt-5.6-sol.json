@@ -1,0 +1,379 @@
+{
+ "task": "foodSuggestions",
+ "run": "20261125-135713-FoodSuggestions",
+ "baseline": "anthropic:claude-sonnet-5-5",
+ "candidate": "openai:gpt-6.2-sol",
+ "judge": {
+  "model": "gpt-5.6-sol",
+  "effort": "low",
+  "answered_by": [
+   "gpt-5.6-sol"
+  ],
+  "rubric_sha256": "3319337dd7474dd4ea3ca1fadccf261490d1a126a23e304e033c7278f8ae7818",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 18,
+ "pairs_skipped": [],
+ "cases": 18,
+ "candidate_wins": 16,
+ "baseline_wins": 1,
+ "ties": 1,
+ "both_bad": 0,
+ "orders_agree_share": 0.9444444444444444,
+ "net": 0.8333333333333334,
+ "net_ci95_cases": [
+  0.5555555555555556,
+  1.0
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 48,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.4168,
+ "verdicts": [
+  {
+   "case": "alex-breakfast-nothing-yet",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B gives two breakfast-appropriate, immediately doable upgrades built directly on Alex\u2019s frequently logged eggs and toast, protein shake, and banana. Its protein math uses the provided baselines and reasonable additions, while Answer A makes more questionable calorie/protein claims and proposes unnecessarily large, more elaborate meals. B also supports lean gain without forcing protein into every suggestion.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives two practical breakfast additions built directly around Alex\u2019s familiar eggs and toast, protein shake, and banana. Its portions and estimates are plausible, and it supports weight gain without unnecessarily forcing protein into every option. Answer B is less reliable: its \u201cextra\u201d calorie/protein claims lack a clear baseline, the shake estimate depends on unspecified shake calories, and the swap framing is less aligned with the add-or-upgrade rule.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-dinner-big-gap-nearby",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B builds directly on Alex\u2019s familiar Eggs and toast and Peanut butter sandwich without repeating foods already eaten today. Its portions are concrete, protein-forward, and the two suggestions together plausibly address the 80 g gap. Answer A offers suitable dinner options, but introduces mostly unfamiliar meals and gives a notably low protein estimate for 3 eggs plus 1 cup of egg whites and toast.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A builds directly on familiar foods Alex has not eaten today, gives concrete portions, and together its suggestions plausibly cover the 80 g protein gap. Both options are actionable, protein-forward, and compatible with dinner/evening eating. Answer B includes useful variety and a natural nearby pick, but invents less-familiar meals and substantially understates the protein in its stated egg-and-toast combination.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-late-snack-nearly-there",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more concise, snack-appropriate, and gives two clearly portioned, immediately doable options that address the remaining calorie and protein gaps. Its yogurt bowl fits the available room especially well. Answer A is also actionable, but \u201cbefore bed\u201d does not match the stated snack context, and the trail mix option falls short of the protein gap without a clear reason to prefer it.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more immediately usable: both snack ideas name clear foods, portions, calories, and protein, and neither repeats something already eaten today. Its yogurt bowl fits the remaining calorie room particularly well and closes the protein gap. The cheddar-and-apple option is slightly above the stated 250 kcal room, but Answer B has larger issues: vague serving sizes in the first card, no calorie estimate in the second, and an unsupported bedtime framing when the input only says snack time.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lunch-little-history",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A better targets the large protein and calorie gaps with a substantial chicken-and-rice lunch, then offers concrete calorie and protein additions. It builds on Alex\u2019s familiar meal without repeating today\u2019s protein shake, and each suggestion is specific and lunch-appropriate. Answer B is also usable, but its beans and extra rice add relatively little toward the 122 g protein gap, and the \u201c42 g protein\u201d estimate for the stated portion is somewhat optimistic.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A builds directly on Alex\u2019s familiar chicken and rice, gives practical portions, fits lunch, and avoids repeating today\u2019s protein shake. Its suggestions support both the large protein gap and the calorie surplus needed for lean gain. Answer B\u2019s \u201cdouble\u201d portion assumes an unstated baseline, and its protein and calorie estimates appear inconsistent with the listed amounts.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more focused and immediately doable, using Alex\u2019s familiar chicken and rice plus protein shake to address the lunch-time protein gap. Answer A adds unsupported details such as whole milk providing \u201c+8 g\u201d and a vague turkey-or-yogurt upgrade supposedly reaching \u201c35+ g,\u201d and \u201cdouble the chicken\u201d lacks a known baseline. Although B\u2019s estimated 55 g for the bowl is also not supplied by the input, its overall recommendation is clearer and better grounded in the logged foods.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more focused and immediately doable: it builds lunch around Alex\u2019s familiar chicken and rice, gives concrete portions, and adds the familiar protein shake to address the large protein gap. Answer B offers useful options, but \u201cdouble the chicken\u201d assumes an unknown usual portion, the whole-milk amount is unspecified, and the PB sandwich claim that either two turkey slices or Greek yogurt would raise it to 35+ g protein is questionable. A is therefore clearer and more reliable.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-dinner",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B better builds on Alex\u2019s familiar foods without repeating eggs and toast or chicken and rice, and both suggestions are immediately actionable with clear portions. Its options also help close the remaining protein gap while adding enough substance for the evening. Answer A offers a useful shake and vegetable side, but leads with an unfamiliar salmon-or-steak meal and inaccurately implies the shake would use the full 800 kcal available.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A builds directly on Alex\u2019s familiar peanut butter sandwich, protein shake, and banana without repeating foods already eaten today. Its portions are concrete and help close the protein gap, though the options feel somewhat more snack-like than dinner. Answer B is more dinner-oriented, but it invents salmon or steak despite the instruction to build on familiar logged foods, and the claim that the shake uses the full 800 kcal of room is unsupported.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-vegan-breakfast",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B gives three practical breakfast upgrades built directly around Alex\u2019s familiar foods, with clear portions and plausible protein gains. It stays protein-forward while also adding useful calories for weight gain. Answer A is also relevant, but its full block of tofu plus a cup of beans is a less natural breakfast upgrade, and several of its protein and calorie estimates are more questionable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives specific, breakfast-appropriate upgrades built directly around Alex\u2019s frequently logged foods, with sensible portions and a clear protein focus. Its estimates broadly follow from the provided protein figures and common add-in amounts. Answer B uses a disallowed swap label and makes shakier claims such as 45 g protein and 600+ kcal without enough information to support them.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-vegan-dinner",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B consistently builds on Alex\u2019s familiar foods\u2014the Black bean burrito and Peanut butter oats\u2014without re-suggesting today\u2019s tofu scramble or shake. Its portions are specific, protein-forward, and workable at dinner. Answer A\u2019s burrito card includes tofu despite the explicit instruction not to re-suggest foods already eaten today, and its lentil-tempeh bowl invents a less familiar meal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is better because all three suggestions build on Alex\u2019s familiar Black bean burrito or Peanut butter oats and give concrete, protein-forward additions that suit dinner. Together they offer a realistic path toward the 75 g protein gap without repeating today\u2019s tofu scramble or vegan protein shake. Answer B reintroduces tofu despite it already being eaten today and invents a less familiar lentil-tempeh bowl rather than prioritizing logged staples.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-breakfast-nothing-yet",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more concise, breakfast-appropriate, and gives two immediately doable, protein-forward additions with clear amounts. It also builds directly on Sam\u2019s frequently logged oatmeal and Greek yogurt, while A adds more unsupported nutrition figures and uses slightly judgmental phrasing like \u201cactually holds you\u201d and \u201ca real 30g+ protein start.\u201d Both invent some protein estimates beyond the provided data, but B has fewer and otherwise fits the feature better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more grounded in Sam\u2019s logged foods, directly combining familiar oatmeal and Greek yogurt into a practical protein-forward breakfast. Its second option is specific and suitable for breakfast, while Answer B overstates protein for some portions, uses mildly judgmental phrasing like \u201cactually holds you\u201d and \u201creal 30g+,\u201d and labels an addition as a swap.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-breakfast-treats-logged-most",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B gives specific, breakfast-appropriate upgrades that build directly on Sam\u2019s usual bagel and iced latte, with plausible portions and protein estimates. Answer A is similarly actionable, but several estimates are overstated or internally inconsistent, especially claiming ultra-filtered milk adds 20\u201325 g and that a roughly 40 g breakfast is about 40% of a 115 g target.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three specific, breakfast-appropriate protein additions tied directly to Sam\u2019s usual bagel and iced latte, with reasonable portions and protein estimates. Answer B is also actionable, but it conflates protein powder and ultra-filtered milk as both adding 20\u201325 g, and its claim that the egg sandwich reaches about 40% of the daily target is overstated. A is more accurate and consistently grounded in the logged foods.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A offers three concrete, dinner-appropriate options with useful portions, including the familiar Turkey sandwich and one natural Corner Market pick. It directly addresses the remaining protein gap without overemphasizing it, while also offering a vegetable add-on. Answer B builds well on the Turkey sandwich, but its two cards are essentially parts of one meal and provide less choice.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B offers three concrete, dinner-appropriate options, including a familiar turkey sandwich with an amount and a nearby grocery pick that naturally uses the provided location. It directly addresses the 27 g protein gap while also adding vegetables without suggesting restriction. Answer A is workable, but both cards revolve around the same turkey sandwich, and the second does little to address the stated gap.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dinner-protein-already-hit",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B gives two specific, dinner-appropriate options that roughly fit the 200-calorie room and acknowledges that protein is already on target. It also builds one suggestion around Sam\u2019s familiar chicken burrito bowl without re-suggesting foods eaten today. Answer A\u2019s salmon and sweet potato suggestion would substantially exceed 200 calories, and its upgraded burrito bowl lacks usable portions and a credible calorie estimate.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives two concrete, dinner-appropriate options with portions that roughly fit the 200-calorie room and acknowledges that protein is already covered. It also connects naturally to Sam\u2019s familiar chicken burrito bowl without re-suggesting foods eaten today. Answer B includes a salmon-and-sweet-potato meal that would substantially exceed 200 calories, and its burrito bowl suggestion lacks enough portion detail to support its calorie claim.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lunch-nearby-no-category",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more concise and immediately doable, using Sam\u2019s familiar chicken burrito bowl and turkey sandwich with clear amounts. Its chicken bowl suggestion accurately uses the provided ~45 g protein figure. The turkey upgrade\u2019s projected 36 g total is not supplied by the input, but Answer A relies on several unsupported estimates and invents specifics about Green Bowl\u2019s menu, making it less grounded overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more grounded in Sam\u2019s logged foods and the supplied protein figures, with two practical lunch options that directly address the remaining protein gap. Its claim that 2 oz of turkey raises the sandwich to 36 g protein is not supported by the input, but Answer B invents more nutrition estimates, assumes Green Bowl\u2019s menu, and introduces less familiar foods with vague portions. A is therefore the clearer and more reliable choice.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lunch-under-protein",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B gives two lunch-appropriate, concrete upgrades built directly around Sam\u2019s familiar meals, with protein totals that reasonably follow from the provided figures. It also avoids foods already eaten today and stays focused on the protein gap. Answer A includes questionable protein math for the upgraded sandwich and adds an afternoon yogurt bowl rather than keeping every suggestion focused on lunch.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A builds directly on Sam\u2019s familiar lunch choices, gives concrete additions, and uses the provided protein figures consistently. Answer B is protein-forward, but its turkey sandwich estimate appears inconsistent with the given 24 g baseline plus extra turkey and yogurt, and the whey yogurt bowl introduces an unfamiliar food while drifting beyond the lunch meal at hand.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-snack-nearby",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B gives two distinct, snack-sized options that build directly on Sam\u2019s familiar Greek yogurt and chicken burrito bowl while targeting the protein gap with plausible portions. Answer A is repetitive with two yogurt suggestions, and its almonds-and-chia protein estimate appears overstated. B is therefore more specific, varied, and reliable for the meal at hand.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives two distinct, snack-sized options that build directly on Sam\u2019s familiar Greek yogurt and chicken burrito bowl, with concrete portions and plausible protein totals. It avoids foods already eaten today and meaningfully addresses the 40 g protein gap. Answer B is repetitive with two yogurt cards, slightly overstates the protein from almonds and chia, and assumes specific Juice Stop ingredients that were not provided.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-snack-trend-unknown",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B consistently builds on Sam\u2019s familiar Apple, Cheese stick, and Granola bar while giving specific, snack-sized protein upgrades. Its suggestions make larger, clearer progress toward the 65 g protein gap, and the higher-protein granola bar is a direct upgrade rather than a restriction. Answer A is also usable, but its apple combination appears to understate protein and is less efficient for the stated gap.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more directly focused on the large protein gap, with specific snack-sized additions and clear quantities. It builds on all three frequently logged foods, avoids the turkey sandwich, and its options generally provide more protein than B\u2019s first suggestion. B is still workable, but the apple, peanut butter, and cheese combination is less protein-efficient and its stated protein estimate appears low.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-vegetarian-dinner",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B directly builds on Sam\u2019s familiar tofu stir-fry and cottage cheese, avoids foods already eaten today, and gives specific portions that collectively address the 53 g protein gap. Its protein arithmetic is consistent with the provided figures and the additions are practical for dinner. Answer A includes a less familiar seitan meal and makes a questionable claim that a full 14 oz tofu block plus edamame totals only about 40 g protein.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A builds directly on Sam\u2019s familiar tofu stir-fry and cottage cheese, avoids foods already eaten today, and offers concrete portions that nearly close the 53 g protein gap. Its two suggestions work together as a realistic dinner within the stated calorie room. Answer B includes an unfamiliar seitan meal, adds berries without need, and gives protein estimates that do not align as cleanly with the logged-food data.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-vegetarian-lunch",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more focused and practical: both lunch suggestions build directly on Sam\u2019s familiar meals, give clear amounts, and meaningfully raise protein without repeating cottage cheese. Answer A has useful ideas, but adding protein powder to lentil soup is less natural and unfamiliar, while the tofu stir-fry suggestion is more complicated than needed.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more focused and immediately actionable, with two protein-forward lunch upgrades based on Sam\u2019s familiar tofu stir-fry and lentil soup. It avoids cottage cheese and only suggests additions. Answer B offers more complicated either/or choices, introduces unfamiliar protein powder, and uses a \u201cswap\u201d framing despite the instruction to add or upgrade.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

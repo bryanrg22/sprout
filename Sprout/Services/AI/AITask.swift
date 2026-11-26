@@ -71,18 +71,20 @@ extension AIConfig {
         // turn alone it chose the right tool 102/102 twice and 101/102 (EVAL_REPORT 10). About
         // an eighteenth of the cost and twice as fast (EVAL_REPORT 37). Switched by the
         // owner's decision before the judge was checked against the owner's labels (EVAL_REPORT 38).
-        .coachTurn: [.anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 37")],
+        .coachTurn: [.anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 37"),
+                     .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 42")],
         // The chat chips: both 100% on the rules, and the judge leaned to claude-haiku-5-5 (25 to
         // 13, +0.25, -0.04 to +0.54), an interval that does not favour the shipped model, at a
         // twenty-first of the cost (EVAL_REPORT 36, decided in 38).
-        .coachPrompts: [.anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 36")],
+        .coachPrompts: [.anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 36"),
+                        .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 42")],
         // The daily brief: claude-haiku-5-5 and claude-sonnet-5 both keep the numbers (rules 97%
         // and 100%), but a blind judge preferred claude-sonnet-5 20 to 2 (+0.24 to +0.70): the
         // cheaper model broke the brief's own format and once dropped a number (EVAL_REPORT 39).
         // About $1.40 per 1,000 briefs, one a day. OpenAI: EVAL_REPORT 10.
         .dailyBrief: [
             .anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 39"),
-            .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 10"),
+            .openai: AITaskDefault(model: "gpt-6.2-sol", evidence: "EVAL_REPORT 42"),
         ],
         // Short-writing tasks. Anthropic: claude-haiku-5-5 (thinking off, EVAL_REPORT 25)
         // passed as often as claude-haiku-4-5 or more, 5 repeats on the current prompts, at a
@@ -92,7 +94,7 @@ extension AIConfig {
         // (+0.05 to +0.47) with the rules equal (EVAL_REPORT 39); one line a day.
         .insightLine: [
             .anthropic: AITaskDefault(model: "claude-sonnet-5", evidence: "EVAL_REPORT 39"),
-            .openai: AITaskDefault(model: "gpt-6-luna", evidence: "EVAL_REPORT 22"),
+            .openai: AITaskDefault(model: "gpt-6.2-sol", evidence: "EVAL_REPORT 42"),
         ],
         .weeklyReflection: [
             .anthropic: AITaskDefault(model: "claude-haiku-5-5", evidence: "EVAL_REPORT 35"),
@@ -181,6 +183,10 @@ extension AIConfig {
         .foodSuggestions: .openai, .checklistPlan: .openai, .progressSummary: .openai, .mealPhoto: .openai,
         .planBuild: .openai, .planReview: .openai, .planResearch: .openai,
         .onboardingNote: .openai, .weeklyReflection: .openai,
+        // A judge from each family (EVAL_REPORT 42): the Claude judge's preference for Claude
+        // on these four was not shared by the OpenAI judge, and the pooled verdict holds zero,
+        // so the cheaper vendor runs them.
+        .coachTurn: .openai, .coachPrompts: .openai, .dailyBrief: .openai, .insightLine: .openai,
     ]
 
     /// The vendor a task runs on: a scoped runtime's (tests, evaluations), else the one it

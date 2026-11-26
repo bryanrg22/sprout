@@ -1,0 +1,395 @@
+{
+ "task": "insightLine",
+ "run": "20261125-135250-InsightLine",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "openai:gpt-6.2-sol",
+ "judge": {
+  "model": "gpt-5.6-sol",
+  "effort": "low",
+  "answered_by": [
+   "gpt-5.6-sol"
+  ],
+  "rubric_sha256": "02ae50b942625c89960bad7214e7e8ffdc63a99f2eea04d47d250e4d08cd152b",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 19,
+ "pairs_skipped": [],
+ "cases": 19,
+ "candidate_wins": 11,
+ "baseline_wins": 5,
+ "ties": 3,
+ "both_bad": 0,
+ "orders_agree_share": 0.8421052631578947,
+ "net": 0.3157894736842105,
+ "net_ci95_cases": [
+  -0.10526315789473684,
+  0.6842105263157895
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 50,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.1831,
+ "verdicts": [
+  {
+   "case": "fuel-up-evening",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the gentle nudge toward a proper dinner or snack and sounds warmer and more like a friend texting. Answer B is accurate, but \u201csubstantial\u201d and \u201ccatch up\u201d feel more formal and potentially pressuring.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the caring nudge to eat enough without pushing restriction. Answer B sounds warmer and more like a friend texting, while Answer A\u2019s \u201cwell short\u201d and \u201ccatch up\u201d feel more tracker-like and potentially pressuring.",
+    "error": null
+   }
+  },
+  {
+   "case": "fuel-up-late",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the gentle nudge toward a proper dinner or substantial snack while sounding warmer and more like a friend texting. Answer B is accurate, but \u201cfuel target\u201d feels more clinical and app-like.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the caring nudge to eat a substantial dinner or snack without encouraging restriction. B sounds warmer and more like a friend texting, while A feels more app-like and uses the slightly awkward phrase \u201cunder your fuel target.\u201d",
+    "error": null
+   }
+  },
+  {
+   "case": "gentle-default",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers preserve the original meaning, stay concise, and sound warm and encouraging. Answer B reads slightly more naturally as a friendly one-line message, while A\u2019s \u201cEvery check-in is you getting\u201d is a bit awkward.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers closely preserve the original meaning and keep the warm, encouraging tone. Answer A reads slightly more naturally and smoothly as a friendly one-line message, while Answer B\u2019s phrasing (\u201cis you getting\u201d) is a bit less polished.",
+    "error": null
+   }
+  },
+  {
+   "case": "hydrated",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both preserve the observation and sound warm and encouraging. Answer B is slightly better because it stays closer to the template\u2019s wording, while Answer A adds \u201ctoday\u201d and reframes hydration as a habit, neither of which is explicitly given.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays closest to the original meaning while sounding warm and celebratory. Answer B adds \u201ctoday\u201d and reframes hydration as a habit, details not explicitly given in the observation.",
+    "error": null
+   }
+  },
+  {
+   "case": "hydration-streak-5",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers preserve the observation, sound warm and encouraging, and add no unsupported details. Answer B is slightly more direct and natural as a friend texting \u201cyou,\u201d while Answer A\u2019s phrasing is a bit less conversational.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both preserve the exact meaning and number while sounding warm and encouraging. Answer A feels slightly more natural and personal as a friend texting \u201cyou,\u201d whereas B is a bit more abstract in saying the habit is \u201ctaking shape.\u201d",
+    "error": null
+   }
+  },
+  {
+   "case": "moved",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers preserve the observation and sound warm and encouraging. Answer B is slightly more natural and concise, while \u201cit\u2019s building up\u201d in A is a little less idiomatic than \u201cadds up.\u201d",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both preserve the observation and sound encouraging. Answer A is slightly more natural and concise, while \u201cit\u2019s building up\u201d in Answer B sounds a bit awkward compared with the intended \u201cadds up.\u201d",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-hit",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B preserves all parts of the original meaning: hitting protein, staying full, feeling strong, and recovering well. Answer A is upbeat, but it drops the fullness benefit and adds the more exaggerated phrase \u201clike a champ.\u201d",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A closely preserves all parts of the observation: hitting protein, staying full, feeling strong, and recovering well. Answer B is upbeat, but it drops the fullness benefit and feels slightly more exaggerated.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-streak-12",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers preserve the 12-day protein-goal streak and celebrate it warmly. Answer B is slightly better because it is concise and clearly grounded in the observation, while Answer A\u2019s claim that the user\u2019s body is \u201cloving\u201d the consistency is a bit more speculative.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both preserve the 12-day protein-goal streak and celebrate it warmly without adding advice. Answer A is slightly better because it directly addresses the user, clearly celebrates the streak, and avoids the unsupported claim that the body is \u201cloving\u201d it.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-streak-4",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers accurately celebrate the four-day protein streak in a warm, concise way. Answer B is slightly better because \u201clook at you\u201d feels especially friendly and upbeat, while Answer A\u2019s claim that the user\u2019s body is \u201cloving\u201d it is a little more presumptive than the template.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both preserve the four-day protein-goal streak and celebrate it warmly. Answer A sounds slightly more natural and friend-like, while Answer B\u2019s claim that the user\u2019s body is \u201cloving\u201d it is a bit more presumptive.",
+    "error": null
+   }
+  },
+  {
+   "case": "steps-goal",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both preserve the observation and sound upbeat. Answer B is slightly better because it matches the original meaning more directly and uses natural, concise wording, while \u201ccrushed\u201d and \u201cget those legs moving\u201d in A add a bit of unnecessary intensity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both preserve the observation and offer warm, concise encouragement. Answer A more closely matches the friendly, natural tone of the template, while \u201ccrushed\u201d in B is slightly more exaggerated.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-3",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both preserve the core meaning and are encouraging. Answer A is warmer and more natural as a friendly, glanceable text, while \u201cthree days strong\u201d still clearly reflects the three-day streak and \u201cnice and steady\u201d keeps the gentle tone; Answer B is accurate but more closely echoes the template and sounds slightly more directive.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the core meaning and feel encouraging. Answer B is warmer, more natural, and easier to scan, while still conveying the three-day streak and steady habit-building without adding unsupported advice or figures.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-week-28",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both preserve the 28-day streak and celebrate consistency over perfection. Answer A feels more naturally upbeat and friend-like, while Answer B\u2019s \u201cnot for being perfect\u201d phrasing sounds slightly awkward and less warm.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the 28-day streak and warmly celebrate consistency. Answer B is more natural and upbeat, while A\u2019s \u201cnot for being perfect\u201d sounds slightly awkward and could imply perfection is being judged.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-week-7",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both preserve the exact meaning, keep the stated 7-day figure, and sound warm and encouraging. Answer B reads slightly more naturally as a single, concise text-style sentence, while Answer A is a bit more repetitive with \u201cfor it.\u201d",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers preserve the exact meaning, keep the 7-day figure, and sound warm and encouraging. Their small stylistic differences do not make either clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "welcome-back-14",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A feels warmer and more celebratory, while clearly preserving the ideas of returning after time away and making a fresh start. Answer B is accurate but \u201clogged again\u201d sounds more like app language than a friend texting.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the meaning and avoid mentioning numbers. Answer B feels warmer and more like a friend texting, while \u201clogged again\u201d in Answer A sounds slightly more app-like.",
+    "error": null
+   }
+  },
+  {
+   "case": "welcome-back-5",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B keeps the focus on returning to logging after a break and warmly celebrates that return without mentioning numbers. Answer A is friendly, but calling it \u201cthe hardest part\u201d slightly changes the template\u2019s meaning.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the core meaning, avoid numbers, and warmly celebrate the return. Answer B more closely captures the encouraging template\u2019s full message, including showing back up and treating today as a fresh start, while still sounding friendly and concise.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-gain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B more directly preserves the key celebration that eating enough supports building strength. It is warm, concise, and natural, while Answer A drops the explicit \u201ceating enough\u201d point and adds \u201cshowed up for yourself.\u201d",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A most faithfully preserves the key message that eating enough supports building strength. Answer B is warm, but \u201cgood fuel\u201d shifts toward food quality and loses the explicit celebration of eating enough.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-lose",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is clear, warm, and keeps the key celebration of fueling well and eating enough. It omits the weight-loss outcome, but Answer A\u2019s \u201chelps it stick for good\u201d is ambiguous and could even sound like the weight itself will stick.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B better preserves the link between fueling well and lasting progress, while keeping the tone warm and concise. Answer A is encouraging, but it drops the original point that eating enough supports weight loss and keeping it off.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are warm, concise, and preserve the positive message about eating enough. Answer B stays closest to the template\u2019s meaning, while A changes \u201cfeel good\u201d to \u201cstrong\u201d and is slightly more effusive.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays closest to the original meaning, clearly celebrating getting enough fuel and connecting it to feeling steady and good. Answer B is warm, but changes \u201cfeel good\u201d to \u201cstrong,\u201d which adds a slightly different claim.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-unknown",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B preserves the full meaning: eating enough supports both feeling your best and continued progress, while staying warm and concise. Answer A is upbeat, but it drops the \u201cfeel your best\u201d point and is slightly less explicit about eating enough.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A most faithfully preserves the full meaning: the person ate enough, which supports feeling their best and making progress. It is warm, concise, and natural. Answer B is encouraging, but it drops the explicit idea of eating enough and feeling your best.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "streak-3",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "streak-3",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "streak-3",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "hydration-streak-5",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "hydration-streak-5",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "hydration-streak-5",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}
