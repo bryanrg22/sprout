@@ -27,6 +27,8 @@ enum UITestHooks {
     /// With `--ui-testing`: behave as if the on-disk store had failed to open, so a flow can
     /// check that such a launch shows `StoreUnavailableView` and never onboarding.
     static let storeFailureArgument = "--ui-test-store-failure"
+    /// Lay the chat out as it is with VoiceOver on (a UI flow cannot turn VoiceOver on).
+    static let voiceOverLayoutArgument = "--ui-test-voiceover-layout"
 
     struct SimulatedStoreFailure: Error, CustomStringConvertible {
         var description: String { "simulated by --ui-test-store-failure" }
@@ -42,6 +44,8 @@ enum UITestHooks {
         var freshDefaults = false
         /// `--ui-test-store-failure` was passed as well.
         var simulateStoreFailure = false
+        /// `--ui-test-voiceover-layout` was passed as well.
+        var voiceOverLayout = false
 
         static let inert = Plan()
     }
@@ -54,7 +58,8 @@ enum UITestHooks {
             .map { String($0.dropFirst(scriptedAIPrefix.count)) }
         return Plan(isActive: true, scriptedAI: name,
                     freshDefaults: arguments.contains(freshDefaultsArgument),
-                    simulateStoreFailure: arguments.contains(storeFailureArgument))
+                    simulateStoreFailure: arguments.contains(storeFailureArgument),
+                    voiceOverLayout: arguments.contains(voiceOverLayoutArgument))
     }
 
     static var isDebugBuild: Bool {

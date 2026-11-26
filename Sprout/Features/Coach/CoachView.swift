@@ -253,6 +253,25 @@ struct CoachView: View {
 
     // MARK: - Conversation list
 
+    /// Whether VoiceOver is running, or a UI flow asked for its layout.
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    private var readsInDrawnOrder: Bool { voiceOverEnabled || UITestHooks.current.voiceOverLayout }
+
+    /// The stack that holds the rows. SwiftUI ignores `accessibilitySortPriority` among a lazy
+    /// stack's rows (measured: the same priorities left the order newest first in a
+    /// `LazyVStack` and put it right in a `VStack`; EVAL_REPORT 43), and the flip declares rows
+    /// newest first, so with VoiceOver on the rows go in a plain stack and are read in the order
+    /// they are drawn. Without VoiceOver the lazy stack stays: a plain one measured slower to
+    /// open and heavier (docs/chat-standards.md). The flip keeps pages from jumping either way.
+    @ViewBuilder
+    private func chatStack<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        if readsInDrawnOrder {
+            VStack(alignment: .leading, spacing: Theme.Space.xs, content: content)
+        } else {
+            LazyVStack(alignment: .leading, spacing: Theme.Space.xs, content: content)
+        }
+    }
+
     private var conversation: some View {
         // A FLIPPED list, the layout chat products use (Stream's SwiftUI message list,
         // UIKit chats on a flipped table): the scroll view is turned upside down and every row
@@ -262,12 +281,13 @@ struct CoachView: View {
         // laid out (the unflipped list held its top row from that estimate and moved it by up
         // to 178 pt: docs/chat-standards.md, section 1; EVAL_REPORT 32).
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Theme.Space.xs) {
+            chatStack {
                 // Why the last message has no reply, and what to do about it, right under it.
                 if let failure = engine.failure, !engine.isSending {
                     TurnFailureRow(failure: failure,
                                    onRetry: { engine.retry() })
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.failure)
                         .id(Self.failureID)
                         .transition(.opacity)
                 }
@@ -280,6 +300,7 @@ struct CoachView: View {
                                     onYes: { engine.confirmPendingTool() },
                                     onNo: { engine.declinePendingTool() })
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.confirm)
                         .id(Self.confirmID)
                         // The content is flipped, so its top edge is the screen's bottom.
                         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -288,6 +309,7 @@ struct CoachView: View {
                 if engine.isSending {
                     TypingIndicator(coachName: coachName)
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.typing)
                         .id(Self.typingID)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
@@ -310,6 +332,7 @@ struct CoachView: View {
                                    showDeleteDialog = true
                                })
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.message(at: index, of: transcript.rows.count))
                         .id(message.id)
                         #if DEBUG
                         .chatProbeFrame(message.id)
@@ -325,10 +348,12 @@ struct CoachView: View {
                 if transcript.window.hasEarlier {
                     LoadEarlierRow(isLoading: transcript.window.isLoadingEarlier, action: loadEarlier)
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.top(messages: transcript.rows.count))
                         .id(Self.earlierID)
                 } else if transcript.rows.count > transcript.window.pageSize {
                     ConversationStartRow()
                         .chatFlipped()
+                        .chatReadingOrder(ChatReadingOrder.top(messages: transcript.rows.count))
                 }
             }
             .padding(.horizontal, Theme.Space.md)
@@ -337,6 +362,8 @@ struct CoachView: View {
             .padding(.bottom, Theme.Space.md)
         }
         .chatFlipped()
+        // The rows' reading-order priorities are compared within this container.
+        .accessibilityElement(children: .contain)
         .chatEdgeEffectsHidden()
         // The content starts at the newest message, so the chat opens there with no scroll.
         .scrollPosition($scrollPosition)

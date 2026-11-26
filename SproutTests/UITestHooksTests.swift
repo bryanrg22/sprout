@@ -48,6 +48,19 @@ final class UITestHooksTests: XCTestCase {
         XCTAssertEqual(plan, UITestHooks.Plan(isActive: true, scriptedAI: "fail-500"))
     }
 
+    // MARK: - The chat's VoiceOver layout
+
+    func testVoiceOverLayoutIsAskedForByItsOwnArgumentAndOnlyWithUITesting() {
+        XCTAssertFalse(UITestHooks.plan(arguments: ["Sprout", "--ui-testing"], isDebugBuild: true).voiceOverLayout)
+        XCTAssertTrue(UITestHooks.plan(arguments: ["Sprout", "--ui-testing", "--ui-test-voiceover-layout"],
+                                       isDebugBuild: true).voiceOverLayout)
+        XCTAssertEqual(UITestHooks.plan(arguments: ["Sprout", "--ui-test-voiceover-layout"], isDebugBuild: true),
+                       .inert, "without --ui-testing it does nothing")
+        XCTAssertEqual(UITestHooks.plan(arguments: ["Sprout", "--ui-testing", "--ui-test-voiceover-layout"],
+                                        isDebugBuild: false),
+                       .inert, "a Release build ignores it")
+    }
+
     // MARK: - Starting from empty app defaults
 
     func testFreshDefaultsIsAskedForByItsOwnArgumentAndOnlyWithUITesting() {

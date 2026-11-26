@@ -381,4 +381,18 @@ final class ChatWindowTests: XCTestCase {
         XCTAssertFalse(ChatScrollBox.nearOldest(contentHeight: 300, endInset: 193, offset: -116, viewHeight: 874),
                        "content that does not fill the view has nothing to scroll to")
     }
+
+    // MARK: - VoiceOver's reading order (issue #7)
+
+    /// Higher is read first: the top row, then the messages oldest to newest, then what sits
+    /// under the newest message going down the screen.
+    func testTheReadingOrderIsTheDrawnOrderTopToBottom() {
+        let count = 40
+        let order = [ChatReadingOrder.top(messages: count)]
+            + (0..<count).map { ChatReadingOrder.message(at: $0, of: count) }
+            + [ChatReadingOrder.typing, ChatReadingOrder.confirm, ChatReadingOrder.failure]
+        XCTAssertEqual(order, order.sorted(by: >), "strictly from first read to last")
+        XCTAssertEqual(Set(order).count, order.count, "no two rows share a place")
+        XCTAssertEqual(ChatReadingOrder.message(at: count - 1, of: count), 1, "the newest message is above zero")
+    }
 }

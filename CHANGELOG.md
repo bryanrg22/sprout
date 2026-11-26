@@ -39,6 +39,10 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Fixed
 
+- **VoiceOver reads Vita's chat top to bottom**, oldest to newest, as it is drawn. It read it
+  backwards since the chat started loading in pages (EVAL_REPORT 43). The text box is
+  still read before the messages.
+
 - **The weekly note is shown more often.** Its prompt contained a "7" and the app throws
   away any note with a digit, so a model that repeated "7 days" lost its note to the
   template. The prompt now uses words only (EVAL_REPORT 34).

@@ -52,6 +52,7 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 40 | The plan moves to claude-opus-5-5 once it has room to think; food moves to claude-sonnet-5-5 once one suggestion is shown | 2026-11-25 |
 | 41 | OpenAI measured on every task: nine tasks move to OpenAI, each task now picks its vendor, and the gateway is live | 2026-11-25 |
 | 42 | A judge from the other family: Claude's wins were the Claude judge's taste; four more tasks move to OpenAI; the flaky UI flows fixed | 2026-11-25 |
+| 43 | VoiceOver reads the chat in the order it is drawn: sort priorities work only outside a lazy stack | 2026-11-25 |
 
 ---
 
@@ -2675,4 +2676,68 @@ Each flow passes locally. Whether CI is steady is shown only by repeated runs on
 
 - The panel is two models, not a person.
 - Vita on OpenAI has not yet been used on a phone.
+
+## 43. VoiceOver reads the chat in the order it is drawn: sort priorities work only outside a lazy stack (2026-11-25)
+
+**Why.** Issue #7. The chat is a flipped list: its rows are declared newest first, which is
+what keeps older pages from jumping (section 32). The accessibility tree followed the
+declaration, so VoiceOver would read the conversation bottom to top. The first attempt (#6)
+gave each row an `accessibilitySortPriority` matching its place on screen; the tree did not
+change, and why was not known.
+
+**How.** A UI flow reads the tree XCUITest is given (the same container order VoiceOver
+walks) in a 201-message chat, at the newest message. Each change was run alone.
+
+| What was run | Order read |
+|---|---|
+| The shipped code | input bar, #200, #199, #198, #197, #196, #195, #194: newest first, bottom to top |
+| Priorities on the rows, the container on the scroll view, still a `LazyVStack` | the same |
+| The same priorities, `VStack` in place of `LazyVStack` | input bar, #161, #162 … #200: oldest to newest, top to bottom |
+| Then priority +1 on the conversation, a container around it and the input bar | input bar still first |
+| Instead, priority −1 on the input bar's inset | input bar still first |
+
+**What it shows.** SwiftUI applied the priorities among a plain stack's rows and not among a
+lazy stack's. That is why #6 changed nothing. No Apple document says so; it is what these
+runs show on iOS 26.4.
+
+**Decision.** While VoiceOver is on, the rows go in a plain stack, so they are read as drawn
+(`CoachView.chatStack`, `ChatReadingOrder`). Otherwise the lazy stack stays: a plain one
+measured 540–650 ms to open against 360–440 ms, and 75 MB against 44 MB (docs/chat-standards.md,
+section 1). A UI flow cannot turn VoiceOver on, so `--ui-test-voiceover-layout` asks for the
+VoiceOver layout.
+
+**Checked.**
+- The order flow passes in the VoiceOver layout. Its input-bar check is a strict expected
+  failure, so it fails the day the bar moves.
+- Loading three earlier pages moves the top message 0, 0, 0 pt in both layouts.
+- All eight chat flows pass.
+- The paging flow took 239 s in the VoiceOver layout against 95 s. Most of that is XCUITest
+  reading every row of a plain stack, so it is not a measure of the app's speed.
+- Unit tests: the priorities are strictly ordered, and the switch works only with `--ui-testing`
+  in a DEBUG build.
+
+**What the VoiceOver layout costs to open.** Measured with `--chat-probe` on the simulator
+(iOS 26.4), a 201-message chat with 40 rows loaded, five launches per layout:
+
+| Layout | First draw to usable | Memory at open | Memory 5 s later |
+|---|---|---|---|
+| Lazy stack (VoiceOver off) | 256–274 ms | 42.4–42.8 MB | 43.3–43.6 MB |
+| Plain stack (VoiceOver on) | 400–409 ms | 72.3–72.5 MB | 71.9–72.3 MB |
+
+About 145 ms and 29 MB more, and only while VoiceOver is on. That matches the earlier
+measurement of a plain stack (75 MB against 44 MB), and it is the price of a conversation
+read in the order it is drawn.
+
+**Also fixed here.** "Jump to latest" failed again on CI (PR #13): the newest message was
+read 81 pt short of where it rests (712 against 631). Section 42's fix waited for the
+position at the open to settle; the position after the jump was still read after a fixed
+1.5 s, while the animated scroll could still be bringing it into place. The flow now waits
+for both to settle the same way. Locally it lands at 631 pt both times. Whether CI is steady
+shows only over repeated runs.
+
+**Not verified.**
+- VoiceOver itself, on a phone. The owner's check is in issue #7: swipe left from the newest
+  message, and a three-finger swipe down.
+- What the plain stack costs after many pages are loaded (it lays out every loaded row).
+- The input bar is still read first.
 
