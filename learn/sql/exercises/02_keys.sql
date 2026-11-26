@@ -1,0 +1,11 @@
+-- 02 · How Core Data hands out keys
+--
+-- Z_PRIMARYKEY has one row per entity: its number (Z_ENT, also stored in every row of its
+-- table), its name, and Z_MAX, the last primary key handed out. List Z_ENT, Z_NAME and Z_MAX
+-- for the app's entities (Z_ENT below 16000; above are Core Data's history entities) that
+-- have handed out at least one key, by Z_ENT.
+--
+-- Then think: after a row is deleted, is Z_MAX still the row count? (README, "Questions")
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 02
+

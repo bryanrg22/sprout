@@ -1,0 +1,1 @@
+CREATE INDEX food_by_date ON ZFOODENTRY (ZDATE);

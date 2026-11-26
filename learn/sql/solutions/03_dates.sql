@@ -1,0 +1,3 @@
+SELECT date(ZDATE + 978307200, 'unixepoch', 'localtime') AS day, ZWEIGHTLBS
+FROM ZWEIGHTENTRY
+ORDER BY ZDATE;

@@ -1,0 +1,11 @@
+-- 01 · Which tables hold the app's data?
+--
+-- Every model in the app (FoodEntry, WeightEntry, ...) is a table named Z + the model's name
+-- in capitals. Core Data's own tables start with Z_ ; the history and CloudKit ones with A.
+-- List the names of the 20 model tables, alphabetically.
+--
+-- Tables: sqlite_master (SQLite's own catalogue: one row per table, index, ...)
+-- Hint: GLOB is case-sensitive and '[A-Z]' matches one capital letter.
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 01
+

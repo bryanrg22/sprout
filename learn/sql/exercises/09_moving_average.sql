@@ -1,0 +1,11 @@
+-- 09 · A window function
+--
+-- The app smooths the scale's daily noise. For every weigh-in, oldest first: its Los Angeles
+-- day, its weight, and the average of it and the six weigh-ins before it (fewer at the
+-- start), rounded to one decimal.
+--
+-- Tables: ZWEIGHTENTRY
+-- Hint: AVG(...) OVER (ORDER BY ... ROWS BETWEEN ... PRECEDING AND CURRENT ROW)
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 09
+

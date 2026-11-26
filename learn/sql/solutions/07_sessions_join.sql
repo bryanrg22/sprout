@@ -1,0 +1,8 @@
+SELECT date(s.ZDATE + 978307200, 'unixepoch', 'localtime') AS day,
+       s.ZTYPERAW,
+       COUNT(e.Z_PK) AS exercises,
+       COALESCE(SUM(e.ZWEIGHTLBS * e.ZREPS * e.ZSETS), 0) AS volume
+FROM ZWORKOUTSESSION AS s
+LEFT JOIN ZEXERCISEENTRY AS e ON e.ZSESSIONID = s.ZID
+GROUP BY s.Z_PK
+ORDER BY s.ZDATE;

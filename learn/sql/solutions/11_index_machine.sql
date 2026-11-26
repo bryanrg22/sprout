@@ -1,0 +1,1 @@
+CREATE INDEX exercise_by_machine_date ON ZEXERCISEENTRY (ZMACHINEKEY, ZDATE);

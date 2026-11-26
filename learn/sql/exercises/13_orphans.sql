@@ -1,0 +1,12 @@
+-- 13 · A query that tests the data
+--
+-- Nothing in the database stops an exercise row from pointing at a session that does not
+-- exist (there is no foreign key; README, "Why the tables look like this"). Write a check:
+-- return the Z_PK of every exercise row whose session is missing. On the clean database it
+-- must return nothing; the checker then plants one orphan (a different one each run) and
+-- your query must return exactly that row.
+--
+-- Tables: ZEXERCISEENTRY, ZWORKOUTSESSION
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 13
+

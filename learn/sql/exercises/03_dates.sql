@@ -1,0 +1,13 @@
+-- 03 · Dates are numbers
+--
+-- Core Data stores a date as seconds since 2001-01-01 00:00 UTC (a REAL). SQLite's date
+-- functions count from 1970, so add 978307200 first. List every weigh-in as its day in
+-- Los Angeles (YYYY-MM-DD) and its weight, oldest first.
+--
+-- Tables: ZWEIGHTENTRY (ZDATE, ZWEIGHTLBS)
+-- Hint: date(x, 'unixepoch', 'localtime'). The checker runs with TZ=America/Los_Angeles; in
+-- the sqlite3 shell start it as:  TZ=America/Los_Angeles sqlite3 learn/sql/sprout-demo.sqlite
+-- Try '-8 hours' instead of 'localtime' too, and look at the end of October. Why?
+--
+-- Your answer below. Run:  python3 learn/sql/check.py 03
+

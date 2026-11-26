@@ -20,12 +20,13 @@ enum DemoSeed {
         seed(context)
     }
 
-    static func seed(_ context: ModelContext) {
+    /// `gaining` picks the variant: the lean-gain "Alex" demo or the loss "Jamie" demo. It
+    /// defaults to the launch argument; the SQL learning store (`learn/sql/`) passes `true`.
+    static func seed(_ context: ModelContext, gaining: Bool = isGainRequested) {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
 
         // Profile
-        let gaining = isGainRequested
         let p = UserProfile()
         // Fictional names: the demo is in a public repository and in screenshots.
         p.name = gaining ? "Alex" : "Jamie"
