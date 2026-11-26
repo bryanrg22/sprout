@@ -1,0 +1,896 @@
+{
+ "task": "foodSuggestions",
+ "run": "20261125-105440-FoodSuggestions",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "anthropic:claude-sonnet-5-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "3319337dd7474dd4ea3ca1fadccf261490d1a126a23e304e033c7278f8ae7818",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 48,
+ "pairs_skipped": [
+  {
+   "case": "alex-breakfast-nothing-yet",
+   "repeat": 0,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "alex-dinner-big-gap-nearby",
+   "repeat": 1,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "repeat": 2,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "sam-breakfast-treats-logged-most",
+   "repeat": 1,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "repeat": 2,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "sam-vegetarian-dinner",
+   "repeat": 0,
+   "baseline_usable": true,
+   "candidate_usable": false
+  }
+ ],
+ "cases": 18,
+ "candidate_wins": 21,
+ "baseline_wins": 8,
+ "ties": 19,
+ "both_bad": 0,
+ "orders_agree_share": 0.6041666666666666,
+ "net": 0.2708333333333333,
+ "net_ci95_cases": [
+  0.0625,
+  0.47058823529411764
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 108,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.4245,
+ "verdicts": [
+  {
+   "case": "alex-breakfast-nothing-yet",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A builds entirely on Alex's logged foods (eggs and toast, protein shake, banana, peanut butter), fits breakfast, and adds calories without overloading protein, which matches the note that protein is on target. Answer B is more specific but chases protein the input says not to force, brings in oats, berries and honey that Alex has never logged, and adds calorie and protein estimates that are not in the input. A's third card overlaps somewhat with its first, but B's invented figures and unfamiliar additions are the bigger problems.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives concrete, breakfast-appropriate upgrades built on the logged foods, with amounts and calorie and protein estimates that are plausible and serve the gain goal. Its oats idea is new, but it is a common breakfast, not an unfamiliar meal. Answer B is also grounded in the logged foods, but it is vaguer and repetitive: two of its three cards are peanut butter on toast with eggs. Answer A is more specific and more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-breakfast-nothing-yet",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A has a unit error (\"2750 g goal\" instead of kcal), and its suggestions are vaguer about amounts. Answer B gives concrete, breakfast-appropriate upgrades built on logged foods (eggs and toast, shake, banana, peanut butter) with rough calorie and protein figures. Those figures are estimates rather than input data, but they are plausible approximations, not fabricated user facts. B is more specific and directly serves the calorie gap.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is specific, with quantities, and builds on Alex's logged foods (eggs and toast, shake, banana, peanut butter), which suits a gain goal at breakfast. Its kcal and protein estimates are reasonable nutrition approximations rather than invented user data, though the oats bowl brings in oats and milk that Alex doesn't log. Answer B has a clear error, '2750 g goal' instead of kcal, and is vaguer (a 'side of oats' with no amount). Answer B also leans on 'stack calories' without much specificity, so A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-dinner-big-gap-nearby",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's first card re-pitches chicken and rice, which was already eaten today, breaking an explicit rule; its nearby card also says \"plate\", a meal that doesn't really fit a deli. Answer B builds on eggs and toast, which has not been eaten today, with a concrete protein-forward dinner scramble. B's steak/salmon card is less tied to Alex's own foods, but it is specific, fits dinner, and suits the goal. B's figures match the input, so B is better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B's lead card re-pitches chicken and rice, which was already eaten today and directly violates the input. Its +50g figure for 6oz chicken is also inflated. Answer A avoids eaten foods, builds on eggs and toast from the person's logged foods, and gives concrete dinner options with plausible protein amounts. A's steak/salmon card is less tied to the person's habits, but it is still a normal dinner, so A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-dinner-big-gap-nearby",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A re-pitches chicken and rice, which was already eaten today, in its lead card, breaking an explicit rule. Answer B avoids re-suggesting today's foods and builds on eggs and toast, though its salmon bowl is a food Alex doesn't log. B's figures are reasonable estimates (the ~45 g egg scramble is roughly right with toast), and its cards are specific, protein-forward and suited to dinner. B is better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B's lead suggestion re-pitches chicken and rice, which was already eaten today, so it breaks a direct input rule. Answer A builds on the logged eggs and toast, offers a reasonable new salmon dinner and a fitting deli pick, and its figures are plausible estimates. A's salmon is a slightly new meal and 3 eggs plus a cup of egg whites at ~45 g runs a little high, but these are minor next to B's violation. A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-late-snack-nearly-there",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers ignore the logged foods, but A's apple with peanut butter at least echoes the logged peanut butter sandwich without re-pitching it, and its portions (a cup of yogurt, a tablespoon of peanut butter, a handful of almonds) are snack-sized and fit the 250 kcal room. B is more specific with its figures, but its calorie math is off: an apple with 2 tbsp almond butter is closer to 290 kcal than 200, the yogurt-granola bowl is tight against the room, and 'overnight' recovery is an odd fit for a snack. B is also wordier, and it invents more unfamiliar combinations. A is the more accurate and doable answer, though it is thinner.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both suggest snack-appropriate foods that fit the 250 kcal room and 10 g protein gap, and neither re-pitches an eaten food. Answer B leans on peanut butter, which builds on a logged food, and its quantities are modest and appropriate for 250 kcal. Answer A gives more precise amounts and targets the gap, but its options are all unlogged foods, and the cottage cheese card's 'tops off overnight' framing is a bit off for a snack. A's numbers are plausible and specific, but B is vaguer ('a cup', 'small handful'); overall the two are roughly comparable, with A more specific and B slightly better at building on logged foods.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-late-snack-nearly-there",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Neither answer builds on Alex's logged foods, but all of them were already eaten today, so suggesting new foods is reasonable here. Answer B gives concrete amounts and rough nutrition figures (estimates, not invented user data), which fits the 250 kcal room and the 10 g protein gap. B's 'pre-bed' framing is a slight stretch for a snack, but it is not harmful. Answer A is vaguer ('a cup', 'a handful', 'a few berries'), and its 'without overloading' phrasing leans toward restriction, which is a poor fit for a weight-gain goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers ignore the logged foods, but every item is a simple snack and none re-pitches a food eaten today. Answer A gives concrete amounts and fits the 250 kcal room per card, but 'pre-bed' assumes a timing the input never gives. Answer B is vaguer on amounts ('a cup', 'small handful'), and the almonds card ignores the protein gap. Its 'without overloading' phrasing also flirts with the goal rule. A's specificity and closer focus on the stated gaps make it more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-late-snack-nearly-there",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both avoid re-pitching foods already eaten today and suit a snack. A gives fuzzier amounts (\"a handful,\" \"some berries\") and says \"healthy fats,\" which edges toward moral framing. B gives concrete portions and kcal and protein estimates that fit the 250 kcal and 10 g gap, though its numbers are rough and the cottage cheese one would overshoot calories slightly. B is more specific and actionable overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Every food in the user's log has been eaten today, so new snack foods are acceptable in both answers, and both give snack-appropriate ideas aimed at the remaining 250 kcal and 10 g protein. Answer A is more specific about amounts (1 cup, ~250 kcal, ~10 g), which makes it more doable, though its cottage cheese claim of ~25 g protein is a plausible estimate rather than an invention. Answer B is vaguer: 'a small handful' and 'a few extra calories' for a weight-gain goal undersells the room left. A is more concrete and useful overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lunch-little-history",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on chicken and rice and add Greek yogurt with plausible amounts, and both respect the gain goal and avoid re-pitching the shake. A's avocado card adds only calories with no protein and its third idea is weak on the main gap. B's steak burrito bowl is a new meal not in the logs but still familiar, and it targets protein strongly. B's suggestions close the protein gap more effectively overall, though the steak bowl slightly strays from building on logged foods.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on chicken and rice, add Greek yogurt, avoid the shake, and follow the gain goal with plausible estimates. A's third card, a steak burrito bowl, is a new meal rather than an upgrade of logged foods, and the 60 g figure for 8 oz chicken is a bit high. B's three cards all build on the usual lunch, and its avocado card adds calories toward the stated 2750 target, though it adds no protein. B sticks more closely to the user's own foods with accurate numbers, so it is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lunch-little-history",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both build on chicken and rice, avoid re-suggesting the shake, suit lunch, and respect the gain rule. A's figures are roughly accurate (8oz chicken \u2248 55g protein, 2 eggs \u2248 13g), and its avocado card is a light but valid calorie add. B's 'keep you full through the afternoon' works against a gain goal that needs appetite room, 'healthy fats' edges toward food moralising, and edamame/beans 'stirred in' is a bit less natural. A is tighter and better aligned overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on the logged chicken and rice, suit lunch, and avoid the protein shake. Answer B pushes harder on the 122 g protein gap with a bigger portion (8 oz, ~55 g) and adds eggs (~13 g), giving more protein in total. Answer A's \"keep you full\" framing is a little off for a gain goal. Its \"healthy fats\" phrasing edges toward calling foods good or bad, though its estimates are reasonable. B's 120 kcal for half an avocado is a little low but plausible, and its suggestions are direct and doable, so B is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lunch-little-history",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers build on the chicken and rice, add Greek yogurt and avocado, suit lunch, and avoid re-pitching the protein shake. Answer B gives more concrete amounts (chicken and rice quantities, an olive oil option) and frames yogurt with berries as a natural finisher. B's \"healthy fats\" edges toward food labeling but is mild, and A's figures are equally reasonable. The two are very close, with B slightly more specific and actionable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers build on chicken and rice, add Greek yogurt for about 20 g protein, and suggest avocado for calories, which makes them nearly identical in substance. A gives more precise amounts (6\u20138 oz chicken, 1.5 cups rice) and offers olive oil as an alternative, while B ties its figures to the input's 122 g gap and 2750 target. A's 'healthy fats' phrasing edges toward calling a food good, which the goal rule forbids, and B's '+50g from an extra 6oz on top of a plate' is slightly loose. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers build on Alex's logged foods with nearly identical suggestions: a bigger chicken and rice, a protein shake on the side, and an upgraded PB sandwich. Each gives concrete amounts and stays protein-forward for lunch. B adds a running total (about 120g), which is useful, but its 'turkey-boosted' PB sandwich is an odd pairing and its 35g+ figure is a stretch. A is slightly cleaner, but neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers build on Alex's own logged foods (chicken and rice, protein shake, PB sandwich), suit lunch, push protein, and avoid today's banana and eggs. Answer A's \"past 120g\" quietly assumes the person also takes the first card. Its PB title promises turkey while the body offers yogurt or turkey, and the 14g to 35g+ jump is a stretch. Answer B ties its figures cleanly to the stated 115g gap and gives more plausible estimates, so it is slightly more trustworthy and coherent.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on logged foods and target protein at lunch. A's third card is muddled: it suggests the peanut butter sandwich, then says to double chicken breast instead, which reads oddly. B's sandwich upgrade is concrete. B's \"past 100 g\" checks out (35+60+30=125), though the \"60 g\" for 8 oz chicken is a slight stretch. B is the clearer, more doable set overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers build on logged foods (chicken and rice, the shake, the PB sandwich) and stay protein-forward for lunch. A's math holds up: 35 + 60 + 30 = 125 g, which is past 100 g, and the sandwich upgrade with turkey or yogurt is concrete. B's third card is confused: 'double the chicken breast on the side' of a PB sandwich makes little sense and gives no amount. A is clearer and more doable throughout.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-dinner",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's lead card re-pitches chicken and rice, which was already eaten today, and its third card is vague and partly re-pitches the rice too. Answer B's protein shake with banana and peanut butter builds well on Alex's logged foods. Its salmon dinner is less familiar but is a concrete, sensible dinner, and all three cards are specific with portions and protein estimates. Answer B avoids the repeat and fits dinner better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B's lead card re-pitches Chicken and rice, which the input explicitly says was already eaten today, and its third card also builds on the rice. Answer A avoids re-suggesting eaten foods and builds its shake card on the person's logged Protein shake, Banana and peanut butter. Its salmon dinner is less tied to their usual foods, but it is concrete, suits dinner and gives amounts. A is clearly better despite that.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-dinner",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's first card re-pitches chicken and rice, which was already eaten today and so explicitly breaks the input's rule. Its other two cards are fine: Greek yogurt is specific and protein-focused, and the veggie side is reasonable. Answer B avoids today's foods and builds on Alex's logged shake, banana and peanut butter. Its salmon plate is a new meal but reasonable for dinner, its figures are plausible estimates rather than invented data, and the PB sandwich card is a little odd for dinner but acceptable, so B is better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B's lead card re-suggests chicken and rice, which was already eaten today and is an explicit violation; its veggie card adds little toward the goal. Answer A builds on logged foods (shake, banana, PB sandwich) and gives concrete amounts, though the salmon plate is a somewhat new meal and the stacked suggestions overshoot the protein. Its figures are plausible estimates, not invented input facts. A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-dinner",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's first card re-pitches chicken and rice, which was already eaten today, breaking an explicit rule, and its banana-on-sandwich card does little for the gap. Answer B avoids repeats, gives concrete amounts, and builds on logged foods (shake, banana, peanut butter), though salmon is a new food. B's shake card fits the logged favourites and closes the protein gap well. B is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B's lead card re-pitches chicken and rice, which was already eaten today and is a direct rule violation. Its banana card adds almost nothing toward the protein gap. Answer A gives specific dinner-appropriate amounts and builds on the logged shake, banana and peanut butter, though the salmon is new and the three cards together overshoot slightly. A follows the rules and is more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-vegan-breakfast",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on Alex's logged foods, but B is more specific with quantities and estimates, and it suits a calorie-surplus goal (shake with banana and PB, oats in soy milk). A's oat idea folds the shake into the oats, which swaps rather than adds, and its third card mostly re-combines the same foods with vague amounts. B's numbers are rough estimates of add-ons rather than invented user data, and they are plausible.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers build on Alex's logged foods and suit breakfast and the protein gap. A gives concrete amounts and plausible protein estimates (2 scoops ~50 g, +15-18 g, 12 to 40+ g) that support a weight-gain goal. B's 'extra block of tofu' is a large, vague amount, and its oats swap merely moves the shake powder rather than adding protein. B's burrito idea is also loose, so A is more specific and actually adds more.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-vegan-breakfast",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers build on Alex's logged foods, fit breakfast, and aim at the protein gap within the gain goal. Answer A's 47 g sums the given figures correctly, and its other estimates (25 g+ for the oats, 15-20 g for extra tofu) are plausible, though its suggestions overlap since two of them are tofu scramble plus more. Answer B gives specific amounts, but its oats claim of 12 g rising to ~40 g is inflated (one scoop plus hemp seeds adds roughly 25 g), and its added black beans in a scramble feel a little less natural. Answer A is more accurate and simpler, so it edges ahead.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers build on Alex's logged foods, suit breakfast, and push protein without breaking the goal rule. A's numbers are mostly plausible: protein powder plus hemp seeds on oats gives roughly 12+25+6 \u2248 40 g, and black beans add about 15 g. B's 47 g combines the given 22 and 25 g figures exactly, but its \"25g+\" for the oats undersells adding a scoop of powder, and \"double the tofu\" is vague. A is more specific with concrete amounts, though B's pairing idea is simple and strong.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-vegan-breakfast",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on Alex's logged foods, fit breakfast, and aim at the protein gap within the gain goal. B gives more concrete amounts and its additions stay plant-based and familiar; its kcal and protein estimates (600+ kcal, 40 g) are rough but plausible. A has a vaguer first card and a muddled oats math claim (extra peanut butter plus a scoop adding roughly 25 g). B is somewhat more specific and calorie-aware for a gain goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both build on Alex's logged foods, stay protein-forward, and suit breakfast and the gain goal. Answer A is concrete and fitting: the oats get protein powder plus hemp, the scramble gets edamame or tempeh and toast, and the shake gains calories, which suits a 2750 kcal target. Answer B is also solid, but its third card just stacks two existing items, and its 'add roughly 25g protein' from an extra spoon of peanut butter plus powder slightly overstates the gain. A is a bit more varied and better aimed at the calorie needs of a gain goal.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-vegan-dinner",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex's logged foods are all plant-based (vegan shake, tofu scramble), so Answer A's cheese, chicken and Greek yogurt likely clash with their diet, and its tofu side re-pitches something eaten today. Answer B stays plant-based, builds on the logged black bean burrito, and its protein figures are roughly plausible, though tempeh at 30g and the quinoa bowl at ~25g are slightly generous. B's third card is a somewhat new meal, but it still fits dinner and the protein gap. B is clearly more suitable for this user.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Alex's logged foods are all plant-based (vegan protein shake, tofu scramble), which strongly suggests a vegan diet. Answer B suggests shredded cheese, chicken and Greek yogurt, which would be a poor fit, and it re-pitches tofu, already eaten today. Answer A stays plant-based, builds on the black bean burrito, and gives concrete protein amounts. Its numbers are a bit loose (the bowl titled rice uses quinoa), but it is clearly the more usable answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-vegan-dinner",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A builds on the logged black bean burrito and adds simple, dinner-appropriate protein sides (tempeh about 30g, a cup of edamame about 17g); its figures are roughly accurate, though its burrito card is vague on amounts. Answer B gives precise amounts, but its tofu bowl re-pitches tofu, which was already eaten today, and the PB oats card reads as breakfast and stirs in vegan protein, another re-pitch of today's shake. B's rice bowl is also a fairly invented meal. A fits the rules on re-suggestion and time of day better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A's third card re-pitches the vegan protein shake (a scoop of vegan protein) that was already eaten today, and its edamame rice bowl is a fairly elaborate new meal. Its PB oats also read like breakfast rather than dinner. Answer B builds on the burrito and adds simple, specific, dinner-appropriate sides with amounts that fit the 75 g gap. B's protein estimates are plausible and only one figure in it is slightly vague (\"well past\"), so B is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-vegan-dinner",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A has a garbled figure (\"25g more fuel toward your 1250 kcal\" mixes units), and \"an extra block of tofu\" for ~20g understates a full block, which is closer to 35\u201340g. Answer B builds on the logged burrito with concrete amounts and plausible numbers, and its edamame card is accurate. Its lentil-tempeh bowl is a somewhat new meal, but it uses familiar plant proteins and fits a dinner protein push. B is more specific and more coherent overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A builds on the black bean burrito with specific amounts, and its protein and calorie figures are plausible estimates that stay vegan and dinner-appropriate. Its lentil-tempeh bowl is a somewhat new meal, but it is reasonable. Answer B has a garbled phrase (\"25g more fuel toward your 1250 kcal\" mixes grams with calories) and is vague (\"an extra block of tofu\" for only ~20g, \"whatever you're making\"). Tofu also repeats today's tofu scramble ingredient, so A is clearer and more actionable overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-breakfast-nothing-yet",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers build on the Greek yogurt and oatmeal, give concrete amounts, and fit breakfast and protein. A is direct and doable, though doubling the yogurt to about 35 g and three eggs at 20-25 g are slightly generous estimates. B's figures are reasonable, but stirring egg whites into oatmeal is a less familiar method, and its three-egg scramble with toast at about 25 g is a little high. Each is fine with only minor quibbles, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on the logged Greek yogurt and oatmeal with concrete amounts at breakfast and aim at protein. A's egg whites stirred into oatmeal reads less familiar, its third card is a new meal, and its \"1 cup egg whites +25 g\" is loose. B's cards are simple and doable, though its third card loosely pairs eggs with an unspecified breakfast. Overall B sticks closer to the person's own foods with easy upgrades, so it is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-breakfast-nothing-yet",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on Sam's yogurt and oatmeal, suit breakfast, and stay protein-forward. A's first card treats granola with nuts as interchangeable with protein powder for reaching 30g+, which is wrong. It also gives a vague 'egg white splash'. B's numbers are roughly plausible, though chia and berries giving +8 g protein is a stretch. B's amounts are more concrete, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both build on Greek yogurt and oatmeal, fit breakfast, and target protein without restriction. Answer A's yogurt card adds only ~8 g of protein, and chia and berries add little protein, so it is weaker for the protein gap. Answer B's \"granola with nuts\" option overstates reaching 30g+, but its protein powder route does close the gap. A's oatmeal math (6+25\u224830) and its eggs card are solid, so the two are fairly close, with B's cards slightly more protein-forward and A slightly more accurate.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-breakfast-nothing-yet",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both build on the logged yogurt and oatmeal with concrete amounts suited to breakfast. A's yogurt card is muddled: a handful of nuts would not take a doubled yogurt to 35g+ the way protein powder would. A's eggs card is clean. B's yogurt 'swap' is odd, trading Greek yogurt for Greek yogurt and landing at 25g, only modestly more than the usual 17g. B's oatmeal card is strong, and its egg scramble is specific and lightly framed toward the 115g goal, though its amounts are slightly fussier. Each answer has one weak card and they are otherwise comparable, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on the logged oatmeal and Greek yogurt with protein-forward breakfast upgrades. A's yogurt 'swap' is muddled (Greek yogurt traded for Greek yogurt) and its 25g claim is shaky, and its third card introduces a new scramble meal. B's cards are all simple add-ons to Sam's usual foods with plausible protein numbers. B is slightly tighter and better anchored to what Sam already eats.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-breakfast-treats-logged-most",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers build on the bagel and latte, fit breakfast, and avoid the gummy bears. Answer A's cottage-cheese swap claims \"triple to ~25g\", which overstates what one scoop adds, though its eggs and latte cards are clean and distinct. Answer B is more accurate on the bagel but bundles eggs into it, then repeats eggs as a separate card, and its 'way ahead of your 115g target' line overstates what 35g does. A is tighter and more distinct across its cards with only a mild overstatement, so it is somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on the bagel and the latte, and both stay at breakfast and protein-forward. A's bagel card packs a swap plus eggs into one sentence. Its third card invents a large separate meal that doesn't build on the bagel, and \"way ahead before noon\" overstates things, since 35 g is not ahead of a 115 g target. B's figures are roughly sound: a scoop of cottage cheese gives about 25 g total, eggs add about 18\u201320 g, and the latte goes from ~6 g to ~30 g. B's cards are cleaner and tied to Sam's own foods.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-breakfast-treats-logged-most",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on the bagel and latte, avoid the gummy bears, and suit breakfast with protein-forward adds. A's \"almost zero added calories\" for egg whites leans toward a restriction framing, though it is minor; its swap claims are reasonable. B upgrades both logged staples with concrete amounts (the protein latte is especially low-friction), but its third card overlaps with the eggs already in card one, and the \"30g+\" bagel figure is a bit generous. Overall B builds more directly on Sam's own habits and is slightly stronger.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both build on the logged bagel and latte, stay breakfast-appropriate, and avoid the gummy bears. A's protein latte is a clever routine-preserving upgrade, but its bagel card stacks swaps and sides into a clunky sentence, and its third card invents a fuller unrelated scramble. B's cards are simpler and doable, though 'almost zero added calories' for egg whites is a slightly diet-flavoured framing and 3/4 cup Greek yogurt giving ~20g is a bit generous. Overall A's latte idea and clear numbers edge it slightly, but the differences are small and both are serviceable.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both lead with the turkey sandwich, which builds on Sam's logged foods. A's set is coherent: the sandwich, a side salad to go with it, and a nearby protein top-up, all within 550 kcal and the 27 g gap. B gives portions, but its three cards are competing full dinners, and the chicken-and-rice plate repeats the chicken burrito bowl already eaten today. A is slightly vaguer, but its picks work together and avoid that repetition, so it reads better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers build on the logged turkey sandwich, avoid foods already eaten today, and use the nearby pick properly. Answer A's figures are reasonable estimates, but its chicken-rice idea is a full extra dinner, and A as a whole could push well past 550 kcal; it also never ties back to the user's own numbers. Answer B accurately cites the input's 24 g, 550 kcal and 27 g, and its side-salad add-on fits the hint not to force protein into every pick, though its rotisserie option is vaguer on quantity. B is more grounded in the input and better scoped for the remaining room, so it is modestly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers build on the turkey sandwich, use Corner Market and avoid re-pitching foods already eaten today. B gives concrete amounts (4\u20135 oz turkey, 1.5 cups broccoli) and gram estimates that are plausible, so its picks are more specific and doable. A stays vaguer (\"extra turkey\", \"a tray\") and its salmon-or-chicken plus starchy-side pick is less precise. B's 'full into the evening' framing is mild and does not restrict, so B is clearly more actionable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers build on the turkey sandwich, avoid foods already eaten today, fit dinner, and use Corner Market sensibly. Answer A is more specific, giving amounts (4\u20135 oz turkey, 1.5 cups broccoli, roughly 30 g protein) that close the 27 g gap concretely. Answer B is vaguer ('extra turkey', 'a tray'), though its framing about using the remaining calories fits the eat-enough rule. A's quantified, doable picks make it more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dinner-protein-already-hit",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B claims a full chicken burrito bowl with extra beans fits the 200 kcal of room, which is false since that bowl runs well over 200 kcal. It also adds figures not given in the input (60-80 kcal for berries). Answer A's burrito bowl also overshoots 200 kcal, but it at least acknowledges the room and builds on the logged go-to and dinner-appropriate sides without inventing numbers, though 'lighter on rice' leans toward restriction. Both are flawed, but A has fewer invented facts and fewer misleading claims, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A says a full burrito bowl with extra beans fits the 200 kcal of room, which is false (a ~45 g protein bowl is far over 200 kcal), but it otherwise offers concrete, additive picks with amounts, like 1 cup of berries. Answer B frames the bowl as 'lighter on rice to keep it in range', which leans toward restriction against the goal rule, and its avocado and olive-oil sides are vague with no amounts. Both mishandle the calorie room around the bowl, but A stays additive and specific while B edges into eating less. A is modestly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dinner-protein-already-hit",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B falsely claims a ~45 g protein, likely 500+ kcal burrito bowl fits 'comfortably' in 200 kcal, and its rice swap is framed as saving kcal, which drifts toward restriction. Answer A has similar issues: 'lighter build' and 'without extra heavy calories' edge toward restriction, and the veggie plate lacks amounts. A at least fits its burrito bowl suggestion within the 200 kcal limit, and its soup starter is a concrete add. Neither is clean, but B's factual misstatement about the bowl fitting is the more serious fault, so A is modestly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A builds on Sam's own logged burrito bowl and gives a concrete veggie side with an amount, but it wrongly claims the 200 kcal of room covers a whole burrito bowl, and its cauliflower-rice swap leans toward cutting. Answer B is more restriction-flavoured throughout: 'light', 'without extra heavy calories', 'lighter build', 'instead of rice', and a soup for 'next to nothing'. It also invents shrimp or fish, which aren't among Sam's logged foods, and gives vaguer amounts. A is more specific, grounded in Sam's foods, and less restrictive overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dinner-protein-already-hit",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A edges toward restriction: \"skip the rice\", \"go light\", \"small\" bowl and staying \"within your remaining 200 kcal\" break the goal rule. Answer B also has problems: the 4 oz salmon (~230+ kcal) plus a full burrito bowl overshoots the 200 kcal of room, and the salmon meal is not one of Sam's logged foods. Still, B's swap adds beans and veggies rather than cutting, builds on the logged burrito bowl, and names concrete amounts. B is better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B breaks the goal rule by framing dinner as restriction: it says \"small,\" \"skip the rice,\" \"keep it light,\" and \"stay within your remaining 200 kcal.\" Answer A builds on the person's chicken burrito bowl and suggests doable additions. It does exceed the 200 kcal of room, since a burrito bowl or salmon dinner is well above that. A's swap of rice for beans upgrades the bowl without telling Sam to eat less. A is clearly the better fit, with no invented figures beyond rough estimates.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lunch-nearby-no-category",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on the logged chicken burrito bowl and use Green Bowl sensibly. A's first two cards overlap heavily, since both are the same burrito bowl. A's Green Bowl card also states an invented 35-40g figure, and its \"blow past your yogurt's pace\" line is awkward. B gives three distinct, concrete options that use two logged foods with specific amounts, and its Green Bowl pick avoids fabricated numbers, so it serves Sam better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three distinct, lunch-appropriate options built on Sam's own logged foods (burrito bowl, turkey sandwich) plus a fitting nearby pick, each with concrete amounts. Answer B's first two cards are redundant, both being the burrito bowl, and its 35-40 g figure for Green Bowl is an invented specific. The 'blow past your yogurt's pace' line is also awkward. A is more varied, specific and grounded.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lunch-nearby-no-category",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both build on logged foods, target protein, suit lunch, and avoid re-pitching Greek yogurt. Answer B invents a specific '35-40 g protein' figure for Green Bowl that isn't in the input, and treats 'Green Bowl' as a menu item rather than a place; A's Green Bowl card stays grounded in the given 85 g gap. A's '~45-55g' with double chicken is a modest extrapolation from the logged 45 g, and its cards are tighter, so A is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both build on Sam's logged lunch foods, aim at the protein gap, and use the nearby option well. A invents a specific '35-40 g' figure for the Green Bowl. B overstates what one extra slice of turkey plus cheese adds (24 to over 35 g is implausible), and its burrito bowl figure is muddled. Neither flaw is decisive and the two are comparably useful, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lunch-nearby-no-category",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on logged foods, suit lunch, avoid yogurt and only add. Answer B is more specific with amounts (double chicken, 4 oz turkey for +25 g), though its 40+ g estimate for Green Bowl is a mild invented figure. Answer A says 'roughly double the 24g' with double turkey plus cheese, which is plausible but vaguer, and its Green Bowl card is vague too. B's 60+ g and +25 g estimates are reasonable extrapolations from the given 45 g and 24 g, and its concreteness makes it more useful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on the logged burrito bowl and turkey sandwich, fit lunch, avoid the Greek yogurt and only add. Answer A invents specific figures that aren't in the input: '60+ g' for double chicken, '+25 g' for 4 oz turkey, and '40+ g' for a Green Bowl item whose contents aren't given. Answer B stays anchored to the given 45 g and 24 g numbers, though its 'roughly double' is a loose estimate, and it keeps the nearby pick unquantified. B is concrete and doable without unsupported claims, so it is the safer and better answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lunch-under-protein",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both build on logged foods, suit lunch, and target the protein gap. A sticks closely to the given figures (45g, 24g, 17g) and its suggestions are simple and doable. B invents estimates like ~65g and ~35g and builds a less familiar savory yogurt bowl with cottage cheese and olive oil, which drifts from the person's habits. A is the cleaner, more grounded answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers build on Sam's logged foods, fit lunch, and aim at protein without repeating oatmeal. Answer A makes up figures that aren't in the input: 65 g for a double-chicken bowl, 40 g+ for the sandwich with yogurt, and 35 g for the yogurt bowl. Its third card also invents an unfamiliar savory yogurt and cottage cheese bowl. Answer B sticks to the given numbers (45 g, 24 g, 17 g), and its 35 g+ estimate is modest and clearly framed as approximate, so it is the more grounded and trustworthy choice.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lunch-under-protein",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's first two cards are redundant: both are the burrito bowl, one plain and one with extra chicken. Its third card upgrades the turkey sandwich sensibly. Answer B gives three distinct, specific options with amounts, all built on Sam's logged foods (burrito bowl, turkey sandwich, Greek yogurt) and all protein-forward for lunch. Its protein estimates are plausible, though the yogurt bowl leans more snack than lunch.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives three distinct, specific lunch options built on Sam's logged foods, with portions and protein estimates. The estimates are plausible derivations from the input rather than invented facts, though the yogurt bowl reads a bit like breakfast. Answer B spends two of its three cards on the same burrito bowl, so it is redundant, and its first card is vague, with no amount or upgrade. Its turkey sandwich upgrade is good, but A gives Sam more variety and more actionable advice.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lunch-under-protein",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both build on Sam's logged foods, target protein, fit lunch and avoid re-pitching oatmeal. A sticks closely to the input figures (45g, 24g, 17g), and its turkey upgrade estimate of 35g+ is a reasonable extrapolation. B invents a ~65 g double-chicken figure and \"some fiber\", and folds Greek yogurt into both the second and third cards, so the suggestions are redundant. A is cleaner and more grounded.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on logged foods, fit lunch, and close the protein gap without re-pitching oatmeal. Answer A's \"around 65 g\" for double chicken is an extrapolation not given in the input. Its sandwich card stacks yogurt with turkey, which overlaps the yogurt card, and the berries and nuts add detail but feel slightly padded. Answer B sticks to the input figures (45g, 24g, 17g, 93g), and its cards are clean, distinct and doable, so B is a bit better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-snack-nearby",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A builds on the logged Greek yogurt with the input's own 17 g figure, but its string cheese and almond plate is generic and its 15\u201320 g protein claim is inflated. Answer B's first two cards overlap on yogurt, but both stay on a food Sam actually logs, give concrete amounts, and aim straight at the 40 g gap. B's protein figures (35 g, 25 g) are estimates rather than input facts, but they are plausible, and B is more specific and more useful. B is better overall, though not by a wide margin.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on Sam's Greek yogurt, fit a snack, target the 40 g protein gap, and use the Juice Stop option appropriately. A is more specific and actionable with amounts and protein figures, but its numbers (35 g, 25 g, 6 g from almonds) are estimates not given in the input. B is grounded in the input's ~17 g figure for Greek yogurt, offers a varied doable second option, and avoids inflated claims. A's stacked yogurt cards are also redundant. B is cleaner and more faithful to the input.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-snack-nearby",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A builds on Sam's Greek yogurt, adds a sensible cottage cheese idea with a rough amount, and makes a reasonable Juice Stop pick, although its yogurt card gives no amount. Answer B is more specific, but its two cards are both Greek yogurt, which is redundant. It also invents protein figures for a menu we know nothing about (\"25\u201330 g\" at Juice Stop). Its \"staying on track\" phrasing edges toward the moralising the goal rule forbids, so A is cleaner and more varied overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use Greek yogurt, a snack fit, and Juice Stop, and neither re-pitches oatmeal or the turkey sandwich. A repeats Greek yogurt in two cards, and its protein figures (35 g, +10 g) are estimates rather than invented input facts. B is varied and concrete: yogurt plus berries, cottage cheese at ~25 g, and a protein shot, all short and doable. B's variety and simplicity make it the better set, though both are acceptable.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-snack-nearby",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both build on Greek yogurt, the person's most-logged food, avoid re-pitching oatmeal and the turkey sandwich, respect the maintenance goal and use Juice Stop sensibly. A is vaguer about the yogurt amount, but its cottage cheese card adds a distinct, concrete snack option. B gives specific amounts (1.5 cups for ~25 g), but labels it a \"swap\" when nothing was eaten, its second card is just an add-on to the same yogurt, and the claim that 2 tbsp of chia adds 10\u201320 g protein is inaccurate (it is about 4 g). A is slightly better on variety and accuracy, though neither is clearly superior.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Answer A builds on Greek yogurt with specific amounts (1.5 cups, ~25 g protein, which is plausible) and gives a stackable boost, though cards 1 and 2 overlap and chia seeds won't add 10\u201320 g protein. Answer B also uses Greek yogurt, but granola adds little protein and the card gives no figure, while the cottage cheese card is specific and accurate (~12\u201314 g per half cup). Both nearby picks are similar and both respect the goal rule. A's yogurt card is the strongest single suggestion, but its chia claim is inaccurate; B is more varied and its figures are sound, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-snack-trend-unknown",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A's third card pitches \"turkey roll-up round two\", which re-pitches the turkey Sam already ate in the sandwich today. Its second card is muddled, labelled as upgrading the apple while comparing it to the granola bar. Answer B builds cleanly on all three logged foods with concrete amounts aimed at the protein gap. B's turkey roll-ups also echo the sandwich, but only as one option alongside cottage cheese, so B is the stronger answer overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B's third card, 'Turkey roll-up round two', explicitly re-pitches turkey after a turkey sandwich, which the input forbids; its swap card is also muddled, calling the apple+peanut butter an 'upgrade the apple' while comparing it to the granola bar. Answer A's numbers are plausible: 3/4 cup Greek yogurt plus peanut butter gives about 17g, and two cheese sticks plus cottage cheese gives about 20g+. A also builds on all three logged foods and suits snack time, though it mentions turkey as one option among others. A is clearly better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-snack-trend-unknown",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on logged foods, target protein, suit snack time, and avoid restriction. A's first card claims 2 cheese sticks 'instead of 1', which implies a baseline the input never established. A's protein bar swap 'roughly triple' is reasonable. B gives concrete amounts (3/4 cup yogurt, 1 oz jerky, 15\u201320 g bar) with plausible protein figures, though '+16g total' for cheese plus jerky is slightly loose, and it ties each card to the 65 g gap and the muscle goal more directly.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers build on the logged apple, cheese stick and granola bar, fit snack time, and target the 65 g protein gap without restricting. Answer A gives larger, concrete protein additions (about 18 g from the yogurt dip, a 15\u201320 g bar, about 16 g from jerky plus cheese), each with a clear amount. Answer B's first card adds only about 7 g, and its \"triple the protein\" and \"15\u201320 g\" yogurt figures are vaguer, so it does less to close the gap. A is more specific and more useful, and neither answer has a serious fault.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-snack-trend-unknown",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answer build on the logged apple, cheese stick and granola bar, and both swap the granola bar for a protein bar. A's suggestions are simple and doable right now for a snack, with accurate figures (7 g from the cheese stick, 15\u201320 g from Greek yogurt). B's loaded apple snack is a heavy, invented combo of peanut butter plus a protein-fortified yogurt dip, which drifts toward an unfamiliar meal. B's numbers are also shaky: 2 cheese sticks plus 1/4 cup almonds is about 21 g, so roughly fine, but stacking these makes the snacks large. A is cleaner and more realistic, while B pushes harder on protein but is less practical.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both build on the logged apple, cheese stick and granola bar, stay snack-appropriate, and aim at the 65 g protein gap without restriction. A is more specific with amounts and gives bigger protein hits, but the 'protein-fortified Greek yogurt dip' is a bit contrived and its figures are rough estimates. B is simpler and fully doable, though its first card adds only 7 g toward a large gap. A's stronger, quantified upgrades make it modestly more useful for closing the gap.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-vegetarian-dinner",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Sam's logged foods are all vegetarian, and Answer A's chicken or salmon card ignores that, while B stays plant-based and builds on the tofu stir-fry and the cottage cheese. B's stir-fry card is concrete (a full block plus edamame); the seitan card is new but fits the pattern, though its portions may push close to the 650 kcal limit. Both cottage cheese cards are similar, and A's '1.5x your usual portion' is vaguer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Sam's logged foods (veggie burger, lentil soup, tofu stir-fry) suggest a vegetarian pattern, so B's chicken or salmon card likely misreads the person and introduces foods they don't log. A's seitan bowl is a new meal but fits the plant-based pattern. A's tofu card is concrete and builds on a logged food, but a full block of tofu plus edamame and seitan with rice may push calories hard against the 650 kcal of room. B's tofu card is more modest and calorie-sensible, and both use cottage cheese well, so overall A fits the person better despite being somewhat heavy.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-vegetarian-dinner",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both build on Sam's logged tofu stir-fry and cottage cheese, suit dinner, and target the 53 g protein gap. Answer B invents details not in the input, such as Sam's usual 'half serving' and the fiber figure, and its 35-40g + 25g + 17g totals far exceed the gap and likely the 650 kcal of room. Answer A's 1.5x portion (about 30g) plus cottage cheese (25g) closes the gap realistically, with the third card as an option. A is more grounded in the input.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both build on the tofu stir-fry and cottage cheese, avoid today's foods, and target the 53 g gap. A claims the person's usual stir-fry is a \"half serving\" and quotes 35-40 g. The input gives ~20 g as the usual, so doubling to about 40 g is consistent, but \"half serving\" is a mild invention. A's three picks total about 77-82 g protein and B's about 65-72 g, which is fine against 53 g, though the calories in both may push past the 650 kcal of room. The two answers are close, and B's 1.5x figure of 25-30 g is consistent with the input, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-vegetarian-lunch",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on Sam's logged foods, target protein and suit lunch. A is concise, but its third card adds Greek yogurt, which sits close to the cottage cheese already eaten today, and its egg/cheese numbers are a bit generous. B uses three logged foods with concrete amounts, though the veggie burger card is cluttered and the shredded chicken is an odd fit for someone whose log looks vegetarian. Overall B is slightly more specific and grounded in Sam's own foods, though not by a wide margin.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on Sam's logged foods, give concrete amounts, avoid re-suggesting cottage cheese, and suit lunch. Sam's logged foods (veggie burger, lentil soup, tofu stir-fry) point to a vegetarian or plant-leaning eater, and Answer A's shredded chicken in lentil soup ignores that. Answer A also overloads cards with stacked options (tzatziki or edamame), and its figure of 150 g tofu plus a cup of edamame for only +25 g protein looks low. Answer B's cards are each one clean, doable action that fits Sam's pattern, with plausible protein figures.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-vegetarian-lunch",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both build on logged foods, avoid the cottage cheese eaten today, and suit lunch. A's figures are mostly plausible: half a block of tofu is about 20 g, and egg or cheese gets the burger to roughly 25 g. B overstates a few: a scoop of Greek yogurt won't take lentil soup to 30+ g, and the 1.5 cups tofu figure is loose. A is slightly more accurate and concrete, so it is somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both build on Sam's logged foods (veggie burger, lentil soup, tofu stir-fry), avoid the cottage cheese already eaten today, and give specific protein-forward lunch additions with amounts. A has some awkward parts: a 2-egg scramble alongside a burger is an odd lunch pairing, Greek yogurt stirred into soup is strange, and the numbers are shaky (1 cup tofu bringing soup to 30+ g is a stretch). B's additions are more natural and doable (egg or cheese on the burger, extra tofu, yogurt on the side) and its protein estimates are more plausible, which makes it slightly cleaner and more confident.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-vegetarian-lunch",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both build on the logged lunch foods, aim at protein, avoid cottage cheese, and follow the goal rule. A has shakier numbers: 300g of tofu is more than doubling a typical portion, and a single scoop of Greek yogurt doesn't add 15-20g of protein. B's figures are more plausible (edamame ~17g, 8 oz tofu ~30g meal) and it correctly references the 90g gap from the input. B's suggestions are also cleaner and immediately doable, so B is slightly but clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both build on Sam's logged lunch foods, aim at the protein gap and avoid re-suggesting cottage cheese. Answer A's numbers are roughly plausible: 1 cup edamame is ~17g, and 8 oz tofu over rice is ~25-30g. Answer B overstates its gains: a scoop of Greek yogurt plus a cup of lentils adds nowhere near 15-20g as written, and an egg plus black beans getting the burger to 30g is a stretch; the yogurt-in-soup idea is also a bit odd. A is more accurate and equally doable, so it is the better answer.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-dinner-on-target-nearby",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lunch-under-protein",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

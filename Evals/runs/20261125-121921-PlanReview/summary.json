@@ -1,0 +1,144 @@
+{
+ "run": "20261125-121921-PlanReview",
+ "tasks": [
+  {
+   "task": "planReview",
+   "dataset": "plan_review/v1",
+   "cases": 14,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-opus-4-8",
+     "attempts": 28,
+     "usable": 28,
+     "passed": 27,
+     "pass_rate": 0.9642857142857143,
+     "ci95_cases": [
+      0.8928571428571429,
+      1.0
+     ],
+     "ci95": [
+      0.8228742388150135,
+      0.9936676435024582
+     ],
+     "per_repeat_pass": [
+      1.0,
+      0.9285714285714286
+     ],
+     "latency_p50_s": 16.877,
+     "latency_p95_s": 19.473,
+     "mean_uncached_input_tokens": 2663.6428571428573,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 1171.4285714285713,
+     "mean_cost_usd": 0.04260392857142857,
+     "scores": {
+      "about_you_written": 1,
+      "assessment_words": 55.964285714285715,
+      "calorie_max_change_kcal": 21.428571428571427,
+      "calorie_min_at_or_above_floor": 1,
+      "calorie_min_change_kcal": 23.214285714285715,
+      "changelog_note_written": 1,
+      "has_range": 1,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 4.928571428571429,
+      "insight_tones_valid_as_written": 1,
+      "insights_three_to_five": 1,
+      "logged_days": 22.285714285714285,
+      "no_change_note_matches_the_numbers": 1,
+      "no_number_outside_the_input": 0.07142857142857142,
+      "numbers_outside_that_are_sums_or_differences": 2.1785714285714284,
+      "numbers_outside_the_input": 2.5,
+      "prose_present": 1,
+      "protein_change_g": 0.17857142857142858,
+      "protein_g_per_lb": 0.7821428571428571,
+      "protein_in_sane_band": 1,
+      "protein_set": 1,
+      "range_contains_app_target": 0.10714285714285714,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -18.892857142857142,
+      "range_moved_as_expected": 0.8846153846153846,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 173.21428571428572,
+      "says_no_change": 0.21428571428571427,
+      "strategy_words": 82.5,
+      "used": 1,
+      "wrong_person_pronoun": 0.03571428571428571
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "attempts": 28,
+     "usable": 28,
+     "passed": 28,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.8793527963418923,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 19.78,
+     "latency_p95_s": 23.347,
+     "mean_uncached_input_tokens": 2490.714285714286,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 1693.9642857142858,
+     "mean_cost_usd": 0.04384214285714286,
+     "scores": {
+      "about_you_written": 1,
+      "assessment_words": 68.28571428571429,
+      "calorie_max_change_kcal": 42.857142857142854,
+      "calorie_min_at_or_above_floor": 1,
+      "calorie_min_change_kcal": 37.5,
+      "changelog_note_written": 1,
+      "has_range": 1,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 4.892857142857143,
+      "insight_tones_valid_as_written": 1,
+      "insights_three_to_five": 1,
+      "logged_days": 22.285714285714285,
+      "no_change_note_matches_the_numbers": 1,
+      "no_number_outside_the_input": 0,
+      "numbers_outside_that_are_sums_or_differences": 5.214285714285714,
+      "numbers_outside_the_input": 6,
+      "prose_present": 1,
+      "protein_change_g": -0.7142857142857143,
+      "protein_g_per_lb": 0.7764285714285715,
+      "protein_in_sane_band": 0.9285714285714286,
+      "protein_set": 1,
+      "range_contains_app_target": 0.21428571428571427,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -1.0357142857142858,
+      "range_moved_as_expected": 0.7692307692307693,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 180.35714285714286,
+      "says_no_change": 0.21428571428571427,
+      "strategy_words": 81.21428571428571,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-opus-4-8",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "shared_cases": 14,
+     "mean_difference": 0.03571428571428571,
+     "ci95": [
+      0.0,
+      0.10714285714285714
+     ]
+    }
+   ]
+  }
+ ]
+}

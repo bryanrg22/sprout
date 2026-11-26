@@ -26,7 +26,7 @@ struct ProgressSummaryCard: View {
     }
 
     var body: some View {
-        if !AIConfig.hasActiveKey {
+        if !AIConfig.hasKey(for: .progressSummary) {
             // No key → quietly hide (the weight chart still stands on its own). The note to
             // add a key lives on the Food tab + Settings; we don't nag here too.
             EmptyView()

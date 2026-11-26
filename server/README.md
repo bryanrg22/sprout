@@ -13,8 +13,18 @@ only the app's own models are paid for.
 iPhone (no key) ──signed──▶ gateway (keys, caps, allowlist) ──▶ api.anthropic.com / api.openai.com
 ```
 
-The app has no key field at all: every text task runs on Claude through the gateway, and
-OpenAI only draws the character picture. The gateway serves exactly those two endpoints.
+The app has no key field at all. Each text task runs on the model that measured best for it,
+Claude or OpenAI, and OpenAI draws the character picture. The gateway serves exactly these
+routes (each forwarded to the same path on the provider):
+
+| Gateway route | Provider | Used for |
+|---|---|---|
+| `POST /anthropic/v1/messages` | Anthropic | every Claude task |
+| `POST /openai/v1/responses` | OpenAI | gpt-5.6 and later text models (all the allowed ones), including the plan's web research |
+| `POST /openai/v1/chat/completions` | OpenAI | older OpenAI text models; no allowed model uses it today |
+| `POST /openai/v1/images/edits` | OpenAI | the character picture |
+
+The OpenAI routes answer 503 `provider_disabled` without `OPENAI_API_KEY`.
 
 ## How a call is checked
 
@@ -32,11 +42,17 @@ OpenAI only draws the character picture. The gateway serves exactly those two en
 3. **The allowance:** this device's spend today (UTC) is under `DEVICE_DAILY_CAP_USD`, and
    everyone's under `TOTAL_DAILY_CAP_USD`. Otherwise 429 `daily_limit` / `service_limit`,
    which the app shows as "That's all the AI for today".
-4. **The request:** an allowed model (`src/pricing.ts`), output at most 8,192 tokens, no
-   streaming, no server tools except Anthropic web search with at most 5 uses; for the
-   character picture, the one image model at `low` and one image.
+4. **The request:** an allowed model (`src/pricing.ts`: `ANTHROPIC_MODELS`, and
+   `OPENAI_MODELS` = `gpt-6-luna`, `gpt-6.2-sol`, `gpt-5.6-sol`), an output cap of at most
+   8,192 tokens (`max_tokens`, `max_output_tokens` or `max_completion_tokens`, whichever the
+   API names), no streaming, no OpenAI background responses or priority tier, and no server
+   tools except web search: Anthropic's with at most 5 uses, OpenAI's `web_search` on
+   Responses only (with `max_tool_calls` at most 5 when it is sent). For the character
+   picture, the one image model at `low` and one image.
 5. **Forward** with the owner's key; the provider's answer goes back unchanged. The cost is
-   computed from the provider's own `usage` report and added to the device's day.
+   computed from the provider's own `usage` report (plus $0.01 per web search: Anthropic's
+   `server_tool_use.web_search_requests`, or each completed OpenAI `web_search_call` item)
+   and added to the device's day.
 
 Nothing about a person is stored: no body, no name, no IP. The database holds device public
 keys, used counters, challenges and per-day dollar totals. Logs hold the route, status,
@@ -60,7 +76,7 @@ model, cost and the first 8 characters of the key id.
 
 - App Attest identifies a genuine install, not a person. Someone who reinstalls the app gets
   a new key and a new daily allowance; `TOTAL_DAILY_CAP_USD` is the backstop. Set a monthly
-  spend limit in the Anthropic console too.
+  spend limit in the Anthropic console (and the OpenAI one, if its key is set) too.
 - A device that does not support App Attest (the Simulator, very old hardware) cannot use
   the built-in AI; it can still use a key of its own.
 
@@ -83,11 +99,30 @@ Caddy gets the HTTPS certificate on first start. Then set `AIGateway.address` in
 Update: `git pull && docker compose up -d --build`. Logs: `docker compose logs -f gateway`.
 Today's spend: `docker compose exec gateway node -e "const {DatabaseSync}=require('node:sqlite');console.log(new DatabaseSync('/data/gateway.sqlite').prepare('select key_id, usd, requests from spend where day=date()').all())"`.
 
+## Running it on a host that already serves other things (how it runs today)
+
+Deployed 2026-11-25 on the owner's droplet beside other services, where port 443 is taken
+and memory is short (1 vCPU, 1 GB, now with a 1 GB swap file), so without Docker:
+
+- Node 24 LTS in `/opt/sprout-gateway/node` (checksum-verified; the system Node is left alone),
+  the code in `/opt/sprout-gateway/src` (this repository), built there with `npm ci && npm run
+  build && npm prune --omit=dev`.
+- `sprout-gateway.service`: user `sproutgw`, `EnvironmentFile=/etc/sprout-gateway.env` (the
+  owner pastes the keys; mode 640), `HOST=127.0.0.1 PORT=8790`, data in
+  `/var/lib/sprout-gateway`, `MemoryMax=160M`, `CPUQuota=50%`, read-only system.
+- `sprout-caddy.service`: Caddy 2 (checksum-verified binary) as user `sproutcaddy`, HTTPS on
+  **port 8446** for `137-184-90-238.sslip.io` with a Let's Encrypt certificate (HTTP-01 on port
+  80), `MemoryMax=120M`, `CPUQuota=50%`.
+- The app's address: `https://137-184-90-238.sslip.io:8446` (`AIGateway.address`).
+
+Update: `cd /opt/sprout-gateway/src && git pull && cd server && PATH=/opt/sprout-gateway/node/bin:$PATH npm ci && npm run build && npm prune --omit=dev && systemctl restart sprout-gateway`.
+Logs: `journalctl -u sprout-gateway -f`. Health: `curl https://137-184-90-238.sslip.io:8446/health`.
+
 ## Developing
 
 ```bash
 npm ci
-npm test          # 58 tests: App Attest checks, the store, every route
+npm test          # 71 tests: App Attest checks, the store, every route, the config
 npm run typecheck
 ```
 

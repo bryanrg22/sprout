@@ -10,10 +10,11 @@ mkdirSync(dirname(config.dbPath), { recursive: true })
 const store = new Store(config.dbPath)
 const app = createApp({ config, store, fetch: globalThis.fetch, now: () => Date.now() })
 
-serve({ fetch: app.fetch, port: config.port }, ({ port }) => {
+serve({ fetch: app.fetch, port: config.port, hostname: config.host }, ({ port }) => {
   console.log(
     JSON.stringify({
       event: "listening",
+      host: config.host,
       port,
       appIds: config.appIds,
       allowDevelopment: config.allowDevelopment,

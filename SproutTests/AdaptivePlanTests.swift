@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import Sprout
 
 /// Pins the pure logic of the adaptive Plan (see docs/adaptive-plan.md): the `CoachPlan` model's
@@ -117,6 +118,60 @@ final class AdaptivePlanTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    // MARK: - A blank answer is never stored (EVAL_REPORT 40)
+
+    /// Recorded from claude-opus-5-5 on a plan build: every field empty, every number 0.
+    private let blankPlan: [String: Any] = ["changelog_note": "", "assessment": "", "protein_target": 0,
+                                            "calorie_min": 0, "strategy": "", "insights": [], "headline": "",
+                                            "about_you": "", "calorie_max": 0]
+
+    func testABlankAnswerIsNotAPlan() {
+        XCTAssertFalse(PlanService.isUsable(blankPlan))
+        let good: [String: Any] = ["headline": "On track", "assessment": "Steady.", "calorie_min": 1800,
+                                   "calorie_max": 2000, "protein_target": 120]
+        XCTAssertTrue(PlanService.isUsable(good))
+        // Each part is required on its own; numbers sent as strings still count, as in makePlan.
+        for key in ["headline", "assessment", "calorie_min", "calorie_max", "protein_target"] {
+            var missing = good; missing[key] = nil
+            XCTAssertFalse(PlanService.isUsable(missing), key)
+        }
+        var quoted = good; quoted["calorie_min"] = "1800"
+        XCTAssertTrue(PlanService.isUsable(quoted))
+        var blankHeadline = good; blankHeadline["headline"] = "   "
+        XCTAssertFalse(PlanService.isUsable(blankHeadline))
+    }
+
+    /// A review that gets a blank answer throws and leaves the plan it was reviewing as it was.
+    @MainActor
+    func testABlankReviewLeavesThePlanUntouched() async throws {
+        let container = try TestStore.makeContainer()
+        let context = container.mainContext
+        let profile = femaleLossProfile()
+        context.insert(profile)
+        let plan = CoachPlan(headline: "Keep me", assessment: "Still here.", calorieMin: 1700, calorieMax: 1900,
+                             proteinTarget: 115, changelog: [PlanChange(date: .now, summary: "Plan created.")])
+        context.insert(plan)
+        try context.save()
+        let transport = ScriptedTransport([.json(200, [
+            "content": [["type": "tool_use", "id": "tu_1", "name": "write_plan", "input": blankPlan]],
+            "usage": ["input_tokens": 900, "output_tokens": 120],
+        ])])
+        let runtime = AIRuntime(provider: .anthropic, apiKey: "test-key-not-real", model: "claude-opus-4-8",
+                                transport: transport)
+        do {
+            _ = try await AIRuntime.$current.withValue(runtime) {
+                try await PlanService.review(profile: profile, foods: [], weights: [], context: context)
+            }
+            XCTFail("a blank plan must not be accepted")
+        } catch AIConfig.AIError.decoding {
+            // expected
+        }
+        XCTAssertEqual(plan.headline, "Keep me")
+        XCTAssertEqual(plan.calorieMin, 1700)
+        XCTAssertEqual(plan.proteinTarget, 115)
+        XCTAssertEqual(plan.changelog.count, 1, "no review line was added")
+    }
 
     func testLoggedDayCountIsDistinctDays() {
         let cal = Calendar(identifier: .gregorian)

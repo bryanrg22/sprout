@@ -175,6 +175,10 @@ struct EvalOutcome {
     var output: String
     /// What the app shows from the reply, when that differs from `output` (see `EvalRecord.shown`).
     var shown: String? = nil
+    /// What the model was given, when the request's last user message is not all of it (a
+    /// chat turn: the data summary, the notes and the earlier turns too). Nil: the harness
+    /// reads it from the request (`EvalRecord.given`).
+    var given: String? = nil
 
     static func failed(_ error: Error) -> EvalOutcome { failed(error, output: "") }
 
@@ -297,7 +301,7 @@ enum EvalRunner {
                             ? calls.reduce(0) { $0 + ($1.thinkingTokens ?? 0) } : nil,
                         stopReason: calls.last?.stopReason,
                         calls: calls.count, output: outcome.output,
-                        given: requests.firstRequest.flatMap(givenText(inRequest:))
+                        given: (outcome.given ?? requests.firstRequest.flatMap(givenText(inRequest:)))
                             .map { String($0.prefix(givenLimit)) },
                         shown: outcome.shown))
                 }

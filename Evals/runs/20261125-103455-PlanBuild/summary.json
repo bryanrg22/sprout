@@ -1,0 +1,260 @@
+{
+ "run": "20261125-103455-PlanBuild",
+ "tasks": [
+  {
+   "task": "planBuild",
+   "dataset": "plan_build/v1",
+   "cases": 15,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 30,
+     "usable": 30,
+     "passed": 26,
+     "pass_rate": 0.8666666666666667,
+     "ci95_cases": [
+      0.7333333333333333,
+      0.9666666666666667
+     ],
+     "ci95": [
+      0.7031831605558306,
+      0.9469043057578189
+     ],
+     "per_repeat_pass": [
+      0.8666666666666667,
+      0.8666666666666667
+     ],
+     "latency_p50_s": 8.223,
+     "latency_p95_s": 9.975,
+     "mean_uncached_input_tokens": 3067.133333333333,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 1701.5,
+     "mean_cost_usd": 0.0011574633333333332,
+     "scores": {
+      "about_you_written": 1,
+      "assessment_words": 134.6,
+      "calorie_min_at_or_above_floor": 0.9333333333333333,
+      "changelog_note_written": 1,
+      "has_range": 0.9333333333333333,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 4.7,
+      "insight_tones_valid_as_written": 1,
+      "insights_three_to_five": 1,
+      "logged_days": 17.066666666666666,
+      "no_number_outside_the_input": 0,
+      "numbers_outside_that_are_sums_or_differences": 5.6,
+      "numbers_outside_the_input": 8.2,
+      "prose_present": 0.9333333333333333,
+      "protein_g_per_lb": 0.8346666666666667,
+      "protein_in_sane_band": 1,
+      "protein_set": 1,
+      "range_contains_app_target": 0.7857142857142857,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -72.42857142857143,
+      "range_ordered_as_written": 0.9333333333333333,
+      "range_width_kcal": 184.10714285714286,
+      "strategy_words": 166.33333333333334,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-opus-4-8",
+     "attempts": 30,
+     "usable": 30,
+     "passed": 30,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.8864829086095221,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 21.701,
+     "latency_p95_s": 25.689,
+     "mean_uncached_input_tokens": 3069.133333333333,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 1460.9,
+     "mean_cost_usd": 0.05186816666666667,
+     "scores": {
+      "about_you_written": 1,
+      "assessment_words": 75.56666666666666,
+      "calorie_min_at_or_above_floor": 1,
+      "changelog_note_written": 1,
+      "has_range": 1,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 5,
+      "insight_tones_valid_as_written": 1,
+      "insights_three_to_five": 1,
+      "logged_days": 17.066666666666666,
+      "no_number_outside_the_input": 0,
+      "numbers_outside_that_are_sums_or_differences": 3.1,
+      "numbers_outside_the_input": 4.466666666666667,
+      "prose_present": 1,
+      "protein_g_per_lb": 0.83,
+      "protein_in_sane_band": 1,
+      "protein_set": 1,
+      "range_contains_app_target": 0.6666666666666666,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -61.96666666666667,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 187.36666666666667,
+      "strategy_words": 105.83333333333333,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "attempts": 30,
+     "usable": 13,
+     "passed": 12,
+     "pass_rate": 0.4,
+     "ci95_cases": [
+      0.2,
+      0.6
+     ],
+     "ci95": [
+      0.24590394326083403,
+      0.5767994750172616
+     ],
+     "per_repeat_pass": [
+      0.2,
+      0.6
+     ],
+     "latency_p50_s": 22.927,
+     "latency_p95_s": 24.524,
+     "mean_uncached_input_tokens": 2903.0333333333333,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2068.866666666667,
+     "mean_cost_usd": 0.052989466666666665,
+     "scores": {
+      "about_you_written": 0.9230769230769231,
+      "assessment_words": 81.3076923076923,
+      "calorie_min_at_or_above_floor": 0.9230769230769231,
+      "changelog_note_written": 1,
+      "has_range": 0.9230769230769231,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 4.384615384615385,
+      "insight_tones_valid_as_written": 0.9230769230769231,
+      "insights_three_to_five": 0.9230769230769231,
+      "logged_days": 15.923076923076923,
+      "no_number_outside_the_input": 0,
+      "numbers_outside_that_are_sums_or_differences": 6.769230769230769,
+      "numbers_outside_the_input": 10.692307692307692,
+      "prose_present": 1,
+      "protein_g_per_lb": 0.82,
+      "protein_in_sane_band": 1,
+      "protein_set": 0.9230769230769231,
+      "range_contains_app_target": 0.6666666666666666,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": 17.583333333333332,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 195.83333333333334,
+      "strategy_words": 119.53846153846153,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "decoding(\"the answer was cut off at 2200 tokens\")"
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 30,
+     "usable": 30,
+     "passed": 16,
+     "pass_rate": 0.5333333333333333,
+     "ci95_cases": [
+      0.3,
+      0.7333333333333333
+     ],
+     "ci95": [
+      0.3614201328152505,
+      0.6976787277587178
+     ],
+     "per_repeat_pass": [
+      0.6,
+      0.4666666666666667
+     ],
+     "latency_p50_s": 18.422,
+     "latency_p95_s": 22.239,
+     "mean_uncached_input_tokens": 3133.133333333333,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 1607.4666666666667,
+     "mean_cost_usd": 0.022340933333333333,
+     "scores": {
+      "about_you_written": 0.9333333333333333,
+      "assessment_words": 76.53333333333333,
+      "calorie_min_at_or_above_floor": 1,
+      "changelog_note_written": 0.8666666666666667,
+      "has_range": 1,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 2.966666666666667,
+      "insight_tones_valid_as_written": 0.6,
+      "insights_three_to_five": 0.6,
+      "logged_days": 17.066666666666666,
+      "no_number_outside_the_input": 0,
+      "numbers_outside_that_are_sums_or_differences": 4.2,
+      "numbers_outside_the_input": 6.333333333333333,
+      "prose_present": 0.8333333333333334,
+      "protein_g_per_lb": 0.83,
+      "protein_in_sane_band": 1,
+      "protein_set": 1,
+      "range_contains_app_target": 0.8666666666666667,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -83.56666666666666,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 190.33333333333334,
+      "strategy_words": 136.73333333333332,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-opus-4-8",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "shared_cases": 15,
+     "mean_difference": -0.13333333333333333,
+     "ci95": [
+      -0.26666666666666666,
+      -0.03333333333333333
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "shared_cases": 15,
+     "mean_difference": -0.6,
+     "ci95": [
+      -0.7666666666666667,
+      -0.4
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "shared_cases": 15,
+     "mean_difference": -0.4666666666666667,
+     "ci95": [
+      -0.6666666666666666,
+      -0.23333333333333334
+     ]
+    }
+   ]
+  }
+ ]
+}

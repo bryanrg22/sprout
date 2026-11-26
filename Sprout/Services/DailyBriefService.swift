@@ -173,7 +173,7 @@ enum DailyBriefService {
 
         // Optional AI polish — same safety model as WeeklyReflection/InsightPhraser: the
         // template is already shippable; the model may only rewarm the SAME fact.
-        if AIConfig.hasActiveKey, let polished = await rephrase(picked, name: signals.name) {
+        if AIConfig.hasKey(for: .dailyBrief), let polished = await rephrase(picked, name: signals.name) {
             brief.headline = polished.headline
             brief.body = polished.body
         }
@@ -227,7 +227,7 @@ enum DailyBriefService {
     static func rephraseRaw(_ picked: (topic: Topic, headline: String, body: String),
                             name: String) async -> String? {
         do {
-            let client = try AIClient.make()
+            let client = try AIClient.make(for: .dailyBrief)
             return try await client.chat(system: system,
                                          messages: [ChatTurnMsg(role: "user", text: userTurn(picked, name: name))],
                                          model: AIConfig.model(for: .dailyBrief),

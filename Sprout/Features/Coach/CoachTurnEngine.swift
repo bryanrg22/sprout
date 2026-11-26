@@ -317,7 +317,7 @@ final class CoachTurnEngine {
 
     private func attempt(_ call: Call) async -> Next {
         guard let context, let profile else { return .done }
-        let provider = AIConfig.provider
+        let provider = AIConfig.provider(for: .coachTurn)
         // Snapshot the prompt and the schemas here, on the main actor, so no model object
         // crosses to the network call.
         let data = CoachDataSnapshot.fetch(from: context)
@@ -336,7 +336,7 @@ final class CoachTurnEngine {
 
         do {
             let turn = try await AIFailureRecorder.$current.withValue(recorder) {
-                let client = try AIClient.makeFull()
+                let client = try AIClient.makeFull(for: .coachTurn)
                 return try await client.chatWithTools(system: system.volatile,
                                                       messages: messages, tools: tools,
                                                       model: AIConfig.model(for: .coachTurn),
@@ -514,12 +514,18 @@ final class CoachTurnEngine {
         let toast = UndoToast(summary: summary, undo: undo)
         undoToast = toast
         let sleep = env.sleep
+        let window = Self.undoWindow
         undoTask = Task { @MainActor [weak self] in
-            await sleep(.seconds(5))
+            await sleep(window)
             guard !Task.isCancelled, let self, self.undoToast?.id == toast.id else { return }
             self.undoToast = nil
         }
     }
+
+    /// How long the Undo banner stays: 5 seconds in the app. The UI flows get 15, because on a
+    /// slow CI runner finding the button, letting it settle and tapping it took longer than 5
+    /// and the tap found nothing (main, 2026-11-25).
+    static var undoWindow: Duration { UITestHooks.isActive ? .seconds(15) : .seconds(5) }
 
     /// Reverses the last auto-applied change and dismisses the banner.
     func performUndo() {
@@ -595,7 +601,7 @@ final class CoachTurnEngine {
     func noteUnansweredMessageIfAny() {
         guard let context, !isSending, pendingTool == nil, failure == nil else { return }
         guard let newest = newestConversationRow(in: context), newest.isUser else { return }
-        fail(.interrupted, provider: env.runtime?.provider ?? AIConfig.provider, call: nil)
+        fail(.interrupted, provider: env.runtime?.provider ?? AIConfig.provider(for: .coachTurn), call: nil)
     }
 
     private func newestConversationRow(in context: ModelContext) -> ChatMessage? {

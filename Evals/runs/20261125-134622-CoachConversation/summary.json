@@ -1,0 +1,114 @@
+{
+ "run": "20261125-134622-CoachConversation",
+ "tasks": [
+  {
+   "task": "coachTurn",
+   "dataset": "coach_conversations/v1",
+   "cases": 30,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 90,
+     "usable": 90,
+     "passed": 90,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9590629315783191,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.476,
+     "latency_p95_s": 4.115,
+     "mean_uncached_input_tokens": 1174.611111111111,
+     "mean_cache_read_tokens": 13165.7,
+     "mean_cache_write_tokens": 780.1,
+     "mean_output_tokens": 366.0444444444444,
+     "mean_cost_usd": 0.0005296528333333334,
+     "scores": {
+      "assistant_messages": 0.9555555555555556,
+      "fallback_shown": 0,
+      "reply_chars": 433.81111111111113,
+      "reply_non_empty": 0.9333333333333333,
+      "reply_sentences": 6.644444444444445,
+      "reply_words": 79.5,
+      "tool_applied_count": 0.18888888888888888,
+      "tool_as_expected": 1,
+      "tool_call_count": 0.25555555555555554,
+      "tool_called": 0.24444444444444444,
+      "tool_calls_dropped_by_app": 0.011111111111111112,
+      "tool_invalid_count": 0,
+      "tool_proposed": 0.06666666666666667,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "openai:gpt-6-luna",
+     "attempts": 90,
+     "usable": 90,
+     "passed": 90,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9590629315783191,
+      0.9999999999999999
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.853,
+     "latency_p95_s": 3.335,
+     "mean_uncached_input_tokens": 2050.6,
+     "mean_cache_read_tokens": 6133.655555555555,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 78.8,
+     "mean_cost_usd": 0.00030579655555555555,
+     "scores": {
+      "assistant_messages": 0.9333333333333333,
+      "fallback_shown": 0,
+      "reply_chars": 253.56666666666666,
+      "reply_non_empty": 0.9333333333333333,
+      "reply_sentences": 2.611111111111111,
+      "reply_words": 43.84444444444444,
+      "tool_applied_count": 0.16666666666666666,
+      "tool_as_expected": 1,
+      "tool_call_count": 0.23333333333333334,
+      "tool_called": 0.23333333333333334,
+      "tool_calls_dropped_by_app": 0,
+      "tool_invalid_count": 0,
+      "tool_proposed": 0.06666666666666667,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-haiku-5-5",
+   "paired": [
+    {
+     "candidate": "openai:gpt-6-luna",
+     "shared_cases": 30,
+     "mean_difference": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    }
+   ]
+  }
+ ]
+}

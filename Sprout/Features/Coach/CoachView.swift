@@ -179,6 +179,7 @@ struct CoachView: View {
         #if DEBUG
         ChatDebug.runScript(engine: engine, transcript: transcript, center: askVita,
                             scrollToTop: { scrollPosition.scrollTo(edge: .bottom) },
+                            isAtBottom: { [transcript] in transcript.window.isAtBottom },
                             arrive: { [context, transcript] text in
                                 context.insert(ChatMessage(role: "assistant", content: text, createdAt: .now,
                                                            isSystemSeed: false))

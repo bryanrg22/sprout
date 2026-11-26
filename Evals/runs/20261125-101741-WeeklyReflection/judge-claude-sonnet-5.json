@@ -1,0 +1,850 @@
+{
+ "task": "weeklyReflection",
+ "run": "20261125-101741-WeeklyReflection",
+ "baseline": "anthropic:claude-haiku-5-5",
+ "candidate": "anthropic:claude-sonnet-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "5264286aa09b15d84ad99f388d03f072e42e05674090565eda5b5e69bbdb78c8",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 47,
+ "pairs_skipped": [
+  {
+   "case": "alex-fresh-page",
+   "repeat": 1,
+   "baseline_usable": true,
+   "candidate_usable": false
+  }
+ ],
+ "cases": 16,
+ "candidate_wins": 21,
+ "baseline_wins": 16,
+ "ties": 10,
+ "both_bad": 0,
+ "orders_agree_share": 0.7872340425531915,
+ "net": 0.10638297872340426,
+ "net_ci95_cases": [
+  -0.2127659574468085,
+  0.4318181818181818
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 106,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.3716,
+ "verdicts": [
+  {
+   "case": "alex-climbing-consistent",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both reflect the facts accurately and nod to Alex's note. B says \"four days of lifting\", but the input says \"trained / moved on four days\", which is a slight reframing. B also says \"real numbers\" when no numbers were given, and its tip is vaguer and edges toward pressure. A gives a concrete, useful tip (a post-lift protein snack) and stays accurate, though its line \"You're in this together with me\" is slightly awkward, so A is somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately and nod to the note, but A says the gain is \"showing up in real numbers\" when the input gives no numbers, and it assumes the Sunday cooking \"is clearly\" driving the wins. A's tip is vague (\"keep an eye on getting fueled up\"), while B gives a concrete, useful tip tied to Alex's after-work lifts. B's \"in this together with me\" is slightly awkward but warm, so B is the better note overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-climbing-consistent",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect the week accurately, celebrate the climbing trend as on-track lean gain, and nod to Alex's note about lifting after work and cooking on Sundays. Answer A gives no tip, which is a required element of the note. Answer B adds a small, practical tip (an extra glass of water or a short walk after lifting) without scolding, though calling water and steps 'a little lower' is a mild comparative framing. Overall B more fully meets the brief.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both reflect the facts accurately and nod to the note. A slightly overclaims by tying the trend to Sunday cooking as \"proof\" and calls water/steps \"lower\" (5 and 4 days), which reads mildly as a deficit framing, though it does give a concrete tip. B has no real tip, just \"keep it rolling,\" which misses a required element. A's tip is small and kind, so A better fulfills the brief overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-climbing-consistent",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately, nod to the note, and read the climbing trend correctly. B covers more of the week's specifics (fuel 5, protein 6, training 4), ties the Sunday cooking and lifting after work naturally into the progress, and offers a more actionable, personalized tip about protein after the lift. A's protein tip is weaker since Alex already hit protein six days, and its phrase \"You're in this together with me\" is slightly awkward. B is somewhat better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A reflects more of the week's facts (fuel on five days, protein on six, training on four, hydration) and ties them to Alex's note. It slightly over-attributes the fueling to Sunday cooking and says \"training after work\", but that is a reasonable nod to the note, not an invented figure. Its tip about post-lift protein is specific and useful. Answer B is warm and accurate but vaguer, its tip mostly restates the protein habit Alex already has, and \"You're in this together with me\" reads awkwardly.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-dropped-fast",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers stick to the facts, cite the race note, handle the dropping trend gently and recommend eating enough with protein. A's \"I want to gently flag\" reads a bit clinical, and \"You're in this together with me\" is awkward phrasing. B is warmer and more natural, and it explains the trend kindly (the body is asking for more fuel). B also adds reassurance (\"No stress at all\"), though \"training miles\" is a slight embellishment and it runs slightly long. B is better overall for warmth and friend-like tone.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate, invent nothing, nod to the 10K race, read the dropped trend gently, and encourage fueling and protein. A runs to five long sentences with some repetition and filler (\"no stress at all, just a gentle nudge\"), and it adds \"training miles\" and \"the muscle you're working so hard to build\", which are mild embellishments. B is tighter and clearer, and its tip (\"fuel up a bit more, even on the busy days\") is concrete and kind. B is somewhat better overall, though both are fit to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-dropped-fast",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate, invent nothing, nod to the race and gently teach about fueling without scolding. Answer B celebrates more of the real habits (logging, training on five days, steps) with warmer energy and frames eating as part of training. Answer A gives a more concrete tip (a little more at each meal, protein snacks), but it skips the five training days and closes with a slightly generic line. B's \"needed more fuel than it got\" is a mild inference but a reasonable, gentle one, so B edges ahead on making Alex feel seen and celebrated.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately and nod to the race note without inventing anything, and both gently explain that eating enough and getting enough protein protects energy and muscle. Answer A's \"needed more fuel than it got\" is a mild inference, and its tip of making eating feel like part of the training plan is vague. Answer B gives a concrete, small tip (a little more at each meal, a protein-rich bite between meals), which is the more useful practical guidance. Both are warm, but B's actionable tip makes it the better answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-dropped-fast",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B calls it \"marathon training for that spring ten-K\", which contradicts the input (a 10K is not a marathon), and \"logging all those miles\" leans toward invented detail. Answer A sticks to the facts given, reads the drop gently, explains why protein and eating enough matter, nods to the race, and offers one concrete small tip. A's \"signal worth paying attention to\" is slightly heavier in tone, but it is accurate and warm overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A calls the race \"marathon training\" for a ten-K and mentions \"logging all those miles\", which misstates Alex's own note and invents detail. Its tip (\"eat enough most days and get protein in more consistently\") is vague and a bit pressuring. Answer B reports the facts accurately and nods correctly to the ten-kilometre race. It also explains gently why fuel protects muscle, gives one concrete small tip, and ends warm.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-eased-down",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both reflect the facts accurately (five days logged, protein on four, three training days) and frame the dip warmly as normal fluctuation. A's tip is concrete and actionable: add a bigger meal or snack on the lower-appetite days, which directly supports fueling. B's tip, \"pairing meals with a bit more consistency,\" is vague and harder to act on, and A is a little tighter overall, so A is somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately (five days logged, protein four, three training sessions), frame the dip warmly as normal fluctuation, and add no invented figures. Answer A's tip, \"pairing meals with a bit more consistency around the days you train,\" is vague and a little awkward. Answer B's tip, a bigger meal or extra snack on low-appetite days, is concrete and directly supports eating enough for a gain goal. B also opens with explicit pride and reads more naturally, so it is clearly the better answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-eased-down",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers report the week accurately and frame the dip warmly as normal fluctuation, invent nothing, and keep a friendly tone. A says protein was \"especially\" the lever for gain, which slightly misreads the guidance on eating enough overall, but its pre-session snack tip is concrete and useful. B celebrates training days too, but \"I'd love to see that number climb\" adds mild pressure, and \"more food overall on busier days\" is vaguer. A is gentler and its tip more actionable, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately and frame the dip as normal fluctuation. A says \"three training sessions\" (fine) but invents \"busier days\", and its tip is vague; \"I'd love to see that number climb\" adds mild pressure. B celebrates the two fueled days, names the dip as not a setback, and gives a concrete pre-session snack tip that suits a gain goal, so it is warmer and more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-eased-down",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are accurate, warm, frame the dip as normal fluctuation, and give a fueling tip. Answer A stays positive throughout and offers one concrete tip: extra food around training sessions. Answer B points out that only two days were fully fueled and adds 'let's nudge that number up', which brings in slight pressure and a deficit focus, though its line that 'more food isn't something to earn' fits the goal rule well. Answer A is slightly cleaner and gentler, with a specific tip and no undertone of pressure.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately and frame the dip as normal fluctuation. A says \"Only two days felt fully fueled\" and \"let's nudge that number up together,\" which leans toward a gentle shortfall framing and adds scale pressure. B stays warm, celebrates protein, training and water, and gives a concrete, useful tip (extra food around training sessions) without pressure. B fits the feature's tone better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-fresh-page",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the zero-log week accurately and without guilt, invent nothing, and encourage a few weigh-ins. Answer B adds a genuinely useful small tip: jot meals down without overthinking. Its warm framing (\"showing up now matters more than a perfect streak\") fits the brief well. Answer A is warm, but its \"you're in this together with me\" phrasing is slightly awkward and it offers no distinct tip beyond weigh-ins.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both handle a zero-log week warmly, without guilt or invented facts, and both encourage weigh-ins. A gives a distinct small practical tip (jot meals without overthinking) and avoids restating the zero; B explicitly says 'no entries across all seven days', which can feel a bit like tallying a failure, and its tip is just the weigh-in ask repeated. A is slightly better as a supportive note with one useful tip.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-fresh-page",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the zero-logged week gently, invent nothing, encourage weigh-ins, and frame eating enough as the work. A explicitly states \"zero of the seven days tracked\", which reads slightly blunter, and its \"protein in the mix\" tip is reasonable but generic, while B is warmer (\"no pressure\") and gives a concrete small tip (log a meal, weigh once or twice). B is slightly better in tone and tip, though both are fit to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers reflect the zero-logging week gently, invent no figures, honor the gain rule, and encourage weigh-ins warmly. A is five sentences and smoothly framed. B runs six sentences, which is over the three-to-five length; it also states \"zero of the seven days\" bluntly and adds a protein tip not grounded in the input, though that tip is reasonable. A is slightly better on length and tone, but the difference is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-eased-down",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are accurate, warm and follow the goal rule; each frames the dip as normal fluctuation and ties a tip to Thursday five-a-side. B assumes Alex played the game this week ('Hope Thursday's five-a-side game was a blast'), which the input doesn't support, and it skips the step-goal habit. A sticks strictly to the facts, celebrates both fueling and steps, and gives a clear protein tip. A is slightly better on factual fidelity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A says \"Hope Thursday's five-a-side game was a blast\", which assumes the game happened this week when the input never says so; that is a mild invention. Answer B covers more of the actual week (logging, fueling, steps), frames the trend as normal fluctuation as instructed, and ties its tip to the note without claiming the game took place. B's 'keep that protein going' is slightly off since protein was hit only once, but it is gentle and useful, so B is better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-eased-down",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is accurate and warm and offers a fueling tip suited to a steady-weight goal, but it reflects little of the week beyond logging and weight. Answer B reflects more of the real week (steps on three days) and frames the trend correctly for holding steady. However, B's protein tip pitched as helping Alex 'feel fuller' leans toward appetite control, which fits poorly with a no-restriction steady goal. B also speculates that Thursday's five-a-side boosted step days, a link the input never gives. On balance, A's tip about fueling for the pitch is safer and better aligned with the goal rule, while B's richer reflection carries these small faults.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Answer A celebrates logging and the three step-goal days, frames the trend correctly for holding steady, and nods to five-a-side, though \"I'm guessing Thursday's five-a-side helped\" edges toward speculation and \"feel fuller\" is a slightly appetite-oriented framing. Answer B is accurate and warm and ties its fuelling and protein tip to the football, which fits the maintenance goal well. However, B celebrates only logging and misses the step habit. Both are fine to show; A reflects more of the actual week, while B's tip is better aligned, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-eased-down",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers reflect the facts accurately (five logged days, three days fueling well, a gentle downward trend framed as normal) and stay warm and non-restrictive. Answer A ties Alex's five-a-side note to one small, useful tip: a little extra protein on game days to help recovery, which fits the steady-weight goal. Answer B gives no real tip, and 'Hope Thursday's game was a good one' assumes a game happened this week, which the input does not say. A is the better answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect the facts accurately, frame the slight dip as normal, and stay warm without restriction. Answer A says \"Hope Thursday's five-a-side game was a good one,\" which implies a game happened this week, and it offers no real tip. Answer B ties the note to a useful, gentle protein tip that fits the single protein day and the holding-steady goal. B is the better fit for the brief.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-weigh-ins",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A invents \"glad you're back at it,\" implies the protein day and fueling day were different days (not stated), and never mentions the two training days. Answer B celebrates training, reads the week accurately, nods to night shifts, and asks for weigh-ins. B's \"that day you hit protein and fueled up fully\" also assumes the same day, a small invention, and its \"more logging, more protein, more movement\" edges toward pressure rather than one small tip. Even so, B reflects more of the actual week and reads more naturally, while A also has awkward phrasing (\"You're in this together with me\").",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A reflects all the facts, including the two training days, and ties them warmly to the night-shift note; its weak spots are implying protein and fueling happened on the same day and closing with a vague list of 'more' that reads like mild pressure. Answer B gives a concrete, useful protein tip. However, it invents two things: that Alex is 'back at it', and that fueling and protein happened on different days. It also never celebrates the training days. On balance, A feels more faithful to Alex's actual week, though it is close.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-weigh-ins",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A reflects the facts accurately (logged two, moved two, fueled well one, protein once), nods to the night shifts, and gives the weigh-in tip warmly, though \"You're in this together with me\" is slightly awkward. Answer B is warm and also nods to the shifts, but it is vaguer about the facts (\"logged some fuel and protein in there\"). B also adds a mildly invented flourish (\"schedule that keeps flipping\"), and its second tip on protein muddies the single small tip. A reflects the week more concretely and faithfully, so the person feels more seen.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate, warm and goal-appropriate. Each nods to the night shifts and gently encourages weigh-ins. B reflects the facts more precisely (two logged days, two training days, one fueled day, protein hit) and says plainly that it is proud of Alex, though \"You're in this together with me\" is slightly awkward. A is vaguer (\"logged some fuel and protein in there\") and drifts a little toward a second tip, but it reads naturally.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-weigh-ins",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B merges the fueled-well day and the protein-goal day into one ('The day you fueled well and hit your protein goal'), which the input does not support. That is a mild invention. Answer A reports the facts accurately, nods to the night shifts, encourages weigh-ins, and gives a tip tied to the shifts that is relevant and warm.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A merges two separate facts into \"the day you fueled well and hit your protein goal\". The input lists fueling well and reaching protein as separate facts, so treating them as the same day is a small invention. Answer B states the facts accurately (two days logged, two days moving, one well-fueled day), explains the weigh-in gap gently, and its shift-timed protein tip fits Alex's night shifts better than A's \"off-shift days\" tip. Both are warm and free of shaming, but B is more faithful to the input and more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plateau",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect the facts accurately and handle the plateau well. Answer A gives no tip, which the feature calls for. Answer B offers a small, useful protein tip that fits the week, where protein was hit on only two days. B is warm and complete.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers stay accurate to the input, frame the plateau correctly, and avoid shaming. A includes a small, useful tip (protein with each meal), which fits the protein facts and the goal. B reflects more of the facts but gives no tip, which the feature asks for. A's 'scale held pretty flat' is fine, so A meets more of the criteria.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plateau",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect the facts accurately, invent nothing and reassure about the plateau. Answer A gives no real tip; \"keep doing what you're doing\" is generic. Answer B offers a small, useful tip on leaning into protein, tied to the actual data, and ends warm. B's \"quiet setup before the next step up\" is a mild speculative framing, but it is acceptable encouragement.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both reflect the facts accurately without inventing anything, and both handle the plateau correctly. A gives a concrete small tip (lean into protein), which the feature asks for. B has no real tip beyond \"keep doing what you're doing\", though it does explicitly say consistency breaks plateaus. A's tip makes it more useful while staying warm and non-pressuring.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plateau",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate, invent nothing, and reassure Alex correctly about the plateau. A's tip says protein \"keeps you full\", which works against a weight-gain goal, and its closing line \"You're in this together\" is awkward. B is warm and stays on the goal, and its tip (pair training days with protein) suits a strength gain and is fresh, though \"protein push\" is a little vague. B is better for Alex.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers stick to the facts and handle the plateau reassuringly. B's tip says protein 'keeps you full', which works against a weight-gain goal where eating enough is the work. B's closing 'You're in this together' is also awkward. A is accurate and warm, with a fitting tip about pairing training days with protein.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-checked-in-with-note",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers celebrate the downward trend, nod to the new baby, and invent nothing. Answer A's \"protein to stay full\" tip edges toward appetite control, which sits uneasily with the no-restriction rule. Answer B's tip, eat enough on one more day, maps directly onto the week's facts and the goal rule, and its warmth suits a sleep-deprived new parent. B is slightly longer and \"survival mode\" is a mild assumption, but its tip is more on-goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers celebrate the downward trend, acknowledge the new baby, and stay accurate to the two logged days, one fueled day, water and movement. A's tip, to eat enough on one more day, is small, useful and fits the goal rule, while B's protein tip strays into food advice with a \"stay full\" framing that edges toward appetite control. B's \"that's showing up in the numbers\" overclaims a causal link, and its \"eat well\" phrasing is slightly moralizing. A is warmer and more tightly grounded in the facts given, though \"survival mode\" and \"baby-brain\" are a bit casual.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-checked-in-with-note",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers celebrate the downward trend and acknowledge the new baby. A sticks closely to the facts: two days logged, fueled one, water, moved. Its \"rest is part of what keeps results coming\" is a gentle, useful tip, though \"hit your water goal\" omits that it was only one day. B says \"the day you logged fueling well\", which is slightly off, and \"whatever you're doing is working, so let's keep it going\" is vague, with no concrete tip; it also omits the logging count. A is more grounded and gives an actual tip, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both celebrate the downward trend and acknowledge the new baby and sleep, and neither invents facts. B reflects the week more accurately and fully (two days logged, fueled on one, water, movement) and gives a gentle tip about grabbing rest when possible. A's phrasing \"on the day you logged fueling well\" is a little muddled, and its tip is vaguer. B makes Sam feel more seen and stays warm.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-checked-in-with-note",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B misstates the facts: it implies Sam fueled well, hit water, and moved on both logged days, when each happened on only one day. Answer A states the counts accurately (two days logged, fueled on one), is warm, and acknowledges the baby and the sleep. Both celebrate the trend and give a gentle protein tip, so A's accuracy makes it the better answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A misstates the facts by saying Sam fueled well and got water and movement in on both logged days, when each happened on only one day, so it invents progress. Answer B states the counts accurately (two days logged, fueled well on one), though it is a bit vague on water and movement. Both celebrate the downward trend, nod warmly to the new baby, and offer a protein tip, so B's accuracy decides it.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dropping-fast",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use only facts from the input, celebrate the fast drop, and gently teach about fueling and protein without suggesting restriction. Answer A's \"pump the brakes on the 'more, faster' thinking\" puts a mindset on Sam that the input never mentions and reads slightly corrective. Its \"let's make that more\" about protein days edges toward pressure. Answer B is warmer and celebrates the drive and habits plainly, ending with one clear, gentle tip (fuel up a bit more) and encouragement.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use only the facts given, celebrate the drive, and teach gently that eating enough and protein help the loss last. Answer B says \"pump the brakes on 'more, faster' thinking\", which attributes a mindset Sam never expressed and comes across a bit corrective. Its \"the scale is clearly noticing\" also leans on the scale rather than the smoothed trend. Answer A is warmer, frames fueling as protecting progress, and ends with one clear, forward-looking tip, so it fits the brief slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dropping-fast",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers reflect the facts accurately, celebrate the drive, and gently teach the fuel-up message without scolding. B treats 'the two days you ate enough' and 'hit your protein goal' as the same days, an implied overlap the input doesn't state, and its \"bounce back\" line edges toward worry. A is cleaner and more concise, and gives one clear, specific tip. A is better, though only slightly, because it invents nothing and stays focused.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately, celebrate the drive, and gently teach about fueling. A conflates the two fueled days and the two protein days as the same days, which isn't stated, and at five sentences of dense text it reads a bit long and lecture-like. B stays within five sentences and is clear, with one concrete tip (add protein to a couple of meals). It is warm and accurate, while A has a minor implied invention.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-dropping-fast",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use only facts from the input and follow the guidance to celebrate the fast drop, then gently advise eating enough and protein. A's line that the drop means 'your body is being pushed harder than it likes' and that lost muscle 'tends to bounce back later' is a bit alarming and less celebratory for someone who wants to see results. B celebrates more plainly, reflects more of the habits (movement four days, protein twice), and frames the tip encouragingly with 'a little more fuel in the tank'. B fits the warm, upbeat brief better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both stay accurate to the facts, celebrate the fast drop, and gently teach about eating enough and protein without restricting. A is warmer and more celebratory, which fits Sam's wish to see results celebrated, and it names more of the real habits: four training days, five step days, six days logged, and the two protein days. B is also good, but its line that the loss \"tends to bounce back later\" leans a bit toward worry. A's framing of \"a little more fuel in the tank\" stays more encouraging while giving the same useful tip.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-easing-down-consistent",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both are accurate, warm, celebrate the downward trend, and address Sam's note without inventing facts. Answer A's tip covers evening snacking without restricting, and it ties the walks to the habits being built. Answer B's morning-protein tip directly serves the energy goal and avoids any framing around snacking, but it skips the snacking half of the note. Both are good and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers celebrate the downward trend accurately and invent no facts. A ties its tip to the morning-walk energy Sam mentioned and stays safely within the goal rule. B nods to both parts of Sam's note, but its tip frames the evening snacking as 'late-night grazing' to 'take the edge off', which leans toward implying restriction or moralising about Sam's eating; it also glosses over steps and training on only three days. A is warmer and fully compliant, so it is the slightly better answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-easing-down-consistent",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate, warm, celebrate the downward trend, and nod to the evening snacking and the morning-walk energy. A slightly overstates things by saying water, steps and movement happened on \"several days\" and implying building walk energy, but this is vague rather than invented. B ties the facts to the goal more cleanly: fueling well is the engine, and protein and water support energy, which links to the walks. B's tip of keeping protein steady through the day avoids framing evening snacking as a problem and reads more naturally, so it is marginally better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers reflect the facts accurately, celebrate the downward trend, nod to Sam's note, and give a small protein-related tip without restriction. Answer A is more specific: it gives water as four days rather than B's vague \"several days\", and it ties the tip directly to Sam's evening snacking without implying the snacking is a problem. B's tip of a protein-rich evening snack is also fine, but A connects the facts to Sam's note a little more naturally and specifically.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-easing-down-consistent",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately and celebrate the downward trend. A says 'the scale is moving down' instead of the smoothed trend, a slight misframing, and its evening protein snack tip loosely addresses the snacking note. B frames the trend correctly, ties fueling to results, and gives a useful morning-fuel tip, but says 'since mornings are your thing', which isn't quite in the input and skips the evening snacking. B's trend framing and warmth edge out A.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A accurately reflects the trend (the smoothed line, not the scale), celebrates the logging, fueling, protein and water habits, and gives a useful morning-fuel tip that ties to Sam's walks, though it skips the evening-snacking part of the note. Answer B says 'the scale is moving down', which misreads the smoothed trend, and its evening-snack tip edges toward managing snacking. B does acknowledge the full note and the movement days, and nothing in it is outright restrictive. On balance A is cleaner, more accurate, and still warm.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-steady",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A says \"six days running,\" which implies consecutive days, and that is not stated in the input; its tip about a protein-rich bite is generic and could edge toward satiety framing. Answer B leads with the steady trend as the goal and stays accurate, though \"those two movement days felt good\" slightly assumes a feeling Sam never reported. B's tip is gentle and explicitly free of pressure, and it ties to the facts of the week. Overall B is more accurate and warmer, with a more useful tip.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B says water was hit \"six days running\", which implies consecutive days, a fact the input does not give; otherwise it covers the week accurately and its protein tip is gentle. Answer A reflects the facts accurately, though it skips steps and its \"those two movement days felt good\" mildly assumes how Sam felt. A's tip is framed without pressure and fits the goal of holding steady. B's invented detail is the more serious fault, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-steady",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate, warm, celebrate holding steady, and invent nothing. A leaves out the two training days, and its tip ('keep that going') is slightly muddled. B covers every fact, including the training, and gives a gentle protein nudge framed around energy rather than restriction. B is somewhat more complete and its tip is cleaner.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect the facts accurately, celebrate the steady trend as the goal, invent nothing, and offer a gentle protein tip without suggesting restriction. A's tip is vaguer (\"nudging that up a touch\"), and its \"literally\" and \"seriously\" make it a little breathless. B's tip is clearer and more actionable (\"a protein-rich food at each meal\"), and its tone is warm and calm. B is modestly but clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-steady",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate, warm and invent nothing, and both read steady as the goal. A is concise and its protein-at-each-meal tip is small and useful, but it leaves out steps, protein days and movement. B reflects more of the week, ties fueling to the result and echoes Sam's own 'habits that feel good' wording. B runs a bit long at five dense sentences, but its protein tip is gentle and it makes Sam feel more fully seen, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are accurate, warm, invent nothing, and celebrate the steady trend as the goal. A runs five sentences, slightly over-dense, and its 'feel even fuller' wording leans a little toward appetite control, but it reflects nearly every fact and frames the protein nudge gently. B is cleaner but skips steps, protein days and movement, and its 'stay full' tip is similar. A makes Sam feel more fully seen, so it edges ahead.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-ticked-up",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately and frame the uptick warmly as normal fluctuation. A has an awkward line ('You're in this together'), and its protein tip just restates something Sam already did, with 'feel satisfied' edging toward appetite framing. B nods to Sam's stated goal of locking in good habits, and its tip of pairing water with workout days targets a real weak spot (water hit only once). B's 'trend is still right where it should be' slightly overstates, but it is minor and still warm, so B is the better note overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers reflect the facts accurately, frame the uptick warmly as normal fluctuation, and give a small tip. A slightly overclaims with \"your trend is still right where it should be\", while its water-on-workout-days tip is concrete and actionable. B says \"you ate well\", which drifts toward food moralising against the goal rule, its tip is vaguer, and its closing \"You're in this together\" is awkward phrasing. A is slightly better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-ticked-up",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately and frame the uptick as normal fluctuation. B ties the week to Sam's holding-steady goal and habits, but calling it \"that's exactly what your trend showed\" and \"the kind of consistency\" with three of seven days is a bit of a stretch. A is accurate and warm, but its protein tip is less apt, since protein was already a relative strength and the goal is steadiness; B's water tip targets a real gap (water hit on one day). Overall B fits the goal and the tip better, despite slight overstatement.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers reflect the facts accurately and frame the uptick warmly as normal fluctuation. B's tip about protein keeping you 'full' leans subtly toward appetite control, which fits poorly with a hold-steady goal that forbids restriction framing. A's water tip ties directly to the week's weaker spot (water hit only once) and is gentle. A also mentions 'hormones' and frames the change well, so A is slightly better aligned.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-ticked-up",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A is warm, but \"even on the days life got busy\" invents context, and \"moved your body on two more\" wrongly implies four distinct days; its protein-snack tip is fine, if a little generic. Answer B also slightly overreaches by implying the same two days covered eating enough, protein and training, which the input never says. B's water tip targets a real gap (water was hit on only one day) and is concrete, and its tone is friendly and pressure-free. Both read the uptick correctly as normal fluctuation, but B's tip is more useful and its stretch is milder.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B invents facts: it says 'even on the days life got busy' and 'moved your body on two more', which suggests four distinct days when only three were logged. Answer A is accurate apart from implying the good habits all fell on the same two days, which is a mild conflation. It handles the uptick warmly and gives a concrete, useful water tip tied to the week's weak spot. B's protein-snack tip is weaker and its framing adds things the input never said, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-weigh-ins",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both reflect the facts accurately, and both ask gently for a few weigh-ins. Each implies Sam travelled this week, which the note (every other week) doesn't confirm. Answer A says \"all while juggling the travel you mentioned\", and B builds its opening around a travel week, so B's framing leans on this assumption more heavily, though it frames it kindly. A calls three of seven days \"exactly the kind of consistency\", which is a bit overstated, while B's tip ties fueling and protein together in line with the goal rule; overall the two are of similar quality, with small flaws on each side.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers reflect the facts accurately and nod to the travel, but A presumes this was a travel week (\"work travel weeks can throw everything off\", \"bumpy schedule\"), which the input doesn't establish, while B's \"juggling the travel you mentioned\" also presumes it, slightly more softly. B's tip about protein \"keeps you full\" leans toward appetite suppression, which is a bit off-message for a goal where eating enough matters, whereas A's tip ties fueling and protein to energy and fits the guidance better. Both are warm and suggest weigh-ins without pressure, so A edges ahead on its tip and its fuller celebration of the one fueling day.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-weigh-ins",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the facts accurately, but B's \"usual chaos of being on the road\" asserts Sam travelled this week, which the input doesn't say; A's \"even with travel in the mix\" makes the same slip more mildly. A stretches the facts by calling three of seven days \"consistency\", and its tip is two vague ideas plus an awkward \"You're in this together\". B gives one clear, useful protein tip tied to staying fueled, wants to show Sam results as the goal asks, and ends warmer, so B is better overall despite the small embellishment.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both reflect the facts accurately and handle the missing weigh-in data well. A says \"all the usual chaos of being on the road\" this week, which implies Sam travelled this week when the input only says every other week. B handles travel more carefully. A's tip is specific and useful (nudge protein up), with a warm, friendly close. B's tip is vaguer, its \"You're in this together\" is a clumsy slip, and calling three of seven days \"consistency\" is a bit off. On balance A reads more warmly and helpfully, and its travel implication is minor.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-weigh-ins",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate to the facts, nod to the travel note, and encourage weigh-ins warmly. A covers all the habits but its only tip is the weigh-in nudge. B gives a genuinely useful tip to fuel well and hit protein more often, which fits the goal rule that eating enough drives results, and it frames travel nicely. B is slightly stronger on the one-useful-tip criterion without any pressure.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both stay faithful to the facts and nod to the travel note. A treats the travel as if it happened this week ('even with that travel... thrown in'), which the input does not say, and its tip ('more days of fueling well and hitting protein') reads a bit like a gap being pointed out. B accurately lists every habit, frames the travel as general context, gives a clear weigh-in tip, and ends warmly. B is slightly more accurate and complete.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-plateau",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect the week accurately and reassure Sam that a plateau is normal. Answer A says \"you're walking at lunch on your desk-job days,\" which leans on the onboarding note, though Sam's note itself says he walks at lunch, so this is acceptable. It never mentions fueling well on four days and gives only a vague tip. Answer B covers the fueling, protein and movement days, ties the lunch walks to the note, says consistency breaks plateaus, and gives a clearer tip (hit protein more often), so it is slightly stronger and more complete.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers reflect the week accurately, reassure Sam about the plateau, and nod to the lunchtime walks. Answer B says \"you're walking at lunch on your desk-job days,\" which states as a current-week fact something that comes only from the onboarding note; Answer A frames the walks more generally, though both are mild. Answer A also mentions fueling on four days and gives a clearer tip (hit protein a bit more often), while B's closing advice is vaguer. Answer A covers the actual week more fully and gives the more useful tip, so it is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-plateau",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect the facts accurately and reassure Sam about the plateau. Answer A gives no concrete tip, and its line \"I also see you walking at lunch\" implies the data showed this, which overstates the onboarding note. Answer B nods to the lunch walks naturally and offers a small, useful tip that ties a water refill to the walks, building on the two water days. B is therefore better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A reflects the facts accurately, reads the plateau as normal, nods to Sam's lunchtime walks, and gives a concrete, useful tip (pair walks with a water refill), though \"those lunchtime walks you're so good about\" slightly overstates what the input shows. Answer B is warm and accurate but has no real tip. It also asserts \"I also see you walking at lunch,\" which implies observed data beyond the onboarding note, when steps were only hit on two days. A fits the brief better by including a small, useful tip.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-plateau",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate to the facts and handle the plateau well. A has an awkward garbled phrase (\"you're-on-your-feet movement\"), and it ties the lunch walks to the step and training counts in a way that implies a causal link the input doesn't support. B is natural, nods to the lunch walks appropriately, and offers a gentle hydration tip grounded in the actual data. B's \"that one dipped\" slightly implies a comparison to an earlier week, but it reads as mild and B is warmer and better written overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers reflect the facts accurately, reassure about the plateau, and nod to Sam's lunch walks. A says hydration \"dipped\", which implies a comparison to an earlier week that isn't in the input, and \"keeping up those lunchtime walks\" slightly presumes a behaviour; but its hydration tip ties to a real weak spot and it reads warmly. B has an awkward phrase (\"you're-on-your-feet movement\"), and its protein tip's \"keep you full\" framing edges toward appetite control, but it is otherwise faithful and clear. These minor flaws roughly balance, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-quiet-week",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the one logged day accurately and encourage weigh-ins without inventing facts. B adds a small, useful tip (log one meal a day). It does call the week \"lighter\", which is gentle and honest rather than scolding. A frames one day as a \"real step\" and gives only the weigh-in nudge, and its \"this week's job\" phrasing leans slightly toward pressure, so B's concrete, low-pressure tip makes it somewhat more helpful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers reflect the single logged day accurately, invent nothing, gently encourage weigh-ins and stay warm without pressure. Answer A says \"the real progress you're making\", which is a mild assumption, but it adds a concrete small tip (log one meal a day). Answer B ties directly to Sam's wish to see results, though its only tip is the weigh-ins, which the input already asked for. Both are fit to show and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-quiet-week",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both reflect the one logged day and encourage weigh-ins without inventing weight data. B assumes \"life clearly kept you busy\" and \"how great you're doing\", which are small inventions, and its only tip is to weigh in more. A gives a genuinely useful protein tip that fits the no-restriction rule, but has an awkward line (\"You're in this together\"). A's real tip and closer fidelity to the facts make it slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A reflects the single log warmly and encourages weigh-ins, but \"Life clearly kept you busy\" invents a reason for the week, and \"the progress you're working so hard for\" and \"how great you're doing\" assume progress the input does not show. Answer B states the facts accurately, ties directly to Sam's wish to see results, and its protein tip fits the goal rule, since it is about eating enough rather than restricting. B's \"You're in this together\" is slightly awkward, but B is more grounded and more useful overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-quiet-week",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers reflect the sparse week accurately, invent nothing, gently encourage weigh-ins, offer a protein tip and end warm. A names the one logged day specifically and credits it, which helps Sam feel seen, though \"You're in this together with me\" is slightly awkward. B's \"logging was light\" is vaguer but kind, and its tip about \"getting enough food\" aligns well with the goal rule; the phrase \"working so hard for\" slightly overstates a one-day week. Overall they are comparably good, with no clear winner.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are warm, invent nothing, ask for a few weigh-ins and give a protein tip that stays within the goal rule. B reflects the actual fact (one of seven days) and credits it, and it nods to Sam's eagerness to see results. A calls the week \"light\" and says \"that's totally okay\", which is vaguer and carries a faint deficit framing, though both are fine to show. B makes Sam feel more seen, so it is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-ticked-up",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are accurate to the facts, frame the uptick correctly as normal fluctuation, and avoid restriction advice. A covers more of the week (logging, protein, fueling well) and gives a sensible protein tip. Its line \"You're in this together\" is a slightly awkward slip. B leads with the uptick, says \"on the scale\" rather than \"trend\", and skips the fueling days. B's walking tip is useful but leans toward pairing food with exercise, which edges close to the compensation framing the goal rule warns against.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are accurate and frame the uptick warmly as normal fluctuation. B reflects more of the week: four days logged, three protein days and two fueled-well days. A leads with the scale and skips the fueling, and its tip to pair fueling with a walk edges toward linking food and exercise, though it is not compensatory. B's ending, \"You're in this together,\" is slightly awkward, but overall B is clearer, more complete and safer.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-ticked-up",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are accurate, frame the uptick warmly as normal fluctuation, and avoid restriction language. A includes the fueled-well-on-two-days fact, which the input stresses as key to results, while B omits it. A's tip to keep protein at the center 'since it helps keep you full' leans slightly toward appetite control but is not restrictive, and B's tip is fine but a bit vague. A reflects the week more fully and aligns better with the goal rule's emphasis on eating enough, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both are accurate, warm, and frame the uptick correctly without inventing facts. B also celebrates fueling well on two days, which the input highlights as how results keep coming. B's tip ties directly to protein. A's \"scale ticked up\" slightly misframes the smoothed trend, and its tip is a bit awkward, though fine; B reflects the week more fully.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-ticked-up",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are accurate and warm, and both frame the uptick correctly as normal fluctuation. A covers more of the actual week (four days logged, protein on three, fueled well on two) and gives one focused tip. B says \"the scale\" rather than the smoothed trend, a slight inaccuracy, and gives two tips (more movement plus eating enough), though its nudge to eat enough fits the goal rule nicely. These are small differences, so A is only slightly better for its fuller, more precise reflection.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers stick to the facts and frame the uptick as normal fluctuation. Answer B reflects more of the week (logging, protein, and the two well-fueled days) and gives one clear, small tip. Answer A says \"food timing\" and \"nothing to read into\", which is slightly off from the input's framing, and its \"let's aim to get a bit more movement\" plus \"keep leaning into eating enough\" adds up to two nudges rather than one tip. B reads warmer and more complete.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "sam-maintain-steady",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-maintain-steady",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-maintain-steady",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-eased-down",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-eased-down",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-eased-down",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

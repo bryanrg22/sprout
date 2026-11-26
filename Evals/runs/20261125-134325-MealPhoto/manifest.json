@@ -1,0 +1,42 @@
+{
+ "run_id": "20261125-134325-MealPhoto",
+ "eval": "MealPhoto",
+ "models": [
+  "openai:gpt-6.2-sol"
+ ],
+ "repeats": 1,
+ "limit": 1,
+ "started_utc": "2026-11-25T13:43:25+00:00",
+ "commit": "5008ef93671b24141f54cb1bcb8b23d8e1073938",
+ "branch": "bryan/photo-and-chat-evals",
+ "dirty_files": [
+  "?? Evals/runs/20261125-134256-CoachConversation/"
+ ],
+ "xcode": "Xcode 26.4 Build version 17E192",
+ "app_tree": "04b6653c51a9faa74e68351716d60621cff85737",
+ "harness_tree": "0d995830c5d4d792d073112e0de33890aca68556",
+ "prices_sha256": "0b190476f8dcc837c45cba4c39759df313b518eba7166d81171b535fddf28e2a",
+ "dataset_sha256": {
+  "Evals/datasets/memory_fold/v1.jsonl": "4d0c660c76e844358048f348b78a2880849421e2288f7cac9c4ad35e70d99855",
+  "Evals/datasets/plan_build/v1.jsonl": "193cfcef1bc641dcb39719f283ecc8cb74e45940eb2fcbf2192004247b440cc1",
+  "Evals/datasets/daily_brief/v1.jsonl": "e1a5238033d797b4dae6fbdc10064548a2d3d3c86811ecedbf82aeb2d734c198",
+  "Evals/datasets/checklist_plan/v1.jsonl": "7c78d4a5bf67a58b4f10bd3a23f1a0c911c96dd89d6432a680c9371e62272c01",
+  "Evals/datasets/plan_review/v1.jsonl": "809ef2960bedd7e26dbcd4fb123b6c08cf8233e67c2e8acb87edbef1e1ca904f",
+  "Evals/datasets/coach_prompts/v1.jsonl": "7c78d4a5bf67a58b4f10bd3a23f1a0c911c96dd89d6432a680c9371e62272c01",
+  "Evals/datasets/meal_photo/v1.jsonl": "24b7a9a2e700a1f53eddb4faa95cdd7fca1e222b4f287656ee2567bb28b2d906",
+  "Evals/datasets/meal_describe/v1.jsonl": "40e5590a2a5e21af53baf5e051d7c68cdc1a5dae49a47a2f4bd522745daf7c27",
+  "Evals/datasets/meal_describe/v3.jsonl": "663a81b5cfcc38cdd86e6f2eda117e370cb621cb529aa13b0a4c1c1a3479f7b6",
+  "Evals/datasets/meal_describe/v4.jsonl": "d43cca6d71ec7ac6fa6447603ac57131136451a9ac9d7d246dd24e6d7839126a",
+  "Evals/datasets/coach_conversations/v1.jsonl": "2014b1af2e435236ad8efcf5afbc3ace663304fe43d127c97e21adcbdae50109",
+  "Evals/datasets/progress_summary/v1.jsonl": "14ebeb478d87c0289a84bf9415c79d5897569deee1714e743e9a5a9404cc33c0",
+  "Evals/datasets/food_suggestions/v1.jsonl": "aa31eca9270a12ff6c81bb76d8a942ad94103f6a1a4f0e1c17df8be95961fd7e",
+  "Evals/datasets/avatar/photos/synthetic-man-50s-glasses.jpg": "a8dd1e3387ae74fec09038298f8aed7b495e25a3c6fa7765a5b5c2d81d770ced",
+  "Evals/datasets/avatar/photos/synthetic-man-30s-beard.jpg": "522f0a46cc1ba537f86ec63b2cb20bd968620dae81077a5ab0c11f3c5fd15529",
+  "Evals/datasets/avatar/photos/synthetic-woman-20s-ponytail.jpg": "9d0c9139b5bee4f7045bf130d5d337b05b805fc0456d0fb4cc48cd661160617d",
+  "Evals/datasets/coach_tool_choice/v1.jsonl": "7e7ae9895e3ed48a0e7612af614501509340415d4bb15f86274749ac1bd0bbb9",
+  "Evals/datasets/coach_tool_choice/v2.jsonl": "eb3868088c58495d8016c84af7435033f6dc7b92d6be72526c9cdcfa8341c148",
+  "Evals/datasets/onboarding_note/v1.jsonl": "72803b6af26ee4502855fa4e2f7648d64189e0ace53470d661c826a4dac6c560",
+  "Evals/datasets/insight_line/v1.jsonl": "6bd6d93d6f561d8a75f9acae64601594ba93abbd4dcff884c97fae6b9be31c8a",
+  "Evals/datasets/weekly_reflection/v1.jsonl": "f9cc35f5648bb0e8645d5d8aaf9d89406442c5de8920a84ca324048dbe52bf20"
+ }
+}

@@ -1,0 +1,57 @@
+{
+ "run": "20261125-134352-MealDescribeHousehold",
+ "tasks": [
+  {
+   "task": "mealDescribe",
+   "dataset": "meal_describe/v4",
+   "cases": 1,
+   "candidates": [
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 1,
+     "usable": 1,
+     "passed": 1,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.20654329147389294,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 3.886,
+     "latency_p95_s": 3.886,
+     "mean_uncached_input_tokens": 578,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 156,
+     "mean_cost_usd": 0.002716,
+     "scores": {
+      "carbs_abs_error_g": 0.10000000000000142,
+      "confidence_is_valid": 1,
+      "fat_abs_error_g": 0,
+      "fiber_g_abs_error": 0.10000000000000009,
+      "fiber_g_answered": 1,
+      "items_sum_to_total": 1,
+      "kcal_pct_error": 0,
+      "kcal_within_20pct": 1,
+      "protein_abs_error_g": 0,
+      "range_well_formed": 1,
+      "saturated_fat_g_abs_error": 0,
+      "saturated_fat_g_answered": 1,
+      "sodium_mg_abs_error": 0.19999999999999996,
+      "sodium_mg_answered": 1,
+      "sugars_g_abs_error": 0.40000000000000036,
+      "sugars_g_answered": 1,
+      "truth_in_stated_range": 1
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

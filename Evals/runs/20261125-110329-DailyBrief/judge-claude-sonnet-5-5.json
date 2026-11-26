@@ -1,0 +1,715 @@
+{
+ "task": "dailyBrief",
+ "run": "20261125-110329-DailyBrief",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "anthropic:claude-sonnet-5-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "a91a0dfc462faf5a8c21a64f2d97108577705dd881b7c5ae056ac6da0d23c34f",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 39,
+ "pairs_skipped": [],
+ "cases": 13,
+ "candidate_wins": 9,
+ "baseline_wins": 3,
+ "ties": 27,
+ "both_bad": 0,
+ "orders_agree_share": 0.8205128205128205,
+ "net": 0.15384615384615385,
+ "net_ci95_cases": [
+  -0.02564102564102564,
+  0.358974358974359
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 90,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.1928,
+ "verdicts": [
+  {
+   "case": "big-steps-steady-hr",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep 15,420 and 59 exactly, add no invented claims, use one emoji, and have a one-number headline. A frames it as 'fitness quietly leveling up', a slight rewording but faithful. B adds 'Nice work.' and stays very close to the original phrasing. Both are warm and fit for display, and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the 15,420 and 59 figures, put one number in the headline, use one emoji, and sound warm. A drops \"yesterday\" from the headline but stays faithful; its \"Nice work\" is a little generic. B keeps \"yesterday\" and rewords the insight with a bit more friendly energy while preserving its meaning. The differences are minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "big-steps-steady-hr",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep 15,420 and 59 accurately, with one emoji each and a warm tone. A moves the step count into the headline, which is allowed since it is one number, and \"the same as always\" is a slight overstatement of \"usual.\" B keeps the meaning more faithfully, with a clean headline and a body that mirrors the observation warmly. Both are fine, and B is slightly closer to the original meaning.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep 15,420 and 59 with the same meaning and stay warm, each using one emoji. A keeps the headline number-free and the body faithful, including \"usual 59\" and \"what getting fitter looks like from the inside.\" B puts a number in the headline, which is allowed, and its \"the same as always\" is a slight overstatement of \"usual\"; both read well. A is marginally more faithful, but the difference is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "big-steps-steady-hr",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep 15,420 and 59 with the same meaning, one number in each headline and one emoji, and both are warm. A drops \"usual\" (\"held steady at 59\"), which softens the point that 59 is Alex's normal baseline; its body is also a bit wordy with \"steady\" repeated. B keeps \"usual\" and stays closer to the original meaning while still reading like a friendly text. B is slightly better for fidelity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep 15,420 and 59 with one number in the headline and one emoji each. A's \"barely registered with your body\" could read as the steps didn't count, a slight meaning wobble, though its body faithfully keeps \"usual 59\". B drops \"usual\" but \"held steady\" preserves the meaning, and its tone is warmer and more celebratory. B is slightly better: clearer headline and more friend-like voice, though it is a touch wordier.",
+    "error": null
+   }
+  },
+  {
+   "case": "check-in-named",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the same meaning and numbers, add no invented claims, use one emoji, and stay warm. A is slightly more concise and rewords the note freshly, but it drops the \"I'm here\" companionship line. B keeps that warmth but is almost a verbatim copy with minor edits. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and the three 'one' items, use one emoji, and stay warm with no pressure. A stays closer to the original, keeping 'I'm here'; B drops that line but reads crisply and still says any one of them is a win. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "check-in-named",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight and the three 'one' items intact, add no invented figures, use one emoji, and stay warm and guilt-free. Answer A's headline is shorter and punchier, and 'just you and today' is warm, while B mostly mirrors the original with a slightly longer headline. Both are fit to show and the differences are minor stylistic ones, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and the \"one meal, one glass, one walk\" items, and neither adds a number or a claim. A mostly copies the original, while B rewords it more naturally in a warm, texting tone, though B drops the \"I'm here\" presence. Both have one emoji, read easily at a glance, and contain nothing harmful. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "check-in-named",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and the same numbers, use one emoji, and stay warm with no guilt or restriction talk. A has a short headline and a crisp body, though \"clean slate\" drops the \"I'm here\" companionship note. B keeps that warmth, but its headline is longer and the body is slightly redundant (\"is a win\u2026 and any of them counts\"). The differences are minor and neither answer is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the single insight and its three \"one\" items, add no new figures, stay warm, and use exactly one emoji. A keeps the \"fresh page\" image and the \"I'm here\" presence from the original, but its body is slightly redundant (\"is a win today, and any of them counts\"). B reads cleanly at a glance but drops the \"I'm here\" companionship line. These are minor trade-offs, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "check-in-no-name",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the meaning, the 'one' items and the warm framing, and each uses a single emoji. Answer B keeps the 'I'm here' companion line from the original headline, which adds warmth. Answer A drops it, but its headline is shorter and easier to read at a glance. The differences are minor, and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the meaning and every item intact, use one emoji, add nothing invented, and stay warm with no guilt. A keeps \"I'm here,\" which preserves the companion reassurance from the original headline. B drops that phrase but reads a little tighter. The differences are negligible, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "check-in-no-name",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and the \"one\" counts, use a single emoji, and stay warm and free of guilt. B keeps \"I'm here\" from the original, which carries the companion presence the observation intended, though \"is plenty\" adds a small redundancy. A drops \"I'm here,\" losing a bit of the warmth, but is tighter. The differences are minor and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and the numbers and use one emoji. A keeps \"I'm here\" from the original headline, which matters for warmth. A adds \"is plenty\", which is a slight addition but fits the tone, and A's body runs to one fairly long sentence. B drops \"I'm here\", losing some of the companion feel, but it is tighter and still faithful; the difference is minor either way.",
+    "error": null
+   }
+  },
+  {
+   "case": "check-in-no-name",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning and the \"one\" items intact, with one emoji each and nothing invented. A merges the body into one long sentence and drops \"I'm here,\" while B keeps the companion line and reads a bit more naturally as two sentences. The difference is small; B is slightly more faithful and warm.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and the 'one' items intact, use a single emoji, and stay warm and guilt-free. A keeps 'I'm here', which is a supportive part of the original headline, and B drops it, a slight loss in warmth. The differences are minor, and both are fit to show and essentially equivalent.",
+    "error": null
+   }
+  },
+  {
+   "case": "deep-sleep",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the 1h 36m figure and the same meaning, use one emoji, follow the headline-plus-body format, and sound warm. A's \"quietly\" and B's \"You got\" are minor stylistic differences, and neither adds a claim or makes a mistake. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 1h 36m figure and the meaning, use one emoji, and have a short headline with a body of two sentences. Answer B reads slightly warmer and more friend-like (\"for the win,\" \"quietly doing its repair work\"), while A sticks closer to a plain restatement. Both are fit to show, and the difference is minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "deep-sleep",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the 1h 36m figure and the same repair-work insight, add nothing invented, and use one emoji each. A's \"for the win\" and \"quietly doing its repair work\" sound slightly warmer. B reads a bit flatter but is equally accurate and well suited to the format, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the 1h 36m figure and the meaning, use a single emoji, and stay warm with no invented claims. Answer A's headline is a clean restatement but its body reads a bit flatly. Answer B's \"for the win\" and \"quietly doing its repair work\" sound more like a friend texting, without adding any facts. The difference is small, but B is slightly warmer and still faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "deep-sleep",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the 1h 36m figure and the repair-work insight, each uses one emoji, and both sound warm. A softens \"feel better\" to \"feel a little easier,\" which slightly shifts the meaning. B adds \"go easy and enjoy it,\" a mild flourish but harmless and friendly, and keeps the original meaning more faithfully. Both are fit to show, and B edges ahead on fidelity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the 1h 36m figure and the repair-work meaning, each with a single emoji and a warm tone. A stays very close to the original (\"usually just feel better\") and adds a gentle \"go easy and enjoy it,\" which is friendly and makes no new claim. B shifts \"feel better\" to \"feel a little easier\" and adds the qualifier \"showed up big,\" both slight changes in meaning that are not serious. A is marginally more faithful and just as warm.",
+    "error": null
+   }
+  },
+  {
+   "case": "gap-return",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the same welcome-back meaning, add no numbers, use one emoji, and are warm with no guilt. A's \"nothing to explain\" is a slight addition but it stays in the same spirit, and B's \"I promise\" is equally warm. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight (no catch-up owed, start from today, log one thing), add no numbers, use one emoji, and stay warm and guilt-free. A's \"I promise\" adds friendly reassurance, and B's \"nothing to explain\" reinforces no-guilt. Both fit the format and are equally fit to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "gap-return",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single welcome-back insight with no numbers and no guilt, and each uses one emoji. A adds \"nothing to explain,\" which is mild but slightly implies an absence needing explanation. B stays closer to the original (\"pick up from today,\" \"rolling again\") and reads as warm. The difference is small, so neither answer is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the same meaning, add no numbers, and use one emoji with a short headline and body. A is a close, warm rewording. B adds \"nothing to explain,\" which is a mild extra claim but supportive and guilt-free, and it reads equally warm. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "gap-return",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight (no catch-up owed, log one thing today), add no numbers, and stay warm and shame-free with one emoji each. A is slightly tighter and closer to the original phrasing, and B's \"pick up from today\" is also faithful. Neither has a fault, and the differences are stylistic.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the same welcome-back meaning with no invented figures, one emoji each, and a warm, guilt-free tone. Answer A adds \"no pressure,\" which fits the observation. Answer B adds \"nothing to explain,\" which also fits and mildly reinforces no guilt. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "long-sleep",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers keep 8h 12m and the same meaning, with one emoji each and nothing invented. A's headline is short and punchy and its body is a clean two sentences. B's headline is longer and its body adds a 'be kind to yourself' tail, which is harmless but makes it less glanceable. A is tighter and equally warm.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 8h 12m figure and the single insight, use one emoji, and sound warm with no invented claims. A's headline is a bit longer and its added 'be kind to yourself' is harmless but slightly generic. B's headline is punchier and easier to read at a glance, though 'a full night' slightly reframes the observation. Both are fit to show and the differences are minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "long-sleep",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep 8h 12m and the meaning, use one emoji, and sound warm with no invented claims. A's headline is shorter and punchier, while B's headline is a longer run-on with a greeting. The bodies are nearly equivalent, and neither answer has a serious fault, so the difference is minor stylistic preference.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep 8h 12m and the meaning, use one emoji, sound warm, and add nothing harmful. A's headline is a bit longer but still one sentence. B's \"full night\" is a slight rewording but not a factual claim. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "long-sleep",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep 8h 12m and the meaning, use one emoji, and sound warm. Answer A's headline rounds to \"Eight hours,\" which introduces a slightly altered figure. Answer B stays faithful to the observation and reads naturally.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the meaning and numbers exactly. It adds a warm \"Sam\" and a single emoji, so it is faithful and friendly. Answer B's headline rounds to \"Eight hours\", which adds a number that differs from 8h 12m, and \"feel lighter\" could read as weight-related, a slight drift in meaning. A is cleaner and fully faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "quiet-day-hr",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 57 and the ten-minute walk, keep the rest-is-good meaning, add nothing invented, and use one emoji. A rewarms the wording more and reads warmly, but its headline \"Quiet days count too\" drops the specific \"yesterday\" framing and turns it into a slight generalization. B stays very close to the original while adding a friendly greeting, so it is faithful and warm but less rewarmed. Neither is clearly better, since both are fine to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the single insight, the 57 resting heart rate and the ten-minute walk, and both treat the rest day as good, with one emoji each. A is nearly a verbatim copy with a light greeting added, so it is accurate but adds little warmth. B rewords more warmly and more like a friend (\"Quiet days count too\", \"backs you up\", \"cozy recovery zone\") without changing the meaning, and its headline is shorter. B reads slightly better at a glance, though the difference is modest.",
+    "error": null
+   }
+  },
+  {
+   "case": "quiet-day-hr",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the 57 and the ten-minute walk, stay warm, and use one emoji. Answer A has the shorter, punchier headline and a tight body, though \"plenty\" slightly shifts \"counts.\" Answer B adds a mild interpretive claim (\"your body's clearly soaking in the rest\") and runs a bit longer, but stays faithful otherwise. Both are fine, and A is slightly more at-a-glance with less added claim.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the 57 and the ten-minute walk, are warm, and use one emoji. A adds a claim that the body is 'clearly soaking in the rest', a mild interpretive addition, and runs a bit long. B is tighter and more glanceable, though 'is plenty' slightly shifts 'absolutely counts' and could read as a ceiling on movement. On balance B reads more cleanly and keeps the meaning, with only a minor wording shift.",
+    "error": null
+   }
+  },
+  {
+   "case": "quiet-day-hr",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep 57 and ten-minute walk, warm tone, one emoji, and treat rest positively. B adds the claim that the body is \"telling you it was a good call.\" That is a mild interpretive stretch and lengthens the body. A stays closer to the original meaning (\"backs it up\") and is tighter at a glance.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the 57 and the ten-minute walk, use one emoji, and stay warm with no guilt. Answer A adds \"your body's telling you it was a good call,\" a mild interpretive claim, though it is close to \"agrees\" in the original. Answer B stays closer to the original meaning and reads a bit more naturally as a friendly text. The difference is small, but B is slightly more faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "quiet-day-plain",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight, add no numbers, use one emoji, and frame rest positively. A is warmer and more texting-like with a short headline. B is a closer, slightly stiffer paraphrase, but it keeps the full 'counts, not against you' point that A folds into its headline. Both are fit to show and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no numbers, use one emoji, and frame rest positively. A's 'it's never working against you' slightly overstates the original 'not against you,' but only mildly. B is snappier and more friend-like, with a short headline and a single-sentence body. Both are fit to show and the differences are minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "quiet-day-plain",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight, add no numbers, treat rest as good, and use one emoji. A's headline is short and warm, and its body adds a friendly reframe (\"it's working for you\") that stays within the meaning. B's headline is a bit long but faithful, and its \"never\" slightly overstates the original \"not against you.\" Both are fit to show and the differences are minor.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight, add no numbers, treat rest as good, and use one emoji. A stays very close to the source, but its headline is a bit flat, and it reads more like a copy than a rewarming. B's headline is warmer and more friend-like, and its 'working for you' adds an affirming twist without changing the meaning, though its body is slightly longer. Both are fit to show and are close in quality, with B marginally warmer and A marginally tighter, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "quiet-day-plain",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, add no numbers, and treat rest warmly with one emoji each. A's headline is a short single sentence and its body flows naturally. B's headline is a bit long and run-on, and \"it's never working against you\" slightly shifts the meaning from \"rest doesn't count against you\" to \"your body is never working against you.\" A is cleaner and more faithful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the same insight with no numbers, both are warm, each uses one emoji, and both treat rest positively. Answer A's 'never working against you' slightly overstates the original ('not against you'), and it splits the body into two sentences, which is fine. Answer B's headline shifts the framing slightly but keeps the meaning, and its body stays faithful. The differences are minor and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-14",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A swaps \"14 days\" for \"two weeks.\" The meaning is the same, but the instruction says to keep the numbers exactly, so dropping the figure 14 is a small fault. Answer B keeps 14 exactly, holds to the single insight, stays warm with one emoji, and fits in two sentences. B is the more faithful of the two and is still easy to read at a glance.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the exact figure of 14 days and the meaning, uses one emoji, and has a warm, friendly tone. Answer B changes '14 days' into 'two weeks'. That is equivalent, but the input asked for the numbers to be kept exactly, and B drops the figure itself. B is still warm and concise, but A is more faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-14",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the 14-day figure and the insight, and neither adds a new claim. A rewords it more warmly and naturally: it says \"two weeks\" in the headline and keeps 14 in the body. B mostly copies the original wording with a name added, so it sounds more like the app than a friend texting. A is the better rewarming, though B is acceptable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A keeps the 14-day figure in the headline and stays faithful, though it mostly copies the original, so it adds little warmth. Answer B rewords the headline to \"two weeks\" while keeping 14 in the body, which preserves the meaning and sounds warmer and more like a friend texting. B's \"adding up to something real\" is a mild added framing but not a factual claim, and it keeps the consistency message. Both are acceptable, but B is the warmer rewording, while A is safer and more exact.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-14",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A turns \"14 days\" into \"two weeks,\" which keeps the meaning but does not keep the exact number the instructions require. Answer B keeps 14 days and the whole insight word for word, and adds a warm \"I'm proud of you.\" B is less of a rewording, but it is faithful and still warm, with one emoji. Since keeping every number exactly is required, B is the better answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the exact figure \"14 days\" and the meaning, adds warmth with \"I'm proud of you,\" and uses one emoji. Answer B rewrites \"14 days\" as \"two weeks.\" That is equivalent, but it drops the exact number the input asked to keep. B is warm and natural, but A stays more faithful to the numbers while still sounding friendly.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-28",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight and the number 28, add nothing invented, and use one emoji each. Answer A is a lively, friend-like rewording that stays faithful and reads easily in two clean lines. Answer B is also faithful and warm, adding 'I'm proud of you', though it mostly copies the original wording and runs slightly longer. Both are fit to show and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the 28-day figure and the core message, add no new numbers, and use one emoji. A has a slightly clunky headline that starts with the name, and it adds \"I'm proud of you,\" which is warm and fine. B reads more naturally as a text from a friend and its headline is cleaner. The two are close and both fit to show, with B only marginally smoother, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-28",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 28-day number, add no invented figures, use one emoji, and stay warm with no guilt. A drops 'in a row' but '28 days strong' still conveys the streak; it is punchy and reads as a friend texting. B keeps the observation's wording almost exactly and adds a fine second sentence, but its headline is less warm and more app-like. The differences are minor, and both are good and faithful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 28-day figure, the single insight, add nothing invented, and use one emoji. A keeps \"in a row\" explicitly and reads warmly, while B's \"28 days strong\" drops the \"in a row\" streak wording slightly but stays close in meaning and is punchier. Both are fit and similarly good; neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-28",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 28-day number and the meaning, use one emoji, and stay warm with no invented figures. A's \"28 days strong\" drops \"in a row\" but still implies a streak, and it feels a bit more like a friend texting. B sticks closer to the original wording and reads slightly flatter, though it's still warm. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 28-day figure and the single insight, add nothing invented, use one emoji, and stay warm and guilt-free. Answer A keeps \"in a row\" and the consistency meaning explicitly, while B's \"28 days strong\" drops the consecutive framing slightly but still implies it. B reads a bit more like a friend texting, and A sticks a bit closer to the source. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "travel-day0-east",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the 8-hour figure, the few-days framing, and the 'adjusting, not slipping' close, and each uses a single emoji. A's body runs to three sentences against the one-or-two limit, and 'logging only if it feels easy' shifts the meaning slightly. B leaves out 'east', but its headline carries the one number, its body has two sentences, and it stays faithful and warm. B fits the format better without a serious fault.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the 8-hour figure in the headline but drops \"east\" and \"today.\" Its body is two clean sentences that match the source closely. Answer B keeps all the details, but its body runs to three sentences, over the one-or-two limit, and \"jet lag math\" is a slightly playful framing that adds nothing. Both are warm and accurate, but A fits the format better and is easier to read at a glance.",
+    "error": null
+   }
+  },
+  {
+   "case": "travel-day0-east",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A is concise and keeps the 8 hours east and few days, but it drops the sleep and appetite point. Its \"logging only when it's easy\" also slightly shifts the meaning. Answer B keeps the full insight and numbers and has a warm headline, but its body runs three sentences, over the two-sentence limit. B's fidelity to the meaning matters more than A's brevity, though both are close.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 8 hours east figure, the advice, and the \"adjusting, not slipping\" framing, with no invented facts and one emoji each. Answer A's body runs to three sentences, over the one-or-two limit. Answer B's body is two sentences, but it drops the mention of sleep and appetite and puts the number in the headline. B's omission is minor, A's is a format breach, and both are warm and accurate, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "travel-day0-east",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 8 hours east figure, the few-days catch-up, and the water/daylight/easy-logging advice, and each uses one emoji with a warm, guilt-free tone. Answer A's headline is slightly tighter and uses the 'your body's still catching up' framing faithfully. Answer B adds the mild framing 'a big jump', which is not an invented figure, and it reads equally warm. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 8 hours east figure and the full meaning, use one emoji each, stay warm, and add nothing invented. A's headline is a full sentence and its body is two clear sentences. B's headline is a fragment, and its body changes \"catch up\" to \"settle in\" while running long with dashes, but it is still clear. The differences are minor and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "travel-day2-west",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep day 3 and the 3-hour westward shift and use one emoji, and both are warm and accurate. A says \"any body,\" which slightly overstates the original \"most bodies.\" B's \"usually\" preserves that hedge, and B tracks the meaning more faithfully while staying friendly, though its body is a bit long.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep day 3 and the 3-hour westward shift, use one emoji, and sound warm. B's \"any body\" overstates the original's \"most bodies,\" a slight change in meaning, while A's \"usually\" preserves the hedge. A is slightly more faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "travel-day2-west",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep Day 3 and the 3-hour westward shift with no invented figures, and both carry one emoji and a warm tone. A changes \"most bodies\" to \"any body,\" a slight overgeneralization that shifts the claim, but adds the nice \"not you\" reassurance. B keeps the meaning faithfully with \"most bodies\" and adds a gentle \"be gentle with yourself,\" though its body runs slightly longer. B's fidelity gives it a small edge.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the numbers and meaning, use one emoji, and sound warm. B changes \"most bodies\" to \"any body,\" a slight overgeneralization that alters the claim. A preserves the meaning exactly, adds a gentle note, and keeps the body to two sentences.",
+    "error": null
+   }
+  },
+  {
+   "case": "travel-day2-west",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A says the shift 'still has a few days of settling left,' which subtly changes the meaning (the original says it takes a few days total, and by day 3 it may be nearly done), and it drops the 'settles on its own' reassurance. Answer B keeps the meaning and all the numbers faithfully, including 'settles on its own', and adds a warm, gentle close. Both stay within one emoji and a short headline, but B is more accurate while still warm.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the observation's meaning and numbers exactly: most bodies need a few days, the 3-hour westward shift, and that it settles on its own. It adds a warm, gentle nudge and uses one emoji. Answer B says the shift 'still has a few days of settling left' on day 3, which subtly changes the meaning by implying more days remain, and it drops the reassurance that it settles on its own. Both sound warm, but A is more faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "trend-eased",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight with no invented numbers, use one emoji, and sound warm. A slightly reframes the observation as \"slow-and-steady\" progress that \"sticks\", which is close but still faithful; B stays closer to the original wording and puts the name in the headline. Neither has a fault and the differences are stylistic, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight, add no numbers, use one emoji, and sound warm. A stays closest to the original wording with a friendly greeting. B's 'slow-and-steady' and 'keep right on going' are slightly more conversational but drift a little from 'keep doing exactly that.' Neither has a clear edge.",
+    "error": null
+   }
+  },
+  {
+   "case": "trend-eased",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the single insight, add no numbers, use one emoji, and sound warm. A drops \"real progress\" but keeps the meaning; its added \"clearly\" is a slight embellishment. B tracks the original more faithfully and reads just as warmly. The differences are minor, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight, add no numbers, use one emoji, and sound warm and friendly. A stays very close to the original wording, while B rephrases slightly with \"clearly working\" and \"keep it up\" but keeps the same meaning. Neither has any fault, and the differences are only style.",
+    "error": null
+   }
+  },
+  {
+   "case": "trend-eased",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight, add no numbers, use one emoji, and stay warm, so they are equally faithful. Answer A adds 'slow, steady,' which is a slight embellishment but not a change of meaning, since the original's 'sustainable' implies it. Answer B stays closer to the original wording, and A reads a bit warmer, but neither difference is enough to make one clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the single insight, add no numbers, and each uses one emoji in a warm, friend-like tone. Answer B adds \"slow, steady\", a mild elaboration that roughly paraphrases \"sustainable\" rather than inventing a claim. Answer A stays closer to the original, while B reads slightly more natural, and neither difference is meaningful. Both are fit to show and neither is clearly better.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "long-sleep",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "long-sleep",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "long-sleep",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "check-in-no-name",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "check-in-no-name",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "check-in-no-name",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

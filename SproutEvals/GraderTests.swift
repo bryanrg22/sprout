@@ -552,6 +552,25 @@ final class GraderTests: XCTestCase {
         }
     }
 
+    /// `meal_describe/v4` describes every portion in household words, never a weight, and each
+    /// row's truth is the sum of its USDA parts (the sources name the grams `build_v4.py` took
+    /// from USDA's own portion list).
+    func testMealDatasetV4StatesNoWeightsAndAddsUp() throws {
+        let cases = try rows("meal_describe/v4.jsonl", as: Graders.MealTruth.self)
+        XCTAssertEqual(cases.count, 22)
+        XCTAssertEqual(Set(cases.map(\.id)).count, cases.count)
+        let weight = try NSRegularExpression(pattern: #"\d\s*(g|grams?|kg|ml)\b"#, options: [.caseInsensitive])
+        for c in cases {
+            XCTAssertNil(weight.firstMatch(in: c.description, range: NSRange(c.description.startIndex..., in: c.description)),
+                         "\(c.id): v4 gives no weight")
+            XCTAssertTrue(c.source.hasPrefix("FDC "), c.id)
+            XCTAssertGreaterThan(c.kcal, 20, c.id)
+            // Calories from the macros (4/4/9) land near the stated total, as on a label.
+            let fromMacros = 4 * c.protein_g + 4 * c.carbs_g + 9 * c.fat_g
+            XCTAssertEqual(fromMacros, c.kcal, accuracy: 0.2 * c.kcal + 10, c.id)
+        }
+    }
+
     /// Cases whose truth has more sugars than carbohydrate because the USDA record does:
     /// 171265 ("Milk, whole, 3.25% milkfat, with added vitamin D") lists total sugars 5.05 g
     /// per 100 g against carbohydrate (by difference) 4.8 g. The dataset keeps USDA's values;
@@ -878,6 +897,10 @@ final class GraderTests: XCTestCase {
     private let serverError: ScriptedTransport.Reply = .json(500, ["error": ["message": "boom"]])
 
     /// Runs `call` against a scripted model, the way an evaluation attempt runs against a real one.
+    private func scripted<T>(model: String, _ replies: [ScriptedTransport.Reply], _ call: () async -> T) async -> T {
+        await scripted(replies, model: model, call)
+    }
+
     private func scripted<T>(_ replies: [ScriptedTransport.Reply], provider: AIProvider = .anthropic,
                              model: String? = nil, _ call: () async -> T) async -> T {
         let runtime = AIRuntime(provider: provider, apiKey: "test-key-not-real", model: model,
@@ -1116,7 +1139,7 @@ final class GraderTests: XCTestCase {
         XCTAssertFalse(Graders.hasListOrHeader("Great week - really.\nKeep going."))
 
         XCTAssertEqual(Graders.itemBounds(ProgressSummaryService.schema, "highlights"), 2...4)
-        XCTAssertEqual(Graders.itemBounds(FoodSuggestionService.schema, "suggestions"), 2...3)
+        XCTAssertEqual(Graders.itemBounds(FoodSuggestionService.schema, "suggestions"), 1...3)   // one is shown since EVAL_REPORT 40
         XCTAssertEqual(Graders.itemBounds(CoachPromptService.schema, "prompts"), 2...5)
         XCTAssertEqual(Graders.itemBounds(ChecklistPlanService.schema, "tasks"), 3...5)
         XCTAssertEqual(Graders.itemBounds(ChecklistPlanService.schema, "chips"), 4...8)
@@ -1935,12 +1958,14 @@ final class GraderTests: XCTestCase {
         let wrap = pick(.idea, "Turkey wrap upgrade", "Roll three slices of turkey into a wrap with spinach.", "🌯")
         let good = Graders.foodSuggestions([pick(), wrap], rawCount: 2, expect: foodExpectation())
         XCTAssertTrue(good.pass)
-        XCTAssertEqual(good.scores, ["shown_within_schema": 1, "nearby_rule_kept": 1, "wrong_person_pronoun": 0,
+        XCTAssertEqual(good.scores, ["shown_within_schema": 1, "at_least_two_shown": 1, "nearby_rule_kept": 1, "wrong_person_pronoun": 0,
                                      "no_banned_phrase": 1, "details_one_sentence": 1, "titles_2_to_5_words": 1,
                                      "one_emoji_each": 1, "names_a_logged_food": 1, "nothing_eaten_today_in_a_title": 1,
                                      "model_count_within_schema": 1])
-        // The schema's own bounds: 2 to 3.
-        XCTAssertFalse(Graders.foodSuggestions([pick()], rawCount: nil, expect: foodExpectation()).pass)
+        // The schema's own bounds: 1 to 3 (one is shown since EVAL_REPORT 40; the prompt asks for 2 to 3).
+        let one = Graders.foodSuggestions([pick()], rawCount: nil, expect: foodExpectation())
+        XCTAssertTrue(one.pass); XCTAssertEqual(one.scores["at_least_two_shown"], 0)
+        XCTAssertFalse(Graders.foodSuggestions([], rawCount: nil, expect: foodExpectation()).pass)
         XCTAssertTrue(Graders.foodSuggestions([pick(), wrap, pick()], rawCount: nil, expect: foodExpectation()).pass)
         XCTAssertFalse(Graders.foodSuggestions([pick(), wrap, pick(), wrap], rawCount: nil, expect: foodExpectation()).pass)
         XCTAssertFalse(Graders.foodSuggestions([pick(), pick(.add, "Egg whites", "Add a cup of egg whites.", " ")],
@@ -1990,7 +2015,8 @@ final class GraderTests: XCTestCase {
         XCTAssertNil(scores(pick())["model_count_within_schema"])
         XCTAssertEqual(scores(pick(), rawCount: 3)["model_count_within_schema"], 1)
         XCTAssertEqual(scores(pick(), rawCount: 4)["model_count_within_schema"], 0)
-        XCTAssertEqual(scores(pick(), rawCount: 1)["model_count_within_schema"], 0)
+        XCTAssertEqual(scores(pick(), rawCount: 1)["model_count_within_schema"], 1)
+        XCTAssertEqual(scores(pick(), rawCount: 0)["model_count_within_schema"], 0)
         // A diet the logged foods show: a score, never the pass.
         XCTAssertNil(scores(pick())["avoided_foods_absent"], "the case shows no diet")
         XCTAssertEqual(scores(pick(), avoid: ["chicken", "egg"])["avoided_foods_absent"], 1)
@@ -2058,39 +2084,43 @@ final class GraderTests: XCTestCase {
     func testFoodAttemptOnAScriptedModel() async throws {
         let cases = try rows("food_suggestions/v1.jsonl", as: LiveEvals.FoodCase.self)
         let item = try XCTUnwrap(cases.first { $0.id == "sam-vegetarian-lunch" })
+        // The replies are forced tool calls, so a model that is sent one is pinned: food ships on
+        // claude-sonnet-5-5 (EVAL_REPORT 40), which is asked for a JSON-schema answer.
         func suggestion(_ kind: String, _ title: String, _ detail: String) -> [String: Any] {
             ["kind": kind, "title": title, "detail": detail, "emoji": "🥗"]
         }
         let lentil = suggestion("add", "Lentil soup plus", "Stir a scoop of cottage cheese into your lentil soup for 14 g more protein.")
         let tofu = suggestion("idea", "Tofu rice bowl", "Build a tofu stir-fry bowl with edamame and brown rice.")
-        var outcome = await scripted([toolReply(["suggestions": [lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
+        var outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertTrue(outcome.ok); XCTAssertTrue(outcome.pass)
         XCTAssertEqual(outcome.scores["avoided_foods_absent"], 1)
         XCTAssertEqual(outcome.scores["model_count_within_schema"], 1)
         XCTAssertTrue(outcome.output.hasPrefix("[add] 🥗 Lentil soup plus: Stir a scoop"), outcome.output)
 
         let chicken = suggestion("add", "Grilled chicken add-on", "Add grilled chicken to your veggie burger for 30 g of protein.")
-        outcome = await scripted([toolReply(["suggestions": [lentil, chicken]])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [lentil, chicken]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertTrue(outcome.pass, "the feature is told no diet, so this is recorded and does not fail the case")
         XCTAssertEqual(outcome.scores["avoided_foods_absent"], 0)
 
-        // One suggestion left after the service drops an empty row: shown, and under the schema's minimum.
-        outcome = await scripted([toolReply(["suggestions": [lentil, suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
-        XCTAssertTrue(outcome.ok); XCTAssertFalse(outcome.pass)
-        XCTAssertEqual(outcome.scores["shown_within_schema"], 0)
+        // One suggestion left after the service drops an empty row: shown, and within the schema
+        // since one is enough (EVAL_REPORT 40); fewer than the prompt asks for is recorded.
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [lentil, suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
+        XCTAssertTrue(outcome.ok); XCTAssertTrue(outcome.pass)
+        XCTAssertEqual(outcome.scores["shown_within_schema"], 1)
+        XCTAssertEqual(outcome.scores["at_least_two_shown"], 0)
         // Four returned, three shown: the app's cap makes it showable; the model's own count is recorded.
-        outcome = await scripted([toolReply(["suggestions": [lentil, tofu, lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [lentil, tofu, lentil, tofu]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertTrue(outcome.pass)
         XCTAssertEqual(outcome.scores["model_count_within_schema"], 0)
 
         // Nothing the service can use: not usable, and what the model sent is kept.
-        outcome = await scripted([toolReply(["suggestions": [suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["suggestions": [suggestion("add", "", "")]])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertFalse(outcome.ok)
         XCTAssertTrue(outcome.output.contains("\"suggestions\""), outcome.output)
-        outcome = await scripted([toolReply(["picks": []])]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["picks": []])]) { await LiveEvals.foodAttempt(item) }
         XCTAssertFalse(outcome.ok)
         XCTAssertEqual(outcome.output, #"{"picks":[]}"#)
-        outcome = await scripted([serverError]) { await LiveEvals.foodAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [serverError]) { await LiveEvals.foodAttempt(item) }
         XCTAssertFalse(outcome.ok); XCTAssertEqual(outcome.output, "")
     }
 
@@ -2346,29 +2376,31 @@ final class GraderTests: XCTestCase {
 
     func testChecklistAttemptOnAScriptedModel() async throws {
         let item = try XCTUnwrap(try coachCases("checklist_plan").first { $0.id == "alex-lifter-bio-and-notes" })
+        // The replies are forced tool calls, so a model that is sent one is pinned: the checklist
+        // ships on claude-sonnet-5-5 (EVAL_REPORT 39), which is asked for a JSON-schema answer.
         func entry(_ title: String, _ icon: String = "figure.walk") -> [String: Any] { ["title": title, "icon": icon] }
         let tasks = [entry("Leg day at the gym", "dumbbell.fill"), entry("Evening walk"), entry("Early night", "bed.double.fill")]
         let chips = [entry("Gym", "dumbbell.fill"), entry("Walk"), entry("Stretch", "figure.flexibility"), entry("Meal prep", "carrot.fill")]
-        var outcome = await scripted([toolReply(["tasks": tasks, "chips": chips])]) { await LiveEvals.checklistAttempt(item) }
+        var outcome = await scripted(model: "claude-sonnet-5", [toolReply(["tasks": tasks, "chips": chips])]) { await LiveEvals.checklistAttempt(item) }
         XCTAssertTrue(outcome.ok); XCTAssertTrue(outcome.pass)
         XCTAssertEqual(outcome.scores["reflects_the_routine"], 1)
         XCTAssertEqual(outcome.scores["icons_known_share"], 1)
         XCTAssertTrue(outcome.output.contains("Leg day at the gym"))
 
         // The app's own filter drops a task about the scale; two tasks are left, under the minimum.
-        outcome = await scripted([toolReply(["tasks": [tasks[0], tasks[1], entry("Morning weigh-in")], "chips": chips])]) {
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["tasks": [tasks[0], tasks[1], entry("Morning weigh-in")], "chips": chips])]) {
             await LiveEvals.checklistAttempt(item)
         }
         XCTAssertTrue(outcome.ok); XCTAssertFalse(outcome.pass)
         XCTAssertEqual(outcome.scores["tasks_within_schema"], 0)
         XCTAssertEqual(outcome.scores["none_dropped_by_the_app"], 0)
         // Nothing left after cleaning: the service throws, the card keeps its presets, the reply is kept.
-        outcome = await scripted([toolReply(["tasks": [entry("Skip dinner")], "chips": [entry("Start a diet")]])]) {
+        outcome = await scripted(model: "claude-sonnet-5", [toolReply(["tasks": [entry("Skip dinner")], "chips": [entry("Start a diet")]])]) {
             await LiveEvals.checklistAttempt(item)
         }
         XCTAssertFalse(outcome.ok)
         XCTAssertTrue(outcome.output.contains("Skip dinner"))
-        outcome = await scripted([serverError]) { await LiveEvals.checklistAttempt(item) }
+        outcome = await scripted(model: "claude-sonnet-5", [serverError]) { await LiveEvals.checklistAttempt(item) }
         XCTAssertFalse(outcome.ok)
         XCTAssertTrue(outcome.error?.contains("boom") ?? false, outcome.error ?? "")
     }
@@ -2384,10 +2416,11 @@ final class GraderTests: XCTestCase {
             return String(test.name[range.upperBound...].dropLast())
         }
         for added in ["InsightLine", "WeeklyReflection", "OnboardingNote", "MemoryFold", "ProgressSummary",
-                      "FoodSuggestions", "CoachPrompts", "ChecklistPlan"] {
+                      "FoodSuggestions", "CoachPrompts", "ChecklistPlan", "MealDescribeHousehold", "MealPhoto", "CoachConversation",
+                      "PlanBuild", "PlanReview", "PlanResearch"] {
             XCTAssertTrue(names.contains(added), "LiveEvals has no test\(added)")
         }
-        XCTAssertEqual(names.count, 12)
+        XCTAssertEqual(names.count, 18)
         for name in names {
             XCTAssertTrue(Graders.containsPhrase(usage, name), "Evals/run.sh does not list \(name) in its usage")
         }

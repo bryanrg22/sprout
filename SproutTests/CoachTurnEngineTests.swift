@@ -1078,4 +1078,10 @@ final class CoachTurnEngineTests: XCTestCase {
         XCTAssertFalse(engine.isSending)
         XCTAssertNil(engine.failure)
     }
+
+    /// The Undo banner stays 5 seconds in the app; only the UI flows lengthen it.
+    func testTheUndoBannerStaysFiveSecondsOutsideTheUIFlows() {
+        XCTAssertFalse(UITestHooks.isActive)
+        XCTAssertEqual(CoachTurnEngine.undoWindow, .seconds(5))
+    }
 }

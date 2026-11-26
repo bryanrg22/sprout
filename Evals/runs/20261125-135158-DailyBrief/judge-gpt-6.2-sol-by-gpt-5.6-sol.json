@@ -1,0 +1,299 @@
+{
+ "task": "dailyBrief",
+ "run": "20261125-135158-DailyBrief",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "openai:gpt-6.2-sol",
+ "judge": {
+  "model": "gpt-5.6-sol",
+  "effort": "low",
+  "answered_by": [
+   "gpt-5.6-sol"
+  ],
+  "rubric_sha256": "a91a0dfc462faf5a8c21a64f2d97108577705dd881b7c5ae056ac6da0d23c34f",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 13,
+ "pairs_skipped": [],
+ "cases": 13,
+ "candidate_wins": 6,
+ "baseline_wins": 6,
+ "ties": 1,
+ "both_bad": 0,
+ "orders_agree_share": 0.9230769230769231,
+ "net": 0.0,
+ "net_ci95_cases": [
+  -0.5384615384615384,
+  0.5384615384615384
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 38,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.1952,
+ "verdicts": [
+  {
+   "case": "big-steps-steady-hr",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both preserve the core observation and all numbers, but B is warmer, clearer, and more natural. It explicitly keeps the important detail that 59 is Alex\u2019s usual resting heart rate, while A only says it is steady and uses the more exaggerated phrase \u201cshrugged it off like a pro.\u201d",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the same insight and preserve the figures 15,420 and 59 without adding unsupported claims. Answer A is more natural and caring, while B\u2019s \u201clike a pro\u201d and \u201cfitter engine\u201d phrasing feels more performative and less like a warm friend.",
+    "error": null
+   }
+  },
+  {
+   "case": "check-in-named",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the original \u201csmall walk\u201d wording and all quantities intact while staying concise, warm, and easy to scan. Answer B is also strong, but changes \u201csmall walk\u201d to \u201cshort walk,\u201d making A the slightly more faithful rewording.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the single supportive insight and all three \u201cone\u201d examples without adding claims. Answer B is slightly more faithful to the original wording (\u201cfresh page\u201d and \u201csmall walk\u201d), while staying warm, concise, and easy to scan; its headline fragment is a minor style issue but not enough to outweigh that fidelity.",
+    "error": null
+   }
+  },
+  {
+   "case": "check-in-no-name",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A stays very close to the original insight and preserves all three options without adding a new idea. It also feels warmer and more personal by using the friend\u2019s name, while remaining concise and easy to scan. Answer B is good, but \u201cchase a goal\u201d adds a slight interpretation that was not explicit in the observation.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the observation\u2019s single supportive insight and all three \u201cone\u201d examples without adding claims. Answer B is slightly warmer and more personal because it uses the friend\u2019s name and a fitting emoji, while staying concise and easy to scan.",
+    "error": null
+   }
+  },
+  {
+   "case": "deep-sleep",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A more faithfully preserves the observation\u2019s meaning, including the exact 1h 36m figure and the body\u2019s repair work. Its wording is warm, concise, and easy to scan, while Answer B shifts \u201crepair work\u201d to \u201crecharge\u201d and ends with a slightly awkward rhetorical question.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B preserves the original meaning and the exact 1h 36m figure, while keeping the specific idea of bodily repair work. It also sounds warmer and more natural, directly addresses Alex, and uses one fitting emoji. Answer A is acceptable, but \u201crecharge\u201d is a slight shift from the observation\u2019s more specific \u201crepair work,\u201d and its closing question is less smooth.",
+    "error": null
+   }
+  },
+  {
+   "case": "gap-return",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both preserve the welcoming reset message, keep \u201clog one thing today,\u201d and avoid guilt or pressure. Answer A is slightly closer to the original wording, while Answer B is equally warm and cleanly formatted; neither has a meaningful quality advantage.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both are warm, concise, and preserve the core invitation to restart by logging one thing. Answer A is slightly better because it stays closest to the original without adding \u201cnothing to explain,\u201d which introduces an unnecessary implication that Alex might need to justify being away.",
+    "error": null
+   }
+  },
+  {
+   "case": "long-sleep",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both preserve the single insight and the exact sleep duration without adding unsupported claims. Answer A feels slightly more like a warm friend texting Sam, while keeping the original idea of overnight repair and an easier day; its one emoji is also appropriate and unobtrusive.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the single insight and the exact sleep duration. Answer B stays closer to the original meaning by retaining both the \u201crepair work\u201d framing and the idea that such nights \u201ctend\u201d to make the day easier, while also sounding warm and personal.",
+    "error": null
+   }
+  },
+  {
+   "case": "quiet-day-hr",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both preserve the single insight and all numbers without adding claims. Answer A is slightly warmer and more companion-like, while staying concise and treating the quiet day positively; its wording also follows the original observation especially closely.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the observation and its numbers without adding unsupported claims. Answer B is slightly warmer and more companion-like, addresses Alex naturally, and keeps the reassuring framing that a quiet day supports recovery.",
+    "error": null
+   }
+  },
+  {
+   "case": "quiet-day-plain",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the full insight: yesterday was quiet, rest draws on work already done, and it counts for you rather than against you. It is warmer and more companion-like, while Answer B slightly shifts the meaning by calling rest \u201cpart of the work\u201d and drops the reassuring \u201cnot against you\u201d contrast.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both preserve the single insight without inventing facts or numbers. Answer B is warmer and more companion-like, directly addresses Sam, and retains the vivid idea that rest is \u201ccashing in\u201d prior work and counts for rather than against you. Its headline is short, and the body remains one easy-to-read sentence with only one emoji.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-14",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B preserves the exact 14-day streak and the original message about consistency over perfection without adding a new claim. Answer A is warm, but \u201cyou\u2019re winning it\u201d goes beyond the observation, and it restates 14 as both \u201ctwo weeks\u201d and \u201cfourteen days.\u201d",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A preserves the exact 14-day streak and the message that consistency matters more than perfection. It is warm, direct, and fits the required headline-and-body format. Answer B converts 14 days to \u201ctwo weeks,\u201d repeats the figure, and adds \u201cyou\u2019re winning it,\u201d making it less faithful to the original observation.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-28",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B preserves the exact insight and the 28-day figure in a clear headline and warm, concise body. Answer A is encouraging, but \u201cmore powerful than any perfect streak\u201d adds an unnecessary comparison and slightly shifts the original meaning.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A preserves the exact 28-day insight and clearly restates that consistency matters more than perfection. It is warm, direct, and follows the required headline-and-body structure. Answer B is friendly, but \u201cperfect streak\u201d slightly muddles the original message and its headline is less clearly a sentence.",
+    "error": null
+   }
+  },
+  {
+   "case": "travel-day0-east",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B preserves the observation\u2019s meaning and all details, including the qualifier \u201cusually,\u201d while staying warm and easy to scan. Answer A changes \u201cusually take\u201d to the more certain \u201cwill take\u201d and adds the unsupported judgment that the shift is \u201ca lot to ask.\u201d",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the original meaning, the exact figure \u201c8 hours,\u201d and the uncertainty that sleep and appetite \u201cusually\u201d take a few days to adjust. Answer B spells out the number, changes \u201cusually\u201d to the more certain \u201cwill,\u201d and adds the unsupported judgment that the shift is \u201ca lot to ask.\u201d",
+    "error": null
+   }
+  },
+  {
+   "case": "travel-day2-west",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both preserve the same insight and all numbers without adding claims. Answer B is slightly clearer and more polished: its headline is a complete sentence, while A\u2019s \u201ccatch up on\u201d is grammatically awkward. B still sounds warm and directly addresses Sam.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the core insight and all numbers without adding a problematic claim. Answer A is more natural and polished, while B\u2019s phrase \u201ctakes most bodies a few days to catch up on\u201d is grammatically awkward. A also sounds warm and directly supportive while staying easy to scan.",
+    "error": null
+   }
+  },
+  {
+   "case": "trend-eased",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B stays closest to the original insight: the trend moved down, the progress is sustainable, and Sam should keep doing what\u2019s working. Answer A\u2019s \u201cslow-and-steady\u201d and \u201cactually sticks\u201d add certainty not present in the observation, while the downward-chart emoji may overemphasize weight loss.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both preserve the core insight and add no figures. Answer A stays closest to \u201csustainable\u201d with \u201cthe kind you can keep up,\u201d while Answer B adds \u201cslow-and-steady\u201d and \u201cactually sticks,\u201d which slightly overstates details not present in the observation. A is also warm, concise, and natural without the unnecessary downward-chart emoji.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "long-sleep",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "long-sleep",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "long-sleep",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "check-in-no-name",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "check-in-no-name",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "check-in-no-name",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

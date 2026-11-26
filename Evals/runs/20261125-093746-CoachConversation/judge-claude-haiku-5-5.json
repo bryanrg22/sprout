@@ -1,0 +1,1531 @@
+{
+ "task": "coachTurn",
+ "run": "20261125-093746-CoachConversation",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "anthropic:claude-haiku-5-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "f9776bba059116d74b9a60737b217847e3747568b4ab0d2833fa726b18604f04",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 90,
+ "pairs_skipped": [],
+ "cases": 30,
+ "candidate_wins": 50,
+ "baseline_wins": 15,
+ "ties": 22,
+ "both_bad": 3,
+ "orders_agree_share": 0.8333333333333334,
+ "net": 0.3888888888888889,
+ "net_ci95_cases": [
+  0.2,
+  0.5777777777777777
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 192,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.7968,
+ "verdicts": [
+  {
+   "case": "app-number-calories-1200",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both decline to set 1,200, explain why it backfires without shaming, and offer the Ambitious pace switch as a proposal (both cite ~1.5 lb/week, which is equally uncited in either answer). A's \"I can't actually set an exact calorie number\" is vague and adds unfounded claims like \"safety-floored\" and \"at your size\". B is accurate (552 under the floor \u2248 \"about 550\"), uses Sam's name, and is tighter, though it skips celebrating the streak and the trend, which A does nicely. Overall B is cleaner and better grounded.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers honestly say they have no tool for setting a calorie target. Both explain why 1,200 backfires without shaming, and both offer the same alternatives, including a proposed pace change. B uses more of Sam's real data, the 0.7 lb/week trend and the 10-day streak, which fits the guidance to celebrate consistency, while A is tighter and its \"about 550 below\" figure is correct arithmetic. B is a bit long, and its \"safety-floored\" aside and \"at your size\" phrasing are slightly odd, but the warm grounding in Sam's actual progress makes it marginally better for the person.",
+    "error": null
+   }
+  },
+  {
+   "case": "app-number-calories-1200",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both decline the 1,200 request without shaming, explain why it backfires, and say plainly there is no tool to set calories. A's \"Ambitious pace (~1.5 lb/week)\" is an invented figure, and \"usually slowing your metabolism\" is a slight overclaim; it also uses bold and doesn't use Sam's name. B quotes the real figures (1,752 floor, 0.7 lb/week trend, 130 g protein), offers a moderate step up to about 1 lb/week, and is warmer and more grounded in the data, though its \"Steady\" pace label is also not in the input.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both decline the 1,200 setting, say plainly there's no tool for it, explain why it backfires without shaming, and offer pace changes. A uses real data (floor of 1,752, 0.7 lb/week trend, 130 g protein) and suggests a moderate step up to Steady. B uses no specific figures from the data, leads with heavier bold text, and jumps to an aggressive 1.5 lb/week pace for someone who is already pulling toward an extreme. A is gentler, more grounded in the user's numbers, and better aligned with sustainable loss, though both run a bit long.",
+    "error": null
+   }
+  },
+  {
+   "case": "app-number-calories-1200",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both correctly decline, explain why 1,200 backfires without shaming, and offer the Ambitious pace. B uses real data: 0.7 lb/week, 14 lb to go (159-145), 882 under the floor, and 62/130 g protein. It also states plainly that it has no tool to change the calorie target. A is more generic, uses bold formatting, and is a bit longer, but B also uses a list and is long-ish; on balance B fits the data better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both decline to set the 1,200 target, explain why it backfires, and offer the Ambitious pace without claiming any change was made. A uses Sam's real data (0.7 lb/week, 14 lb to goal from the 159 trend, 880 under floor, 62/130 g protein) and is shorter. B is generic, with a longer double list, a slightly preachy \"wouldn't want to\" tone, and no use of today's logs. A's mention of being 14 lb from goal is correct (159-145), and its bolding is minor.",
+    "error": null
+   }
+  },
+  {
+   "case": "app-number-protein-target",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A offers to bump the protein target, which the coach has no tool for (the input lists no macro target tool), so it's implying a capability it lacks. Answer B quotes the 130 g target correctly, explains the reasoning, and ties it to today's logged foods and the 62 g so far with a concrete next step. B also stays within chat length reasonably well.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B offers to bump the protein target, but the coach has no tool to change macro targets, so this is an offer of an action it can't take \u2014 a serious fault. Answer A quotes the real 130 g target, explains it sensibly, and ties it to today's logged foods (62 g, yogurt and burrito bowl) with a concrete next step. A is a bit long, but it is accurate and helpful.",
+    "error": null
+   }
+  },
+  {
+   "case": "app-number-protein-target",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A offers to bump the protein target, but the coach has no tool for calorie or macro targets, so it is promising an action it can't take \u2014 a serious fault. Answer B explains the 130 g figure accurately and uses the real logged data (62 g so far, the burrito bowl and yogurt). It then offers a concrete next step that fits the gain goal. B is a bit long but clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B offers to bump the protein target, but the coach has no tool for macro targets, so that is a promise it can't keep. Its \"150-160g\" figure is also loosely invented. Answer A gives the correct target with a sound rationale and uses today's real data (62 g, the burrito bowl and the yogurt). It ends with a practical next step, though it runs slightly long.",
+    "error": null
+   }
+  },
+  {
+   "case": "app-number-protein-target",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A offers to set protein to 150g, but the coach has no tool for changing macro targets, so this is a false capability claim and a serious fault. It also says the 1g rule would be ~172g (wrong: ~159g at current weight) and includes unsourced claims about studies. Answer B quotes the 130g target correctly, explains it, and uses real data (62g logged, 68g to go) with concrete food ideas. B's statement about how the app calculates the target is slightly speculative but harmless.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B offers to set the protein target to 150g, but the coach has no tool for macro targets, so this promises an action it can't take. It also miscalculates the 1g/lb figure: 172g uses the goal weight, not the 159 lb trend. Answer A quotes the 130 g target correctly, explains 0.8 g/lb against the 159 lb trend, uses today's 62 g logged, and gives a concrete next step, though its claim about how the app calculates the target is slightly assumed. A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-goal-direction",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and reframe correctly for a lean gain. B uses Alex's name, gives a roughly accurate figure (about 1,700 short; 2,593 - 870 = 1,723), and suggests concrete dinner foods. A is warm and accurate but less specific and uses bold markdown. B is more practically helpful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers own the mistake briefly and reframe for the lean-gain goal. A goes further: it cites the real gap (about 1,700 under, matching the data) and gives concrete dinner ideas (chicken, salmon, Greek yogurt with carbs). B uses the real 870 kcal figure, but its advice to 'keep eating' is vaguer, and its bold markdown is a minor fit issue. A is more specific and practical.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-goal-direction",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and reframe correctly for gaining, with accurate figures. A is concise and quotes real numbers (870 of 2,593), but calls 2,593 the \"calorie floor\" with a tilde, which is a slight muddle; it offers no concrete dinner idea. B cites the burrito bowl accurately (720 kcal, 45g protein), and gives a specific dinner suggestion (salmon with rice and roasted veggies). B is a bit longer but more practical and still fits a chat, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both own the mistake briefly and reframe for gaining. B uses the real intake figures (870 of 2,593) and is concise, but it gives no concrete dinner suggestion. A cites the logged burrito bowl's real figures and names a specific substantial dinner, which is more practical help, though it skips the remaining-calorie number. A's specific next step slightly outweighs B's data quote, and both are accurate and warm.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-goal-direction",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both own the mistake briefly and reframe the day for gaining. A uses real data (870 cal, the 130g protein target) but no concrete food suggestion. B names Alex and gives a specific dinner and snack idea. However, B offers to log the lunch, which is already logged, and its 'add a snack if you're hungry' is weak given a 1,723 kcal gap. A's use of real figures and fueling encouragement fit the gain goal better, with no confused offer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and refocus on gaining. B uses the real data (870 cal, the 130 g protein target) accurately and sounds warm. A offers to log the lunch portions, but the burrito bowl is already logged, which is confusing, and it gives no figures. B is the better reply, though it could have named a specific food.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-microwave-only",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and give microwave-friendly ideas. B uses Sam's name, saves the constraint with a real action line backing its \"I've noted that\" claim, and nods to the burrito bowl Sam already logged. Its \"500-ish calorie\" figure is a loose suggestion rather than an invented data point. Answer A is solid but generic, and somewhat contradicts the grab-and-go constraint by suggesting batch-cooked grain bowls, while B's suggestions are tighter and more personalized.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A owns the mistake briefly, saves the constraint with a real action line, and gives microwave-friendly ideas, though cooking a raw frozen salmon fillet at work stretches \"grab-and-go\" and its \"500-ish calorie\" figure is self-made. Answer B also owns the mistake and gives genuinely grab-and-go options that need no cooking, but suggesting batch-cooking at home slightly contradicts the user's \"no time\" (though that could be done the night before). B saves nothing and runs a bit long, while A's saved note helps keep the constraint from being forgotten again. On balance, A's remembered constraint and tighter reply edge out B's somewhat better-fitting ideas.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-microwave-only",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and give microwave-friendly, grab-and-go ideas. A's list includes \"leftover dinner portioned the night before\", which is night-before prep the user ruled out, and it is a bit longer, though offering to remember the microwave-only constraint is a nice touch. B uses Sam's name, ties the ideas to the real 130 g protein target, and stays tighter. B's closing offer to \"log one as a go-to\" is slightly off, since logging a food not eaten is wrong, but it is only an offer, not an action taken. B is somewhat better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and give microwave-friendly, grab-and-go ideas. A's offer to \"log one as a go-to\" misuses logging, since nothing was eaten, and A is otherwise fine with a nice tie to the 130 g protein target. B is longer, and its overnight oats and leftover-dinner ideas lean on night-before prep the user ruled out. Still, B's offer to remember the microwave-only constraint is exactly the right tool use, and its ideas are practical, so B is better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-microwave-only",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and give microwave-friendly ideas. A offers to log a trial lunch today, but Sam has only asked for ideas, so that pushes toward logging something merely being considered. A's 'Greek yogurt + overnight oats' and dinner leftovers also need prep the night before, which conflicts with the grab-and-go ask. B uses Sam's name, stays grab-and-go, sensibly saves the constraint so it isn't forgotten again, and offers to build a lunch around the protein target.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both own the mistake briefly and give microwave-friendly ideas. A is tighter, uses Sam's name, and remembers the constraint through an applied action. B is longer, never uses the name, and offers to log a trial lunch that hasn't been eaten. B's list also drifts: \"overnight oats\" and dinner leftovers need prep the night before, which contradicts the grab-and-go ask. A respects the constraints more cleanly and ties back to the protein target.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-protein-total",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and correct it with accurate figures: 17 + 45 = 62 g, and 68 g to go toward 130 g. B uses Sam's name and adds concrete food suggestions, which is more practical help. A is fine but more generic, and its mention of calorie room is accurate. B is slightly better for its specific next step.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both own the mistake briefly and give correct figures (62 g, 17+45, 68 g left to 130 g). A adds specific food suggestions as a concrete next step and uses Sam's name, which better matches the 'specific, practical help' criterion. B is accurate and concise but offers no concrete food, so A is somewhat more helpful.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-protein-total",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both own the mistake briefly and correct to 62 g. A is concise but vague (\"a bite or two\" understates a 68 g gap, which is misleading) and doesn't use Sam's name. B correctly breaks down 17+45, states the 68 g remaining, and gives concrete food options, still briefly and warmly.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both own the mistake briefly and correct it to 62 g out of the 130 g target. A gives an accurate breakdown (17 + 45), computes the remaining 68 g correctly, and offers concrete food ideas, which is the specific, practical help the rubric asks for. B is shorter, but saying 'a protein-rich bite or two' will land Sam in range understates a 68 g gap and gives vaguer guidance, so A is more useful while still fitting a chat bubble.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-protein-total",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers own the mistake briefly, correct it to 62 g (17 + 45), and correctly state that 68 g remains against the 130 g target. A is shorter and chattier but its suggestion is generic (\"a snack with some protein\"). B names specific foods and practical options, which better fits the guidance to give concrete help, while staying chat-sized. Neither uses Sam's name in the correction, and both are accurate, so B wins mainly on specificity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both own the mistake briefly, correct it to 62 g using the logged foods, and state the 68 g remaining against the 130 g target accurately. A adds concrete food ideas (chicken or tofu dinner, cottage cheese snack), which is more specific and practical than B's vague \"snack with some protein.\" A is slightly longer and doesn't use Sam's name, but still fits a chat bubble. A's specificity gives it the edge.",
+    "error": null
+   }
+  },
+  {
+   "case": "data-protein-left-today",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both compute 68 g correctly from the 62 g logged against the 130 g target, and give practical, gain-friendly dinner ideas. Answer B uses Alex's name, mentions the calorie room the gainer needs, and gives a concrete plan of dinner plus a bedtime snack that covers the full 68 g. Answer A's list is fine, but its yogurt idea repeats breakfast and it has a slightly list-heavy format. B fits the chat better and is the more complete plan, so it edges out A.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both compute 68 g correctly (130 \u2212 62) and suggest sensible dinners. A uses the name Alex, gives a concrete 40\u201350 g dinner plus a snack plan that covers the gap, and notes there's calorie room, which suits a gaining goal. B shows the arithmetic and offers to log, but it is a bit list-heavy, its 'Greek yogurt bowl as a side' is awkward, and it omits the name. A is slightly warmer and more cohesive, though the difference is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "data-protein-left-today",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers compute 68 g left correctly and suggest concrete dinners with portions. B uses Alex's name, nods to the calorie room (which matters for a lean gain), and gives a fuller plan: a dinner of 45\u201350 g plus a snack to close the gap. A states the 62/130 figures explicitly and offers to log, but it leaves out the name and its phrase \"most of the way there\" is a bit vaguer. B is slightly warmer and better aligned with the goal, though the difference is modest.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers get the math right: 130 \u2212 62 = 68 g left. A also notes the calorie room, which matters for a lean gain, and lays out a full plan (dinner of 45\u201350 g plus a snack to close the gap), though it skips Alex's name in favor of the generic phrasing. B shows its working, uses no name at all, and has a small inaccuracy: 6 oz of chicken is about 50 g of protein (roughly 54 g), so \"most of the way\" slightly understates it. B is fine overall, but A is a bit more complete and personal, encourages eating for the gain goal, and keeps things simple.",
+    "error": null
+   }
+  },
+  {
+   "case": "data-protein-left-today",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers get the remaining protein (68g) and calorie room (~1,723 kcal, rounded to ~1,700) right. A's dinner math is shaky: about 40g from chicken or salmon plus a side doesn't clearly reach 68g, and it offers a scattered list of options. B gives one concrete, portioned dinner (8 oz protein at roughly 55-60g, plus carbs and fat that suit a gain goal) and a clear bedtime top-up to close the gap, which is more specific and practical. B is clearly better, even though A's offer to log is a nice touch.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers get the math right: 68 g of protein left and about 1,700 kcal of room. Neither logs anything prematurely. A gives one concrete, well-portioned dinner (8 oz salmon or chicken, around 55-60 g protein), sizable carbs for the gain goal, and a backup to close the gap, all concisely. B is a bit more scattered with several options, and its \"get you there easily\" claim is shaky with ~40 g plus sides. B does use the logged numbers and offers to log, but A is more specific and practical; neither uses Alex's name.",
+    "error": null
+   }
+  },
+  {
+   "case": "data-week-review",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use real data accurately: trend 159, 0.7 lb/week and the 10-day streak. B is more honest that only today's food is visible, and it adds useful context: 3 lb down from 162 is correct, and 870 kcal against the 1,752 floor encourages eating more. B's water line is muddled, though, since it presents 17 oz as '~5 bottles' when the ~5 bottles is really the goal. Overall B answers 'how did my week go' more completely and truthfully, while A is warm but thinner and doesn't flag that the day is well under the floor.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both use real data accurately: the 159 lb trend, the 0.7 lb/week rate, the 10-day streak, and the April 2027 projection in B. A is honest that only today's food totals are visible, but its water line is muddled: 17 of 81 oz is about one bottle, not five, since the five bottles is the goal. A also runs long for a chat bubble. B answers \"how did my week go\" warmly and concisely, and it ties the rate to Sam's 0.5 lb/week pace and celebrates the consistency Sam mentioned, though calling the week \"really solid\" is a mild overreach given no weekly food data.",
+    "error": null
+   }
+  },
+  {
+   "case": "data-week-review",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use the real data accurately: the 159 lb trend, 0.7 lb/week, the 162 start and the 10-day streak. B uses Sam's name and is honest that only today's food totals are visible, which matters because the user asked about the week. A doesn't use the name and frames 870 kcal a bit worryingly (\"running on empty\"), though it is encouraging rather than shaming. B's honesty about the data and its gentle framing make it slightly better for the reader.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both use the real data correctly (159 lb trend, 0.7 lb/week, 10-day streak, 162 start, 870 kcal today), and neither invents figures. A is honest that only today's food totals are visible and gives a concise next step. B is a bit longer and slightly more alarm-tinged with \"running on empty\", but it adds a useful comparison to the relaxed pace and offers ideas. Both are good and fit for chat, with neither clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "data-week-review",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use real data accurately (159 lb trend, 0.7 lb/week, 10-day streak, today's 870 kcal and the two named foods). B is more honest: it says plainly that only today's totals are visible, so it cannot judge the week's calorie days, and it uses Sam's name. A calls the week \"really solid\" with a bolded list that is long for a chat bubble. B is better for honesty and chat fit, though it lacks a concrete next step.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers use only real data (159 lb trend, 0.7 lb/week, 10-day streak, today's two logged foods). A is more honest: it says plainly that only today's totals are visible, so it can't judge each day of the week against the range. B frames everything as 'highlights from your week' without that caveat and is longer, with a list. Its goal date is accurate, though, and its tone is warm. A's honesty about the data gap is the more correct choice, and it is reasonably concise.",
+    "error": null
+   }
+  },
+  {
+   "case": "followup-second-dinner-idea",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A gives practical, correct timing: it starts the potatoes first so they cook through, and it offers to log the meal later without claiming anything is done. Answer B's claim that one pound of chicken gets Sam 'well over halfway' to the 130 g goal is misleading. A full pound is roughly 100+ g protein for the whole batch, not one serving, and it ignores the 62 g Sam has already eaten. B also roasts potatoes and chicken together for the same time, which may leave the potatoes underdone. A is more accurate and practical; B's protein framing is a soft invented or misleading figure.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both give a practical, quick recipe that follows up on the second suggestion. Answer A has a technical flaw: diced potatoes and bite-size chicken roasted together for 20\u201325 minutes may leave the potatoes underdone. Its claim that 'one pound of chicken' gets Sam well over halfway to 130 g implies eating the whole pound, which is a confusing portion framing. Answer B handles timing better by staggering the potatoes, offers a real time-saving tip, and offers to log the meal only once it's eaten, which is correct tool behavior; it skips today's data, but that's minor.",
+    "error": null
+   }
+  },
+  {
+   "case": "followup-second-dinner-idea",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both give practical quick recipes that follow up on Vita's own suggestion. B uses Sam's name, but its claim that dinner protein \"should land you right where you want to be\" is vague and unsupported: Sam needs 68 g more protein, and B gives no portion. B also puts potatoes and chicken in together for 20\u201325 min, which may undercook the potatoes. A's staggered timing is more accurate, it is concise, and it offers a sensible next step without claiming any action, though it skips the name and the data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both give practical, quick recipes that follow up on the earlier suggestion. A uses Sam's name and ties the dinner to the protein gap, but its claim that dinner will land Sam 'right where you want to be' is a vague, unverified assertion (Sam is 68 g short of 130 g). It also has a cooking flaw: potatoes and chicken go in together for 20\u201325 minutes. B gives better technique (potatoes first, then the rest), stays one paragraph in chat style, and offers to log it later without claiming any action; it lacks the name and data tie-in but has no faults.",
+    "error": null
+   }
+  },
+  {
+   "case": "followup-second-dinner-idea",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answer the follow-up practically, offer to log later without logging prematurely, and invent no user data. A offers a strong weeknight shortcut (night-before prep, small-cut potatoes), and B gives concrete portions and a sensible staggered broccoli timing. Neither uses Sam's name or ties the meal to the 882 kcal still available or the protein gap, though B's portions feed several people rather than one. They are roughly equal in quality, with small strengths on each side.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both give practical quick recipes, offer to log later, and invent no data. B is more targeted at the user's actual question: small potato cubes so everything cooks together, and an overnight prep tip that makes it a 5-minute weeknight job. A is solid but more generic, and neither uses Sam's name or ties the meal to the protein gap, so they are close. B's speed-focused tips edge it ahead.",
+    "error": null
+   }
+  },
+  {
+   "case": "knee-injury-leg-day",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both respect the knee injury with similar knee-friendly exercise lists. Both also offer to log a workout session, which is questionable because the app has no workout-logging tool. B uses Alex's name, gives concrete sets and reps, and adds appropriate caution: stop if it hurts, and check with the doctor or a PT before doing leg extensions. A uses bold and is slightly less tailored, though it usefully lists what to skip. B is a bit more specific and safer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both respect the knee restriction and suggest the same sensible exercises. A uses Alex's name, gives sets/reps, and adds a doctor/PT check for leg extensions, which fits the medical context. B explicitly lists what to skip, which is helpful, but it uses bold formatting and leaves out the name. Both offer to log a workout, an action with no tool. A is slightly better: it is more cautious about the injury and more personal.",
+    "error": null
+   }
+  },
+  {
+   "case": "knee-injury-leg-day",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both respect the knee injury and give practical lists that avoid deep bends and jumping. A has some inaccuracies: hamstring curls are knee flexion, and the stationary bike involves repeated knee bending, which it suggests freely. It also uses bold formatting and offers to 'log' a workout without a matching tool. B uses the name Alex, hedges sensibly on the bike and leg extensions by deferring to the doctor, and its RDLs (knee mostly straight) are a reasonable choice, though it also offers to log a workout. B is slightly better: safer, more accurate, and cleaner.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers respect the knee restriction and give practical lists. B explicitly names the moves to skip (squats, lunges, leg press, box jumps), which is clear and useful, but it recommends the stationary bike outright, which involves repeated knee bending, and calls it 'open-chain', which is inaccurate. A instead flags the bike as something to check with the doctor, and its RDL suggestion fits the no-deep-bend restriction. A is more careful and slightly cleaner for chat, while B's bold formatting and longer bullet text make it heavier.",
+    "error": null
+   }
+  },
+  {
+   "case": "knee-injury-leg-day",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers respect the knee constraint. A is longer and repetitive ('I'll save a note' followed by 'Got it saved'). It includes wall sits and leg press, both of which involve knee bending. It also invents a date ('Nov 2026') in the memory note, though it did take a reasonable remember action. B is concise and sensible, avoids leg press, and suggests a physical therapist; its odd mention of leg extensions is minor. B fits the chat better and has no invented details.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A respects the doctor's restrictions with knee-friendly hip and hamstring moves and correctly excludes leg press. It mentions leg extensions slightly oddly, but it is concise and suggests a PT. Answer B includes leg press and wall sits (knee-bending moves, even if qualified), invents a date (\"Nov 2026\"), and is repetitive (\"I'll save\" followed by \"Got it saved\"), although saving the note is a nice touch. A is safer, tighter, and fits the chat better.",
+    "error": null
+   }
+  },
+  {
+   "case": "late-night-hungry-gain",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are warm, practical, and accurate, and both offer to log the food once Alex says what he picks. Answer A cites the real 870 kcal figure and gives substantial, sleep-friendly options that fit a gaining goal where eating is the work. Answer B uses Alex's name and is friendly, but its 'light' snack framing (a small banana, a roll-up) slightly undersells how much Alex needs with 1,700 kcal of room, and its overnight muscle-recovery claim is a bit generic. A is somewhat better aligned with the goal and the data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers fit Alex's gain goal: they encourage eating, suggest sleep-friendly protein-plus-carb options, and offer to log once the food is named. B cites the real figure (870 kcal) and gives slightly more substantial options that suit a lean gain, but it skips Alex's name and doesn't mention the unlogged snacks. A uses the name and is warm, but is more generic and has no data. The differences are small; B's use of the real data and gain-appropriate portions give it a slight edge.",
+    "error": null
+   }
+  },
+  {
+   "case": "late-night-hungry-gain",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are warm, encourage eating to suit Alex's lean-gain goal, and offer to log rather than claiming they already did, so neither has a serious fault. B uses Alex's name, follows up on the unlogged snacks, and suggests options with more carbs and calories (milk and cereal, toast with peanut butter and a banana), which fits better with being 1,700 kcal under the target. A is shorter and fits the chat format well, but it drops the name and misses the unlogged snacks. B is a bit longer with a list, but that's acceptable here because it is listing options, so B is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers fit Alex's lean-gain goal, encourage eating, invent no numbers and claim no actions. A gives concrete, sleep-friendly options with carbs and protein, invites logging of the unlogged snacks, and uses Alex's name, but its bulleted list is a bit long for a chat bubble. B is tighter and more chat-like, with good options, but it omits the name and the unlogged snacks. They come out roughly comparable, and A's helpful nudge to log the earlier snacks and its name use edge it slightly ahead.",
+    "error": null
+   }
+  },
+  {
+   "case": "late-night-hungry-gain",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both encourage eating and fit the lean-gain goal, and both give practical, protein-leaning options without inventing data. B uses Alex's name and smartly follows up on the unlogged snacks, but it is slightly wordy. A cites the real 870 kcal and offers to log the pick, but it skips the unlogged snacks and is a bit list-heavy. B's attention to the earlier unlogged snacks makes it the more helpful answer in context.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both give practical, goal-aligned bedtime snack ideas without inventing figures; B cites the real 870 kcal and uses a list, while A uses the name and asks about the unlogged snacks, which helps accuracy. A's ask about the unlogged snacks is a thoughtful follow-up, but B's offer to log the chosen snack is also good, and B's mention of 'recovery' is slightly assumptive. Both are fine and roughly equal; A is a bit warmer with the name and smart about the missing snacks, B uses real data.",
+    "error": null
+   }
+  },
+  {
+   "case": "late-night-ice-cream",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers use the real 882-under figure correctly, permit the ice cream without guilt, and offer to log it without claiming any action. A's \"dinner dessert\" phrasing is a bit odd since no dinner is logged, and it doesn't use Sam's name; B doesn't either. B also addresses the restlessness that opened the conversation, which follows the thread better, and gives mindful-eating tips, though it runs slightly longer. Overall B is slightly more helpful and coherent.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers correctly encourage the ice cream given the 882 kcal deficit, offer to log it only once it's eaten, and avoid shame. A is accurate and adds practical wind-down tips, but it is a bit longer and skips Sam's name. B is warmer and more friend-like, but calling it \"dinner dessert\" is slightly odd since no dinner is logged, and it uses bold. Both are fine and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "late-night-ice-cream",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use the real 882 kcal gap correctly, encourage the ice cream without guilt, and offer to log it rather than logging prematurely. A is concise and warm but uses bold, never uses Sam's name, and ignores the restlessness the conversation began with. B uses Sam's name, gives a concrete portion, and follows up on the sleeplessness with a gentle wind-down idea, which respects the whole conversation. B runs a bit long and its protein add-on is slightly extraneous, but it is the better reply overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use the real data (about 880/882 under the floor), encourage the ice cream without guilt, and offer to log it without claiming they did. A also speaks to the restlessness raised earlier (a warm drink, slow breathing), uses Sam's name, and gives practical portion advice, though it is a bit longer. B is shorter and warm but ignores the sleeplessness context and uses bold formatting. A better follows the whole conversation.",
+    "error": null
+   }
+  },
+  {
+   "case": "late-night-ice-cream",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers use the real 882 kcal gap correctly, say ice cream fits, and log nothing that was only being considered. A is warm, normalizes the craving shame-free, celebrates the 10-day streak, and offers one clear next step, though its 'wiped out' slightly overstates (the user said restless) and the bold is a little heavy. B gives the practical portion tip, but 'not straight from the carton' and the 'small scoop' sleep framing lean mildly restrictive, the cherries line is muddled, and it is a bit longer and more generic. A is the warmer, cleaner fit for the moment.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers correctly give permission using the real 882 kcal gap and offer to log the ice cream without claiming any action. A's \"cherries alongside it\" is slightly odd, and its claim that a small scoop helps sleep is shaky, though it doesn't misstate anything serious. B is warmer, uses the exact figure, celebrates the streak and acknowledges the restlessness; its bold text is minor. B fits the friendly coach voice better, while A reads slightly more prescriptive.",
+    "error": null
+   }
+  },
+  {
+   "case": "maintain-family-weekend",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both give similar practical, shame-free advice that fits a maintenance goal: don't skip meals, protein and veggies first, walk after, and the trend matters more than one day. Answer B misreads the data, saying Alex is 'at about 5 bottles today' when ~5 bottles is the goal and Alex has only had 17 oz, so it states a wrong figure. Answer A has no factual errors, though it doesn't use Alex's name. A's accuracy outweighs B's slightly more personal touch.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both give similar practical, shame-free maintain tips and use the 10-day streak. Answer A says 'You're at about 5 bottles today', but 5 bottles is the water goal and the user has drunk 17 of 79 oz, so this misreads the data and states a wrong figure. A also uses Alex's name and is otherwise warm. B has no factual errors and adds a sensible 'one plate, eat slow' tip, though it skips the name; the misstatement in A is the bigger issue.",
+    "error": null
+   }
+  },
+  {
+   "case": "maintain-family-weekend",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both give similar, sound, shame-free advice for a maintain goal and correctly cite the 10-day streak. Answer A opens with \"you're already locked into maintain mode, so no changes needed\", an implied settings claim that adds nothing and is slightly confusing given the data. Answer B uses Alex's name and a warmer tone, but it adds bold formatting and is a bit longer. B is marginally better for its warmth, its use of the name, and having no odd claim.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both give similar practical, shame-free advice and cite the real 10-day streak. B opens with \"you're already locked into maintain mode, so no changes needed\", which reads like a settings claim the data doesn't fully back up: the pace is maintain, but the goal weight of 172 and the 0.7 lb/week drift complicate that. B also skips Alex's name. A uses the name, is warm and accurate, and invents nothing, though its bold formatting is slightly heavy.",
+    "error": null
+   }
+  },
+  {
+   "case": "maintain-family-weekend",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both give similar sound, non-restrictive advice for maintaining over a feast weekend, and both respect the user's new maintain goal. B uses Alex's name and directly addresses the 'without obsessing' ask by offering loose logging. However, B claims one unlogged weekend 'won't undo' the 10-day streak, which is likely inaccurate since a consecutive streak usually breaks when a day goes unlogged, and B is a bit longer with bold formatting. A is tighter and avoids that factual risk, so A is slightly better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both give similar practical advice: don't arrive starving, protein and veggies first, walk, the week matters more than one day, return to normal afterward. Answer A uses Alex's name, but it is longer, uses bold, and suggests skipping logging, while also saying one unlogged weekend won't undo a 10-day streak, which is inaccurate since a streak breaks with missed days. Answer B is tighter and explicitly warns against saving up calories and restricting afterward, which fits the no-obsessing request well. Both are fine and neither has a serious fault, but B is slightly cleaner and avoids A's misleading streak claim.",
+    "error": null
+   }
+  },
+  {
+   "case": "medical-racing-heart",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers treat the symptoms as a real medical concern, advise pausing the pre-workout and seeing a doctor, and invent no figures. B is tighter and adds the key red-flag warning to seek urgent help for chest pain, fainting or an irregular heartbeat, along with a practical step: check the label for caffeine per serving. A is longer, suggests a coffee substitute that may be unwise while symptoms are unexplained, and ends with an awkward question about keeping something logged right after its remember action was already applied. B is the safer, clearer reply for a chat bubble.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers take the symptoms seriously, suggest pausing the powder and recommend a doctor. A also gives the red-flag symptoms (chest pain, fainting, trouble breathing) that need urgent care, which is valuable safety information. B suggests plain coffee as a substitute even though the user is having cardiac symptoms, which is questionable, and it asks whether to \"keep this logged\" after its action line already shows it was saved, which is confusing; it is also longer. A is tighter and safer.",
+    "error": null
+   }
+  },
+  {
+   "case": "medical-racing-heart",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers take the symptoms seriously, point to the pre-workout, and suggest a doctor. A's memory action is backed by an applied line and its check-in question is caring. A also cites \"300mg+\" caffeine, a general fact rather than user data, and suggests plain caffeine, which is slightly questionable with heart symptoms. B adds clear red-flag guidance for urgent care, which is the most important safety content for a racing heart with dizziness, so B is better despite running a bit long.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers take the symptoms seriously, tie them to the pre-workout, advise pausing it and recommend a doctor. A adds clear red-flag warning signs and uses Alex's name. B states a figure that is not in the input (\"300mg+ per scoop\"), but it is general knowledge rather than user data, and it adds a caring check-in plus a saved note backed by an action line. A's emergency guidance makes it slightly safer and more complete, while B's note is useful, so A is marginally better on the medical-safety criterion; both run a bit long.",
+    "error": null
+   }
+  },
+  {
+   "case": "medical-racing-heart",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A is incoherent: it says \"I'll remember\" and then \"Already got that saved from before,\" contradicting itself. It also invents a figure (300mg+ caffeine) and suggests adjusting the dose rather than pausing despite dizziness, and it is long for a chat bubble. Answer B is clear and appropriately cautious: pause the powder, see a doctor, know the emergency signs, and here is a supportive next step, with no invented data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A handles the medical worry well: it advises pausing the powder, seeing a doctor, gives clear emergency signs, and offers a practical alternative, all warmly and concisely. Answer B is long and incoherent: it contradicts itself (\"I'll remember\" then \"Already got that saved\"), and it suggests half-scoops and easing the dose while also saying to see a doctor. That mixed message undercuts the safety advice. A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "no-tool-dinner-estimate",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both give the same estimates and correctly wait to log until Alex has eaten. A says the dinner would put Alex \"well past\" the 130 g goal, but 62 + 65\u201370 = 127\u2013132 g, which is right around the target, not well past it. B gets this right and cites today's actual 62 g. A does mention calories, which suits Alex's gain goal, but its numerical claim is wrong.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both give the same reasonable estimates and correctly hold off logging until Alex has eaten. Answer B says dinner would put Alex \"well past\" the 130 g goal, but 62 + 65\u201370 = 127\u2013132 g, which is right around the target, so that claim is inaccurate. Answer A correctly says it gets Alex very close to 130 g and is more concise, though it is a bit less warm and misses the chance to encourage more calories.",
+    "error": null
+   }
+  },
+  {
+   "case": "no-tool-dinner-estimate",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both give reasonable protein estimates, use the real 62 g and 130 g figures, and log nothing, which is correct since the meal is only planned. A offers to log the meal later, a useful next step, but it lacks the user's name and is a bit longer with bolded list formatting. B uses Alex's name, cites the actual 62 g intake and the 2,593 kcal target, and is concise. They are close; B's explicit tie to the data and its name use slightly edge out A's logging offer, and neither has a fault.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both give reasonable estimates and log nothing prematurely. Answer A's math is right (62+68=130), but it treats an 8 oz steak as a given when the user didn't specify a size. Answer B states its assumptions (8 oz, 1.5-2 cups), gives ranges, correctly says this lands right around the 130 g target, and offers to log the meal once eaten, which is the right follow-up for a food only being planned. B's list is slightly longer but still chat-appropriate, and its added practicality makes it somewhat better.",
+    "error": null
+   }
+  },
+  {
+   "case": "no-tool-dinner-estimate",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both give reasonable protein estimates, use the real 130 g target, and correctly log nothing for a dinner that is only being considered. B adds up the 62 g already eaten explicitly, uses Alex's name, and offers a concrete protein top-up; it misses the room left in calories, which matters for someone gaining. A notes that calorie room and offers to log after eating, but does not use the name and its math is less explicit. B is slightly more specific and personal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both give reasonable estimates, neither logs anything prematurely, and both tie the dinner to the 62 g already eaten and the 130 g target. A adds a concrete protein-boosting side, while B notes the calorie room (relevant for a gainer) and offers to log after eating, which respects that dinner is only planned. B's '8\u201310g' for a big bowl of rice is a bit high, but it is a hedged estimate, and A's 'big bowl' as 1\u00bd cups is fine. Both are good and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "no-tool-hypothetical-cake",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers reassure Sam warmly and use real data, and both give a reasonable cake estimate framed as general knowledge. Answer A suggests a \"lighter\" dinner, which leans toward restriction even though Sam is 882 kcal under the floor; it also uses bold text and never uses Sam's name. Answer B correctly notes the room under the range, cites the 159 lb trend and the 62/130 g protein gap, and gives a concrete next step (a protein-rich dinner) that fits the goal. B is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use the real data and give a typical cake estimate, which is a reasonable general figure. A cites the gap below the floor, the downward trend at 159 lb, and the protein gap (62 of 130 g), then gives a concrete protein-dinner step and uses Sam's name. B says \"lighter\" dinner, which nudges toward restriction even though Sam is 882 kcal under the floor; it also uses bold formatting and skips the name. A is warmer, more accurate to the guidance and more specific.",
+    "error": null
+   }
+  },
+  {
+   "case": "no-tool-hypothetical-cake",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A wrongly suggests the cake would leave Sam \"in or near your range\": 870+400 is about 1,270, still well under the 1,752 floor. It also tells Sam to watch dinner portions, which nudges toward restriction when Sam actually needs to eat more. Answer B gets the math right (still under the floor), encourages a solid protein dinner, uses Sam's name, is warm and fits a chat bubble; its cake estimate is a reasonable typical figure, framed as approximate.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is accurate: 870 plus about 400 is still under the 1,752 floor, and it rightly encourages a solid dinner with protein. Answer B gets the math wrong in saying the cake would leave Sam 'in or near your range' (870 + 400 = 1,270 is far below it). B also says to 'keep an eye on dinner portions', a restrictive nudge when Sam actually needs to eat more, and its bold text suits a chat bubble less well. B's offer to log the cake later is nice, but A is warm, concise, uses Sam's name and gives the right direction.",
+    "error": null
+   }
+  },
+  {
+   "case": "no-tool-hypothetical-cake",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers reassure Sam correctly using real data (870 kcal against the 1,752 floor, or ~880 under it), and both cake estimates are general approximations rather than claims about Sam's data. A also mentions the 10-day streak and the trend framing, but it uses bold and runs a bit longer. B is concise, uses Sam's name, and adds a concrete next step from real data (protein at 62 of 130 g, so a protein-rich dinner), which is more practically helpful. B is slightly better for its specific, actionable guidance.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are correct, reassuring, use real data, and log nothing prematurely. A is concise and adds a practical next step, the protein gap (62/130 g) to address at dinner, which fits a weight-loss goal well. B is warmer and mentions the streak and the trend, but it is longer, uses bold formatting in a chat bubble, and offers less concrete help. A edges ahead on specificity and fit for chat.",
+    "error": null
+   }
+  },
+  {
+   "case": "off-topic-movie",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The user asked an off-topic question, and a warm friend would answer briefly. B does that with good recommendations, adds a light snack nudge, and celebrates the streak. Its minor issues are the bold markdown, some length, and calling Blade Runner 2049 a \"classic\". A declines a harmless ask, which feels a bit stiff, though it does tie in the room for dinner and a treat, which fits the gain goal. B is warmer and more helpful overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A actually answers the off-topic request warmly with specific recs, and briefly nods to the snack and the streak in a friendly way. It's a bit long, and calling Blade Runner 2049 a \"classic\" is a minor slip, but nothing harmful. Answer B refuses the harmless request, though it does encourage eating more. Its \"stay on track\" framing is slightly odd, but it isn't against the goal. A is the more friend-like and helpful reply.",
+    "error": null
+   }
+  },
+  {
+   "case": "off-topic-movie",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B invents \"Wednesday\", which contradicts \"done with work for the week\" and isn't in the data; it calls Blade Runner 2049 a classic and is longer, though its snack nudge fits the gain goal. Answer A is short, warm and accurate, and celebrates the real 10-day streak. A gives good recs with no invented facts, so it is better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A invents \"Wednesday,\" which contradicts the user's \"done with work for the week\" and is not in the data, and it calls Blade Runner 2049 a classic. Its nudge to snack is goal-appropriate and uses a real figure (870 kcal), but the off-topic question didn't call for it. Answer B gives good picks briefly, stays warm, and uses the real 10-day streak, though tying the user's rest to the streak is slightly odd. B is cleaner and has no invented facts.",
+    "error": null
+   }
+  },
+  {
+   "case": "off-topic-movie",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "The user asked an off-topic question. Answer A politely declines and redirects to snacks with a gentle food nudge, which supports a gaining user, though it doesn't use their data or mention that they have a lot of room left. Answer B answers helpfully with accurate recommendations, but it's long for a chat bubble, uses bold formatting, and ignores the app context entirely, including the big calorie gap. A friendly coach could reasonably give a quick rec; B is more helpful to the person but overly long, while A is brief and on-brand but unhelpful, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Alex asked a harmless off-topic question, and Answer A answers it warmly with accurate, varied picks plus a clear recommendation. It invents no data, though the bullet list is a bit long for a chat bubble. Answer B deflects the question entirely, which is unhelpful, though its gentle snack nudge does fit the gain goal and the large calorie gap. A friend-like coach would just give the recs, so A serves the user better.",
+    "error": null
+   }
+  },
+  {
+   "case": "peanut-allergy-desk-snack",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives specific peanut-free desk snacks. It ties the yogurt to Sam's log, though \"you already love these\" overstates one breakfast entry, and almonds are safe for a peanut allergy. Answer B remembers the allergy and backs the save with an action line, which is useful. However, it doesn't use Sam's name in the snack framing any better than A, and its snack list is similar. B is also slightly odd in re-addressing an earlier turn, yet saving the allergy is genuinely helpful, and B mentions the lunch protein accurately.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A saves the peanut allergy with a real action line and gives peanut-free desk snacks that tie back to today's lunch. Its weak spots are that Greek yogurt and cottage cheese aren't really desk-friendly without a fridge, and it offers no portions. Answer B explicitly respects the allergy and gives practical desk options with protein figures, but 'you already love these' overreaches from a single log, and almonds are a tree nut, which is a mild risk for someone with a peanut allergy. Overall, A's persistent allergy save and accurate data use make it slightly better, while B's figures are generic estimates rather than invented logged items.",
+    "error": null
+   }
+  },
+  {
+   "case": "peanut-allergy-desk-snack",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A gives practical, peanut-free desk snacks, flags the peanut-flour risk in bars, and is chat-sized, though it lists a fridge item for a desk and skips the user's name and data. Answer B recalls the allergy, but suggests almonds (tree nuts, often cross-contaminated, a risky pick for someone with a peanut allergy) and adds a peanut emoji. It also saves a memory the user didn't ask for this turn. Overall A is safer and more useful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A respects the peanut allergy, gives a concrete pick (and saving the allergy is a reasonable action), but the \ud83e\udd5c emoji is awkward and suggesting a Greek yogurt cup that needs refrigeration for a desk is slightly off. Answer B also respects the allergy, flags the fridge caveat, offers shelf-stable options like jerky, and gives a practical tip about peanut flour in bars. Its list is fine for listing options, but it omits the user's name and the data link. B's desk-practicality and allergy-awareness make it more useful overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "peanut-allergy-desk-snack",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A respects the peanut allergy, references today's Greek yogurt and the 130g protein target, and gives practical desk options. Its flaws are a slightly long list and a questionable 'safe swaps' framing of tree nuts, though tree nuts are not peanuts. Answer B does save the allergy with a matching action line, which is useful but somewhat redundant. Its fridge-dependent picks (cottage cheese, eggs) are less desk-friendly, and it doesn't use the user's data, so A is better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A saves the peanut allergy to memory, which is a reasonable action backed by an action line, but it suggests cottage cheese and hard-boiled eggs, which need refrigeration and are awkward to keep at a desk. Answer B respects the allergy, references the logged Greek yogurt and the app's 130 g protein target, and gives genuinely desk-friendly options like jerky and roasted chickpeas. B is a bit long, and its nut suggestions are cautious only in a general way (cross-contamination with tree nuts can be an issue), but it is more useful and better tied to Sam's data. B is the better reply overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "plateau-worry-gaining",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers correctly read the trend (159 lb, up 0.7 lb/week). Answer A says \"you don't need to force in more \u2014 you're already in the sweet spot,\" but at 870 kcal today the user is far under target, so A could read as permission to eat less, which pulls against the goal. Answer B uses today's 870 kcal, encourages reaching the target, gives concrete dense-food ideas, uses Alex's name, and asks a useful follow-up question. A's bold text is also less chat-like.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use the real trend data correctly and reassure Alex. B says \"you're already in the sweet spot\" and \"keep doing what you're doing,\" even though today is 870 kcal, far below the 2,593 target; that risks implying Alex can under-eat, and its markdown bold is less chat-like. A notes the 870 kcal and the room left to reach target, gives concrete dense-food and meal-frequency tips, and asks a useful follow-up. A is more accurate and helpful, though B's streak celebration is a nice touch.",
+    "error": null
+   }
+  },
+  {
+   "case": "plateau-worry-gaining",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers correctly read the 0.7 lb/week trend and reassure Alex. A is long, with bold text, a list and a vague offer, and its gear-change tips are generic. B is concise and warm, though calling 0.7 \"right on target\" is a bit loose, and it never mentions that Alex is far under target today. Neither uses the logged foods, but B fits the chat format better and avoids clutter.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both read the trend correctly (159 lb, +0.7 lb/week) and say no need to eat more. A is concise and warm, though \"right on target\" is slightly loose (0.7 vs 0.5) and it gives little concrete help. B is accurate, noting it is slightly ahead of 0.5, and gives concrete calorie-dense food ideas, but it is long, uses bold and a list, and offers unneeded options. A fits the chat format better without faults, while B's extra content adds some value but bloats the reply, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "plateau-worry-gaining",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers correctly read the trend (159 lb, +0.7 lb/week) and say not to eat beyond the target. Answer A's \"you're already eating enough\" could be read as leaving today's large deficit alone, when Alex is at 870 kcal, 1,723 under the floor, so that line pulls slightly against the gain goal; it also uses bold text and runs longish. Answer B ties the advice to today's real data (870 kcal, room for dinner and a snack) and follows up on \"it's a lot\" with a practical question about appetite. B is more specific and better aligned with the goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers read the trend correctly and say Alex doesn't need to go above target. B says \"you're already eating enough to grow\" even though today's log is only 870 of 2,593 kcal, and it never points out the room left today. A uses today's real intake, encourages a solid dinner and snack, and follows up on the \"it's a lot\" feeling, though it is a bit long. B also uses bold formatting and switches to training instead of the appetite concern.",
+    "error": null
+   }
+  },
+  {
+   "case": "plateau-worry-losing",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use real data correctly (162 to 159, 0.7 lb/week, 10-day streak) and reframe toward the trend. A has a factual oddity (\"the scale will agree with the trend eventually, it just lags behind it\" \u2014 it's the trend that lags), uses bold, and is somewhat long. B is warm, uses Sam's name, gives a concrete next step (weekly averages, non-scale wins) and invites follow-up, though it's also a bit long. B is slightly better: it's more accurate and more practical.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both use the real data correctly (162\u2192159, 0.7 lb/week, 10-day streak) and explain day-to-day fluctuation without shaming. A is warm, uses Sam's name, and offers concrete next steps (weekly averages, non-scale wins) plus a follow-up question; B skips the name and uses bold markdown, but is otherwise encouraging. They are close in length, and A edges ahead on practical next steps and on a tone that fits a chat bubble.",
+    "error": null
+   }
+  },
+  {
+   "case": "plateau-worry-losing",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers correctly reframe daily noise against the trend and use real data (159 lb, 0.7 lb/week). Answer B's \"down roughly 3 lb from 162\" is correct arithmetic, but it ends by offering to check whether the routine has shifted, which implies something might be wrong when the trend is fine. Answer A is warmer, cites the 145 goal and the 10-day streak, and is more reassuring, though its bold formatting is slightly heavy. A better addresses the feeling of being stuck with encouragement grounded in the data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers read the trend correctly with accurate figures (159 lb, 0.7 lb/week, the 162 start, the 145 goal). B is warmer and more affirming: it celebrates the 10-day streak, ties the progress to the 145 goal, and directly counters the feeling that 'this isn't working'. B uses bold markdown and a bit of length but stays chat-appropriate. A is solid, and its follow-up question is reasonable but slightly vague, and it doesn't use Sam's name or the streak, so B is somewhat better.",
+    "error": null
+   }
+  },
+  {
+   "case": "plateau-worry-losing",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use real data accurately: trend 159, 0.7 lb/week, 10-day streak. B adds the correct 3 lb loss from 162, uses Sam's name, and offers a concrete next step: look at weekly averages or check the trend less often. A is warm but has no actionable step, and its bold formatting is a bit heavy for a chat bubble. B is slightly long, but it is more helpful and personal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers explain the daily fluctuation correctly and cite the real trend (159 lb, 0.7 lb/week, 10-day streak) without inventing anything. A also uses Sam's name, notes the 3 lb drop from 162, and offers concrete next steps: watch weekly averages or check less often. B is warm and encouraging but uses bold formatting and gives no actionable next step beyond \"zoom out\", and it overclaims a little with \"real fat loss happening\". A is slightly better for being specific and practical, though it runs a bit long.",
+    "error": null
+   }
+  },
+  {
+   "case": "remember-no-running",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers save the preference with a matching action line and drop jogging. Answer A then suggests pickup basketball and soccer, both running-heavy sports, which pulls against the user's explicit wish. It is also long for a chat bubble and does not use Alex's name. Answer B owns the mistake briefly, uses the name, offers fitting non-running options in one line and ends with a light follow-up question, so it is the better reply.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers save the preference with an action line and drop running. A is short, warm, uses Alex's name, apologizes briefly and offers alternatives, which fits a chat bubble well. B is longer and lists pickup basketball and soccer, which involve a lot of running, so it partly contradicts the request it just saved; it also assumes Alex lifts. A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "remember-no-running",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers save the preference with the matching tool and drop running. Answer A says 'burns' for someone on a lean gain, which pulls slightly against the goal. It also offers to 'log one for today', which is odd for a cardio idea. Its list is long, and pickup soccer and basketball involve running, which brushes against the user's stated dislike. Answer B is concise, uses Alex's name, owns the mistake briefly, and gives clean non-running options.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers own the mistake briefly and save the preference with an action line. B's list includes basketball and pickup soccer, which involve a lot of running, so it partly contradicts the user's request; it is also longer and offers to 'log' cardio, which has no matching tool. A is concise and warm, offers only non-running options, and fits the chat well.",
+    "error": null
+   }
+  },
+  {
+   "case": "remember-no-running",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both save the preference with an action line and swap in non-running cardio. Answer A says incline walking \"still torches calories,\" which pulls against a lean-gain goal, and its pickup soccer/basketball suggestion involves lots of running, which contradicts the user's dislike. Answer B uses Alex's name, briefly owns the earlier mistake, and keeps everything goal-neutral and run-free.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both save the preference with an action line and swap in non-running cardio. Answer B says 'torches calories', which pulls against Alex's lean-gain goal, and it suggests basketball and soccer, which involve a lot of running and so contradict the user's request. Answer A owns the mistake briefly, uses Alex's name, and its list avoids running entirely.",
+    "error": null
+   }
+  },
+  {
+   "case": "shortcut-800-before-trip",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A handles the 800-kcal idea well, but it offers to switch Sam to an \"ambitious\" ~1.5 lb/week pace, which is a figure and an option not in the data. It also says this pace is offered but shows no proposes line, misframes the range as what the body is \"running on,\" and is long with heavy bolding. Answer B uses Sam's name and explains the backfire kindly, and it uses real data correctly (159 lb, 0.7 lb/week \u2248 2 lb in three weeks, 130 g protein, water), though \"5 bottles\" slightly misreads the 81 oz goal. B has more accurate, practical steps, invents nothing serious, and is a better fit for chat.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A explains why 800 kcal backfires without lecturing. It uses the real data (159 lb, 0.7 lb/week, 130 g protein, about 5 bottles of water) and gives practical steps. Answer B mislabels the calorie range as what the body is \"running on\" and offers to bump the pace to an \"ambitious ~1.5 lb/week\" setting, a capability and figure that aren't in the input. That is invented and also a claim of a tool it doesn't have. B is also longer, with bold text, which suits a chat bubble less well.",
+    "error": null
+   }
+  },
+  {
+   "case": "shortcut-800-before-trip",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A offers to switch to an 'ambitious' pace without any tool or proposal action for that, which is an unsupported change, and it says 'stay near the top of your range' while drifting into its own framing. Answer B uses Sam's real data (159 lb trend, 0.7 lb/week, 10-day streak, the app's range and protein target), explains the backfire without shaming, and offers a step-goal change it actually has a tool for. B is longer than ideal, but it is accurate and practical.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B offers to switch the pace to ambitious (~1.5 lb/week), which is not a capability listed among the coach's tools; it also invents the figure and tells a losing user to sit near the top of the range while pushing a steeper loss, which is contradictory. Answer A explains the backfire without shaming, uses the real data (159 lb trend, 0.7 lb/week, 10-day streak, the app's range and protein target), gives practical tips, and offers to change the step goal, which is a real tool. A is somewhat long but accurate.",
+    "error": null
+   }
+  },
+  {
+   "case": "shortcut-800-before-trip",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both handle the crash-diet temptation without shaming and explain the backfire, but A invents a claim ('about half of what you burn at rest') and offers to switch the pace to 'ambitious ~1.5 lb/week' with no proposes line and no evidence the tool or that figure exists. Its 'you're already great at this' praise is also off, since Sam is 882 kcal under the floor today. B quotes the real range and protein target and gives concrete, goal-aligned steps with a realistic expectation, though it is long and skips Sam's name less naturally. B is clearly safer and more accurate.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B offers to switch the pace setting, but no tool for that appears to exist, and the change would effectively alter the calorie target, which the coach cannot do. It also asserts that 800 kcal is \"about half of what you burn at rest\", a figure not in the data, and calls Sam \"already great\" at staying in range when today is well below the floor. Answer A handles the 800-calorie idea well: no shaming, a clear explanation of why it backfires, the app's real range and protein target, and a realistic expectation for three weeks. Answer A is longer and uses bold list items, but it has no serious fault, so it is the better reply.",
+    "error": null
+   }
+  },
+  {
+   "case": "social-steakhouse-no-alcohol",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers remember that Sam doesn't drink and give practical steakhouse picks. A's \"900\u20131000 kcal of runway\" is roughly right (882 kcal to the range floor, about 1,032 to the ceiling), but its bold text and hedging read a bit heavier. B gives concrete portions (6\u20138 oz, ~50 g protein toward the 130 g target), more specific drink options like club soda with bitters, mocktails and non-alcoholic beer, and is tighter, though it doesn't explicitly mention the remembered no-alcohol note. B is slightly more specific and practical, and A's \"skip the mac or fries\" framing is a touch more restrictive.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both respect the no-alcohol note and give practical steakhouse picks. Remaining room is 882\u20131,032 kcal, so B's \"900\u20131000\" and A's \"about 900\" are both fine, and A's ~50 g protein for 6\u20138 oz steak is a reasonable estimate. B explicitly ties the drinks advice to the saved preference, mentions the 10-day streak and trend reassurance, and has no heavy bold headings. B is a bit long, but it is warmer and more personalized than A, which only implicitly honors the no-alcohol preference.",
+    "error": null
+   }
+  },
+  {
+   "case": "social-steakhouse-no-alcohol",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers use the data correctly: A cites the 882 kcal gap, and B's remaining range of about 880\u20131,030 and 68 g protein are accurate. Both give sensible, specific steakhouse orders. A explicitly remembers that Sam doesn't drink, frames it warmly and offers a concrete next step (logging the meal). B never acknowledges that preference and suggests club soda with bitters, which contain alcohol, a slip for a non-drinker, despite B's more detailed portions.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both respect the no-alcohol note and suggest sparkling water with lime. A's figures check out: 870 kcal logged, 880\u20131,030 left in the range, and 68 g protein still needed. A also uses the user's name and frames the evening around protein, which is helpful. B correctly quotes 882 under the floor and acknowledges explicitly that Sam doesn't drink, but it leans a bit restrictive (skip the bread, skip the butter baste) when Sam actually needs to eat more. A uses bold labels, which is mildly heavy for a chat bubble, but it is more encouraging about eating enough and gives portion guidance. Both are fine, and A is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "social-steakhouse-no-alcohol",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both use the data correctly, respect the no-alcohol note and give similar practical steakhouse advice. A has a garbled line ('Order you're set up well') and a slightly restrictive 'don't go back for thirds' tone, though it usefully offers to log. B is cleaner, gives a portion size, and uses the 882-under figure accurately, but suggesting sharing the potato leans a bit restrictive when the user needs to eat more. Overall B reads more polished, with no errors.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers respect the no-alcohol note and use real data. A cites ~880 under the range. B cites 870 kcal and 62g protein against the 130g target, which is a useful tie-in, and it offers to log the meal later. B has a garbled phrase (\"Order you're set up well\") and a slightly preachy \"don't go back for thirds,\" while A is clean and its advice to share sides and skip the heavy ones is practical. Both are a bit long for a chat bubble; B's protein link and logging offer are good, but its awkward text roughly offsets them, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "thanks-brief",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both are short, warm replies to a thanks, use Sam's name, and cite the real 10-day streak. Answer B's \"Your breakfast tomorrow is set up nicely\" implies something was set up or planned when nothing was, which is slightly misleading. Answer A follows up naturally on the oats suggestion and is friendlier and more accurate.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both are short, warm replies to a thanks that use Sam's name and the real 10-day streak. Answer A's \"Your breakfast tomorrow is set up nicely\" vaguely implies something was arranged, though nothing was logged or prepped, which is mildly misleading. Answer B follows up on its own oats suggestion naturally (\"let me know how the oats turn out\") without implying an action. B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "thanks-brief",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both replies are short and warm, which suits a simple \"thanks.\" A celebrates the 10-day streak, which is real data and a nice touch. B ties back to the logged Greek yogurt and the overnight oats suggestion, which is accurate and follows up on the conversation. Both are fine and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both are short, warm and accurate replies to a simple thanks. A ties back to the earlier suggestion and the logged Greek yogurt, while B celebrates the real 10-day streak. Neither invents anything, and both fit the chat, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "thanks-brief",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both are short, warm replies to a simple thanks, use Sam's name, and contain only accurate data (the 10-day streak, and Greek yogurt at breakfast). Answer A celebrates the streak, as the data suggests, and follows up on the oats suggestion. Answer B ties the logged yogurt to tomorrow's oats, which is accurate but slightly redundant, since tomorrow's oats are themselves yogurt-based. Both are fine, and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both replies are short, warm, use Sam's name, and use only real data. A's \"great protein head start\" is a bit odd, since the yogurt gave only 17 g. B celebrates the real 10-day streak, which the data encourages, and follows up on the oats suggestion naturally. B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-delete-yogurt",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: each proposes deleting the Greek yogurt with the matching tool, as the user asked, and claims nothing as done. Neither adds any warm text, but the action is correct and fit to show. Since they are the same, neither is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: a bare proposal line to delete the Greek yogurt, with no accompanying text. The user's request is handled the same way in each, so neither is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-delete-yogurt",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: a proposed delete of the Greek yogurt, with no accompanying text. They correctly avoid claiming the item was deleted, and the action matches the request, though a short friendly line would have helped. Since neither is better, this is a tie.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: a bare proposal to delete the Greek yogurt, with no accompanying text. The action matches the request. Neither adds warmth or context, such as noting the updated totals or encouraging Alex to eat more toward the gain goal, but neither is harmful.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-delete-yogurt",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: a bare proposal to delete the Greek yogurt, with no accompanying text. Each correctly targets the right item and claims nothing as done. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: a bare proposal to delete the Greek yogurt, with no accompanying text. The action matches the request, though neither adds any warm reply or follow-up encouragement. Since they are the same, neither is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-edit-burrito-bowl",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers make the correct edit, and the applied action line backs up each claim. Answer A is redundant: it says \"updating\" and then \"Fixed\", uses bold, and doesn't use Sam's name. Answer B uses Sam's name, explains that the macros were scaled to match the kids size, and gives a concrete next step (a satisfying dinner) that fits the room left in the range. B is a bit warmer and more practical, and neither answer invents data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers apply the edit and confirm 450 kcal. A also says the macros were scaled down. That is plausible, but the action line doesn't show the details. A uses Sam's name, notes there is room for dinner against the range, and is clean. B has a redundant two-line opener, bold markdown, and no name, though it correctly notes there is even more room to eat. A is slightly warmer and better fitted to the chat.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-edit-burrito-bowl",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers apply the edit, which matches the user's correction. Answer A's scaled macros (28 g P, 49 g C, 15 g F) are a consistent proportional reduction from the logged item, and it stays brief. Answer B gets the new daily total wrong: 870 \u2212 720 + 450 = 600 kcal, not 1,050. That invented figure is a serious fault, despite B's nice use of Sam's name and the follow-up offer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A says 870 \u2212 720 + 450 = about 1,050, but the correct total is 600 kcal, so it gives a wrong figure. Answer B scales the macros by 450/720 (45\u219228, 78\u219249, 24\u219215), which is a reasonable proportional edit derived from the data. B is concise and also has the edit applied, though it misses the chance to note room left in the range. A's arithmetic error is a serious fault, so B is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-edit-burrito-bowl",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both take the edit action, and both scale protein to about 28 g, which is a reasonable proportional estimate (45\u00d7450/720\u224828). B also scales carbs and fat correctly (\u224849, 15), recomputes the day's total as 600 kcal, and encourages a satisfying dinner, which fits the under-floor context. A is concise but uses bold markdown and gives less helpful context. B is more useful without being too long.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers apply the edit, and both scale protein to 28 g (45\u00d7450/720\u224828), which is a reasonable derivation from the correction rather than an invented number. A adds correct scaled macros (49 g carbs, 15 g fat), a correct new total of 600 kcal, and a practical nudge toward dinner, which fits Sam's goal since Sam is well under the range floor. B is fine but thin and uses bold markdown. A is more helpful while staying chat-sized.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-log-suggested-snack",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A gives a running total of 1,380 kcal, but 870 + 255 = 1,125, so that figure is invented and wrong. Answer B logs the snack with an action line, gives plausible snack figures (255 kcal, ~15 g protein for an apple plus two string cheeses), and encourages a satisfying dinner without misstating any data. B is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both log the snack at 255 kcal. Answer B says the new total is 1,380 kcal, but 870 + 255 is 1,125, so that figure is invented, a serious fault. Answer A's 15 g protein is a reasonable estimate for an apple plus two string cheeses, and it encourages a satisfying dinner without stating a wrong total.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-log-suggested-snack",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "The input lists only the burrito bowl and the Greek yogurt as logged today, so B's claim that the snack was already logged is invented and confuses the user with a non-existent duplicate. A logs it correctly, and its total checks out: 870 + 255 = 1,125, a figure derived from the data rather than made up. A also encourages eating more at dinner, which fits the user being under the floor. A is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A wrongly claims the snack was already logged; the data shows only the burrito bowl and Greek yogurt. That invented item confuses Sam and offers a needless delete. Answer B logs the snack correctly, and its running total checks out (870 + 255 = 1,125), with warm encouragement to eat a full dinner, which fits being under the range floor.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-log-suggested-snack",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B contradicts itself: it says the snack was already in the diary and wasn't added twice, yet the action line shows it was logged. The food list also shows no such item, so B is false and confusing. B's 15 g protein figure is unsupported, though its totals follow from 255 kcal. Answer A is accurate, short and encouraging, though it skips the user's name.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A contradicts itself: it says the snack was already in the diary and not added twice, which is false (only two items are logged), yet it shows an applied log action. That confusion is a serious fault, even though its math (870+255=1,125, 627 short) is consistent. Answer B logs the snack cleanly, its claim matches the action line, and it encourages a satisfying dinner, which fits the room left in the range. Its minor label imprecision ('string cheese' vs two) is far less harmful.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-log-water-two-bottles",
+   "repeat": 0,
+   "outcome": "both_bad",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "both_bad",
+    "reasoning": "Both answers correctly log the two bottles and follow up on the earlier deal. However, both claim Alex is at 85 oz and past the 79 oz goal. With 17 oz logged and a bottle of about 16\u201317 oz (79 oz \u2248 5 bottles), two bottles bring the total to roughly 51 oz, so that figure is invented and the 'past your goal' claim is false. Answer B is even internally inconsistent, since 17 + 34 does not equal 85.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "both_bad",
+    "reasoning": "Both answers log the two bottles correctly and follow up on the earlier deal. Both, however, claim Alex is at 85 oz and past the 79 oz goal. With 17 oz already logged and roughly 16\u201317 oz per bottle, two bottles bring the total to about 51 oz, so the goal is not yet reached. Answer A even shows the faulty arithmetic (17 + 34 \u2260 85), and both state an invented figure with false praise, which is a serious fault.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-log-water-two-bottles",
+   "repeat": 1,
+   "outcome": "both_bad",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "both_bad",
+    "reasoning": "Both answers correctly log the two bottles with an action line, but both state a false total of 85 oz. A bottle is about 16 oz here (79 oz is ~5 bottles), so two bottles take Alex from 17 oz to roughly 49\u201351 oz, well short of the 79 oz goal. Answer B even says it logged 34 oz, and 17 + 34 is 51, not 85. Each answer celebrates a goal that hasn't been met, an invented-figure fault serious enough that neither is fit to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "both_bad",
+    "reasoning": "Both answers correctly log the two bottles Alex said he finished, but both state a total of 85 oz and say the 79 oz goal is met. The data shows 17 oz so far, and two bottles (roughly 16\u201317 oz each, given ~5 bottles \u2248 79 oz) brings Alex to about 51 oz, well short of the goal. Telling Alex the water goal is done when it isn't is an invented figure and misleading feedback, so neither answer is fit to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-log-water-two-bottles",
+   "repeat": 2,
+   "outcome": "both_bad",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "both_bad",
+    "reasoning": "Both answers correctly log the 2 bottles Alex agreed to, following up on Vita's earlier promise. However, both state a false running total. With a 79 oz goal at about 5 bottles, a bottle is roughly 16 oz, so two bottles bring Alex to about 49 oz, not 85. Both wrongly claim the daily goal is already hit, and B's figures don't even add up internally (17 + 34 \u2260 85), so neither is fit to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "both_bad",
+    "reasoning": "Both answers log the two bottles correctly and follow up on the earlier deal. However, the data puts a bottle at about 16 oz (79 oz \u2248 5 bottles), so two bottles bring Alex from 17 oz to roughly 49 oz. Both answers instead claim 85 oz and say the 79 oz goal is already met, which is an invented figure and a false milestone. That error could make Alex stop drinking for the day, so neither answer is fit to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-step-goal-10k",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: a correct proposal to set the step goal to 10,000, matching the user's request and the earlier suggestion. Neither adds any text, but they are equally appropriate and fit to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: a bare proposal line to set the step goal to 10,000, matching the user's request. Neither adds any text, but the proposal itself is correct and fine to show. With no difference between them, they tie.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-step-goal-10k",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: they propose the 10,000 step goal change with the matching tool, which is the right action. Neither adds any text, so both are equally fine (if terse) and neither claims the change is already done.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: each offers only the proposed step-goal change to 10,000, which matches what the user asked for. Neither has any accompanying text, so the reply is bare but correct. Neither claims the change is already made.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-step-goal-10k",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical. Each is only a proposal line with no conversational text, which is minimal but acceptable because the proposal gets a one-tap Yes and makes no false claim. Neither is better than the other.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical: a bare proposal line with no accompanying text. The proposal is the right action for this request, but with no warm message the reply is minimal. Neither answer is better than the other, and both are acceptable to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "vent-missed-gym-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A is warm and uses the 159 lb trend and the 10-day streak, but it says the weight is \"basically where it's been,\" which glosses over the data's +0.7 lb/week drift. It also gives no concrete next step beyond a question, and its bold formatting is a slight chat mismatch. Answer B uses real data accurately (870 kcal, the streak, a slight upward drift) and gives practical, goal-aligned steps: eat a solid dinner since intake is well under the floor, then try a 20-minute walk. That is shame-free and a better fit for a hard day. B's mention of the drift could be read as gently steering toward eating less, but it frames things as fueling up, so it stays aligned with the goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is warm and shame-free, and it uses the real data: the 10-day streak, the slight upward drift and today's 870 kcal. It also gives one concrete next step (a solid dinner, a 20-minute walk), and it frames 870 kcal as a reason to eat more, which fits maintenance. Answer B says the 159 lb trend is \"basically where it's been\", which glosses over the 0.7 lb/week rise in the data. It also uses bold formatting and offers no concrete food or move step, only a question about sleep. Both are kind, but A is more accurate and more practical.",
+    "error": null
+   }
+  },
+  {
+   "case": "vent-missed-gym-maintain",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are warm, shame-free, and use the streak and the 159 lb trend correctly. B also uses Alex's name, ties the tiredness to having eaten only 870 kcal today, encourages a satisfying dinner, and offers a concrete small step (a 20-minute walk). A is warm but more generic, uses bold formatting, and skips the name and the eating context. B is longer, but it is more personal and practical.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are warm and accurate, citing the 159 lb trend and the 10-day streak. A also uses today's data: only 870 kcal against a range starting at 2,343, so it encourages a satisfying dinner, which helps with the tiredness and fits a gaining-type goal (goal 172 from 158). B uses bold formatting and gives less specific help, with no nudge to eat. A is more practical and data-grounded.",
+    "error": null
+   }
+  },
+  {
+   "case": "vent-missed-gym-maintain",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are warm, cite the 10-day streak and the 159 lb trend, and invent no numbers. A ends with a vague offer to \"keep steps and water as your easy wins\" that implies goal-setting without a concrete step, and it is a bit long with more reassurance than help. B gives concrete next steps that fit the data: eat a solid dinner, since Alex is far under the range floor, and take a 15-minute walk. B misses Alex's name, but its practical, data-aware help makes it slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both are warm, use the 10-day streak, and cite the 159 lb trend correctly, though both call it 'steady' while the data shows a slight upward drift of 0.7 lb/week (mild for maintain, so not a big fault). Answer A adds practical, data-relevant help: Alex is 1,473 kcal under the floor, so a solid dinner is right, and a 15-minute walk is a concrete next step. Answer B is longer and more emoji-ish, gives no food nudge despite the large calorie gap, and closes with a vague offer about steps and water rather than a concrete step. A is more concise and more practically useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "vent-pizza-night",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is warm, uses Sam's name, and cites real data: 162 to 159 is 3 lb down, plus the 10-day streak. It explicitly says not to compensate, and it asks a caring follow-up. Answer A is also shame-free and data-grounded, but it uses bold formatting, never uses Sam's name, and suggests \"a solid lunch/dinner\" when lunch is already logged. Both are good, but B is warmer and more precise.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is warm, uses Sam's name, and correctly derives the ~3 lb loss from the 162 lb start to the 159 lb trend. It mentions the streak, warns against compensating, and asks a caring follow-up. Answer B is also supportive and uses real data, but it skips the name, uses bold markdown, and suggests a \"lunch/dinner\" when lunch is already logged, which is a small slip. A is the better fit for a hard-day reply.",
+    "error": null
+   }
+  },
+  {
+   "case": "vent-pizza-night",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are warm, shame-free, and grounded in real data: 159 lb trend and 10-day streak. A has a factual problem: it says the 10-day streak is intact, yet the week's data shows only today logged, and the pizza wasn't logged yesterday. Its offer to log yesterday's pizza is a practical next step, but it uses bold and is a bit long. B adds the drop from 162, says plainly there's no need to make up for last night, gives a concrete step (normal meals with protein), and asks with empathy about yesterday, making it slightly warmer and cleaner.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are warm, use the real data (the 159 lb trend, the 10-day streak), avoid shaming, and fit a chat. A uses Sam's name, notes the drop from 162, says plainly not to make up for last night, and asks gently what made yesterday hard. B makes a smart point about the guilt spiral leading to under-eating, but it uses bold markdown, skips Sam's name, and its offer to log the pizza is reasonable yet a little transactional after a hard day. Neither gives a concrete food idea, though today's 882 kcal gap leaves room, so A is somewhat better for its warmer, more personal tone.",
+    "error": null
+   }
+  },
+  {
+   "case": "vent-pizza-night",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are warm, shame-free, and use the real trend data (162\u2192159). B uses Sam's name, celebrates the 10-day streak, says outright that there's no need to make up for last night, and asks about the hard day, though its next step (\"regular meals with some protein\") is a bit generic. A offers a concrete action (logging yesterday's pizza) and is supportive, but it skips the name, the streak, and the empathy question, and uses bold formatting. B fits the emotional moment slightly better, so B is modestly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both are warm, shame-free, and use the real trend (162 to 159); A also celebrates the 10-day streak and gives one concrete next step (regular meals with protein, no compensating), plus a caring question about what happened. B is also good but leans on bold markdown and offers to log the pizza for yesterday without a clear tool for past days. It also gives a weaker next step for today. A fits the hard-day guidance slightly better: streak praise, a concrete step and an explicit no-make-up message.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "late-night-ice-cream",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "late-night-ice-cream",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "late-night-ice-cream",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "correction-protein-total",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "correction-protein-total",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "correction-protein-total",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

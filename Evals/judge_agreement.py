@@ -23,7 +23,7 @@ OUT = os.path.join(HERE, "labeling")
 TASK_LABELS = {
     "insightLine": "Insight line", "weeklyReflection": "Weekly note", "onboardingNote": "Onboarding note",
     "memoryFold": "Coach memory", "progressSummary": "Progress recap", "foodSuggestions": "Food suggestions",
-    "coachPrompts": "Chat chips", "checklistPlan": "Daily checklist",
+    "coachPrompts": "Chat chips", "checklistPlan": "Daily checklist", "coachTurn": "Vita chat",
 }
 
 

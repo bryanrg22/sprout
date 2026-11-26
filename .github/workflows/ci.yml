@@ -81,8 +81,8 @@ jobs:
       - name: Verify unit test counts
         if: ${{ !cancelled() }}
         run: |
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1220 --markdown >> "$GITHUB_STEP_SUMMARY"
-          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1220
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1231 --markdown >> "$GITHUB_STEP_SUMMARY"
+          python3 tooling/check_xcresult.py "$RUNNER_TEMP/unit.xcresult" --min-tests 1231
 
       - name: Coverage by target
         if: ${{ !cancelled() }}
@@ -109,7 +109,7 @@ jobs:
 
       - name: Verify evaluation self-test counts
         if: ${{ !cancelled() }}
-        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 104 --max-skipped 14
+        run: python3 tooling/check_xcresult.py "$RUNNER_TEMP/evals.xcresult" --min-tests 114 --max-skipped 20
 
       - name: Upload result bundles
         if: ${{ !cancelled() }}
@@ -245,6 +245,13 @@ jobs:
           cp Evals/datasets/meal_describe/v3.jsonl /tmp/v3.before
           python3 Evals/datasets/meal_describe/build_v3.py > /dev/null
           diff /tmp/v3.before Evals/datasets/meal_describe/v3.jsonl
+      - name: meal_describe/v4.jsonl and meal_photo/v1.jsonl are what their build scripts produce
+        run: |
+          cp Evals/datasets/meal_describe/v4.jsonl /tmp/v4.before
+          python3 Evals/datasets/meal_describe/build_v4.py > /dev/null
+          diff /tmp/v4.before Evals/datasets/meal_describe/v4.jsonl
+          test "$(wc -l < Evals/datasets/meal_photo/v1.jsonl)" -eq 30
+          python3 -c "import json,os; rows=[json.loads(l) for l in open('Evals/datasets/meal_photo/v1.jsonl')]; missing=[r['photo'] for r in rows if not os.path.exists('Evals/datasets/meal_photo/'+r['photo'])]; assert not missing, missing"
       - name: Judge scripts parse
         run: python3 -m py_compile Evals/judge.py Evals/judge_agreement.py
 

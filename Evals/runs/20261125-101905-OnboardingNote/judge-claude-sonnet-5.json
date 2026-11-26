@@ -1,0 +1,752 @@
+{
+ "task": "onboardingNote",
+ "run": "20261125-101905-OnboardingNote",
+ "baseline": "anthropic:claude-haiku-5-5",
+ "candidate": "anthropic:claude-sonnet-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "c39eabf2bc7a2138152dd6fabc27ee15d4bc9e4582797830aad91da2162394ff",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 39,
+ "pairs_skipped": [
+  {
+   "case": "alex-lean-gain-note-with-a-figure",
+   "repeat": 0,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "alex-lean-gain-note-with-a-figure",
+   "repeat": 1,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "alex-lean-gain-note-with-a-figure",
+   "repeat": 2,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "sam-ambitious-note-with-a-figure",
+   "repeat": 0,
+   "baseline_usable": true,
+   "candidate_usable": false
+  },
+  {
+   "case": "sam-ambitious-note-with-a-figure",
+   "repeat": 1,
+   "baseline_usable": false,
+   "candidate_usable": false
+  },
+  {
+   "case": "sam-ambitious-note-with-a-figure",
+   "repeat": 2,
+   "baseline_usable": false,
+   "candidate_usable": false
+  }
+ ],
+ "cases": 13,
+ "candidate_wins": 12,
+ "baseline_wins": 13,
+ "ties": 14,
+ "both_bad": 0,
+ "orders_agree_share": 0.6923076923076923,
+ "net": -0.02564102564102564,
+ "net_ci95_cases": [
+  -0.28205128205128205,
+  0.2564102564102564
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 90,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.2502,
+ "verdicts": [
+  {
+   "case": "alex-lean-gain-long-note",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both name the lean muscle gain, reflect the surgery and ski-season goal, invent no numbers and avoid moralising about food. A is four sentences and ends explicitly on \"starting now,\" though it reads a bit generic. B is energetic and friend-like, but \"makes your knee stronger\" edges toward a medical promise, and it ends on \"Let's get to work\" rather than \"starting now.\" A follows the brief slightly more closely, so it is the better answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name the lean muscle gain goal, reflect the knee surgery and ski season note, frame eating enough positively, and invent no numbers. A is punchy and friend-like, but it implies muscle gain will make the knee itself stronger, a slight overreach, and it ends with \"Let's get to work\" rather than an explicit \"starting now.\" B is warm and direct, ties the goal to feeling good on the slopes, and ends on momentum with \"starting now,\" though it runs a little long and generic in the middle.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lean-gain-long-note",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers name the lean-gain goal, reflect the knee surgery and the ski season, invent no numbers and frame eating enough positively. A is four sentences, ends on \"let's start today,\" and is warm without being precious, though \"keeping your knee in mind\" leans slightly cautious. B is energetic, friend-like and results-focused (\"carving down the mountain\"), treats Alex as capable rather than fragile, and ends on \"Let's get to work\" with momentum. The two are close, but B's tone better matches the encouraging, direct, not-fragile style asked for.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both name the lean gain goal, reflect the knee and ski season, invent no numbers, and frame eating enough positively. A is energetic and friend-like, but it has four sentences plus a fragment, so it pushes the length limit. B is warm, direct and ends on a clear 'start today', though 'keeping your knee in mind' leans slightly cautious. Both are fit to show and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lean-gain-long-note",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers name the lean muscle goal, reflect the surgery and ski season, invent no numbers and frame eating enough positively. A ends explicitly on \"starting now\" and stays friendly and direct, though \"a pace your knee can handle\" leans slightly cautious. B is energetic but runs four longer sentences and does not end on \"starting now\" (\"Let's get after it\" is close). A fits the brief a bit more cleanly, with the required momentum close, and B's slight overpromise about the knee is a minor issue.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers name the lean muscle-gain goal, reflect the knee surgery and ski season from Alex's note, treat eating enough as fuel without moralising, and invent no numbers. A is energetic and friend-like but runs long and overpromises on the knee. B is direct and encouraging, explicitly ends on 'starting now', and frames the training around the knee without treating Alex as fragile. B fits the brief slightly better on momentum and on staying within four sentences.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lean-gain-no-note",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers name the lean-gain goal, frame it around strength and how it will feel, invent no numbers, avoid moralising about food, and end on starting now. A is four sentences and makes eating enough the work, as the goal rule asks. B is also four sentences, slightly more energetic and friend-like, but \"instead of just bigger on a scale\" brushes against making weight gain sound lesser. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both name the lean gain goal, give an energetic welcome, invent no numbers, and avoid moralising about food. A's phrase \"instead of just bigger on a scale\" lightly disparages weight gain, but it still reads as a punchy, friend-like welcome ending on \"starting now.\" B directly affirms that eating enough is the work, matching the goal rule, and also ends on starting now, though it feels a bit more generic. Neither is clearly better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lean-gain-no-note",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers name the lean muscle gain goal, invent no numbers, and avoid moralising, and both frame eating enough as the work. A ends explicitly on 'starting today' momentum and stays within the given context. B is energetic and results-focused ('in the mirror', 'what you can lift'), but it adds a training plan ('layer in consistent training') that goes slightly beyond the input, and 'Let's get to it' is a weaker 'starting now' close than A's. Both are fit to show, but A follows the brief more cleanly.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name the lean muscle gain goal, reference moderate activity, invent no numbers and don't moralise about food. A is five sentences, over the two-to-four limit, and its \"shortchanging the work\" phrasing is slightly odd. It does read energetically and ends on momentum. B is four sentences, frames eating enough as the work (fitting the goal rule), sounds like a warm friend and ends with \"Let's get started today\"; it fits the format better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lean-gain-no-note",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers name the lean muscle-gain goal, invent no numbers, avoid moralising about food, and frame eating enough as part of the work. A frames the goal more explicitly around results and feeling (\"feeling stronger and more energized\"), while B is punchier and more friend-like but says less about how good the outcome will feel. Both end on momentum, so they are close, with A slightly better on the results-and-feeling criterion.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name the lean muscle goal, use the given activity level, invent no numbers, and do not moralise about food. B frames the outcome more around how it will feel (\"feeling stronger and more energized\") and treats eating enough as the work, which fits the brief well. A is punchier and ends on momentum, but it says little about results or feelings. B is slightly more results-framed while still ending on \"let's get started,\" though both are fine, so this is a narrow call.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lean-gain-note",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers name the lean-gain goal, reflect Alex's note about shifts and Sunday cooking, invent no numbers, and avoid moralising about food. A names the full goal (building muscle, steady lean gain), frames it around how strong and capable Alex will feel, and ends cleanly on momentum with \"start building today.\" B is energetic and practical, but it only references \"lean gain\" obliquely, ends less clearly on \"starting now,\" and assumes Alex batch-preps, which the note doesn't say. A fits the brief slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both reflect the note well, invent no numbers and avoid moralising about food. Answer B explicitly names the goal (building muscle, steady lean gain), frames it around how strong and capable Alex will feel, and ends on clear 'start building today' momentum. Answer A only obliquely references 'lean gain' and its ending is a bit weaker on 'starting now'. B fits the brief more fully.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lean-gain-note",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, reflect the shifts and Sunday cooking, and invent no numbers or moralise about food. A explicitly ends on \"starting now\" with momentum and stays at three sentences. B runs to four sentences and is energetic, but it ends with \"Let's build this thing\" rather than \"starting now\", and \"exactly the right call here\" slightly reframes the goal as a choice being judged. A meets the brief more cleanly.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers name the lean muscle gain, reflect the shift work and the Sunday cooking, invent no numbers and moralise about no food. A is more energetic and friend-like, saying 'eat like you mean it', which suits a gain goal. B is warm but a little flatter. B states the goal more clearly and ends on 'starting now', while A ends with 'Let's build this thing', which still carries momentum, so it is close; A's warmer, more direct voice gives it a slight edge, but not a clear one.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lean-gain-note",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both name the goal, frame it around feeling strong, reflect the shift work and Sunday cooking, invent no numbers, and avoid moralising. A is three tight sentences that end explicitly on \"starting right now,\" matching the momentum criterion. B is four sentences and ties Sunday cooking to fueling through the week, which is a nice practical touch, but its close (\"Let's get to work \ud83d\udcaa\") is less directly \"starting now.\" These differences are small, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both name the goal, reflect the shifts and Sunday cooking, invent no numbers, and avoid moralising about food. A ties Sunday cooking to consistent fueling on busy days more specifically, while B adds generic protein advice and closes more explicitly on 'starting right now.' Both read like an encouraging friend, and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-no-note",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the maintain goal, invent no numbers, avoid moralising, and give an energetic welcome since there is no note. Answer A is a bit clunky (\"You're in this together with me\") and mostly restates the input. Answer B sounds more like a real friend (\"that's its own kind of strong\"), frames the goal around how good it will feel, and ends cleanly on \"starting now.\" B is somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the maintain goal, invent no numbers, avoid moralising, and stay energetic since no note was given. A is tighter, sounds more like a friend, and ends squarely on \"starting now\". B uses the input's light activity sensibly but is wordier, and its \"You're in this together with me\" is clunky. Neither has a serious fault, but A reads better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-no-note",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A names the maintain goal and frames it around feeling strong and energized. It references the input's activity level accurately and ends with \"start now\" momentum. Answer B says \"good food,\" which edges toward labelling foods good, something the goal rule forbids. B's ending is energetic but lacks the explicit \"starting now\"; A is cleaner and fully compliant.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A says \"good food,\" which edges toward labelling food good, though it's mild. It also doesn't really end on \"starting now.\" Answer B names the goal accurately, gives an energetic welcome, references activity without inventing anything, and ends on \"Let's start now.\" B follows the rules more cleanly.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-maintain-no-note",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both welcome Alex energetically, name the maintain goal, frame it around feeling strong and energized, and invent no numbers. B adds unprompted advice about 'solid protein', which edges toward food prescription the note didn't call for. A stays within the input, references the lightly active base accurately, and ends on 'from today' momentum. A is slightly cleaner and more faithful to the brief.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name the maintain goal, give an energetic welcome, invent no numbers and avoid moralising. A slips in unsolicited protein advice that isn't grounded in the input. B stays cleanly on the goal, uses the given activity level naturally, and ends on clearer momentum with \"from today.\" B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-steady-gain-no-note",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the goal, reference the extreme activity level, avoid invented numbers and food moralising, and give an energetic welcome. B explicitly frames eating enough as the work, paints a vivid results picture, and ends with crisp momentum (\"Let's get to work\"). A is slightly vaguer (\"where the magic happens\") and its ending is a bit softer, though still fine. B is modestly better, but not decisively so.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers name the steady, lean muscle gain goal, give an energetic welcome, invent no numbers, and frame eating enough as the work without moralising. Answer A is punchier and more direct, with a vivid results picture, and it ends on clear momentum with \"Let's get to work.\" Answer B is also good but slightly more generic (\"where the magic happens\"), though it does end on \"from today.\" Both are fit to show and are close in quality; A is marginally crisper, but not clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-steady-gain-no-note",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers name the muscle-gain goal, invent no numbers, frame eating enough positively and end on momentum. A is four sentences and clean, though its ending 'Let's get started... Let's go, Alex!' is a little repetitive. B names the goal more precisely as a steady, lean gain, is more vivid and energetic, and fits a no-note welcome, but its second sentence is long and the emoji and 'I'm with you every step' lean slightly saccharine. Both are fit to show and the differences are minor stylistic trade-offs, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the muscle-gain goal, frame eating enough positively, invent no numbers, and moralise about no food. A is more vivid and energetic, with \"Picture yourself stronger\" and a clear \"Let's get to work\" ending; its line \"no guesswork needed once your plan kicks in\" is a little vague but harmless. B is solid but more generic, and \"we'll adjust as we go\" softens the momentum before a slightly repetitive close.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-steady-gain-no-note",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the goal, invent no numbers, and avoid moralising about food. B frames the goal around visible results and how strong Alex will feel, with a more energetic, friend-like tone, and ends on momentum with \"Let's build.\" A is solid but blander, and \"we'll make it feel manageable\" edges toward treating Alex as fragile. B is the better fit.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the steady lean muscle gain goal, invent no numbers, avoid moralising, and fit the no-note energetic welcome. A is more energetic and results-focused (mirror, strength), with friend-like directness, and ends on momentum. B is solid but slightly flatter, and 'make it feel manageable' hints at treating eating as a burden. Its ending 'let's get started today' does carry momentum, though, so the gap is modest; A is slightly better on energy and results framing.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-steady-gain-note",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the lean muscle goal, reflect the shirts note and activity level, invent no numbers and avoid moralising about food. B quotes Alex's own words directly, which makes him feel more heard, and its voice is more energetic and friend-like. A is solid but slightly more generic, and B ends on strong momentum, so B is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, reflect the shirts note, use active status from the input, frame eating enough positively, invent no numbers, and end on momentum. A has a warmer, friend-like voice (\"I love this\", quoting the note) and builds energy, though \"strength to match that energy\" is slightly vague. B is clear and ends with \"from today\", but it reads a bit more scripted and restates the goal rather than reacting to it. The two are close, and A's voice gives it a slight edge.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-steady-gain-note",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both name the lean-gain goal, reflect the shirts note, avoid invented numbers and food moralising, and frame eating enough as the work. A is three tight sentences and ends on clear \"start today\" momentum. B is warm and results-focused, but \"a few months from now\" adds a mild unsupported timeframe and its close (\"I've got you every step\") is less of a starting-now ending. The differences are small, so A is marginally better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name the muscle-gain goal, echo Alex's 'fill out my shirts' line, treat eating enough as the work, invent no numbers and avoid moralising. A slightly misquotes the note ('filling out your shirts' in quotes), uses four sentences with some gushing, and ends on 'Let's get to work', which carries momentum but not as directly. B is tighter, sounds like a direct friend, and ends cleanly on 'let's start today', which matches the 'starting now' ending best.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-steady-gain-note",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, reflect the shirts note, frame eating enough positively, and invent no numbers. A is warm, results-framed, and ends on momentum with \"from today.\" B is energetic and ends with \"starting now,\" but \"fills out every doorway\" is hyperbolic. B also adds a process lecture and \"days progress feels slow,\" which shifts away from results framing. A is cleaner and stays closer to the brief, though both are acceptable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers name the goal, reflect the shirts note, avoid invented numbers and treat eating enough positively without moralising. A is energetic but leans hype (\"fills out every doorway\") and only alludes to the goal instead of naming the steady, lean gain. B names the goal clearly, frames it around how good it will feel, and ends on momentum with \"from today.\" B fits the brief slightly better and more cleanly.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-ambitious-no-note",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, give an energetic welcome, invent no numbers and avoid moralising. A ends explicitly on \"we start right now\" and frames the plan around fueling and recovery. B nicely reinforces eating enough, but ends on \"I'm with you every step\" rather than \"starting now\" momentum, and \"faster than you think\" edges toward an unfounded promise. A is slightly better on the momentum close.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both name the fat-loss goal, give an energetic welcome, invent no numbers and avoid moralising about food. A explicitly frames eating enough as part of the goal, in line with the goal rule. B ends on a clear \"we start right now\" momentum line, but its protein mention edges toward unrequested nutrition prescription. Both are fit to show and the differences are minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-ambitious-no-note",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, reference the ambitious pace and activity, invent no numbers, and stress fueling properly rather than restricting. A ends with an explicit 'get started today' momentum, while B's 'with every week that passes' leans toward future framing, though it does close with 'Let's get moving'. B's 'not by cutting corners' is slightly preachy, and A is cleaner and more direct about starting now.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name the goal, acknowledge the ambitious pace and high activity, avoid numbers and moralising, and stress eating enough. A has a slightly vaguer \"not by cutting corners\" line and ends with \"Let's get moving\" rather than a clear \"starting now\". B ends explicitly on starting today and frames the goal more concretely around results. B edges it, though both are good.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-ambitious-no-note",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, give an energetic welcome, invent no numbers, and avoid restriction or moralising. A ends on an explicit \"starting today\" and frames everything around fueling well. B is a touch punchier but adds prescriptive instructions (\"lift hard, keep those steps up\") that aren't in the input and lean toward compensating with exercise. A fits the rules a little better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both name the goal, use the very active and ambitious inputs, invent no numbers, avoid moralising, and end on momentum. A is punchier and more friend-like, and \"Eat enough\" reflects the rule directly. \"Faster than you think\" slightly overpromises. B is warm but a bit more generic and coach-scripted. \"Starting today\" hits the momentum cue cleanly. Neither is clearly better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-note",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both reflect Sam's note well and stay on the maintain goal without inventing numbers or moralising. A ends clearly on 'Let's get started today', and its tone is warm and friendly. B is punchy and direct, but it slides into prescriptive advice ('solid protein') that edges toward food direction, and its close is less clearly 'starting now'. A fits the brief slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect Sam's note and frame maintenance positively without inventing numbers or moralising about food. A is punchy and friend-like, but its prescriptive list (\"steady training, solid protein\") edges toward directives that weren't asked for. B names the goal clearly, reflects the note warmly, uses the given activity level, and ends on \"get started today\" momentum. B fits the brief slightly better, though both are acceptable.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-note",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers name maintenance, reflect Sam's note, and invent no numbers. A adds 'steady protein', mild but specific advice that isn't moralising, and closes on a clear 'Let's get started' with momentum. B's 'No backsliding' carries a faintly shaming tone, and it ends on 'keep you right where you are' rather than 'starting now', though it is energetic. A is slightly better: friendlier, ends on momentum, and has no shame-adjacent language.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name maintenance, reflect Sam's note, invent no numbers, and avoid moralising about food. Answer A's \"No backsliding\" carries a faintly pressuring tone. It also doesn't really end on \"starting now\" momentum. Answer B is warm, direct, and ends on \"Let's get started,\" though \"steady protein\" is mild nutrition advice that doesn't violate the rules.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-maintain-note",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers name maintenance, reflect Sam's note, invent no numbers and avoid moralising about food. B echoes Sam's own words more directly (\"got yourself to where you wanted to be\"), frames the goal around results and feeling (\"strong, energized, exactly where you want it\"), and ends on \"starting now\" as specified. A is solid but a bit flatter, and its ending (\"from today\") is weaker. B has a small typo (\"a underrated\") but is still clearly the better welcome.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers name maintenance, reflect Sam's note, avoid numbers and moralising, and end on momentum. A frames it more strongly around protecting the win and how good it will feel (\"strong, energized, exactly where you want it\"), and it closes crisply with \"starting now\". B is solid and correctly uses the activity level, but it is a bit flatter, and its ending (\"Let's get started\u2026 from today\") is weaker. A has a small grammar slip (\"a underrated\"), but its tone better fits the friend-coach voice.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-relaxed-no-note",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both name the goal, invent no numbers, avoid moralising about food, and give an energetic welcome since there is no note. A ends explicitly on \"starting today\" and frames results well; its mention of \"enough protein\" is fine, but it reads slightly templated. B affirms eating enough, in line with the goal rule, though its \"not quick fixes\" leans a little toward lecturing, and it ends on \"let's get moving\", which is also momentum. Both are fit to show and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name the goal, give an energetic welcome, invent no numbers, and avoid moralising about food. A adds slightly preachy framing (\"not quick fixes,\" \"trust the process\") but reinforces eating enough. B reflects the pace and activity level, frames results around feeling more capable, and ends on clear momentum with \"starting today.\" B's mention of \"enough protein\" and training is mild prescription, but it is not invented data, so B reads as slightly more friend-like and on-brief.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-relaxed-no-note",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the goal, mention the relaxed pace, invent no numbers and end on momentum. A is four sentences with a slightly generic tone (\"welcome aboard\", \"genuinely glad\"), and its \"enough protein\" leans a little prescriptive but is fine. B is punchier and more friend-like, explicitly frames eating enough as part of the plan, which fits the goal rule, and ties the result to how good it will feel (\"you're about to feel it working\"). B's \"moving more\" is not framed as compensation, so it is acceptable, which makes B slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, give an energetic welcome, invent no numbers, and end on momentum. A stays within the rules, explicitly framing eating enough as part of the goal, with a direct, friendly tone. B adds unprompted specifics like 'enough protein' and 'steady training' and presumes 'where you're starting from' without input support, though these are minor. A is slightly tighter and more on-brief.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-relaxed-no-note",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the goal correctly, give an energetic welcome with no note to reflect, invent no numbers, and avoid moralising about food. B frames the goal more strongly around how good it will feel (\"feel the difference in your energy and strength\") and explicitly affirms eating enough. A ends more squarely on \"starting today\", but its \"plenty of protein, consistent training\" leans slightly prescriptive and assumes training the input never mentioned. B is the more results- and feeling-focused of the two, so it edges out A.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, give an energetic welcome, avoid invented numbers and food moralising, and respect the relaxed pace. A frames the goal around results and feeling, saying they're 'about to feel the difference in your energy and strength', and has a friend-like tone. B adds a somewhat prescriptive 'plenty of protein, consistent training' and ends more directly on 'starting today', but it is slightly more generic. Both are fit to show, and A's stronger focus on how good the results will feel edges it ahead.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-relaxed-note",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers name the goal, reflect Sam's note about energy for the kids, avoid numbers and food moralising, and mention eating enough. Answer A is a tight four sentences and ends explicitly on 'starting today', which is the momentum the brief asks for. Answer B is warmer and more friend-like, but it runs long, ends with an emoji, and its close ('Let's get started') is weaker on 'starting now'. A's mention of 'your training' slightly assumes a context Sam hasn't described, but both answers are fit to show and A follows the brief more cleanly.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both reflect the desk/kids note, keep to the relaxed pace, invent no numbers and avoid moralising about food. A is warmer and more friend-like, framing the result around how it will feel (energy, chasing kids), though at four long sentences it runs on a bit. B names the goal more explicitly and ends with 'starting today', but reads slightly more generic and clinical ('the kind of reason that keeps people consistent'). Both are fit to show, and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-relaxed-note",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both reflect the kids/energy note, invent no numbers, and end on momentum. A names the goal explicitly (fat coming off, leaner and stronger) and stresses eating enough to fuel the day, which fits the goal rule well. B never clearly names losing weight, and its \"good food\" phrasing edges toward labelling food, though it is energetic and friendly. A follows the brief more fully.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both reflect Sam's note about energy for the kids, invent no numbers, and end on momentum. Answer A says \"good food that fuels you,\" which edges toward labelling food as good, and it never clearly names the weight-loss goal (fat loss, leaner, stronger). Answer B names the goal explicitly (\"leaner and stronger,\" \"fat comes off\"), affirms eating enough as the rules ask, and stays encouraging without moralising. B is clearly better on the rubric.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-relaxed-note",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the goal, reflect the kids/energy note, invent no numbers and avoid moralising. B frames the goal more around results and how good it will feel, and its 'eating enough to fuel you' fits the goal rule. However, B ends on 'watch that energy come back' rather than an explicit 'starting now', while A closes cleanly with 'starting today'. A is slightly more generic, B is warmer and more friend-like; overall B better matches the voice, though it is close.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, reflect the kids/energy note, invent no numbers and avoid food moralising. A is warmer and more friend-like, frames the result vividly (\"watch that energy come back\"), and explicitly says eating enough to fuel you, which fits the goal rule. B is solid but a bit more generic and coach-speak (\"steady protein\", \"consistency beats intensity\"), though it ends more clearly on \"starting today.\" A edges it on friend-like voice and on framing the payoff around how good it will feel.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-steady-no-note",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the goal correctly, invent no numbers, avoid moralising about food, and give an energetic welcome. A runs to five sentences, over the two-to-four limit, but it ends explicitly on \"it starts now\" and doesn't restrict. B stays within four sentences, is punchy and friend-like, and its \"fuel yourself properly\" fits the eat-enough rule, though its ending (\"Let's get moving\") is less explicitly \"starting now\". On balance B is tighter, more natural and keeps to the length, so it edges ahead.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both welcome Sam energetically, name the weight-loss goal, invent no numbers and avoid moralising about food. A is punchy and friend-like, and \"fuel yourself properly\" fits the eat-enough rule, though it ends on \"let's get moving\" rather than an explicit \"starting now.\" B restates the goal somewhat robotically, but it reflects the pace and activity level, mentions protein and energy, and ends explicitly on \"it starts now.\" Both are good with small trade-offs, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-steady-no-note",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both name the weight-loss goal, frame it around results, use the steady pace, invent no numbers, and avoid moralising. A's specific 'dial in your training and protein' is a mild assumption but acceptable, it stays within four sentences, and it ends with 'let's get started today.' B runs about five sentences across two paragraphs, over the two-to-four limit, and 'no shortcuts needed' edges toward a lecture, though it is warm and ends with momentum. A fits the format better and is equally energetic.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both name the goal and pace, have no invented numbers, and close on momentum. A's \"real food fueling real training\" fits the rule that eating enough is part of reaching the goal. B's \"dial in your training and protein\" leans slightly prescriptive, but it doesn't restrict food. Both are energetic and friendly; B is slightly more welcoming and its \"starting today\" ending is more explicit, while A has a warm tone, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-steady-no-note",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both name the goal, give an energetic welcome, invent no numbers and avoid moralising about food. B reflects the chosen steady pace and explicitly reinforces eating enough, which fits the goal rule well, but it ends on \"I'm with you every step\" rather than a clear \"starting now\". A ends on stronger momentum (\"let's start today\") but introduces \"real training and enough protein,\" a mild prescription that wasn't in the input, though not a fabricated figure. Both are fit to show and roughly equal, with B slightly warmer and A slightly better on the closing, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers name the goal, give an energetic welcome, invent no numbers and avoid moralising. A states the outcomes as a promise and fits Sam's steady pace with \"eating enough\"; its close is energetic, though it lacks an explicit \"starting now\". B names the goal more fully, ties in the steady pace, and ends more clearly on momentum (\"let's start today... this week\"). B's \"enough protein\" is mild but neutral, so B fits the criteria slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-steady-note",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers name the goal, reflect the running note, avoid numbers, and respect eating enough. Answer A is a bit clinical in places (\"steady, sustainable fat loss\", \"moderately active base\") but ends clearly on momentum with \"we start today.\" Answer B sounds more like a friend and is more vivid about results and feeling good, though it lacks an explicit \"starting now\" and \"train consistent\" is slightly sloppy. On balance, B's warmer, results-focused voice fits the brief better, and its \"Let's get after it\" still carries momentum.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both name the weight-loss goal, reflect the running note, invent no numbers, and avoid moralising, and both affirm eating enough. B ends explicitly on \"we start today\", ties the running back to the goal more directly, and frames fueling as part of the goal. A is energetic but ends on \"let's get after it\" rather than a clear starting-now beat. A's \"stay patient\" and \"without burning out\" also lean slightly cautious, so B is somewhat better on momentum and clarity.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-steady-note",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the goal, reflect the running note, and invent no numbers or moralise about food. B is warmer and more personal (\"that's not gone, just waiting for you\") and explicitly frames eating enough as how the goal is reached. A is a bit clunkier and invents a \"first session\", but it does end on \"starts now\", while B's close lacks the explicit \"starting now\" momentum. On balance B reads more like a real friend and reflects the note better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, reflect the running note, avoid invented numbers and food moralising, and respect the eating-enough rule. A is warmer and more personal: \"that's not gone, that's just waiting for you\" makes Sam feel heard, and it frames the results around a feeling Sam remembers. B is more generic. Its line \"first session starts now\" presumes a workout plan that isn't in the input, and its sentences are clunkier, though it does end more explicitly on \"starting now\".",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-steady-note",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers name the goal, reflect the running note, invent no numbers and avoid moralising about food. B is more energetic and friend-like, folds in the steady pace and the person's activity level naturally, and ends on momentum. A is solid but a bit wordier, and its specific protein advice drifts slightly toward prescription. B better captures the encouraging, direct tone.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both reflect the running note, invent no numbers, and avoid moralising. A ties the welcome to Sam's note warmly, builds on the moderately active foundation and steady pace, frames results around feeling, and ends on momentum. B also works, but it is longer than four sentences, edges into advice (protein), and its goal framing is a bit flatter, though it does name fat loss, leaner and stronger explicitly. A is slightly better fit for the format and tone.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-relaxed-note",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers name the goal, reflect the kids and chaotic mornings, invent no numbers, and avoid moralising about food. B sounds more like a real friend with energy, and it affirms that eating enough fuels training. A is solid but a bit stiffer. Both end on momentum, though A's \"start today\" is closer to \"starting now.\" B's voice and reflection are stronger overall, so it is better for the reader.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, reflect the chaotic mornings with two kids, invent no numbers, and avoid restriction or food moralising. Answer A feels warmer and more like a friend: it reframes \"relaxed\" as the smart call, which makes the person feel heard and validated, and it ends on momentum. Answer B is solid but a bit more clinical (\"Your goal is to lose weight\"), and its ending is weaker on immediacy, though \"start today\" works. A's tone fits the brief better.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-relaxed-note",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both name the goal, reflect the kids/chaotic mornings note, invent no numbers and avoid moralising about food. A is warm but a bit generic, and its \"one good day at a time\" phrasing slightly implies days can be good or bad. B is more energetic and friend-like, reflects the note vividly, frames the goal around results (\"it's going to click\") and ends on momentum. B is somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers name the goal, reflect the kids and chaotic mornings, invent no numbers and avoid moralising. Answer A is warmer and more energetic, and it frames the goal around results (\"it's going to click\"), though \"Friend\" capitalised as a name reads a bit oddly. Answer B is solid but blander and ends with \"starting now\" momentum, while \"very doable\" sounds slightly reassuring, as if the reader needed comforting. A edges ahead for its friend-like energy and direct encouragement, and both end on momentum.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-relaxed-note",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both reflect the kids-and-chaotic-mornings note, name the goal, invent no numbers and avoid moralising. A's 'moving more through your day' leans slightly toward exercise-as-lever, though it isn't compensation, and its tone is a bit generic. B is warmer and more friend-like, frames results vividly ('keeping up with them') and stresses eating enough to fuel. B's closing 'one solid day at a time' carries less 'starting now' urgency than A's 'Let's start today', but B is still the stronger note overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both name the goal, reflect the kids note, invent no numbers and avoid moralising. A has more personality and results-focused feeling (leaner, stronger, keeping up with kids) and explicitly ties eating enough to fuel, though its last line is a bit soft on \"starting now.\" B is flatter and more generic, and \"eating enough protein and moving more\" edges toward prescription. A better captures the energetic friend voice.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "alex-steady-gain-note",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-steady-gain-note",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-steady-gain-note",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lean-gain-note",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lean-gain-note",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lean-gain-note",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

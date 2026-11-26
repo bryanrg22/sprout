@@ -4,10 +4,13 @@
 #
 #   Evals/run.sh <eval> "<provider:model[@effort]>[,...]" [repeats] [limit]
 #
-#   eval      MealDescribe | CoachToolChoice | DailyBrief | Avatar
+#   eval      MealDescribe | MealDescribeHousehold | MealPhoto | CoachToolChoice | CoachConversation
+#             | DailyBrief | Avatar
 #             | InsightLine | WeeklyReflection | OnboardingNote | MemoryFold    (cheap-tier wording tasks)
 #             | ProgressSummary | FoodSuggestions | CoachPrompts | ChecklistPlan (structured tasks: a forced
 #               tool call, or the JSON-schema format on the models that refuse one, EVAL_REPORT 30)
+#             | PlanBuild | PlanReview | PlanResearch  (the adaptive plan: the build without its research
+#               phase, the review, and the web-search research brief, which also pays per search)
 #             (Avatar: image models; the @suffix is the image quality, e.g.
 #              "openai:gpt-image-2.6-flare@low,openai:gpt-image-2.6-sunburst@medium";
 #              the cases are the photos in Evals/datasets/avatar/photos/, see its README)

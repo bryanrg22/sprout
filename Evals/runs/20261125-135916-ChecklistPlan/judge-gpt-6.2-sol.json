@@ -1,0 +1,859 @@
+{
+ "task": "checklistPlan",
+ "run": "20261125-135916-ChecklistPlan",
+ "baseline": "anthropic:claude-sonnet-5-5",
+ "candidate": "openai:gpt-6.2-sol",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "4a453a9d90920bc8514637cb70cfe28b702166ac969f2688612cae9543da5dcf",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 48,
+ "pairs_skipped": [],
+ "cases": 16,
+ "candidate_wins": 29,
+ "baseline_wins": 11,
+ "ties": 8,
+ "both_bad": 0,
+ "orders_agree_share": 0.875,
+ "net": 0.375,
+ "net_ci95_cases": [
+  0.020833333333333332,
+  0.6875
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 108,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.4494,
+ "verdicts": [
+  {
+   "case": "alex-brand-new",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The input has no recent workouts listed, so specific splits like \"Leg day\" and \"Upper body\" in A are invented, and \"Strength session\" stated as a fixed plan assumes a training day. B hedges with \"if planned\" and keeps its chips generic, which matches the sparse input, though it is minimal. Both avoid food restriction and the scale; A's meal prep is allowed but its invented training split is a real fault. B is more faithful and still warm.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The input has no workout history, so specific splits like \"Leg day\" and \"Upper body\" in B are invented. B's \"Strength session\" as a firm task also ignores that we don't know whether today is a training day. A hedges sensibly with \"if planned\", stays within what the input supports (a strength goal), and keeps its tasks gentle and doable. A is sparse but accurate, while B fabricates training details and adds \"Meal prep\", which drifts toward food.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-brand-new",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The input shows no logged workouts, only a general strength-building goal, so neither answer can name a specific sport. Answer A schedules a 'Strength session' today without knowing Alex's training split or recovery status, and fills its chips with assumed activities (Yoga, Foam rolling), which edges toward invented detail. 'Prep tomorrow's meals' counts as prep and fits a gain goal, and nothing in A restricts food. Answer B is gentler and stays within what the input supports while still offering a strength chip, so it fits better despite being sparser.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The input shows no recent workouts, only a stated strength-building goal, so neither answer can name a specific training split. A grounds its one strength chip in that goal and keeps its tasks gentle and doable. B is fuller but adds yoga and foam rolling, which nothing in the input supports, and \"Prep tomorrow's meals\" and \"Meal prep\" touch on food when the input asks for nothing about food. A's \"Strength training\" chip ties to the goal, so A stays closer to both the input and the rules.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-brand-new",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The input has no workout data, only a goal of building strength, so specific sports would be invented. Answer A adds \"Leg day\" and \"Yoga\" chips with no basis in the input, and it assigns a strength session today without knowing Alex's recent load. Answer B stays generic but grounded in strength training, with gentle tasks phrased warmly and sensible chips. Both avoid food restriction and the scale (meal prep counts as prep), but B avoids invention.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The input has no workout history, so specifics like \"Leg day\" and \"Yoga\" in B are invented, and B's \"Meal prep\" leans toward food despite the instruction to cover movement, rest, prep and wellness only. A stays grounded in the stated goal of strength building and recovery, with short, gentle tasks and universal chips. A's chip list sits at the minimum of four but contains nothing fabricated. A is the safer, more accurate answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-bio-and-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A builds a sensible post-leg-day plan with a stretch, knee-friendly mobility (from the cranky-knee note), an early wind-down (from the poor sleep after shifts) and bag prep, and its chips reflect Alex's real split plus the Sunday cooking habit. Answer B's \"Log leg day\" is redundant because the session is already logged, and its tasks are more generic, ignoring the knee and recovery context. Both stay within movement, rest, prep and wellness with no food restriction, but A is more personal and better suited to today. A is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A tells Alex to \"Log leg day\", but the leg session is already logged today, so that task is redundant. Answer B instead plans the evening sensibly around today's legs, with a stretch, knee-friendly mobility that reflects the cranky-knee note, and an early wind-down for sleep after shifts. B's chips use Alex's real training split, the knee, and the Sunday cooking habit; \"Sunday meal prep\" counts as prep, not restriction. B stays within eight chips and five tasks, is warm and specific, and is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-bio-and-notes",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers fit the day: legs are already done, so they lean into recovery, walking, water and winding down, and both avoid food restriction and the scale. A is more personal: it uses the knee note (Knee mobility), the poor sleep after shifts (wind down, early night) and Sunday cooking (meal prep chip), and adds a post-legs stretch. B names the actual training split in its chips, which is good, but 'Log strong leg day' is an odd task since the session is already logged. A is somewhat stronger overall on personalisation and on planning recovery for today.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers stay within movement, rest and wellness, and neither invents facts. Answer A's first task, \"Log strong leg day\", is redundant because the leg session is already logged today. Its chips do usefully reflect Alex's actual split (legs, chest and arms, back and shoulders). Answer B fits today's plan better (post-legs stretch, recovery walk, wind down for sleep given the shift-related sleep issues) and personalises the chips with knee mobility for the cranky knee and Sunday meal prep, which is prep rather than restriction, though its generic \"Gym\" chip is weaker than A's named split.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-bio-and-notes",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific to Alex's real training split, sensible for a day after legs, and free of food restriction. A is more personal: it adds a knee mobility task drawn from the cranky-knee note, plus sleep and Sunday prep chips. B's \"Log that leg day\" is odd because the session is already logged, and it misses the knee note. A's \"Drink more water\" is slightly blunt but fine, so A is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers reflect Alex's actual split and recognise that leg day is already done, and both stay clear of food restriction and weigh-ins. Answer B is more personal: it uses the cranky-knee note for a knee mobility task and chip, the poor sleep after late shifts for 'sleep early', and Sunday cooking as a prep chip, all drawn from the input. Answer B's 'Sunday meal prep' chip on a non-Sunday is a small mismatch, and 'Leg day, nice work' reads more as a note than a task. Answer A is fine but generic, and 'Log that leg day' is odd since the session is already logged, so B's personalisation outweighs its minor flaws.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers are specific to Alex's actual split (legs, chest & arms, back & shoulders, walk) and plan sensibly around today's leg session with stretching and rest. Answer A's \"Prep tomorrow's meals\" and the \"Meal prep\" chip touch food, but prep is allowed and nothing in it is restrictive, so the fault is minor. Answer B's \"Log strong leg day\" is a little odd as a task since the workout is already logged, but B is warm, tight and fully in scope. They are close, and B is slightly cleaner, with warmer wording like \"Stretch after squats\" that reflects Alex's own note.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers draw on Alex's real split (legs, chest/arms, back/shoulders, walk) and stay within wellness topics. Answer A's tasks are concise and suit a day when leg day is already done: stretch, hydrate, wind down early. \"Log strong leg day\" is slightly redundant since the session is already logged, but it is harmless and celebratory. Answer B is also reasonable, and meal prep counts as prep, but its \"Drink water\" and \"Meal prep\" chips are not activities Alex actually does, its \"8 hours of sleep\" is a bit prescriptive, and an evening walk after a hard leg day is fine but less restful, so A is slightly tighter and more faithful to the input.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific, safe and drawn from Alex's actual split, with no food or scale content. Answer B's first task, \"Log strong leg day\", is odd because the leg session is already logged today, which makes it slightly redundant. Answer A gives a sensible post-leg-day recovery plan (stretch, hydrate, sleep, easy walk, plan tomorrow) and chips that cover the real split plus universal ones, though \"Gym\" and \"Leg day\" overlap a little. Both are good, but A gives a slightly more useful plan for today.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers fit today's completed leg session with recovery-focused tasks and chips drawn from Alex's real gym split, and neither touches food or the scale. Answer A's \"Log strong leg day\" nods to the squats but is already done (the workout is logged), and its tasks are terse. Answer B gives a fuller, sensible recovery plan (stretch, hydrate, sleep, easy walk, plan tomorrow) and a broader chip set that still reflects Alex's actual training. B is slightly more useful and warm, though both are fine.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers draw their chips from Alex's actual split (legs, chest/arms, back/shoulders, walk) and add sensible universal ones, with no food or scale content. Answer B's \"Log today's leg day\" is redundant because the input shows the leg session is already logged. Answer A builds a coherent post-leg-day recovery plan (stretch, easy walk, gym bag prep, sleep) and adds relevant recovery chips like foam roll and stretch. Its \"8 hours of sleep\" is a bit prescriptive, but A is still more useful and better tailored to the day.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers draw on Alex's real split and stay within movement, rest and wellness. Answer A's \"Log today's leg day\" is odd, because the input already shows today's leg session logged, so it reads as redundant. Answer B builds a sensible recovery plan after a leg session (stretch, easy walk, gym bag prep, sleep), and its chips are drawn from Alex's training plus universal ones. B is more coherent and better suited to Alex's day.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-training-notes-only",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex has no gym yet and no logged workouts, so Answer A's 'Gym session' and 'Bodyweight workout' chips assume activities Alex doesn't actually do. Its 'Chili batch-cook' and 'Meal prep' chips also edge into food, and '8 hours of sleep' reads as a prescriptive target. Answer B stays tightly personal, tying the gym search and the commute into gentle tasks, with chips drawn from Alex's real situation plus universal ones like a walk and an early night. B is warmer and better grounded in the input.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Alex has no gym yet and no logged workouts, and Answer A reflects that: it ties tasks to the commute and to gym scouting, with chips Alex can actually do. Answer B includes a \"Gym session\" chip and a \"Bodyweight workout\" chip that aren't supported by the input. It also adds food-related chips (Meal prep, Chili batch-cook), which breaks the movement/rest/prep/wellness-only instruction about food. A is more personal, more accurate and warmer.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-training-notes-only",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers personalise the plan around the gym search and the long commute, and both stay within movement, rest, prep and wellness. Answer A adds batch-cooked chili, which is food prep grounded in the notes and fits a gain goal, but its \"Gym session\" chip assumes a gym Alex doesn't have yet. Answer B ties a post-commute stretch to the actual commute and stays fully grounded, with tasks that are small and doable. The two have comparable strengths and minor flaws, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is grounded in Alex's notes: no gym yet, so scouting one; a long commute, so post-commute stretching. Its chips fit what Alex actually does and include universal ones (a walk, an early night). Answer B adds a \"Gym session\" chip although Alex hasn't found a gym, and \"Home strength\" and \"Commute podcast\" are invented activities, while \"Batch-cook chili\" and \"Meal prep\" stray into food tasks the brief excludes. A is the more accurate and fitting checklist.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-training-notes-only",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers fit Alex's notes well: no gym yet, a long commute, and nothing about restriction or the scale. Answer A adds meal prep and batch cooking, which tie to his love of chili and fit a gain goal as prep, but its \"Home workout\" chip assumes an activity the input doesn't show. Answer B is tighter, with chips drawn from his actual situation plus universal ones, though it is slightly more generic. Both are warm and fit to show, and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers pick up Alex's gym search, commute and hydration, and neither invents data or restricts food. A's tasks and chips are tight, personal and doable, though its chip list is fairly minimal. B is broader, with meal prep and batch cooking that suit the chili note (prep is allowed and supports gain), but \"Home workout\" and \"Commute podcast\" are not activities Alex is shown doing. The fit is roughly even: A is more faithful to the input, B more complete, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-nothing-logged-today",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers fit the input: they name Alex's actual runs and yoga, plan recovery after today's run, and stay away from food restriction and the scale. Answer A adds a \"Strength session\" chip, but the input shows no strength training, so that chip is invented. Answer B's tasks are specific and doable (gentle recovery yoga after the run, refilling the water bottle, winding down early), and its chips are drawn from what Alex really does. \"Log today's run\" is slightly odd since the run is already recorded, but it is minor compared with A's invented chip.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is tightly grounded in Alex's actual activities (run, long run, yoga) and plans sensibly for a day that already has a 40-minute run: recovery yoga, hydration and an early night. Answer B adds a \"Strength session\" chip that isn't in the workout history, which is invented, and its \"8 hours of sleep\" is a specific not drawn from the input. B's meal prep fits a student cooking for one and is within prep, but it doesn't outweigh the invented chip. A is concise, specific and appropriate, so it is the better answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-nothing-logged-today",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex has already run today, so Answer A's \"Today's run\" task duplicates something done, and its \"Strength session\" chip is not supported by the input, which shows only running and yoga. Answer B builds a sensible recovery plan around today's run (water, gentle yoga, an early night), its chips come straight from what Alex actually does, and its wording is warmer. A has some useful items like stretching and meal prep, but B fits the day better and stays faithful to the data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Alex already ran today, so Answer A sensibly plans recovery (water, gentle yoga, early night), and its chips match what Alex really does (run, long run, yoga) plus universal ones. Answer B proposes \"Today's run\" as a task even though it is already done, and adds a \"Strength session\" chip that is absent from the training data, which counts as invented. B's meal prep fits a student cooking for one and is allowed as prep, but its plan for the day is less sensible overall. A is the clearer fit for this person and this day.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-nothing-logged-today",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex has already run today and does runs and yoga, so both answers draw on that. A adds a \"Strength session\" chip that the workout history doesn't support, and its \"Cook a batch meal\" task leans toward food, though as prep for a gain goal and a student cooking for one it is arguably acceptable. B is grounded: yoga for recovery after the run, hydration, rest, and chips that match what Alex actually does. B's \"Log today's run\" is a little odd since the run seems already recorded, but B is still more accurate overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is grounded in Alex's actual running and yoga, plans a gentle recovery evening after today's run, and avoids food and the scale. Answer B adds a \"Strength session\" chip that the workout history doesn't support (no strength sessions logged), and its \"Cook a batch meal\" and \"Meal prep\" items edge into food, which the input explicitly excludes. B's post-run stretch is a nice touch, but A follows the brief more cleanly. \"Log today's run\" is slightly odd since the run is already logged, yet that is a minor flaw.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-soccer-bio",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex had a 90-minute soccer practice yesterday, so today calls for recovery, and Answer B plans for that with a recovery walk, hip stretches, hydration and an early wind-down. Answer A schedules leg day the day after a hard practice, which is a poor plan for someone protecting their speed. A's 'Stretch after soccer' also implies soccer today, which the input does not show. Both answers draw chips from Alex's real activities, but B's tasks fit the day better and stay gentle.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Alex did a 90-minute soccer practice yesterday after a match, a run and a leg session earlier in the week, so today calls for recovery. Answer A gets that right: a recovery walk, stretches, water and an early night, with chips drawn straight from the actual training log plus universal ones. Answer B puts leg day on the day after a hard practice, which is a weaker plan for someone protecting their speed. B also adds meal prep in both tasks and chips, which drifts toward food even though prep is allowed, and its 8-hours-of-sleep target is less gentle.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-soccer-bio",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex had a 90-minute soccer practice yesterday, so Answer B's day of recovery (easy walk, stretching calves and hips, water, winding down early) fits better than Answer A's 'Upper body at the gym'. That task is not grounded in the input, which only shows a legs and core gym session. A's 'Stretch after soccer' also implies soccer today, and its tasks read more like a list of demands. B's chips are drawn closely from Alex's real activities plus universal ones, while A's are still reasonable but less specific.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A fits the day: soccer practice was yesterday, so it suggests recovery tasks (easy walk, stretching, hydration, an early night), and its chips name Alex's real activities: soccer practice, match, run, legs and core. Answer B proposes upper body at the gym, which never appears in the input. Its 'Stretch after soccer' implies soccer today, and 'Drink water' is not an activity chip, though meal prep is acceptable. A is more accurate to the input and makes a more sensible plan for the day.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-soccer-bio",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex did 90 minutes of soccer practice yesterday and a match and run before that. Answer B's recovery-focused day (stretch, walk, hydration, early night) suits that load well, and its chips map directly to the logged soccer practice, match, run and legs/core work. Answer A proposes upper body at the gym, which never appears in the history, and adds meal prep and water chips that stray from the activity focus. Both stay clear of food restriction, but B is more personal and better planned.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A fits the day: after yesterday's 90-minute soccer practice it plans recovery (stretch, easy walk, water, early night), and its chips mirror Alex's actual sessions plus universal ones. Answer B schedules an upper-body gym session, which never appears in Alex's training history, and adds chips like 'Drink water' and 'Meal prep' that aren't activities Alex logs. B's prep and sleep items are acceptable, but it fits the input less well. A is concise, specific and sensible for the day.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-swimmer-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex swam yesterday and the squad meets twice a week, so a recovery walk and a shoulder stretch today (Answer B) is a sensible plan, while Answer A schedules another squad swim straight after one. Both are specific to swimming and cycling, but B's chips name Alex's actual training (Masters swim squad, solo swim, bike ride) plus the universal walk and early night. A's chips are more generic and padded with items like 'Drink water' and '8 hours of sleep'. Neither touches food restriction or the scale, and both stay warm, so B wins on its day plan and chips.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Alex swam yesterday, so Answer A's plan of a recovery walk, shoulder stretch and packing the swim bag fits the day well, and its chips (squad swim, solo swim, bike, walk, early night) match what Alex actually does. Answer B schedules masters swim squad today right after yesterday's swim, which the input doesn't support since the squad runs only twice a week. Its \"Prep tomorrow's meals\" task and \"Meal prep\" chip also drift into food. B's chips are padded with generic items like Drink water and 8 hours of sleep, so A is the more fitting and specific answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-swimmer-maintain",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Alex swam yesterday, and the squad meets only twice a week, so Answer A scheduling the masters squad again today is a questionable plan; Answer B sensibly picks recovery and prep after yesterday's swim. Both use Alex's real sports (swim, cycle) in the chips, and neither mentions food restriction or the scale. Answer A has eight chips but they overlap (Swim / Masters squad, Drink water and 8 hours of sleep doubling the tasks), while Answer B's four chips are tight and specific. Answer B's tasks are gentle, doable and well matched to the day.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Alex swam yesterday and swims with the masters squad twice a week, so A's plan fits the day: recovery walk, shoulder stretch, water, and packing swim gear for the next session, plus chips that match swim, cycle, walk and early night. B schedules a squad swim right after yesterday's swim, which the input doesn't support. B's chips also drift beyond activities into habits like meal prep, drinking water and sleep hours, and duplicate swim/masters squad. A is tighter and better tailored, though both are warm and avoid food and scale content.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-swimmer-maintain",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A names Alex's real sports (swim, cycle, Masters squad) and offers a full set of chips. Its plan schedules a swim today right after yesterday's swim, which is a little less sensible, and \"Meal prep\" is food-adjacent but not restrictive. Answer B has a sensible rest-and-prep plan for the day, but one task is truncated (\"yesterday\u2019s sw\"), a visible defect in the app. Overall A is polished and specific, while B's broken text is the more serious flaw.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A has a truncated task ('Stretch after yesterday\u2019s sw'), which looks broken in the app, though its plan (recover after yesterday's swim, pack the bag) is sensible. Answer B has five clean, specific tasks and chips drawn from Alex's real swim and cycle activity. Scheduling a squad swim the day after a swim is debatable, since squad runs twice a week, but not unreasonable. B's 'Meal prep' chip borders on food but counts as prep rather than restriction, so overall B is more polished and fit to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-brand-new",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The input has no workouts or sports, so neither answer can name specific training. Answer A invents activities Sam isn't shown doing (Strength session, Yoga, Easy jog), which goes against drawing chips from what the person actually does. Answer B sticks to universal, gentle items without inventing anything. A's meal-prep items are borderline but not restrictive, so its main fault is the invented activities, and B is the more faithful answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The input shows no workouts or sports, so neither answer can name specific training. Answer B invents activities Sam isn't shown doing (strength session, yoga, easy jog) and adds meal-related items that drift toward food. Answer A stays with universal, doable movement and wellness actions that fit the input. A is the more faithful choice, even though it is minimal.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-brand-new",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The input shows no workouts, sports or bio, so neither answer can be specific; generic movement and wellness items are appropriate. Answer A's chips include 'Gym session', 'Yoga' and 'Easy jog', which assume activities Sam is never shown to do and so are invented. 'Meal prep' is allowed prep, but it is food-adjacent. Answer B stays within what the input supports with simple, doable, warm tasks and universal chips, so it is the better fit even though it is minimal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The input shows no workouts, so there are no known sports, and generic universal items are appropriate. Answer A sticks to universal, gentle tasks and chips without inventing activities. Answer B adds \"Gym session\", \"Yoga\" and \"Easy jog\" as chips of things Sam 'actually does', which the input does not support, and its meal prep items edge toward food planning. A is more faithful to the input, though thin.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-brand-new",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The input shows no workouts, sports or bio for Sam, so the chips can only be universal ones. Answer A adds Yoga, Gym session, Easy jog and Bike ride, which invents activities Sam isn't shown to do, and one of its tasks (\"Move you enjoy\") is vague. Answer B is short, doable and warm, and sticks to universal, grounded options. Its chips are minimal but meet the requirement of four.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The input shows no workouts or sports at all, so neither answer can name Sam's actual training. Answer A sticks to universal, doable, warm items without inventing anything. Answer B adds chips like Yoga, Gym session, Easy jog and Bike ride that suggest activities Sam is not shown to do, and \"Meal prep\" leans toward food. Its tasks are also slightly vaguer (\"Move you enjoy\"), so A is the cleaner, more faithful answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lifter-notes",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers name Sam's actual gym split, plan around today's leg day, and stay clear of food and the scale. Answer A's \"Wind down early tonight\" and \"8 hours of sleep\" assume a normal night, but Sam works night shifts and the input doesn't say whether tonight is one. Answer B's \"Protect your sleep window\" fits a shift worker without guessing, and its tasks and chips are concise and warm. A's \"Nap before shift\" chip is a nice personal touch, but B's framing suits Sam's schedule better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers stay within movement, rest and wellness, avoid food and scale content, and draw on Sam's real split (legs, chest/arms, back/shoulders, walks). A is concise, and its tasks fit the day well: stretching after today's leg session, water given the low intake, and protecting sleep, which suits a night-shift nurse. B is also sensible and adds a personal 'Nap before shift' chip, but it includes 'Rest after leg day' alongside an 'Easy evening walk', which is slightly redundant. Its 'Drink water' and '8 hours of sleep' chips are less like activities, and '8 hours of sleep' may not suit night-shift work, so neither answer is clearly better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lifter-notes",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers fit the input: they recover after today's leg session, add hydration, stay within movement and wellness, and use chips drawn from Sam's real split. Answer A adds a thoughtful \"Pre-shift nap\" chip tied to the night-shift note, but its tasks are a bit generic (\"Easy walk\" on top of an hour of legs is fine though). Answer B's tasks are more explicitly tied to today (\"Stretch after leg day\", \"Protect your sleep\"), which suits a night-shift nurse, but it misses the night-shift chip. Neither is clearly better, and both are fine to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are specific to Sam's split, sensible after today's leg day, and free of food restriction or scale talk. Answer B adds a \"Pre-shift nap\" chip that draws on the night-shift nurse note and makes the chips more personal. Its extra easy walk task is still gentle and appropriate. Answer A is clean but less tailored, so B is somewhat better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lifter-notes",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are grounded in the input: they reference today's leg day, the split and walks, they avoid food and the scale, and they are warm. Answer A adds a shift-related nap chip that suits the night-shift note and an easy walk task fitting a leg day, but it omits the chest and arms chip and the generic Gym chip adds little. Answer B covers the full split and its tasks are concise and personal (squats, protect sleep), yet it misses the night-shift angle. Neither is clearly better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are specific, safe and warm, and both tie today's leg session to a stretch task. A's tasks are short and sensible, and its chips map cleanly onto Sam's actual training split (Leg day, Chest and arms, Back and shoulders) plus universal ones. B adds a thoughtful nap-before-shift chip, but it omits Chest/Arms, includes a vague \"Gym\" chip and a \"Drink water\" chip that isn't really an activity, and adds an evening walk on a leg day, which is fine but less focused. A is slightly cleaner and truer to Sam's real training.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-training-bio-only",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Sam has no logged workouts, so both answers rightly lean on universal, kid-friendly activities, and both stay away from food restriction and the scale. Answer A has five tasks, but two of them are near-duplicates (\"10 min walk\" and \"Stroller walk outside\"), and its chips add activities nowhere in the input (Yoga, Quick home workout), though \"Play outside with kids\" fits nicely. Answer B is shorter, warmer, and fits a parent of two kids under five well (\"Walk with the kids\", \"Stretch after bedtime\"), with chips that are sensible but minimal. B is more tailored and realistic, while A is padded and partly generic, so B is somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "No workouts are listed, so the only personal detail is that Sam has two young kids and fits things in when possible. Answer A is concise, kid-aware and doable, with warm tasks and sensible chips. Answer B is generic, nearly duplicates its two walk tasks, and adds chips like Yoga and a home workout that the input never shows Sam doing. 'Meal prep' is borderline food territory, so A fits Sam's busy life better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-training-bio-only",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Sam has no logged workouts, so both answers rightly lean on universal, kid-friendly activities drawn from the bio, and neither invents figures or mentions food restriction or the scale. Answer A offers more variety tied to Sam's life (stroller walk, playground play, living-room workout), but five tasks is a lot for a parent who fits things in when they can. Its 'Yoga' and 'Meal prep' chips are also not grounded in the input. Answer B is gentler and more realistic: three tiny, doable tasks and four relevant chips, all fitting a busy parent with two small kids.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The input shows no recent workouts, so neither answer can name specific sports, and both lean sensibly on the kids-under-five context. Answer A is short, doable and grounded in that context (stroll with the kids, a quick stretch, water), and its chips are universal and plausible. Answer B adds activities the input never shows, such as Yoga, Short workout and Quick living room workout, so its chips aren't drawn from what Sam actually does; it also includes Meal prep, which edges toward food. Answer A fits a busy parent better and avoids invention.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-training-bio-only",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The input has no workouts, so both answers rightly lean on Sam's bio about two young kids and avoid inventing sports. Answer B's tasks are short, warm and fit a busy parent's day: a walk with the kids, refilling water (water is low at 17 of 81 oz), and a stretch after bedtime. Answer A has five somewhat redundant tasks (a walk and a stroll) and includes chips like Yoga and Home workout, which the input doesn't show Sam doing, though 'Park with kids' is a nice touch. Both are acceptable, but B is better tailored and better paced for Sam's day.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "The input has no recent workouts, so both answers rightly lean on Sam's bio about two young kids and fitting things in. Answer A is short, warm and personal (\"Walk with the kids\", \"Stretch after bedtime\"), and its water task matches the low water intake shown in the input. Answer B is reasonable but invents activities with no basis in the input (home workout, yoga, meal prep) and repeats walks, which is a lot for a busy parent. A fits Sam's described life better and is more doable.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is specific (swim, cycle, hotel gym), sensible, warm, and avoids food and the scale. Answer B has a truncated task (\"Stretch after yesterday\u2019s sw\"), which is a visible defect in the app, though its chips are fine. Both avoid restriction, but A is complete and well-formed.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A's third task is truncated (\"Stretch after yesterday\u2019s sw\"), which looks broken in the app, though its chips are well-grounded. Answer B names Sam's actual swim and cycling, uses the hotel gym note, keeps to movement, rest and wellness, and every item is complete and warm. B's chip list is slightly padded (\"Drink water\", \"Pack gym bag\") but still sensible given Sam's work travel. B is clearly the better answer to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer B has a truncated task (\"Stretch after yesterday\u2019s sw\"), and it assumes Sam is at a hotel today, which the input doesn't say. Answer A has a minor sequencing issue: it suggests a swim right after yesterday's swim. Even so, it is complete, specific (Swim, Cycle, Hotel gym), and warm, with sensible chips. A's flaws are smaller, so A is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A has a truncated task (\"Stretch after yesterday\u2019s sw\"), a visible defect, though its plan sensibly follows yesterday's swim with an easy ride and stretching. Answer B is complete and personal (swim, cycle, hotel gym, packing for travel), and its chips are drawn from what Sam does plus universal ones. B's \"Easy swim today\" right after yesterday's swim is less ideal, but it is gentle. B is fit to show and A has a broken line, so B is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is specific (swim, cycle, hotel gym), warm and fully within scope, though suggesting another swim right after yesterday's swim is a bit less recovery-minded. Answer B plans the day well with an easy ride and a stretch, but it shows a truncated task (\"Stretch after yesterday\u2019s sw\"), which is a visible defect in the app. Both draw their chips from Sam's real activities. A's polish and completeness make it the better answer to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A is personal and sensible: an easy recovery ride and a stretch after yesterday's swim, plus chips for swim, bike and hotel gym. But one task is truncated ('yesterday\u2019s sw'), which is a visible defect in the app. Answer B is complete and covers swim, cycle and hotel gym, though another swim right after yesterday's swim is a less thoughtful plan, and chips like 'Drink water' and 'Pack gym bag' are not really activities. Even so, the broken text in A is a more serious fault to show the user than B's weaker plan, so B is better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-runner-bio",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A gives a sensible post-run recovery plan with stretching, hydration, easy yoga and an early night, and its chips draw on running and yoga plus universal options. It adds 'Strength session' and 'Foam roll', which aren't in the data, but these are mild extras rather than invented facts. Answer B's 'Log today's 10K training' is confusing and arguably inaccurate, since today was a 40-min run, not a 10K, and logging is already done. B's chips (Training run, Long run, Yoga, walk, early night) are well grounded but fewer in number, so A is cleaner overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Sam already ran 40 minutes today, so recovery-focused tasks fit best. Answer B's \"Gentle stretch after run\" acknowledges that run directly. Answer A's \"Log today's 10K training\" is vague and could read as asking for another session, though its chips (Training run, Long run, Yoga) closely match Sam's actual training. B includes \"Strength session\", which isn't in the input, but a chip is only an option rather than an invented fact, and B's tasks are the better plan for today, so B edges ahead.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-runner-bio",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers fit Sam's day: the run is already done, so recovery, water and rest make sense, and neither invents facts or mentions food restriction. Answer A's tasks are solid, but its chips include \"Meal prep\", which is borderline for a chip list meant to hold activities Sam actually does, and its run chips are generic. Answer B ties itself more closely to Sam, celebrating today's run and naming a \"10K training run\" chip that reflects his bio, and it builds the day around Sam's actual yoga habit. B is warm, specific and clean, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers stay specific to Sam's running and yoga, keep to movement, rest and wellness, and invent no figures. Answer A acknowledges today's run, suggests gentle recovery yoga and an early night, and its chips include a 10K training run tied to Sam's bio. Answer B is also sensible, but it adds a 'Meal prep' chip that edges toward food, which the brief excludes. B's 'Plan your next run' is fine, so the difference is small, but A is cleaner and more personal.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-runner-bio",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers fit Sam's data: he already ran today, so recovery-focused tasks make sense, and both draw on his real activities (runs, long run, yoga) without touching food or the scale. Answer A gives five recovery tasks and eight chips, while B gives three tasks and five chips; both are within range. A is a bit fuller and more useful for recovery (foam rolling, stretching), though B's \"post-run yoga\" ties in nicely with today's run. Neither is clearly better, and both are fit to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both are safe, warm and tailored to Sam's running and yoga, with recovery-focused tasks that suit a day that already included a 40-minute run. A is concise and fits the day well: hydration fits the low water intake, and post-run yoga and an early wind-down suit the day. B adds foam rolling and a stretch chip, but introduces activities like foam rolling and 'Drink water' as a chip that the input doesn't show Sam doing. A recovery walk after a run is fine, but five tasks plus padded chips is less focused, so A is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-soccer-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Sam played 90 minutes of soccer practice yesterday, so a recovery day makes sense. Answer A packs in a legs-and-core session alongside a recovery walk and stretching, which contradicts the rest-after-hard-days logic. Answer B keeps the day restful and coherent, and its chips draw well on what Sam actually does (practice, the Thursday five-a-side, matches, runs, legs and core) plus universal ones. Both stay within movement and wellness, but B's plan suits the day better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Sam had 90 min of soccer practice yesterday, so a recovery-focused day fits; Answer A keeps it to a walk, stretching, water and sleep, which suits that well. Answer B adds a legs and core session the day after a hard practice, and stacking it alongside a recovery walk is a less sensible plan. Both have chip lists drawn from Sam's real activities (soccer, five-a-side, running, legs/core) plus universal options, and neither mentions food or the scale. A's plan for the day is more coherent, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-soccer-maintain",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Nothing in the input says today is Thursday (yesterday was soccer practice, and the dates don't put today on a Thursday), so Answer A's task \"Five-a-side with friends\" assumes a day that isn't supported, and stacks a match onto the day after practice. Answer B sensibly plans recovery after yesterday's practice, with a stretch, an easy walk and an early night. B's chips draw well on Sam's real activities, including five-a-side, the match, an easy run and legs and core. Both stay within movement, rest and wellness and are warm in tone, but B fits today better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Sam had 90 minutes of soccer practice yesterday, and we don't know what day today is, so Answer B's task 'Five-a-side with friends' assumes it's Thursday without support and stacks another match on a hard day. B also tells Sam to 'Stretch after soccer', which reads as if soccer happens today. Answer A sets up a sensible recovery day: a post-soccer stretch, an easy walk, water and an early night, with chips drawn from everything Sam actually does plus universal ones. B's chips are fine, but A's day plan fits the input better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-soccer-maintain",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers plan recovery after yesterday's 90-minute soccer practice, stay away from food and the scale, and draw chips from Sam's real sports. Answer A has a typo (\"five-a-sid\") and a slightly prescriptive \"8 hours of sleep\" chip, but its tasks are a coherent recovery day and it covers more of Sam's activities. Answer B ties its stretch to soccer and has strong chips, but \"Log a little movement\" is a vague, app-centric task rather than a real action. The typo is a visible flaw in A, and B's weak task is minor, so the two come out roughly even, with B marginally cleaner.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers fit the day (recovery after yesterday's soccer practice), draw chips from Sam's real activities, and stay off food and the scale. Answer B has a visible typo (\"five-a-sid\"), and its \"8 hours of sleep\" chip is a figure the input never gives. Answer A is clean, names Sam's actual soccer, five-a-side, run and legs/core sessions, and its tasks are short and doable. A's \"Log a little movement\" is slightly vague, but that is minor next to B's typo.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-bio-and-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Sam already did a 45-minute walk today, so Answer A's \"Lunchtime walk\" task repeats something that's done and doesn't fit the day as described. Answer B accounts for that, with lighter tasks (stretch after desk time, an easy evening dog walk) and personal chips like Sunday yoga and the dog walk. Both stay within movement and wellness and are warm. A's \"Meal prep\" chip is borderline but allowed as prep, so B's better fit with today's data makes it the stronger answer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Sam already did a 45-minute walk today, so Answer B's 'Lunchtime walk' task largely duplicates it, and 'Walk the dog twice' stacks more walking on top. Answer A plans sensibly around the walk already done, with a desk stretch, an easy evening dog walk and an early wind-down. A's chips are personal (lunch walk, dog walk, Sunday yoga) and include universal ones. B's 'Meal prep' chip is borderline but acceptable as prep, though B overall is less attuned to today.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-bio-and-notes",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Sam already walked 45 min today, which is likely the lunch walk, so A's \"Lunchtime walk\" task is redundant, and its \"Gentle yoga flow\" ignores that Sam does yoga on Sundays. B avoids the duplicate walk, keeps tasks gentle (water, easy dog walk, stretch break, wind down) and uses warmer phrasing. Both draw chips from Sam's real activities, the lunch walks, yoga, the dog and the desk job; A's \"Meal prep\" is borderline but allowed as prep. B fits today's plan better and is warmer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers are personal to Sam, drawing on the lunch walks, Sunday yoga and dog walks, and both stay off food restriction. Sam has already done a 45-minute walk today, so B's task of another lunchtime walk is redundant, while A's easier dog walk, stretch break and early wind-down fit the day better. B's 'Meal prep' chip is borderline but allowed as prep, and its eight chips are slightly padded. A's tasks are warmer and better suited to today, though the margin is modest.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-bio-and-notes",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Sam's lunchtime walk is already logged (45 min today), so Answer A's \"Lunchtime walk\" task is redundant, and its \"Gentle yoga flow\" task conflicts with Sam doing yoga on Sundays. Answer A's chips are personal, though \"Meal prep\" is borderline. Answer B's \"Log today's walk\" task is also slightly off because the walk is already logged, but its desk stretch, water and wind-down tasks fit a desk-job day after a walk. B's chips (lunch walk, both dog walks, Sunday yoga, an easy walk, early night) are drawn directly from Sam's routine and notes, so B is somewhat better tailored overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is better because it fits today as the input describes it. Sam already walked 45 min today, so A's \"Log today's walk\" plus a desk stretch and an early wind-down respects that, and its chips (lunch walk, two dog walks, Sunday yoga, an easy walk, early night) come straight from Sam's data and notes. Answer B proposes another lunchtime walk even though one is already done, and suggests yoga on a non-Sunday. Its chips include \"Meal prep\", which is food-adjacent, and \"Drink water\", which is not an activity.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-no-bio-no-notes",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Sam already walked 45 min today, so A's 'Evening stroll' task is a mild stack, but it is gentle; A's chips cover walk, yoga, stretch and early night and are drawn from real activities, though 'Meal prep' is food-adjacent prep, which is allowed. B's 'Log today's walk' is odd because the walk is already logged, but the rest of its tasks are sensible, and its chips are minimal yet accurate. Both are specific and safe, and A is somewhat richer while B is slightly tighter, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both draw on Sam's real walks and yoga with no food restriction or weigh-in content. A's \"Log today's walk\" is slightly odd since the walk is already logged, but its plan is sensible: yoga and water after a 45-minute walk. B suggests an evening stroll on top of today's 45-minute walk, which is mild but fine, and its chips include \"Meal prep\" (allowed as prep) but are redundant with three walk variants. Both are acceptable and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-no-bio-no-notes",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Sam already walked 45 min today, so both answers sensibly lean toward yoga, water and rest. Answer B's \"Log today's walk\" is redundant because the walk is already logged. Answer A's tasks are a sensible recovery-leaning day, though yoga and stretching overlap, and its chips cover Sam's real activities plus universal ones; \"Meal prep\" is prep, not restriction. Neither has anything harmful, but A is slightly more useful and fully plausible, while B has the redundant task and a thinner chip set.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers draw on Sam's real activities (walks, yoga), add hydration and an early night, and stay off food restriction. Answer A's \"Log today's walk\" is odd because the walk is already logged, but its tasks are otherwise sensible. Answer B plans a sensible day: Sam already walked today, so B suggests yoga, stretching and an early night, and its chips are richer, with \"Meal prep\" counting as allowed prep rather than restriction. B is slightly better: its tasks fit the day and its chips cover more of what Sam does.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-no-bio-no-notes",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Sam already walked 45 minutes today, so A's \"Morning walk\" suggests extra movement on top of it, while B's \"Check off today's walk\" acknowledges what's done and plans a gentle day with yoga, water and an early night. Both draw on Sam's real activities (walking, yoga) and avoid food restriction. A's chips are fuller but redundant (Walk, Evening walk, 10 min walk), and \"Meal prep\" is a borderline food item. B is tighter and fits the day better, though its chips sit at the minimum of four.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Sam already walked 45 min today, and Answer A acknowledges this by having them check off today's walk, then adds gentle yoga, water and an early night, all warm, specific and fitting the day. Answer B proposes a \"Morning walk\" as a new task even though today's walk is already logged, which ignores the day as described. Its chips are padded with near-duplicates (Walk, Evening walk, 10 min walk), and \"Meal prep\" edges toward food when the guidance asks for movement, rest and wellness only. A is tighter and better reflects Sam's actual day.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-walker",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "The person already walked 45 minutes today. Answer B acknowledges that by celebrating the walk instead of assigning another one, and it adds hydration (water is low), yoga and wind-down tasks, all warm and grounded in the input. Answer A proposes another gentle walk despite today's walk, and its chips are padded with redundant walk variants plus a meal-prep chip that isn't drawn from the input. B's chips are minimal but accurate, and its plan fits the day better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A recognizes that today's 45-minute walk is already done, so it celebrates it and plans gentle yoga, water and rest, which fits the day. Answer B asks for another walk even though one was already logged today. B's chips are also padded with near-duplicate walk entries. Both stay within movement and wellness, and B's \"Meal prep\" is borderline but not restrictive, so A is clearly the more thoughtful and specific answer.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-walker",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both draw on the person's real activities (walk, yoga) and stay clear of food restriction. Answer A proposes an \"Evening walk\" even though they already walked 45 minutes today, which adds load, though gently; its chips are richer and include Meal prep, which counts as allowed prep. Answer B's \"Log today's walk\" is odd since the walk is already logged, but its plan is gentler and its chips are minimal yet valid. A is somewhat stronger on specificity and chip coverage, and its extra walk is mild, so A edges it.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers draw on the person's real activities (walks and yoga) and keep to wellness topics. A's \"Log today's walk\" is odd, since the 45-minute walk is already logged, but the plan is otherwise light and fits a day after a 45-minute walk. B adds a second walk on top of today's 45 minutes plus a rigid \"8 hours of sleep\" target, and it pads the chips with items the person doesn't do (Meditate, a duplicate 10 min walk, Meal prep), which goes against drawing chips from real activity. A is tighter and better matched to this person.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-walker",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers draw on the person's real activities (walking and yoga) and stay within movement, rest and wellness. Answer A suggests an evening walk even though they already walked 45 minutes today, and stacks yoga on top, which is a heavier plan than the day calls for; its 'Meal prep' chip edges toward food, which is borderline but arguably allowed as prep. Answer B acknowledges today's walk, keeps the yoga gentle and suggests winding down early, which is a sensible, warm plan with chips drawn from what they actually do plus universal ones. B fits the day better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both draw on the person's real activities (walks, yoga) and stay within movement, rest and wellness, with nothing about food restriction or the scale. Answer A fits today better: it credits the 45-minute walk already done, adds water given the low intake, and keeps the plan light. Answer B suggests another evening walk on top of today's 45 minutes, which is less sensible, though its chips are richer (stretch, breathing break, meal prep as prep). A's tasks are better matched to the day, so A edges it.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

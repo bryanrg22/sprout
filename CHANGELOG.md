@@ -7,11 +7,14 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
 
 ### Added
 
+- **The built-in AI is live**: the gateway runs at `137-184-90-238.sslip.io:8446` and the app
+  points at it, so a TestFlight build from here has AI again.
 - **Built-in AI: install and it works.** Nobody using Sprout needs an API key any more.
   The AI runs through a small gateway (`server/`) that holds the keys, answers only a
   genuine copy of the app on a real iPhone (Apple App Attest), pays only for the models
   the app uses, and gives each phone a daily allowance; when it is used up, Vita says
-  so and is back the next day. Every text task runs on Claude; OpenAI only draws the
+  so and is back the next day. Each AI feature runs on the model that measured best for it,
+  from Anthropic or OpenAI (EVAL_REPORT 41); OpenAI also draws the
   character picture (EVAL_REPORT 33).
 
 ### Removed
@@ -43,6 +46,27 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   copy in the coach's notes would go stale and be quoted back. The app now removes any such
   sentence before saving the notes, and the memory runs on the same cheaper, faster model as
   the short notes (EVAL_REPORT 36).
+- **Your plan is never replaced by an empty one.** If the AI ever answers with a blank plan,
+  the app keeps the plan you have and asks you to try again (EVAL_REPORT 40).
+- Food suggestions show one good idea rather than nothing when the AI gives only one
+  (EVAL_REPORT 40).
+- A plan whose insight cards came back in a broken but readable format now shows them
+  (EVAL_REPORT 39).
+- A meal estimate that comes back without its one-line note is still shown, instead of an
+  error (EVAL_REPORT 37).
+- **Checked by a second judge from the other company** (EVAL_REPORT 42): where Claude had
+  "won", only the Claude judge thought so. Vita's chat, the chips, the morning brief and the
+  insight line now also run on OpenAI, which is as good there at about half the cost. Claude
+  keeps Vita's memory and typed meals, where it measured better.
+- **OpenAI measured on every feature too** (EVAL_REPORT 41): food ideas, the checklist, the
+  recap, meal photos and the whole plan now run on OpenAI, which was better or as good at about
+  half the cost (a sixth for the plan); Vita's memory and typed meals stay on Claude.
+- **Every AI feature now runs on the model that measured best for it** (EVAL_REPORT 39): the
+  morning brief, the insight line and Vita's memory on a stronger model, the checklist and
+  typed meals and food suggestions on a newer one, and the whole plan on the newest Opus.
+- **Vita's chat and the chat suggestion chips run on a faster model**, about an eighteenth of
+  the cost. In 30 test conversations its replies were judged better more often than not,
+  especially at remembering what you said earlier (EVAL_REPORT 37, 38).
 - The built-in AI charges Sonnet 5 at its real price ($2 / $10 per million tokens, not
   $3 / $15), so a phone's daily allowance lasts as long as it should.
 
@@ -54,6 +78,9 @@ Sections cited as "EVAL_REPORT n" are in `docs/EVAL_REPORT.md`.
   It judges what the app shows (every eval record now keeps the model's input and what the
   app shows), and its verdicts wait on the owner's 40 labels before they decide a model
   (`Evals/judge_agreement.py`, EVAL_REPORT 36).
+- **Three new evaluations** (EVAL_REPORT 37): meal photos on 30 weighed Nutrition5k plates,
+  meals described in household measures (`meal_describe/v4`, USDA's own portion weights), and
+  30 multi-turn coach conversations run through the app's own `CoachTurnEngine`.
 - `meal_describe/v3` (the label nutrients) is built from USDA data and the meal evaluation
   runs on it; CI rebuilds and diffs it. `run.sh` keeps a masked build log and retries once
   when the simulator refuses to launch the test runner.

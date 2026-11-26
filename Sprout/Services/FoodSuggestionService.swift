@@ -128,7 +128,7 @@ struct FoodSuggestionService {
         "properties": [
             "suggestions": [
                 "type": "array",
-                "minItems": 2,
+                "minItems": 1,   // one good suggestion is shown rather than none (EVAL_REPORT 40); the prompt asks for 2–3
                 "maxItems": 3,
                 "items": [
                     "type": "object",
@@ -151,11 +151,11 @@ struct FoodSuggestionService {
     /// Generate suggestions for the given factual context.
     ///
     /// Throws `AIConfig.AIError.missingKey` when no key is configured (the caller gates on
-    /// `AIConfig.hasActiveKey` first, but we surface it cleanly anyway), and
+    /// `AIConfig.hasKey(for: .foodSuggestions)` first, but we surface it cleanly anyway), and
     /// `AIConfig.AIError.badResponse` / `.decoding` on transport / parse failures.
     ///
     static func suggestions(for context: FoodSuggestionEngine.Context) async throws -> [Suggestion] {
-        let client = try AIClient.makeFull()
+        let client = try AIClient.makeFull(for: .foodSuggestions)
         let prompt = userTurn(for: context)
 
         let content: [[String: Any]] = [AnthropicClient.textBlock(prompt)]

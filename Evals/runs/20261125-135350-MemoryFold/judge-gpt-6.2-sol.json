@@ -1,0 +1,658 @@
+{
+ "task": "memoryFold",
+ "run": "20261125-135350-MemoryFold",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "openai:gpt-6.2-sol",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "46d57a9dd05d5197349dd96d916c6af7e56ca0f433e5c6806a03bc2068cac04a",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 35,
+ "pairs_skipped": [
+  {
+   "case": "alex-with-a-summary",
+   "repeat": 1,
+   "baseline_usable": false,
+   "candidate_usable": true
+  }
+ ],
+ "cases": 12,
+ "candidate_wins": 12,
+ "baseline_wins": 15,
+ "ties": 8,
+ "both_bad": 0,
+ "orders_agree_share": 0.7714285714285715,
+ "net": -0.08571428571428572,
+ "net_ci95_cases": [
+  -0.4857142857142857,
+  0.34285714285714286
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 82,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.377,
+ "verdicts": [
+  {
+   "case": "alex-existing-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps all the lasting facts, including the back injury as a note, and leaves out the calorie target and the phone chit-chat. Its summary drops the earlier 'eating enough on workdays' thread, and it keeps a note about the dropped boxing class, though only as a record that it was cancelled, which is arguably useful. Answer B keeps the earlier thread and handles the boxing retraction correctly, but it puts the back injury only in the summary, where it may fade, and its summary is solid. On balance, A's complete notes, with the injury kept as a durable constraint, matter more for a coach next week than B's fuller summary.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both drop the calorie figure and the phone chit-chat. Answer A keeps the back injury only in the summary, not the notes, and uses \"their\", a gender guess of sorts, though it is neutral. Answer B stores the injury as a note and keeps the retracted boxing class as a note, which is minor clutter; its summary repeats the notes rather than catching up, and it drops the workday-eating thread. On balance, B's notes are more complete and actionable for a coach (the injury is a lasting constraint), though A's summary is better, so B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-existing-notes",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the allergy, the cilantro dislike and the soccer schedule. Both leave out the calorie target, the cracked phone and the dropped boxing class as a lasting fact. Answer A keeps the back injury as a note, which is the right place for an ongoing constraint, though its summary needlessly mentions the dropped boxing class. Answer B puts the injury only in the summary, where it may get lost in later folds, so A is better for a coach next week.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Neither answer returns JSON, which is a format failure for both. Both correctly exclude the 2,750 target, the phone chit-chat, and the boxing class from notes. Answer B keeps the back injury as a lasting note and covers every fact, while Answer A puts the injury only in the summary, where it could be lost. B's summary mentions the dropped boxing class, which is mildly unnecessary but harmless, and A's 'their' is fine, so B is the more complete and actionable memory.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-existing-notes",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A keeps every lasting fact, including the back injury, and correctly stores no calorie figure. However, it keeps the retracted boxing class as a note, and its output is plain text rather than the requested JSON. Answer B is also not JSON, but it cleanly drops the boxing class and the phone chit-chat and stores no figures; it puts the back injury in the summary rather than the notes, a weaker but still retained placement. B handles the retraction correctly and is cleaner overall, so it edges out A.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the allergy, the cilantro dislike, the coaching schedule and the back strain, and both drop the phone chit-chat and the 2,750 figure. Answer A puts the back injury only in the summary, which is less durable, but it is otherwise clean and drops the retracted boxing class entirely. Answer B keeps the retracted boxing class as a note, which wastes space but is harmless context, and its summary is more transcript-like and mentions the calorie target being unchanged, which edges toward an app-owned figure. A is slightly cleaner overall, but B stores the injury more durably; on balance A's handling of the retraction and its concise summary make it slightly better, though the margin is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-first-fold",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A guesses gender (\"him\", \"his\"), keeps the withdrawn half marathon as a note, keeps chit-chat (\"enjoys casual chat about sports\"), and its summary mentions the weather and weigh-in. It also isn't in the requested JSON format. Answer B is gender-neutral, drops the chit-chat and the weight, and correctly reflects the withdrawal, but it leaves the knee injury out of the notes and holds it only in the summary, a real omission. On balance B is cleaner and has fewer faults.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the allergy, shift schedule and oat milk as notes, but it leaves the knee injury out of the durable notes and puts it only in the summary. It also uses neutral pronouns and stores no weight figure. Answer B captures the knee injury as a note, but it guesses Alex's gender (\"him\", \"he\"), keeps chit-chat about sports, mentions the weigh-in, and keeps the withdrawn marathon detail plus the refund. A's flaw is milder because the knee is still captured in the summary, whereas B commits several faults the criteria name explicitly.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-first-fold",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A keeps all the lasting facts, including the knee injury as a note, but it has flaws: it is not valid JSON, it keeps chit-chat (football games, weather, tone), and its summary mentions the weight trend, which touches app-owned data. Answer B is also not JSON, and it leaves the knee injury out of the notes, though its summary covers it, the withdrawn marathon and the lifting focus. B is cleaner, drops the chit-chat and stores no weight information. On balance B is more accurate to the brief, even though putting the knee only in the summary is a weakness.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A leaves the knee injury out of the notes and puts it only in the summary, so a lasting constraint sits in the rolling part. Otherwise A is clean: it stores no weight, has no chit-chat, and handles the retracted half marathon correctly. Answer B keeps the knee and every other fact, but it keeps the withdrawn half marathon as a note and adds chit-chat (football games, weather, tone). It also includes 'weigh-in trend moving in desired direction', which is app-owned, and its summary repeats the notes like a transcript. B's faults (keeping a retracted goal, chit-chat, a weight-trend reference, a bloated summary) outweigh A's misplacement of the knee, which A still preserves.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-first-fold",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A guesses Alex's gender (\"him\", \"He\"), and it keeps the retracted half marathon as a note. It also stores chit-chat (sports, weather) and references the weigh-in trend, which is a figure-adjacent item the app owns. Answer B keeps every lasting fact without assigning a gender, correctly drops the marathon from the notes while recording the withdrawal in a brief summary, and leaves out the weight and small talk.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps every lasting fact (peanut allergy, night shifts, oat milk, knee injury), handles the retracted half marathon correctly, and avoids gender, weights and chit-chat. Its summary is concise, though the 'lifting focus' could arguably have gone into the notes. Answer B guesses Alex's gender ('him', 'he'), keeps chit-chat about the weather and football rapport, and references the weigh-in trend, all faults under the criteria. A is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the lasting facts, leave out the 2,700 kcal target, and correctly record that Alex quit CrossFit. Answer A keeps the specific 4am start and 8pm bedtime and lists the ankle as a note, but its summary ends with chit-chat about parking and mood. Answer B drops the exact times, though 'very early shifts' is less actionable, and keeps the temporary ankle injury in the summary, which is defensible. Both formats are equally non-JSON; overall A keeps more actionable detail, while its parking line is a minor flaw.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the key facts, exclude the 2,700 kcal target, and handle CrossFit as quit. Answer B keeps the specific times (4am start, 8pm bedtime) and the injury details in the notes, which a coach can act on; its only flaw is the closing summary line about parking chit-chat. Answer A drops the specific shift times, puts the ankle injury only in the summary, and does not use the required JSON format either. Overall B is more useful.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers leave out the 2,700 kcal target, which is right because the app owns that figure, and both handle the CrossFit reversal correctly. Answer A keeps the specific schedule (4am start, 8pm bed) and the ankle injury as a note. Answer B drops the ankle from the notes, keeping it only in the summary, and blurs the schedule to 'before dawn', though it is gender-neutral and its summary is fine. A's summary repeats the notes heavily and mentions parking chit-chat, but A keeps more of what a coach would need to act on.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers leave out the 2,700 kcal target and keep all the key facts. Answer A puts the ankle injury only in the summary, not in the notes, though it is a time-bound fact the coach needs. A also drops the 4am/8pm specifics, uses \"them\", and keeps the parking chit-chat as content. Answer B keeps every fact with useful detail, including the injury, and its summary mentions parking only as small talk, though it repeats the notes somewhat.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps all the lasting facts, including specific schedule times, the ankle injury in the notes, and the soy allergy, and it correctly records that CrossFit was quit; its 'her/him' hedge is awkward but does not guess a gender, and it leaves out the calorie target. Answer B puts the ankle injury only in the summary, drops the specific 4am/8pm times, and fills the summary with parking chit-chat. Both are free of invented facts and app-owned figures, but A's summary largely repeats the notes. Overall A gives a coach more of what they need to act on.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the existing notes and add the soy allergy, bakery schedule, sweet potatoes and the CrossFit reversal, and neither stores the 2,700 kcal target. Answer A leaves the sprained ankle out of the notes and puts it only in the summary, and it loses the specific 4am and 8pm times. Its summary also spends space on parking chit-chat. Answer B keeps the ankle and the schedule details in the notes, though writing 'her/him' is a slightly awkward hedge rather than a gender guess. Overall B is the more useful memory for a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plan-that-fell-through",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the key facts: wheat allergy, no spicy food, the rotator cuff limit, the kids' weekends and the playlist, and both leave out the calorie target. A keeps the retracted Denver move as a note, invents \"Mood is upbeat despite the job news\" (nothing supports it), and its summary mostly repeats the notes. B drops the retracted plan from the notes, mentions it only in the summary, and gives a clean, actionable catch-up.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the wheat allergy, the spicy-food intolerance, the rotator cuff, and the kids-weekend schedule, and neither stores the calorie target. Neither returns the requested JSON format, a shared fault. Answer B invents things: \"Mood is upbeat despite the job news\" is not in the input, it claims Alex \"recently added more songs\" when Alex only said they would, and it keeps the retracted Denver move as a note. Answer A is cleaner, invents nothing, and handles the retraction correctly by mentioning it only in the summary.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plan-that-fell-through",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the key lasting facts (wheat allergy, no spice, rotator cuff, kids' weekends, playlist) and leave out the calorie figure. Answer A keeps the retracted Denver move as a note, uses \"him\" to guess gender, and its summary repeats the notes and adds a meta remark about the rules. Answer B drops the retracted move from the notes, puts it in the summary only as context, avoids gendered pronouns, and gives a cleaner brief catch-up.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B guesses Alex's gender (\"with him\"), keeps the retracted Denver move as a note, and its summary repeats the notes and comments on the rules. Answer A keeps every lasting fact, stores no calorie figure, drops the retracted move from the notes, and gives a brief, useful summary. Both use a text format instead of JSON, so neither is flawless, but A is clearly the cleaner memory.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plan-that-fell-through",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A guesses Alex's gender (\"his\") and keeps the retracted Denver move as a note. Its summary repeats the notes, which makes it long, and it adds slight inventions like \"keeps up with it regularly\" and the \"general fitness\" goal. Answer B keeps every lasting fact, leaves out the calorie target, avoids gendered pronouns, and gives a brief, accurate summary that correctly handles the withdrawn Denver plan. B is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the wheat allergy, spicy intolerance, rotator cuff injury and kids-weekend constraint, and neither stores the 3,000 kcal target. Answer B guesses gender (\"his\", \"He\"), keeps the retracted Denver move as a note, invents \"keeps up with it regularly\" and a goal remark, and pads its summary by repeating the notes. Answer A is clean, gender-neutral and concise, with a useful summary. Its only slip is calling the playlist something to \"enjoy\", which is minor.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-takes-back-a-saved-note",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both drop the vegetarian note, keep the egg allergy, the schedule constraint and salmon, and neither stores the weight figure. A keeps the wrist injury as a durable note, while B leaves it only in the summary. A's summary includes a needless movie chit-chat line, and B's mentions the weigh-in without the number. Overall A is more complete and actionable for the coach, and the wrist injury matters for planning.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A leaves the wrist injury out of the notes and puts it only in the summary, which rolls over, so an important constraint could be lost. It also isn't valid JSON, though Answer B isn't either. Answer B keeps every lasting fact in the notes, removes vegetarian correctly, and stores no weight figure; its movie line in the summary is minor chit-chat. Answer B is clearly more complete for a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-takes-back-a-saved-note",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Neither answer stores the weight, both remove the vegetarian note, and both capture the egg allergy, the after-7pm weekday training limit and the salmon preference. Answer A keeps the wrist injury in the notes, where it stays visible as long as it is relevant, but it also stores chit-chat (\"enjoys movies\") as a lasting fact. Answer B leaves the wrist sprain out of the notes, so it survives only in the summary and may fade, and B's summary also carries the movie chit-chat. Losing a current injury from the lasting notes is the more serious omission for a coach planning workouts, so A is better despite its small chit-chat note.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A leaves the wrist sprain out of the notes and only mentions it in the summary, and it keeps movie chit-chat in the summary. Answer B keeps every lasting fact in the notes, including the wrist injury, correctly drops vegetarian, and omits the weight. B's movie note and a slightly long summary are minor flaws. B is more complete and useful to a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-takes-back-a-saved-note",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps every lasting fact, including the wrist injury in its notes, and correctly drops vegetarian and the weight figure, but it keeps movie chit-chat in both notes and summary and is wrapped in a non-JSON format. Answer B leaves the wrist injury out of the notes and puts it only in the summary, which rolls over. That is a meaningful loss, but B is otherwise clean, with no chit-chat and no weight. A also states the injury constraint clearly in its notes, which matters more to a coach than the minor chit-chat fault. On balance A better preserves what the coach needs, despite the clutter.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the core facts and drops the vegetarian note and the weight figure. It leaves the wrist injury out of the notes, but the summary covers it. Its notes are not in the JSON format that was asked for. Answer B keeps every lasting fact, including the wrist injury, and correctly leaves out the weight, but it keeps chit-chat (movies) in both the notes and the summary and is less concise; neither format is JSON, so on balance A's cleaner handling of chit-chat edges out B's slightly fuller notes.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-with-a-summary",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the kiwi allergy, the tennis elbow, the rice preference and the travel schedule, and neither stores the 2,800 target. Answer A keeps the podcast chit-chat as a note and keeps the returned rowing machine in both notes and summary; it also drops the earlier summary context about eating more without feeling stuffed. Answer B drops the retracted rowing machine and the chit-chat, and its summary carries forward the prior context and useful plans. B is cleaner and better follows the memory rules.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the kiwi allergy, tennis elbow, rice preference, and travel schedule, and neither stores the 2,800 kcal target. Neither returns the requested JSON format. A correctly drops the returned rowing machine and the podcast chit-chat, and its summary is a brief catch-up. B keeps the retracted rowing machine and the podcast in both notes and summary, and its summary just repeats the notes instead of catching up on the conversation.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-with-a-summary",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the lasting facts (kiwi allergy, travel schedule, tennis elbow, rice over pasta), store no 2,800 target, and use no gendered pronouns. Answer A keeps chit-chat as a note (the deep-sea diving podcast) and invents an ongoing 'interested in adding rowing' when the machine was returned. Answer B's notes are clean, and only its summary mentions the returned rowing machine, which is harmless context. B is tighter and more accurate for a coach.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the four lasting facts (kiwi allergy, travel schedule, tennis elbow, rice over pasta) and both correctly leave out the 2,800 kcal target. Answer B keeps more noise: it stores the deep-sea diving podcast as a note, which is chit-chat. It also keeps the retracted rowing machine and invents that Alex was 'interested in adding rowing' and 'lifts weights regularly'. Answer A has a minor flaw in mentioning the returned rowing machine in its summary, but its notes are clean and its summary is a useful catch-up, so it is the better memory.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-existing-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the celiac diagnosis, the Wednesday double shifts, the spicy-food preference and the existing notes, and both correctly drop the cancelled spin class. Answer A also stores the plantar fasciitis as a note, which is a lasting injury constraint a coach needs; Answer B puts it only in the summary, where it is more likely to be lost. Answer A's summary mentions the weight trend, but Answer B's summary also mentions the weigh-in and the trend, so neither stores the raw figure. Answer A is better because the injury is kept as a durable fact.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B keeps every lasting fact in the notes, including the plantar fasciitis injury, and correctly leaves out the cancelled spin class and the chit-chat about traffic. Answer A leaves the plantar fasciitis out of the durable notes and mentions it only in the summary, where it is more likely to be lost. Both avoid storing the specific weight figure, though B's mention of the weight trend in the summary is a minor redundancy. Overall, B is the more complete memory for a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-existing-notes",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A keeps all the lasting facts, including the plantar fasciitis in the notes. But it keeps the cancelled spin class as a note, and its summary includes a weight trend (an app-owned figure) plus chit-chat about commutes and mood. Answer B's notes are clean, and its summary is concise and covers the foot injury, the cancelled class and Wednesday prep, though the injury is missing from the durable notes. B is cleaner overall with no app-owned figures or chit-chat; the injury still appears in its summary.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps all lasting facts, puts the plantar fasciitis only in the summary rather than the notes (a minor weakness), and stores no weight figure or chit-chat. Answer B captures the foot injury in the notes, but its summary adds a weight trend remark (app-owned data), keeps the traffic chit-chat, and invents a claim that Sam's overall mood has been positive. It also keeps the cancelled spin class as a note, which is borderline. A is cleaner and invents nothing, so it is better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-existing-notes",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers capture celiac disease, the Wednesday double shifts, spicy food, and the cancelled spin class, and both wrongly carry the weight trend into the summary, a figure the app owns. Answer A keeps the plantar fasciitis in the notes with the walking adjustment, so the coach will reliably see this lasting injury. Answer B leaves the injury only in the summary, where it could drop out at the next fold. A is otherwise clean and actionable, which makes it somewhat better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep celiac, the Wednesday double shift, spicy food and the existing notes, and both correctly drop the cancelled spin class and the traffic chit-chat. Answer A leaves the plantar fasciitis injury out of the notes and puts it only in the summary, so this lasting constraint is less secure. Both mention the weight trend in the summary, a minor overreach into app-owned data, though neither stores the 156.8 figure. B keeps the injury in the notes and is more complete and actionable.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-first-fold",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps all the lasting facts as notes: the shellfish allergy, the vegetarian reversal, the school-run mornings, the shoulder injury and the yogurt preference. Answer B leaves the shoulder injury out of the notes and puts it only in the summary, which is a weaker place for a lasting constraint. A keeps some baking-show chit-chat as a note, and its note on the vegetarian attempt is a bit redundant. Neither stores the calorie target, and A's omission of the injury is the smaller problem, so A is better for a coach to act on.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers leave out the 1,650 kcal figure the app owns, and both handle the vegetarian retraction correctly. Answer A drops the shoulder injury from the durable notes and keeps it only in the summary, so a lasting constraint could be lost later; its summary also carries chit-chat about the baking show finale. Answer B keeps every lasting fact in the notes, including the injury and the before-9 breakfast constraint. B's mention of the vegetarian trial and its baking-show note are minor clutter, so B is clearly the more useful memory for a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-first-fold",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps all lasting facts as notes: the shellfish allergy, the morning constraint, the shoulder injury, the yogurt preference, and the reverted vegetarian trial. It also leaves out the calorie target. Its baking-show note is minor chit-chat, but it is harmless. Answer B leaves the shoulder injury, a key lasting constraint, out of the notes and mentions it only in the summary, and its summary dwells on chit-chat about the finale. Neither uses JSON format, but A better captures the durable facts a coach needs.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A leaves the shoulder injury out of the notes and puts it only in the summary, which is a lasting fact the coach needs. Answer B keeps every durable fact (allergy, diet reversal, school-run constraint, shoulder, yogurt preference) and stores no calorie target. B does keep some baking-show chit-chat and mentions the abandoned vegetarian attempt, but these are minor. Neither answer uses the JSON format, but B is clearly the more complete and useful memory.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-first-fold",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Neither answer stores the 1,650 kcal target, and both drop the vegetarian plan, but neither returns the requested JSON format. Answer A captures every lasting fact in the notes, including the shoulder injury, and its summary is a usable catch-up. Its only minor flaw is keeping the baking-show habit, which is borderline chit-chat (though late nights could matter). Answer B leaves the shoulder injury, a key lasting constraint, out of the durable notes, relegating it to the summary, and its summary spends space on the chit-chat about the baking show finale, so A is more useful to a coach.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A leaves the shoulder injury, a lasting constraint, out of the notes and puts it only in the summary, and its summary includes chit-chat about the baking show. Answer B keeps every lasting fact in the notes, including the shoulder, the 9am breakfast limit, the allergy and the return to eating meat, and it stores no calorie figure. B's baking-show note and the vegetarian-trial history are mild extras, but they are harmless. B is more useful for a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-cancelled-booking",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the key facts (fish allergy, Thursday schedule, oats, toe injury, trainer cancelled), and neither stores the weight figure. A keeps the injury as a durable note and B puts it only in the summary, but it is still recorded. A's summary largely repeats the notes and adds slight embellishments (\"hunger dip\", \"light-hearted moments\"), and both keep the kitten, which is borderline chit-chat. B is tighter and its summary reads as a genuine catch-up, though it is more recap-like, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the fish allergy, Thursday constraint, oats and the toe injury, both drop the cancelled trainer as a booking, and neither stores the weight. A has a concise, useful summary and keeps the injury there, which is acceptable since it's temporary. B puts the injury in the notes and its summary largely repeats the notes as a profile rather than a catch-up, but it is still accurate and actionable. A is cleaner and its summary does the job better, while B is redundant though not wrong.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-cancelled-booking",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the allergy, the Thursday schedule, the oats and the teacher facts, both drop the weight figure, and both use \"they\". Answer A records the broken toe as a durable note and frames the cancelled trainer well, but it adds a speculative \"budget-conscious about added services\" note, keeps the kitten chit-chat, and its summary is long and padded (\"keeps things lively\"). Answer B is cleaner and puts the toe and trainer cancellation in the summary, which works since the injury is temporary, though it also keeps the kitten note. B is more concise and avoids the inference, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the key facts (fish allergy, Thursday schedule, overnight oats, existing notes), omit the weight, and use neutral pronouns, though both keep the kitten trivia. Answer A puts the broken toe only in the summary rather than the notes, which risks losing an active injury constraint. A also adds 'Sam is a teacher' framing but is otherwise accurate. Answer B keeps the injury and the cost sensitivity as durable notes; its summary is a bit redundant and its 'budget-conscious' line is a mild inference, but B is more useful to a coach next week.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-cancelled-booking",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both omit the weight figure, keep the fish allergy, the Thursday schedule, and the oats, and drop the cancelled trainer as an active plan. A puts the toe injury in the notes, which is reasonable for a temporary injury lasting a while; B keeps it only in the summary, which may roll off, though it is still captured. A's notes are complete but somewhat redundant with its summary, and the summary is a bit padded with filler like 'mischievous kitten' and 'conversation has been light'. B is cleaner and more concise, but A's placement of the injury in durable notes is more useful for a coach next week, so A is marginally better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers drop the weight figure, keep the fish allergy, the Thursday constraint and the overnight oats, and handle the cancelled trainer sensibly. A puts the toe injury only in the summary, which is acceptable since it is temporary. B stores the injury as a note and preserves the existing notes faithfully, but its summary largely repeats the notes and adds filler (the kitten, \"conversation has been light\"). A is tighter, with a summary that works as a brief catch-up, and both are fit to use, so A is slightly better on concision without losing any facts.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-course-dropped",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the key facts (vegan, dogs, almond allergy, restaurant schedule, carpal tunnel, tofu scramble), drop the retracted pottery course from the notes, and correctly leave out the weight. A's summary mostly repeats its notes and brings back the withdrawn pottery course, and its note about enjoying concerts leans on chit-chat. B is cleaner and its summary briefly captures the coaching plan, though it keeps the trivial ear-ringing detail. B is slightly better overall for being tighter and less redundant.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the lasting facts (vegan, dogs, almond allergy, restaurant shift schedule, carpal tunnel, tofu scramble), drop the withdrawn pottery course from the notes, and leave out the weight. Answer A's summary is a brief catch-up, though it spends space on chit-chat about ringing ears and the concert. Answer B turns concert chit-chat into notes, mentions the withdrawn pottery course again in the summary, and its summary mostly repeats the notes, making it long and redundant. A is cleaner and closer to what a coach needs.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-course-dropped",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the lasting facts (vegan, dogs, almond allergy, Thursday\u2013Sunday evening restaurant shifts with late dinner, carpal tunnel, tofu scramble), correctly drop the withdrawn pottery course from the notes, and store no weight figure. A is not in JSON format and adds a marginal concert note, but its summary is a decent catch-up. B is also not in JSON format; its notes are clean, but its summary is thin and keeps chit-chat (ringing ears) while omitting the allergy and wrist context. The difference is small, and both are usable, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the core facts (vegan, dogs, almond allergy, Thursday\u2013Sunday evening shifts, carpal tunnel, tofu scramble), drop the withdrawn pottery course from the notes, and store no weight figure. Answer A has slightly weak spots: it puts concert chit-chat in the summary and loses \"after 10pm\". Answer B's faults are larger: its summary mostly repeats the notes, needlessly mentions the withdrawn pottery course, and adds \"weight check-ins ongoing, progress steady\", which edges into app-owned progress data. B also promotes concert chit-chat to a lasting note and doesn't use valid JSON, so A is cleaner and more useful overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-course-dropped",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers keep every lasting fact, drop the weight figure and leave out the pottery course as a durable note. Answer A pads the notes with concert chit-chat turned into a 'March band' note, and its summary largely repeats the notes and mentions the withdrawn pottery course. Answer B's notes are clean and accurate, and its summary is a brief, action-oriented catch-up, though it includes the minor ear-ringing chit-chat. B is tighter and more useful overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the key lasting facts (vegan, dogs, almond allergy, the Thursday\u2013Sunday evening restaurant shifts with late dinners, carpal tunnel, tofu scramble) and both correctly drop the pottery course from the notes. Neither stores the weight figure. Answer A's notes are clean, but its summary keeps chit-chat such as the ringing ears. Answer B adds a mild interpretive note about the band in March, and its summary mostly repeats the notes, re-mentions the withdrawn pottery course, and adds a vague \"progress is steady\" that edges toward an app-owned judgment. A is cleaner overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-takes-back-a-saved-note",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both drop the calorie target and the drilling chit-chat, and neither invents anything. A keeps the Achilles injury as a durable note, which matters for coaching, but it keeps the retracted bike ride in the notes as a reframed fact, which is borderline but still accurate. B handles the retraction cleanly and puts the hiking plan in the summary, but it leaves the Achilles injury, a lasting injury fact, out of the notes and only mentions it in the rolling summary, where it may fade. A's coverage of injuries is more useful to the coach, and its fault is minor by comparison.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers drop the cancelled bike ride as a commitment, keep the sesame allergy, the mushroom dislike, the Monday choir schedule and the existing notes, and leave out the calorie target and the drilling chit-chat. Answer A leaves the Achilles injury out of the notes and keeps it only in the summary, so this lasting constraint may fade from memory. Answer B stores it as a note. B's note on the dropped bike ride is slightly redundant but harmless. B's summary repeats the notes somewhat but is still a usable catch-up, so B serves a coach better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-takes-back-a-saved-note",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both drop the chit-chat, exclude the 1,700 kcal target, and capture the allergy, the mushroom dislike and the choir constraint. A keeps the withdrawn bike ride as a note, though it is framed as dropped. B correctly removes it from the notes and keeps it in the summary. B puts the Achilles injury only in the summary rather than as a durable note, but a month-long injury fits reasonably as current context, and A's \"Earlier focus continues in the background\" is vaguer than B's clear catch-up.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both drop the bike ride from the facts, keep the allergy, mushrooms and choir, omit the 1,700 kcal figure and skip the drilling chit-chat. A keeps the Achilles injury only in the summary, where it may fade over time. B stores it as a lasting note, which suits a recurring injury, though B's note about the dropped bike ride is borderline. B's summary also largely repeats its notes, but B better keeps the injury durable for the coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-takes-back-a-saved-note",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps all the lasting facts (sesame allergy, mushroom dislike, choir on Mondays, Achilles) and leaves out the calorie target, but it converts the retracted bike ride into a note instead of dropping it, which is borderline since it still records the hiking change. Answer B drops the bike ride from the notes correctly, but it leaves the Achilles injury only in the summary rather than in the notes. That injury is a lasting fact a coach needs, at least for this month. Both are reasonable; A's notes are more complete for coaching, and its bike-ride line reflects the correction rather than keeping the stale fact, so A is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both drop the cancelled bike ride from active plans, keep the sesame allergy, the mushroom dislike and the Monday choir schedule, and leave out the calorie target and the drilling chit-chat. Answer A puts the Achilles injury, a lasting constraint for a coach, only in the summary rather than the notes. Answer B stores it as a durable note and keeps all valid facts there, though it retains a mention of the dropped ride (as replaced by hiking), which is acceptable. B better preserves the facts a coach would act on next week.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-with-a-summary",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Answer A captures all lasting facts, including the hamstring injury as a note, and correctly omits the weight figure. However, it keeps the retracted treadmill plan and a speculative 'enjoys dancing' note, and it is not valid JSON. Answer B is also not JSON and omits the hamstring from its notes, though the summary covers it; it drops the treadmill correctly but keeps chit-chat about the wedding photo and loses the snack-prep detail from neither... actually B keeps it. Overall A is more complete on the injury constraint, while B is cleaner on retractions, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers correctly leave out the weight figure. Answer A keeps the allergy, the Pilates schedule and the tea preference, but leaves the hamstring injury out of the notes and puts it only in the summary. It also fills the summary with wedding chit-chat. Answer B records the hamstring injury in the notes with useful guidance, but keeps the retracted treadmill as a note and invents a lasting trait ('enjoys dancing/social events') from one wedding, though its injury handling is more useful to a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-with-a-summary",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both outputs ignore the required JSON format and both correctly leave out the weight figure. A keeps every lasting fact, including the hamstring injury as a note, but it keeps the retracted treadmill and adds chit-chat, inferring \"enjoys dancing/social events\" from the wedding. B is cleaner because it drops the treadmill, though it puts the hamstring injury only in the summary and keeps wedding chit-chat there. Losing the injury from the durable notes is a meaningful omission, while A's faults are mostly clutter, so A is somewhat more useful to a coach.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Neither answer stores the weight figure, and neither keeps the treadmill plan as active. Answer A leaves the hamstring injury out of the notes and puts it only in the summary, though an injury is a lasting fact the coach must keep; A also keeps the wedding photo chit-chat. Answer B captures the injury in the notes, but it records the dropped treadmill idea and pads the notes with wedding chit-chat plus an inferred 'enjoys dancing/social events'. B's omissions are milder than A's missing injury, so B is better overall despite its noise.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-with-a-summary",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Neither answer returns JSON, a format failure shared by both. Answer A keeps the hamstring injury as a note, which a coach must act on, but it also keeps the retracted treadmill and invents \"enjoys social events\" from one wedding. Answer B leaves the injury out of the notes and puts it only in the summary, which is weaker, but its notes are accurate and its summary covers the injury and treadmill decision cleanly without invention. Both have flaws of similar weight: A's injury note is valuable but comes with retracted and inferred content, while B is cleaner but misses the injury as a durable fact.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Neither answer stores the 154.2 weight, which is correct. A keeps the allergy, Pilates and green tea notes, but leaves the hamstring injury only in the summary and keeps wedding chit-chat there. B puts the hamstring injury in the durable notes, which a coach needs, but it also keeps the retracted treadmill as a note and adds an invented trait (\"enjoys social events\") plus wedding chit-chat. B captures the key injury durably, while A's flaws are smaller but it misses it, so the two are close, with B slightly more useful despite the clutter.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "alex-with-a-summary",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-with-a-summary",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-with-a-summary",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

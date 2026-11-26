@@ -46,6 +46,12 @@ Every section says what was **verified** (run, with the output in hand), what wa
 | 34 | The evaluations audited: four grader defects, two prompt defects, a regrade of every past answer, and statistics by case | 2026-11-24 |
 | 35 | Five tasks measured on the current prompts: three move to the cheaper model, the recap keeps its own | 2026-11-24 |
 | 36 | Quality judged, not only rules: a pairwise judge, the memory fold's figures removed in code, nine tasks run | 2026-11-25 |
+| 37 | Three new datasets: meal photos from Nutrition5k, meals in household measures, and thirty coach conversations | 2026-11-25 |
+| 38 | Every task's model decided on the evidence: the chat and the chips move to the cheaper model | 2026-11-25 |
+| 39 | Every task tested: upward as well as down, the plan's three calls, and the two newest models | 2026-11-25 |
+| 40 | The plan moves to claude-opus-5-5 once it has room to think; food moves to claude-sonnet-5-5 once one suggestion is shown | 2026-11-25 |
+| 41 | OpenAI measured on every task: nine tasks move to OpenAI, each task now picks its vendor, and the gateway is live | 2026-11-25 |
+| 42 | A judge from the other family: Claude's wins were the Claude judge's taste; four more tasks move to OpenAI; the flaky UI flows fixed | 2026-11-25 |
 
 ---
 
@@ -2177,4 +2183,496 @@ so). It cannot justify a switch.
   datasets this repository does not have yet (a conversation set, and Nutrition5k photos,
   whose download is still to be approved with its size).
 - No new default has been seen in the app's UI.
+
+## 37. Three new datasets: meal photos from Nutrition5k, meals in household measures, and thirty coach conversations (2026-11-25)
+
+**Approved by the owner** ("do this", for the three datasets proposed at the end of section 36,
+the Nutrition5k download included). **Spent: $3.28** ($2.49 for the runs, $0.80 for the judge),
+against about $13 estimated. **Spend to date: about $32.07.** Each run is `claude-sonnet-5`
+(shipped) against `claude-haiku-5-5`, 3 repeats, on committed trees (`530e800`, `0ab6b5d`).
+
+### Meal photos (`meal_photo/v1`, run `20261125-092930`)
+
+30 plates from Nutrition5k's test split (Thames et al., CVPR 2021, CC BY 4.0). Every plate
+was weighed ingredient by ingredient. The plates were screened for label noise (total equals
+the sum of the ingredients, 0.3–9 kcal per gram, 50–1,500 kcal) and spread across small to
+large (`build_v1.py`, fixed seed). Every photo was looked at: all show a whole plate. About
+13 MB was downloaded; 1.9 MB of JPEGs is committed with `ATTRIBUTION.md`. Each photo goes
+through the app's own preparation, now shared with `PhotoFoodFlow`
+(`UIImage.mealPhotoMaxEdge`, `mealPhotoUpload()`).
+
+| | `sonnet-5` | `haiku-5-5` |
+|---|---|---|
+| Within 20% of the weighed calories | **46%** (30–61%) | 19% (8–32%) |
+| Mean / median calorie error per plate | 35% / 21% | 56% / 38% |
+| Mean absolute error as a share of the mean plate (the paper's measure) | **31%** | 51% |
+| Truth inside the model's own range | 47% | 28% |
+| Over-estimates | 77% of plates, portions +16% (median) | 78%, portions +50% |
+| $ / 1,000 photos, p50 | 11.03, 5.7 s | 0.58, 3.0 s |
+
+Paired difference: −26.7% (−42.2% to −12.2%). For comparison, on this same split the paper
+reports 18.8% for a model trained on the dataset with depth, 26.1% from 2D video frames, and
+41–53% for people (its Figure 7). **Photos keep `claude-sonnet-5`.**
+
+**A finding to act on, not acted on here: both models over-estimate on more than three
+plates in four.** The prompt tells them to assume generous restaurant portions and to add
+hidden oil. That is right for a restaurant meal, but these are weighed cafeteria plates. For
+someone losing weight an over-estimate is harmless; for someone gaining it means eating less
+than they think. The prompt should not be tuned to one cafeteria's plates. A prompt change
+needs a dataset with restaurant meals too.
+
+### Meals in household measures (`meal_describe/v4`, run `20261125-092648`)
+
+v1 and v3 give every portion in grams, and both models passed every attempt (section 36). v4
+describes 22 meals the way people type them, with no weight: "a medium banana", "a cup of
+cooked white rice", "half a salmon fillet". The truth is USDA's own gram weight for that
+household measure of that record, times its per-100 g values (`build_v4.py`; nothing from
+memory). The build refuses a measure USDA does not list, and CI rebuilds and diffs it. One
+case was corrected before the run: USDA's record is a *peeled* apple, so the case says so.
+
+| | `sonnet-5` | `haiku-5-5` |
+|---|---|---|
+| Within 20% | **92%** (82–100%) | 83% (68–95%) |
+| Mean calorie error | 5.5% | 9.4% |
+| Truth inside its range | 88% | 77% |
+
+Paired: −9.1% (−19.7% to −1.5%). **Meal description keeps `claude-sonnet-5`**, now on
+evidence. "Half a salmon fillet" fails for both models: USDA's fillet is 356 g, larger than
+the fillet they picture. The case is kept and noted here.
+
+`claude-haiku-5-5` once left out the estimate's one-sentence `notes` field, and the app
+rejected the whole estimate. `FoodPhotoAnalyzer.Estimate` now treats a missing note as empty,
+as its decoder already treats a malformed optional nutrient. A missing number is still an
+error (`MealEstimateDetailTests`, one new test).
+
+### Thirty coach conversations (`coach_conversations/v1`, run `20261125-093746`)
+
+Each case gives three to five earlier turns, then the user's new message. The cases cover:
+- following up an earlier suggestion;
+- a correction (Vita said 90 g; the user has 62 g);
+- a vent after a bad day;
+- questions about the user's own data;
+- tools the reply should and should not call;
+- a plateau worry;
+- an injury or allergy mentioned earlier;
+- a request for a number the app owns;
+- an extreme shortcut (800 kcal before a trip);
+- a medical worry;
+- a short "thanks".
+
+The eval runs the app's own `CoachTurnEngine.send` on an in-memory store holding the fixture
+user's data and the earlier turns. The prompt, history window, tools, quick logs and confirm
+cards are the app's. Where it differs from the app is stated in `CoachConversationEval.swift`.
+The record's `given` holds what the coach saw (the data summary, the notes, the conversation),
+so the judge reads the reply in context. An eval can now pass its own `given`.
+
+Rules: both models 100% usable. Right tool 100% for `haiku-5-5` and 98.6% for `sonnet-5`. No
+wrong-person pronoun. The same length (about 80 words). $8.52 against $0.47 per 1,000 turns;
+4.3 s against 2.4 s.
+
+**Judge (claude-opus-5-5, as in section 36): `claude-haiku-5-5` 50 / `claude-sonnet-5` 15 /
+tie 22 / both bad 3; net +0.39 (+0.20 to +0.58).** Orders agree 83%; controls 6/6. Its clearest
+wins are the cases about context: the knee injury from two turns earlier, the protein
+correction, the racing-heart worry, the 800-kcal shortcut, the vent after pizza night, the
+"remember I hate running" request. Each of these goes to it in all three repeats. The old
+model wins one case clearly: a follow-up where the cheaper model claimed a pound of chicken
+is "well over halfway" to 130 g of protein.
+
+**Decision: none yet, and this is the decision that matters most.** The coach turn is the
+app's most used and most expensive call. If this holds it is the largest saving in the app (an
+eighteenth of the cost) with better replies. Two things stand between it and a switch:
+- **The judge has not yet been checked against a person.** Five coach pairs were added to
+  the owner's labelling page (45 pairs now).
+- **The conversations were written by a model**, from the app's own data, not taken from
+  real use.
+
+The switch waits for the owner's labels.
+
+### Not verified
+
+- The judge's agreement with a person: 1 of 45 labels so far.
+- No new behaviour has been seen in the app on a phone. The note fix and the shared photo
+  preparation are covered by unit tests only.
+- `meal_photo/v1` is one cafeteria; `coach_conversations/v1` is 30 written cases, 3 to 5
+  turns long, with no photo and no confirm or decline of a proposal.
+
+## 38. Every task's model decided on the evidence: the chat and the chips move to the cheaper model (2026-11-25)
+
+**The owner's decision** ("switch to the models you think are best due to the evals"). This
+sets aside the rule of sections 36 and 37 that a switch resting on the judge waits for the
+owner's labels. No model was called for this section.
+
+The rule applied to every task is the one used since section 35: **the cheapest candidate
+whose interval does not favour the shipped model, unless what it gets wrong is the point of
+the feature.**
+
+| Task | Model | Why |
+|---|---|---|
+| Vita's chat turn | **`claude-haiku-5-5`** (was `claude-sonnet-5`) | Judge 50 to 15, net +0.39 (+0.20 to +0.58), wholly in its favour. Every reply usable, and the expected tool 100% against 98.6% (section 37). On the first turn alone it chose the right tool 102/102, 102/102 and 101/102 against 102 each (section 10's runs). An eighteenth of the cost, twice as fast. |
+| Chat chips | **`claude-haiku-5-5`** (was `claude-sonnet-5`) | Both 100% on the rules. Judge 25 to 13, +0.25 (−0.04 to +0.54), not favouring the shipped model. A twenty-first of the cost (section 36). |
+| Food suggestions | `claude-sonnet-5`, unchanged | The interval holds zero (−0.11, −0.44 to +0.22), so the bare rule would switch. But the point estimate favours the shipped model, and the judge's reasons for it are the feature's purpose: chicken or whey suggested to a person whose every logged food is vegetarian, and a food already eaten today pitched again (section 36). The same exception as the recap. |
+| Daily checklist, progress recap, meal description, meal photo | `claude-sonnet-5`, unchanged | The cheaper model is worse beyond noise on each (sections 35 to 37). |
+| Daily brief, insight line, weekly note, onboarding note, memory fold | `claude-haiku-5-5`, unchanged | Sections 10, 35 and 36. |
+| Plan build, review, research | `claude-opus-4-8`, unchanged | No dataset. |
+
+**Is the evaluation of the chat the path that ships?** Yes, on two counts that were checked:
+- The eval drives `CoachTurnEngine.send`, the chat's own path.
+- The Anthropic client resolves the model it sends (`AIRuntime.resolve`) before it chooses
+  that model's thinking setting, so the scoped model of the eval got the settings it gets in
+  the app.
+
+The gateway already allows `claude-haiku-5-5`. `AITaskModelTests` pins the new table.
+
+**What is still open**, so that this can be reversed on evidence:
+- The judge has not been checked against a person: the owner's labels (1 of 45 so far) are
+  still the test of these two switches. `Evals/judge_agreement.py score` reports the
+  agreement; a low one reopens both.
+- The 30 conversations were written by a model. The first real chats on the new model should
+  be read; the field log (Settings, version tapped seven times) records each turn.
+- Nothing here was seen in the app on a phone.
+
+## 39. Every task tested: upward as well as down, the plan's three calls, and the two newest models (2026-11-25)
+
+**Approved by the owner** ("test for everything!", then "go ahead, run all of them"). **Spent:
+about $32.56**: $23.71 for the runs, $7.10 for the judge, and about $1.75 for 175 web searches,
+which the token prices do not include. **Spend to date: about $64.63.** Every run has 1 to 3
+repeats on committed trees (`f09fb30` and its parent). The judge and rule are as in sections
+36 and 38: the cheapest candidate whose interval does not favour the shipped model, unless
+its misses are the feature's point. A candidate that shows the person a visibly broken result
+at a non-trivial rate is not adopted.
+
+### 1. The short notes, compared upward
+
+Sections 35 and 36 compared `claude-haiku-5-5` only with the older `claude-haiku-4-5`. Against
+`claude-sonnet-5` (runs `100915`, `101653`, `101741`, `101905`, `102319`):
+
+| Task | Judge: `sonnet-5` / `haiku-5-5` / tie | net (95%) | Rules | Model now |
+|---|---|---|---|---|
+| Daily brief | 20 / 2 / 16 | **+0.47 (+0.24 to +0.70)** | 100% / 97% | **`claude-sonnet-5`** |
+| Insight line | 21 / 6 / 30 | **+0.26 (+0.05 to +0.47)** | equal | **`claude-sonnet-5`** |
+| Memory fold | 23 / 8 / 5 | **+0.42 (+0.06 to +0.75)** | equal | **`claude-sonnet-5`** |
+| Weekly note | 21 / 16 / 10 | +0.11 (−0.21 to +0.43) | 98% / 100% | `claude-haiku-5-5` |
+| Onboarding note | 12 / 13 / 14 | −0.03 (−0.28 to +0.26) | 87% / 96% | `claude-haiku-5-5` |
+
+What the judge's reasons show:
+- **Brief:** the cheaper model broke the brief's own format (two-sentence headlines, a
+  three-sentence body), once dropped a number, and once wrote "make up for", which the app's
+  guard caught.
+- **Memory:** `sonnet-5` wrote tighter catch-ups and cleaner retractions. It guessed a gender in
+  2 of 36 folds, against none; that is open.
+
+The three switched tasks run about once a day per person, so the cost is a few cents a month.
+
+### 2. The plan's three calls (`plan_build/v1`, 15 cases; `plan_review/v1`, 14; research on 8 build cases)
+
+The three evals:
+- **Build** runs the app's own prompt, schema and structured call without the live research
+  phase, so the authoring model is isolated.
+- **Review** runs `PlanService.review` itself.
+- **Research** runs the research call with its web-search tool.
+
+No eval touches `ResearchCache`. Where each differs from the app is stated in
+`SproutEvals/PlanEvals.swift`. The baseline is the shipped `claude-opus-4-8`.
+
+| | Build: rules / judge net | Review: rules / judge net | Research: judge net |
+|---|---|---|---|
+| `claude-opus-4-8` (shipped) | 100% | 89% (3 dropped network connections) | |
+| `claude-opus-5-5` | 40%: **17 of 30 cut off** at the app's 2,200-token cap (its thinking cannot be switched off) / +0.38 (−0.23 to +0.91) on the 13 usable pairs | 93% / +0.28 (−0.12 to +0.64) | **6 / 0 / 2, +0.75 (+0.38 to +1.00)** |
+| `claude-sonnet-5` | 53%: **12 of 30 plans had no insights** (below) / **−0.73 (−0.97 to −0.43)** | 93%, 2 without insights / −0.20 (−0.58 to +0.20) | −0.12 (−0.62 to +0.38) |
+| `claude-haiku-5-5` | 87%: a missing range or one below the safe floor in 4 / **−0.50 (−0.73 to −0.27)** | 82%: the same in 4 / 0.00 (−0.36 to +0.36) | **−0.75 (−1.00 to −0.38)** |
+
+Per 1,000 calls: build $51.87 / $52.99 / $22.34 / $1.16; review $37.42 / $42.01 / $16.97 /
+$0.94; research $442.75 / $376.77 / $187.32 / $8.29. Every research call used its five
+searches and read about 85,000 tokens of search results.
+
+**Decisions:**
+- **Research → `claude-opus-5-5`**: preferred beyond noise, and about 15% cheaper.
+- **Build stays on `claude-opus-4-8`**. The other two candidates are worse beyond noise, and
+  `claude-opus-5-5` is cut off by the app's token cap. Raising the cap for that model is a
+  follow-up worth measuring.
+- **Review stays on `claude-opus-4-8`**. The cheaper candidates are within noise on the judge,
+  but `claude-haiku-5-5` set a range below the safe floor or none at all, and `claude-sonnet-5`
+  left a plan without insights 7% of the time. Both are visible on the plan card, and the
+  shipped model did neither.
+
+**The plans without insights, a defect found and partly fixed.** `claude-sonnet-5` sometimes
+broke the forced tool call for `insights`:
+- **Most often:** a fragment such as `"\n<parameter name=\"tone\">watch"`, or the field
+  left empty with the calories at 0. Nothing in the reply can be recovered.
+- **3 times:** the list written as `<parameter name="item">{…}` chunks, one JSON object each.
+
+`StructuredOutputRepair` now reads the second shape, for any property the schema declares as
+a list of objects, but only when every chunk is one JSON object and the string holds nothing
+else. A fragment, a chunk that does not parse, or text around the chunks is still left for the
+decoder to reject. The earlier "leaked markup is not repaired" test still passes; two new
+tests. It is proven on the recorded shape, not regraded on those three replies: the records
+keep 4,000 characters of the reply, and those three were longer. Plans ship on
+`claude-opus-4-8`, which did neither.
+
+### 3. The two newest models on the strong tier
+
+`claude-sonnet-5-5` costs what `claude-sonnet-5` costs. It was run on every task now shipped
+on `claude-sonnet-5`, and `claude-opus-5-5` was run on meal photos too.
+
+| Task | Rules: `sonnet-5` / `sonnet-5-5` | Judge net for `sonnet-5-5` | Model now |
+|---|---|---|---|
+| Daily checklist (`105639`) | 100% / 100% | **+0.29 (0.00 to +0.56)** | **`claude-sonnet-5-5`** (a little cheaper and faster) |
+| Meal description, household (`110108`) | 94% / 94%, mean error similar | not judged | **`claude-sonnet-5-5`** (about 30% cheaper, faster) |
+| Food suggestions (`105440`) | 100% / **89%**: 6 of 54 gave one suggestion where the app requires two, so the card was blank | **+0.27 (+0.06 to +0.47)** | `claude-sonnet-5`: 11% blank cards |
+| Progress recap (`105912`) | 91% / 87%; invented a figure 3 times against once | +0.05 (−0.36 to +0.44) | `claude-sonnet-5`: its numbers are the point |
+| Meal photo (`110645`) | 43% / **29%** (−14%, −27% to −2%); `claude-opus-5-5` 31% | not judged | `claude-sonnet-5` |
+| Daily brief, insight line, memory fold | equal | +0.15, +0.02, −0.19, all within noise | `claude-sonnet-5`, which costs the same or less |
+
+Food is the case to revisit. `claude-sonnet-5-5`'s suggestions are judged better, and its only
+defect is answering with one suggestion. If the card accepted one, it would win outright. That
+is a product choice, left to the owner.
+
+`claude-sonnet-5-5` and `claude-opus-5-5` are added to the gateway's price table (prices from
+`Evals/prices.json`). The 58 gateway tests pass.
+
+### The table now
+
+| Model | Tasks |
+|---|---|
+| `claude-haiku-5-5` | Vita's chat, the chat chips, the weekly note, the onboarding note |
+| `claude-sonnet-5` | Food suggestions, the recap, meal photos, the daily brief, the insight line, the memory fold |
+| `claude-sonnet-5-5` | The daily checklist, a typed meal |
+| `claude-opus-4-8` | Plan build, plan review |
+| `claude-opus-5-5` | Plan research |
+
+### Not verified
+
+- The judge against a person: the owner's labels are still pending (1 of 45).
+- None of today's new defaults has been seen in the app on a phone.
+- The datasets are 8 to 30 cases, and the plan and coach datasets were written by a model.
+
+## 40. The plan moves to claude-opus-5-5 once it has room to think; food moves to claude-sonnet-5-5 once one suggestion is shown (2026-11-25)
+
+**Approved by the owner**: "why not just do opus 5-5? cheaper and smarter no?", then "1. sure",
+in reply to the two follow-ups of section 39. **Spent: $7.95** ($6.32 runs, $1.63 judge).
+**Spend to date: about $72.58.** Runs `20261125-121105` (food, 3 repeats), `121304` (plan
+build, 2) and `121921` (plan review, 2), on `4df5487`.
+
+### Two app changes, each tested before the runs
+
+- **Room to think.** `claude-opus-5-5` and `claude-fable-5-2` cannot switch thinking off,
+  and `max_tokens` counts the thinking. In section 39, `claude-opus-5-5` thought for up to
+  1,191 tokens and was cut off at the plan's 2,200 in 17 of 30 builds. Those two models now
+  get 4,096 tokens on top of what every call asks for (`AnthropicModelProfile.maxTokens`).
+  It is a ceiling, so only what is used is billed. Every other model is sent exactly what it
+  was before. Tests in `AnthropicStructuredFormatTests` and `AnthropicThinkingTests`.
+- **One food suggestion is shown rather than none.** `claude-sonnet-5-5` gave one suggestion
+  in 6 of 54 calls, and the schema's `minItems: 2` turned each into an empty card. The schema
+  now allows 1. The prompt still asks for 2 to 3, and the grader records
+  `at_least_two_shown`.
+
+### Results
+
+| Task | Rules: shipped / candidate | Judge: candidate / shipped / tie | net (95%) | $ per 1,000 |
+|---|---|---|---|---|
+| Plan build: `claude-opus-4-8` / `claude-opus-5-5` | 97% / 97%, both readable every time (was 43%) | **21 / 3 / 6** | **+0.60 (+0.37 to +0.80)** | 52.45 / 53.04 |
+| Plan review: `claude-opus-4-8` / `claude-opus-5-5` | 96% / 100% | 17 / 7 / 4 | +0.36 (−0.04 to +0.71) | 42.60 / 43.84 |
+| Food: `claude-sonnet-5` / `claude-sonnet-5-5` | 100% / 100% (was 89%); two or more shown in 96% | 22 / 12 / 20 | +0.19 (−0.02 to +0.39) | 7.14 / 6.45 |
+
+The shipped model's two plan failures were a wrong-person pronoun. `claude-opus-5-5`'s one
+failure was a blank plan: every field empty and every number 0, on one repeat of a case it
+answered well on the other.
+
+**A defect that blank plan exposed, fixed for every model.** `PlanService` stored whatever
+the model sent. A blank answer to a review would have overwritten the person's plan with an
+empty one; on a build it would have saved an empty plan. `PlanService.requireUsable` now
+refuses a reply with no headline, no assessment, no calorie range or no protein target, and
+throws before anything is stored or folded into About You. The person sees the build's or the
+review's error and keeps their plan. The plan evaluation applies the same check. Two tests: the
+recorded blank reply is not a plan, and a review given one throws with the plan unchanged.
+
+### Decisions
+
+- **Plan build → `claude-opus-5-5`**: preferred beyond noise, at the same cost.
+- **Plan review → `claude-opus-5-5`**: better on the rules and leaning ahead on the judge, at
+  about 3% more. Strictly, the cheapest model within noise is `claude-opus-4-8`. The review
+  re-emits the plan the build wrote, and the build is now `claude-opus-5-5`, so one model
+  writes the document.
+- **Food suggestions → `claude-sonnet-5-5`**: usable every time now, leaning ahead on the
+  judge (beyond noise in section 39, within it here), and about 10% cheaper.
+
+The plan's three calls now all run on `claude-opus-5-5`. `claude-opus-4-8` stays in the
+gateway as the plan tier's default; no task resolves to it.
+
+### Not verified
+
+- The judge against a person: the owner's labels are still pending.
+- How often `claude-opus-5-5` answers blank in use: once in 30 builds and 28 reviews here.
+- Seen in the app on a phone: none of it.
+
+## 41. OpenAI measured on every task: nine tasks move to OpenAI, each task now picks its vendor, and the gateway is live (2026-11-25)
+
+**Why.** Sections 35 to 40 compared Claude models only. The move to one vendor in section 33
+was a simplification, not a measurement, and the owner asked for OpenAI to be measured too ("we
+should"). **Spent: about $18.40** ($11.63 runs, $5.27 judge, about $1 of web searches, and the
+pilots). **Spend to date: about $91.**
+
+Each task was run against the OpenAI model at the same price as its shipped Claude model, with
+3 repeats (2 for the plan, 1 on 8 cases for research), and judged as before:
+
+| Claude tier | OpenAI at the same price |
+|---|---|
+| `claude-haiku-5-5` ($0.10 / $0.50) | `gpt-6-luna` |
+| `claude-sonnet-5` and `claude-sonnet-5-5` ($2 / $10) | `gpt-6.2-sol` |
+| `claude-opus-5-5` ($4 / $20) | `gpt-6.2-sol` (half the price), and `gpt-5.6-sol` for research (the OpenAI model with web search; promotional price until 2026-11-30) |
+
+### Results (runs `20261125-1346…` to `1439…`)
+
+| Task | Claude / OpenAI | Rules: Claude / OpenAI | Judge: OpenAI / Claude / tie | net (95%) | $ per 1,000 | Model now |
+|---|---|---|---|---|---|---|
+| Food suggestions | `sonnet-5-5` / `gpt-6.2-sol` | 100% / 100% | **34 / 5 / 15** | **+0.54 (+0.30 to +0.74)** | 6.49 / 3.36 | **`gpt-6.2-sol`** |
+| Daily checklist | `sonnet-5-5` / `gpt-6.2-sol` | 100% / 100% | **29 / 11 / 8** | **+0.38 (+0.02 to +0.69)** | 7.11 / 3.46 | **`gpt-6.2-sol`** |
+| Plan review | `opus-5-5` / `gpt-6.2-sol` | 96% / 100% | **21 / 3 / 4** | **+0.64 (+0.32 to +0.89)** | 44.09 / 7.47 | **`gpt-6.2-sol`** |
+| Plan research | `opus-5-5` / `gpt-5.6-sol` | 100% / 100% | **7 / 0 / 1** | **+0.88 (+0.62 to +1.00)** | 377.99 / 113.03 | **`gpt-5.6-sol`** |
+| Plan build | `opus-5-5` / `gpt-6.2-sol` | 93% / 100% | 8 / 11 / 9 | −0.11 (−0.48 to +0.29) | 57.31 / 9.50 | **`gpt-6.2-sol`** |
+| Progress recap | `sonnet-5` / `gpt-6.2-sol` | 93% / 100% | 12 / 15 / 18 | −0.07 (−0.38 to +0.24) | 6.20 / 2.84 | **`gpt-6.2-sol`** |
+| Meal photo | `sonnet-5` / `gpt-6.2-sol` | 47% / 51% within 20%; mean error 36% / 28%; truth in range 48% / 76% | not judged | | 11.03 / 4.86 | **`gpt-6.2-sol`** |
+| Onboarding note | `haiku-5-5` / `gpt-6-luna` | 96% / 100% | 11 / 14 / 18 | −0.07 (−0.30 to +0.14) | 0.13 / 0.07 | **`gpt-6-luna`** |
+| Weekly note | `haiku-5-5` / `gpt-6-luna` | 100% / 100% | 14 / 15 / 19 | −0.02 (−0.25 to +0.21) | 0.20 / 0.13 | **`gpt-6-luna`** |
+| Vita's chat | `haiku-5-5` / `gpt-6-luna` | equal | 13 / **51** / 23 | **−0.42 (−0.60 to −0.24)** | | `claude-haiku-5-5` |
+| Chat chips | `haiku-5-5` / `gpt-6-luna` | equal | 12 / **25** / 11 | **−0.27 (−0.50 to −0.02)** | | `claude-haiku-5-5` |
+| Daily brief | `sonnet-5` / `gpt-6.2-sol` | equal | 3 / **15** / 21 | **−0.31 (−0.54 to −0.08)** | | `claude-sonnet-5` |
+| Insight line | `sonnet-5` / `gpt-6.2-sol` | equal | 4 / **20** / 33 | **−0.28 (−0.49 to −0.07)** | | `claude-sonnet-5` |
+| Memory fold | `sonnet-5` / `gpt-6.2-sol` | 97% / **28%** | 12 / 15 / 8 | −0.09 | | `claude-sonnet-5`: OpenAI's notes run to about 400 characters and drop planted facts in 26 of 36 folds |
+| Typed meal (household) | `sonnet-5-5` / `gpt-6.2-sol` | 92% / 86%; mean error 4.8% / 6.8% | not judged | | 5.68 / 2.90 | `claude-sonnet-5-5`: the numbers are the point |
+
+Where the judge cannot separate the two, the cheaper candidate whose interval does not favour
+the shipped model is chosen, as in every section since 35. That rule moves the plan build, the
+recap, the onboarding note and the weekly note. For the plan build and the recap the OpenAI
+model is also the more reliable on the rules: `claude-opus-5-5` gave one blank plan and one cut
+off in 30. Controls passed 6/6 on every judgement.
+
+### Each task now picks its vendor
+
+`AIConfig.provider(for:)` replaces the one global provider. In order:
+1. a scoped runtime's provider (tests, evaluations);
+2. else the vendor the task measured best on (`AIConfig.measuredProviders`);
+3. else Anthropic, when that vendor is unavailable here: the gateway's `/health` reports no
+   OpenAI key, or has not answered yet. The feature then runs on its measured Anthropic model
+   rather than going dark.
+
+Every call site names its task (`AIClient.make(for:)`, `AIConfig.hasKey(for:)`). The no-argument
+factories remain for tests and evaluations, which pin the provider themselves. Tests check:
+- the vendor table;
+- the scoped override and the fallback;
+- that every task resolves, on its vendor and on Anthropic, to a model the gateway allows.
+
+### The gateway
+
+Deployed on the owner's droplet (server/README):
+- HTTPS on port 8446 (port 443 belongs to another service there), the gateway on 127.0.0.1 only;
+- memory and CPU capped;
+- both keys pasted by the owner.
+
+Checked from outside:
+- `/health` reports both keys;
+- an unsigned request is refused (401);
+- the gateway's own port is not reachable.
+
+The OpenAI text routes removed in section 33 are back (`/openai/v1/responses`,
+`/openai/v1/chat/completions`), with:
+- the same App Attest checks, model allowlist and spend caps as the Anthropic route;
+- each web search charged at $0.01;
+- `background` and premium `service_tier` refused (they would bill without a usage the
+  gateway can count).
+
+Two follow-ups, settled the same day:
+- **Cache writes:** OpenAI's usage reports cache reads but no tokens written, so every
+  uncached input token is charged at the 30-minute cache-write rate (1.25× input). For a
+  spending cap, overcounting is the safe direction.
+- **Searches per call:** the app's research call now sends `max_tool_calls: 5`, and the gateway
+  refuses web search without a limit.
+
+71 gateway tests.
+
+### Not verified
+
+- Seen in the app on a phone: nothing yet. A real App Attest registration needs the owner's
+  iPhone.
+- The judge against a person: the owner chose not to label.
+- `gpt-5.6-sol`'s price after its promotion ends on 2026-11-30.
+
+## 42. A judge from the other family: Claude's wins were the Claude judge's taste; four more tasks move to OpenAI; the flaky UI flows fixed (2026-11-25)
+
+**Why.** Every verdict in sections 36 to 41 came from one judge, `claude-opus-5-5`. In section
+41 it compared Claude's answers with OpenAI's, which is where a judge's preference for its own
+family would show. The owner declined to label pairs, so the standard substitute was used: a
+second judge from the other family, and the verdict of the two together (a panel).
+
+**How.** Section 41's runs were judged again, repeat 0 only, the same way:
+- blind, in both orders, the same rubric and the same controls;
+- by `gpt-5.6-sol`, which is a candidate in none of these comparisons. A judge never judges its
+  own answers; `judge.py --judge` now refuses it.
+- plan research by `gpt-6.2-astra`, since `gpt-5.6-sol` is a candidate there.
+
+The panel's verdict for a pair is the mean of the two judges'. Its interval comes from the same
+bootstrap over cases. **Spent: about $3.50.**
+
+| Task | Claude judge (section 41) | OpenAI judge | Panel: net (95%) | Judges agree on |
+|---|---|---|---|---|
+| Food suggestions | OpenAI +0.54 | OpenAI +0.83 | +0.64 (+0.36 to +0.86) | 67% of 18 |
+| Daily checklist | OpenAI +0.38 | OpenAI +0.69 | +0.59 (+0.25 to +0.88) | 88% of 16 |
+| Plan review | OpenAI +0.64 | OpenAI +0.93 | +0.79 (+0.57 to +1.00) | 86% of 14 |
+| Vita's chat | **Claude** −0.42 | OpenAI +0.23 (within noise) | -0.15 (-0.33 to +0.03) | 37% of 30 |
+| Chat chips | **Claude** −0.27 | even 0.00 | -0.25 (-0.59 to +0.09) | 44% of 16 |
+| Daily brief | **Claude** −0.31 | even 0.00 | -0.23 (-0.62 to +0.12) | 46% of 13 |
+| Insight line | **Claude** −0.28 | OpenAI +0.32 (within noise) | +0.00 (-0.26 to +0.26) | 26% of 19 |
+
+Plan research by `gpt-6.2-astra`: 8 to 0 for `gpt-5.6-sol`, but that judge passed only 2 of
+its 6 controls, so its research verdict is not used. Section 41's 7 to 0 by the Claude judge
+stands.
+
+**What it shows.** Where both judges agree, OpenAI's wins hold: food, the checklist and the plan
+review, with agreement of 67% to 88% and panel intervals well above zero. Every task where Claude
+"won" in section 41 was won in the Claude judge's eyes only: the OpenAI judge saw a tie or leaned
+the other way. The two agree on only 26% to 46% of those cases, and the panel's intervals all
+hold zero. **Each judge leans to its own family.** A single judge is not trusted for a comparison
+across vendors again; `judge.py --judge` makes the second one a flag away.
+
+**Decisions.** The rule since section 35 applies to the panel: the cheapest candidate whose
+interval does not favour the shipped model.
+- Vita's chat → `gpt-6-luna`: about 40% cheaper ($0.31 against $0.53 per 1,000 turns) and faster
+  (1.9 s against 2.5 s). It also matched the rules: every reply usable, the expected tool 100%, no
+  invalid tool call. Its replies are shorter (about 44 words against 80), which suits a chat bubble.
+- Chat chips → `gpt-6-luna`: $0.12 against $0.23 per 1,000.
+- Daily brief → `gpt-6.2-sol`: $0.95 against $1.39 per 1,000.
+- Insight line → `gpt-6.2-sol`: $0.78 against $1.14 per 1,000.
+
+The chat's panel point estimate still leans to Claude (−0.15). The interval reaches +0.03, so by
+the rule it is a tie. The chat is the feature to watch in use. The field log names the provider of
+every turn, so moving it back is one line in `AIConfig.measuredProviders`.
+
+Claude keeps two tasks: the memory fold (OpenAI failed it on the rules: facts dropped in 26 of
+36 folds) and a typed meal (Claude more accurate on the rules, 92% against 86%). Neither depended
+on the judge.
+
+### The flaky UI flows
+
+`main`'s UI flows failed after the merges of #8, #9 and #10, each time on a different flow; each
+pull request had passed. Four flows, each with a cause found and fixed:
+1. **A message arriving while reading further up.** It arrived on a 12-second timer, so a slow
+   runner could land it while the reader was still at the bottom, where it is not counted as new.
+   It failed in 3 of the last 4 runs. A new debug step, `arrive:away`, makes it arrive only once
+   the reader has left the bottom for two seconds: an event, not a timer.
+2. **Deleting one of two logged foods.** A long press on a slow runner sometimes never opened the
+   menu. The press is now retried, up to three times, only while no menu is open (an open menu
+   covers the row).
+3. **Vita's Undo.** The banner left after 5 seconds, sooner than a slow runner could find, settle
+   and tap it. The UI flows now get 15 seconds (`CoachTurnEngine.undoWindow`); the app keeps 5,
+   pinned by a unit test.
+4. **Jump to latest.** The reference position was read before the layout below the newest
+   message had finished appearing (163 pt off). It is now read once the position has held for a
+   second.
+
+Each flow passes locally. Whether CI is steady is shown only by repeated runs on `main`.
+
+### Not verified
+
+- The panel is two models, not a person.
+- Vita on OpenAI has not yet been used on a phone.
 

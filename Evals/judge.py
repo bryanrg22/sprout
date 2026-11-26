@@ -40,6 +40,11 @@ JUDGE_MODEL = "claude-opus-5-5"
 JUDGE_EFFORT = "low"
 # Batches API: half the standard price (claude-opus-5-5: $4 / $20 per million tokens).
 BATCH_PRICE = {"claude-opus-5-5": (2.00, 10.00)}
+# A judge from the other family (`--judge openai:<model>`), called directly at list price, to
+# check that the Claude judge's verdicts do not lean towards Claude's answers (EVAL_REPORT 42).
+# A judge never judges its own answers: use one that is not a candidate in the run.
+OPENAI_JUDGE_PRICE = {"gpt-6.2-sol": (2.00, 10.00, 0.10), "gpt-5.6-sol": (4.00, 20.00, 0.40),
+                      "gpt-6.2-astra": (8.00, 40.00, 0.80)}
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Tasks whose raw reply is not what the person sees: the memory is stored after
 # `CoachMemoryService.parse` removes app-owned figures, and a checklist is decoded, repaired
@@ -202,6 +207,44 @@ def run_batch(reqs, state_path):
     return results
 
 
+def run_openai(reqs, model, workers=8):
+    """The same requests, judged by an OpenAI model through the Responses API with the same
+    JSON schema (strict structured output). Returns results shaped like `run_batch`'s."""
+    from concurrent.futures import ThreadPoolExecutor
+    from openai import OpenAI
+    client = OpenAI()
+
+    def one(req):
+        params = req["params"]
+        try:
+            resp = client.responses.create(
+                model=model, instructions=params["system"][0]["text"],
+                input=params["messages"][0]["content"], max_output_tokens=4000,
+                reasoning={"effort": JUDGE_EFFORT},
+                text={"format": {"type": "json_schema", "name": "verdict", "schema": SCHEMA, "strict": True}})
+            u = resp.usage
+            cached = getattr(getattr(u, "input_tokens_details", None), "cached_tokens", 0) or 0
+            entry = {"model": resp.model, "stop_reason": resp.status,
+                     "usage": {"input": u.input_tokens - cached, "output": u.output_tokens,
+                               "cache_read": cached, "cache_write": 0}}
+            try:
+                entry.update(json.loads(resp.output_text))
+            except json.JSONDecodeError:
+                entry["error"] = f"unparsable: {resp.output_text[:200]}"
+            return req["custom_id"], entry
+        except Exception as e:  # a failed call is recorded, not retried
+            return req["custom_id"], {"error": f"{type(e).__name__}: {str(e)[:200]}"}
+
+    with ThreadPoolExecutor(workers) as pool:
+        return dict(pool.map(one, reqs))
+
+
+def openai_cost(results, model):
+    pin, pout, pcache = OPENAI_JUDGE_PRICE[model]
+    return sum((r["usage"]["input"] * pin + r["usage"]["cache_read"] * pcache + r["usage"]["output"] * pout) / 1e6
+               for r in results.values() if "usage" in r)
+
+
 def cost(results):
     total = 0.0
     for r in results.values():
@@ -253,6 +296,8 @@ def main():
     ap.add_argument("--repeats", default="0,1,2", help="repeat indices to judge (default 0,1,2)")
     ap.add_argument("--controls", type=int, default=2, help="cases given control pairs (default 2)")
     ap.add_argument("--dry-run", action="store_true", help="build the requests and stop; spends nothing")
+    ap.add_argument("--judge", default=None,
+                    help="openai:<model> to judge with an OpenAI model instead (a cross-family check)")
     args = ap.parse_args()
 
     records = with_shown(args.run, load_records(args.run))
@@ -269,13 +314,21 @@ def main():
     controls = controls_of(pairs, args.controls, seed=7)
     reqs = build_requests(pairs, controls, rubric)
     tag = args.candidate.split(":")[-1]
-    out_path = os.path.join(args.run, f"judge-{tag}.json")
+    judge_model = args.judge.split(":", 1)[1] if args.judge else None
+    if judge_model and judge_model not in OPENAI_JUDGE_PRICE:
+        sys.exit(f"no price for judge {judge_model}")
+    if judge_model and judge_model in (args.baseline.split(":")[-1], args.candidate.split(":")[-1]):
+        sys.exit(f"{judge_model} is a candidate in this comparison and cannot judge it")
+    out_path = os.path.join(args.run, f"judge-{tag}" + (f"-by-{judge_model}" if judge_model else "") + ".json")
     print(f"{task}: {len(pairs)} pairs, {len(skipped)} skipped (a side not usable), "
           f"{len(controls)} controls -> {len(reqs)} judge calls", flush=True)
     if args.dry_run:
         return
 
-    results = run_batch(reqs, os.path.join(args.run, f".judge-{tag}-batch.json"))
+    if judge_model:
+        results = run_openai(reqs, judge_model)
+    else:
+        results = run_batch(reqs, os.path.join(args.run, f".judge-{tag}-batch.json"))
 
     verdicts, per_case, consistent = [], {}, 0
     for i, p in enumerate(pairs):
@@ -304,7 +357,7 @@ def main():
     summary = {
         "task": task, "run": os.path.basename(os.path.normpath(args.run)),
         "baseline": args.baseline, "candidate": args.candidate,
-        "judge": {"model": JUDGE_MODEL, "effort": JUDGE_EFFORT, "answered_by": models,
+        "judge": {"model": judge_model or JUDGE_MODEL, "effort": JUDGE_EFFORT, "answered_by": models,
                   "rubric_sha256": hashlib.sha256(rubric.encode()).hexdigest(),
                   "system_sha256": hashlib.sha256(SYSTEM.encode()).hexdigest()},
         "pairs_judged": len(judged), "pairs_skipped": skipped, "cases": len(per_case),
@@ -314,7 +367,7 @@ def main():
         "net": net, "net_ci95_cases": ci,
         "controls_correct": controls_correct, "controls": len(controls),
         "judge_calls": len(reqs), "judge_errors": sum(1 for r in results.values() if "error" in r),
-        "judge_cost_usd": round(cost(results), 4),
+        "judge_cost_usd": round(openai_cost(results, judge_model) if judge_model else cost(results), 4),
         "verdicts": verdicts, "control_rows": control_rows,
     }
     json.dump(summary, open(out_path, "w"), indent=1)

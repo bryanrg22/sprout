@@ -79,13 +79,15 @@ Each AI feature is a task (`AITask`, 15 of them) with its own prompt and output 
 
 | Task | Model | How it was chosen |
 |---|---|---|
-| Daily brief, insight line, weekly reflection, onboarding note, memory fold | `claude-haiku-5-5` | **measured**: as good as or better than the previous model on the rules, at about a seventh of the cost, and faster; a blind judge read all but the daily brief and favoured the old model on none, the weekly note clearly the new one. The memory fold's one defect (storing a calorie target) is removed in code (EVAL_REPORT 10, 25, 35, 36) |
-| Progress recap, daily checklist | `claude-sonnet-5` | **measured**: the cheaper model is worse beyond noise, on the recap's numbers and on the checklist's plans as the judge reads them (EVAL_REPORT 35, 36) |
+| Vita chat turn, chat chips, weekly note, onboarding note | `gpt-6-luna` | **measured**: a tie with `claude-haiku-5-5` once judges from both families were pooled (the Claude judge alone preferred Claude; the OpenAI judge did not), at about half the cost; the right tool every time (EVAL_REPORT 41, 42) |
+| Food suggestions, daily checklist, progress recap, meal photo, daily brief, insight line | `gpt-6.2-sol` | **measured**: preferred beyond noise by both judges on food (panel +0.64) and the checklist (+0.59); a tie at lower cost on the rest (EVAL_REPORT 41, 42) |
+| Plan build and review | `gpt-6.2-sol` | **measured**: reviews preferred by both judges (panel +0.79); builds a tie and never blank, at a sixth of the cost (EVAL_REPORT 41, 42) |
+| Plan web research | `gpt-5.6-sol` | **measured**: preferred 7 to 0 over `claude-opus-5-5`, at about a third of the cost (EVAL_REPORT 41) |
+| Memory fold | `claude-sonnet-5` | **measured**: `gpt-6.2-sol` dropped planted facts in 26 of 36 folds (EVAL_REPORT 39, 41) |
+| A typed meal | `claude-sonnet-5-5` | **measured**: within 20% on 92% of household-measure meals against 86% (EVAL_REPORT 39, 41) |
 | The character picture | `gpt-image-2.6-sunburst`, low quality | **measured**: every candidate usable; cheapest in the style wanted (EVAL_REPORT 23, 27) |
-| Food suggestions, chat chips | `claude-sonnet-5` | measured, waiting: within noise of the cheaper model on rules and judge; a switch that rests on the judge waits until the judge is shown to agree with a person (EVAL_REPORT 36) |
-| Meal description | `claude-sonnet-5` | measured, not separable: both models are within 2% when portions are given in grams; a dataset of household portions is needed (EVAL_REPORT 36) |
-| Vita chat turn, meal photo | `claude-sonnet-5` | tier default; no quality dataset yet |
-| Adaptive plan: build, review, web research | `claude-opus-4-8` | tier default (rare: a few calls per person); no dataset yet |
+
+Each task runs on the vendor it measured best on and falls back to its Claude model when that vendor is unavailable (`AIConfig.provider(for:)`).
 
 The gateway allows exactly these models, and a unit test reads the gateway's price table and fails if any task resolves to a model it would refuse.
 

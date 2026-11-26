@@ -25,6 +25,12 @@ dataset on every candidate model, and the numbers decide. Results are written up
 | Eval | Task | What runs | Pass rule |
 |---|---|---|---|
 | `MealDescribe` | `mealDescribe` | `FoodPhotoAnalyzer.analyze(description:)` on `meal_describe/v3` (14: v1's cases with the label nutrients) | total calories within 20% of the USDA total (the US labelling tolerance) |
+| `MealDescribeHousehold` | `mealDescribe` | the same call on `meal_describe/v4` (22): foods in household measures with no weight ("a medium banana", "half a salmon fillet"); the truth is USDA's own gram weight for that measure (`build_v4.py`) | total calories within 20% |
+| `MealPhoto` | `mealPhoto` | `FoodPhotoAnalyzer.analyze(imageData:)` on `meal_photo/v1` (30 Nutrition5k plates, CC BY 4.0, see its `ATTRIBUTION.md`), each photo prepared as `PhotoFoodFlow` prepares it | total calories within 20% of the weighed plate |
+| `CoachConversation` | `coachTurn` | `CoachTurnEngine.send` on `coach_conversations/v1` (30): the fixture user's data and the earlier turns in an in-memory store, then the newest message, exactly as the chat sends it (tools applied or proposed as in the app) | a usable reply; quality is for `judge.py` (the record's `given` holds the data, notes and conversation) |
+| `PlanBuild` | `planBuild` | the plan's write call on `plan_build/v1` (15): the app's own system prompt, user turn, schema and structured call, **without** the live research phase, so the authoring model is isolated (`PlanEvals.swift` states every difference) | it decodes, has a headline, assessment, strategy and range, the range starts at or above the safe calorie floor, protein is set, 3 to 5 insights, no wrong-person pronoun |
+| `PlanReview` | `planReview` | `PlanService.review` on `plan_review/v1` (14): an existing plan and the data since, in an in-memory store | the same as the build |
+| `PlanResearch` | `planResearch` | the research call with its web-search tool on the build cases' words; `ResearchCache` is never read or written. **Each call reads about 85,000 tokens of search results** (about $0.45 on `claude-opus-4-8`, plus $0.05 for five searches) | a brief came back and the model searched |
 | `CoachToolChoice` | `coachTurn` | `CoachContext.systemParts` + `CoachTools.schemas` + `chatWithTools`, then `CoachTools.parse` | the right decision (act or answer), the right action, the right value, as the app itself resolves the call |
 | `DailyBrief` | `dailyBrief` | `DailyBriefService.pick` + `rephrase` | every number kept, none invented, and no wrong-person pronoun |
 | `InsightLine` | `insightLine` | `DailyInsightEngine.bestInsight` + `InsightPhraser.rephrase` on `insight_line/v1` (19 cases) | the line is used (the sanitiser kept it), every number of the template is kept, none is added beyond the template and the observation, and no wrong-person pronoun |
@@ -156,10 +162,13 @@ effort (`openai:gpt-6.1-terra@none`). Keys are read from `ANTHROPIC_API_KEY` and
 - Added sugars, trans fat, cholesterol, vitamin D, calcium, iron and potassium are columns
   in v3 (where USDA lists them) that nothing grades: the estimator is not asked for them
   (`docs/nutrition-detail.md` section 5).
-- There is no meal-photo dataset yet. Nutrition5k (CC BY 4.0) is the public ground
-  truth; published per-dish calorie error for general vision models is 30–45%.
-- `coach_tool_choice/v1` covers the first turn of a conversation only: no
-  multi-turn tool chains, no confirm/decline follow-ups, no photos.
+- `meal_photo/v1` is 30 cafeteria plates photographed from above on one tray, in one
+  cafeteria: no restaurant plates, no bowls of soup, no packaged food, no side views. Its
+  published comparison (Thames et al. 2021) is 18.8% calorie error from overhead RGB-D and
+  26.1% from 2D video frames for models trained on the dataset, and 41–53% for people.
+- `coach_tool_choice/v1` covers the first turn of a conversation only.
+  `coach_conversations/v1` covers a next reply after three to five turns, but not a reply to
+  a photo, a confirm or decline of a proposed change, or a conversation long enough to fold.
 - The labels were written by reading the tool descriptions. They are the intended
   behaviour as understood on 2026-11-22 and should be reviewed by the owner.
 - The eight wording and structure evaluations are code-graded checks of format and

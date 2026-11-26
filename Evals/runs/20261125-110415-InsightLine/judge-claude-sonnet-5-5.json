@@ -1,0 +1,1003 @@
+{
+ "task": "insightLine",
+ "run": "20261125-110415-InsightLine",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "anthropic:claude-sonnet-5-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "02ae50b942625c89960bad7214e7e8ffdc63a99f2eea04d47d250e4d08cd152b",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 57,
+ "pairs_skipped": [],
+ "cases": 19,
+ "candidate_wins": 12,
+ "baseline_wins": 11,
+ "ties": 34,
+ "both_bad": 0,
+ "orders_agree_share": 0.8421052631578947,
+ "net": 0.017543859649122806,
+ "net_ci95_cases": [
+  -0.21052631578947367,
+  0.24561403508771928
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 126,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.2343,
+ "verdicts": [
+  {
+   "case": "fuel-up-evening",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, add no figures, and gently encourage eating. A's \"running a little low on fuel\" conveys being under target with warmth and a slight caring urgency. B's \"room left\" is friendly but softens the under-eating signal into something closer to optional allowance, so the nudge is weaker. A is somewhat better at matching the caring nudge.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, add no invented facts, and encourage eating rather than restriction. Answer A's \"you've got some room left\" wording leans toward budget-style framing and softens the point that the user is under-fueled. Answer B states it clearly (\"running a little low on fuel\") and sounds warmer and more caring (\"cozy dinner or hearty snack\"). B is slightly better as a gentle nudge to eat.",
+    "error": null
+   }
+  },
+  {
+   "case": "fuel-up-evening",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, add no figures, and nudge toward eating more. A is shorter and warmer; \"running a little low on fuel\" conveys being under target clearly. B's \"room left in your fuel tank\" is slightly muddled (room in a tank suggests it's emptyish, which fits, but it reads ambiguously) and is wordier. A is better at a glance.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, add nothing invented, and gently encourage eating, with no push to eat less. A's \"room left in your fuel tank\" is warm and friendly but a bit wordier and slightly softer on the \"under\" meaning. B is shorter, reads at a glance, and keeps \"running a little low on fuel\" clearly matching the template with a cozy, caring tone. B is slightly better for brevity and fidelity.",
+    "error": null
+   }
+  },
+  {
+   "case": "fuel-up-evening",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, encourage eating dinner or a snack, and add no figures. A is shorter and stays close to the template's caring 'you're under, eating will help you feel your best' framing. B's 'room left' framing is warm but shifts toward a budget/allowance feel and is a bit longer and less direct about the under-eating. A is slightly better at a glance and truer to the nudge.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, invent nothing, and gently encourage eating more. A reframes being under target as \"room left,\" which is warm, but it softens the nudge and reads a bit longer. B stays closer to the template's caring nudge and is crisp and friendly. They are close, but B matches the meaning more faithfully and is easier to read at a glance.",
+    "error": null
+   }
+  },
+  {
+   "case": "fuel-up-late",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning (room left in fuel tonight, encourage a real dinner or snack) and add no invented facts. Both are warm, short, and friendly. A's \"room left in the tank\" is a natural friendly idiom, while B's \"room left in your fuel\" is slightly awkward, but the difference is minor. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the meaning: the user is under fuel, so they should eat a real dinner or solid snack. Neither invents anything, and both are warm and short. A's \"room left in your fuel\" is slightly awkward phrasing, while B's \"room left in the tank\" reads more naturally as a friend's text. The difference is minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "fuel-up-late",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, stay warm, and encourage eating without inventing figures. A states the situation plainly (\"running a little low on fuel\") and nudges toward a dinner or snack, matching the template closely. B's \"you've got some fuel left to grab\" frames it as an allowance remaining, which softens the caring \"you're under\" nudge but still encourages eating a real dinner. A is slightly clearer and more caring at a glance, though both are fine.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning of the template line, add no figures, and gently encourage eating. A frames it positively as fuel left to grab and sounds warm and friend-like. B mentions evening, which is in the observation, and \"running a little low on fuel\" is clear and caring, also friend-like and slightly shorter. Both are fit to show and roughly equal in quality.",
+    "error": null
+   }
+  },
+  {
+   "case": "fuel-up-late",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning and encourage eating, with no invented figures. A drops the \"under your fuel\" part and reads slightly app-like (\"Evening check-in\"), though it is short and caring. B keeps the core meaning (\"room left in today's fuel\") and sounds more like a warm friend texting. B is slightly longer but still glanceable, and it is more faithful to the template.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, add no invented figures, and encourage eating more. A sounds like a warm friend (\"Hey... so good for you\") and conveys being under fuel via \"room left,\" closely matching the template. B's \"Evening check-in\" sounds more app-like and drops the \"under your fuel\" point, though it's still caring. A is somewhat better for voice and fidelity.",
+    "error": null
+   }
+  },
+  {
+   "case": "gentle-default",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning exactly, add nothing invented, and sound warm and friendly. A is slightly tighter. B's 'honestly' adds a natural texting feel. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning exactly, add nothing invented, and sound warm and friendly. A adds 'honestly', which feels a bit more texting-friend, while B is slightly shorter and cleaner. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "gentle-default",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning exactly, add nothing invented, and read as a warm friend's text. A is slightly tighter. B's 'honestly' adds a casual friend tone. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the meaning exactly, add no facts, and are warm, short friend-texting lines that celebrate showing up. A's \"honestly\" adds a casual touch, and B's \"is you getting to know\" feels slightly more personal, but neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "gentle-default",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no new facts, and sound warm and friendly. A's 'getting a little closer to understanding' is slightly wordier. B's 'honestly' adds a natural texting tone, and B reads cleanly. The differences are marginal, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add nothing invented, and sound warm and friendly. A's \"honestly\" adds a casual texting feel, and B's phrasing is slightly wordier but equally fine. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "hydrated",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are warm and short. A swaps \"how full you feel\" for \"feel good,\" which drifts from the template. B keeps both energy and fullness. B's \"keeps you feeling full\" frames fullness as a benefit, but that framing is already in the template, so B matches the meaning more faithfully.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps both parts of the template's meaning, energy and how full you feel, in a warm texting voice. Answer B swaps \"how full you feel\" for \"help you feel good\", which changes the meaning slightly and drops the fullness point. Both are short and upbeat, so A is better on fidelity.",
+    "error": null
+   }
+  },
+  {
+   "case": "hydrated",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, invent nothing, and sound warm and friendly. A's \"keeping you feeling satisfied\" softens \"how full you feel\" slightly, and its \"today\" is a small addition. B stays closer to the original and is a bit shorter. The difference is minor, and both are fit to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no invented facts, and celebrate water in a warm texting voice. B's \"Nailed\" is a bit more upbeat, but its \"keeping you feeling satisfied\" drifts slightly and it is a touch longer. A is more faithful and more concise. The differences are marginal, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "hydrated",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no invented facts, and celebrate water in a warm, friendly tone. Answer B is slightly shorter and uses the more casual \"water goal,\" while A adds \"today\" and \"adds up\" \u2014 both fine, neither clearly better. The differences are negligible.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no figures, and sound warm and friendly while celebrating water. A is slightly shorter and more natural ('water goal'). B adds 'today' and 'adds up', which is harmless but adds length. The differences are minor and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "hydration-streak-5",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning exactly, with no invented facts, and both are warm, short, friend-like lines that celebrate water. The differences are trivial wording choices (\"turning this into\" vs \"really building\"). Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning exactly, add no facts, and celebrate hydration in a warm, friendly texting tone with an emoji. Answer A spells out 'Five' and Answer B uses the numeral, and the phrasing differences are trivial. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "hydration-streak-5",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no facts, and are warm, short, and celebratory about hydration. Answer A reads slightly more smoothly with the dash, while B's comma splice is a touch clunkier. The difference is minor and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning (five days hydrated, building a habit) with no invented facts, and both are warm, short and celebratory. A has a slightly clunky comma splice and \"of staying\" phrasing, while B reads a bit more smoothly. The difference is minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "hydration-streak-5",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, add no figures, and sound warm and friendly. Answer B adds \"and it shows,\" a mild unsupported claim that also makes it a bit wordier. Answer A is tighter and easier to read at a glance. The difference is small, but A is slightly cleaner.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, add no figures, and sound warm and friendly. Answer A adds \"and it shows!\", which is a slight unsupported embellishment and makes it a bit longer. B is tighter and reads easily at a glance. The difference is minor but favors B.",
+    "error": null
+   }
+  },
+  {
+   "case": "moved",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, sound warm, celebrate movement, and add nothing invented. Answer B keeps the \"even a little\" nuance from the template, which reassures someone who did only a small amount. Answer A's \"every bit\" is close but slightly loses the explicit \"even a little counts\" reassurance. The difference is small, but B matches the template more faithfully.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the meaning, add no invented facts, and are warm, short and celebratory of movement. Answer A keeps the 'even a little' nuance from the template a bit more closely, while B's 'every bit' carries essentially the same idea. The difference is negligible.",
+    "error": null
+   }
+  },
+  {
+   "case": "moved",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and add no invented facts. A is shorter and punchy, though it drops the 'even a little counts' nuance only slightly ('every bit' covers it). B keeps the full meaning with a friendly 'Hey' but reads a bit clunky with 'because'. Both are fine, and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no new facts, and celebrate movement warmly. Answer A keeps the \"even a little counts\" reassurance and opens with a friendly \"Hey\", though the \"because\" makes it slightly wordier. Answer B is shorter and punchier but drops the \"even a little counts\" nuance, which matters for encouragement. Both are fit to show and the differences are minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "moved",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add nothing invented, and celebrate movement in a short, friendly line. A drops the explicit \"even a little counts\" nuance but implies it with \"every bit\"; B keeps it but reads a bit clunky (\"counts and adds up\"). Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, add no facts, and sound warm and short. Answer A keeps \"even a little counts\" explicitly but reads a bit clunky and close to the template. Answer B flows more naturally and conveys the same idea through \"every bit,\" so it reads more like a friend's text. The difference is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-hit",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Answer A rewords the line in a punchy, friend-like way but drops the 'full' benefit, a slight loss of meaning that is not harmful. Answer B keeps the full meaning but barely rephrases the template, so it adds little. Both are warm, short and celebrate protein, with no invented facts. A reads more like a friend texting, while B is more faithful, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Answer A keeps the full meaning (full, strong, recovering) with a warm, friendly tone, though it barely rewords the template. Answer B sounds more like a friend texting and celebrates nicely. It drops the 'keeps you full' benefit and adds 'goal', a slight framing shift. Both are fine to show; A is more faithful while B is livelier, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-hit",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B keeps the full meaning, including \"full, strong, and recovering well\", and adds a warm \"Nice work\" in a friendly texting voice. Answer A drops the \"keeps you full\" benefit. It also shifts \"hit\" to \"crushed\", which slightly exaggerates, though it is energetic and warm. Both are short and celebratory, but B matches the template's meaning more faithfully.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the full meaning (full, strong, recovering) and adds a warm 'Nice work,' so it reads like a friendly text. Answer B is upbeat but drops 'keeps you full' and changes 'hit' to 'crushed', which slightly shifts the meaning. Neither invents figures or pushes eating less. A is more faithful while staying warm.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-hit",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, invent nothing, and celebrate protein in a warm, short line. Answer A drops the \"keeps you full\" part of the template, a small loss of meaning. Answer B keeps all three benefits (full, strong, recovering) and still reads like a quick upbeat text. B is slightly more faithful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and add nothing invented. Answer B drops the \"keeps you full\" element, though it reads as one smooth, warm friend-text sentence. Answer A keeps all three benefits (full, strong, recovering), but its \"Protein goal: hit!\" opener sounds a bit app-like, and it runs to two fragments. A is more faithful to the template while B is slightly more natural, so the two balance out and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-streak-12",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning of the template line, add no invented facts, and sound warm and celebratory. A is shorter and easier to take in at a glance, which suits a one-line Today screen insight. B is wordier and adds 'seriously impressive' without gaining any meaning, so A is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning of the template, invent nothing, and celebrate the protein streak in a warm, friendly voice. B is shorter and easier to read at a glance while staying just as warm. A adds wordier praise that doesn't improve it. B is slightly better for a one-line insight.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-streak-12",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 12-day protein streak meaning, invent no figures, and are warm and short. A's \"your body is loving the consistency\" stays closer to the template's \"your body is getting exactly what it needs\" and reads slightly punchier. B is equally valid, and its \"something to be proud of\" is a nice celebration, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 12-day protein streak meaning, add no invented facts, and sound warm and friendly. B is slightly punchier and closer to the template's body-focused framing, while A is equally fine but a bit more generic. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-streak-12",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 12-day protein streak meaning, add no invented figures, and sound warm and celebratory. A's \"your body's loving this\" stays closer to the template's \"your body is getting what it needs.\" B swaps that for \"you should be proud,\" which is still encouraging. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 12-day protein streak, add no invented facts, and sound warm and friendly. B stays closer to the template's meaning about the body getting what it needs, and it is slightly shorter. A drops that body angle, though its pride message is still a fine celebration. The difference is minor, and both are good.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-streak-4",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, celebrate the protein streak, and add no new figures or advice. A is shorter, punchy, and friend-like, and it keeps the template's 'body getting what it needs' sense with 'your body's loving the consistency.' B is warm but slightly longer, and it drops the body-benefit part in favor of 'I'm so proud of you,' which leans a bit coach-like. Both are fine, and the difference is small, but A edges ahead on glanceability and meaning fidelity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the 4-day protein streak meaning with no invented facts and a warm, celebratory tone. B is shorter and reads more like a quick friendly text, and it stays closer to the template's body-benefit framing. A is warm but a bit longer, and \"I'm so proud of you\" leans slightly toward a coach voice. B is marginally better for an at-a-glance line.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-streak-4",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 4-day protein streak, invent nothing, and sound warm and friendly. A stays closer to the template's meaning about the body benefiting (\"your body's loving the consistency\") and is slightly shorter. B swaps that for personal praise (\"I'm so proud of you\"), which is warm but drops the body-benefit point and is a bit longer. Both are good, but neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the 4-day protein streak meaning, add no invented figures, and sound warm and friendly. A drops the 'body getting what it needs' idea but adds personal pride. B keeps closer to the template's body-benefit meaning and is slightly shorter. B is marginally better, but the difference is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "protein-streak-4",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 4-day protein streak meaning, add no figures, and sound warm and friendly. A closely mirrors the template's body-benefit framing ('your body is loving the consistency') with a punchy, texting tone. B is also good but reads slightly more generic and uses a comma splice; the difference is minor.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the 4-day protein streak meaning, add no invented figures, and are warm and short. B reads more like a friend texting (\"nailing\", \"loving the consistency\") and keeps the template's body-benefit framing, while A is equally accurate but slightly flatter, with a comma splice. The difference is small and neither has a fault.",
+    "error": null
+   }
+  },
+  {
+   "case": "steps-goal",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning (step goal reached, praise) and add no invented figures. A's \"crushed\" slightly overstates \"reached,\" but it reads as casual friend enthusiasm rather than a factual claim, and \"way to keep moving\" celebrates movement warmly. B stays closer to the template, but neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, celebrate movement, and add no invented facts or numbers. A is close to the template and reads naturally. B is a bit punchier and more friend-like, though \"crushed\" slightly overstates \"reached.\" Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "steps-goal",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no invented facts, and read as warm friend-style texts that celebrate movement. A's \"crushed\" mildly overstates \"reached\" but is still harmless enthusiasm, and B is equally faithful and friendly. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no invented facts, and read as warm, friendly one-liners celebrating movement. A rewords it slightly more, while B adds \"crushed\" for enthusiasm but stays very close to the template. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "steps-goal",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no facts, and sound like a warm friend celebrating movement. \"Crushed\" slightly implies exceeding the goal, but it's a common colloquial cheer rather than an invented figure. The differences are negligible, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no facts, and read as warm, short friend texts celebrating movement. \"Crushed\" in B is slightly more upbeat but mildly overstates \"reached\"; A is accurate but has a minor comma splice. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-3",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no invented facts, and sound warm and friendly. Answer B explicitly celebrates showing up and keeps \"steady,\" which matches the template closely. Answer A is slightly punchier, but \"strong already\" and \"good habits take root\" are minor embellishments that don't change the meaning. Both are fine, and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning (three days in a row, habit starting, gentle/steady) and add no invented facts. A explicitly celebrates showing up in a direct 'you' voice and keeps 'steady'. B is a bit more compact but drops the direct address and 'steady'. Differences are minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-3",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no facts or numbers, and sound warm and short. A adds a touch of celebratory warmth ('already', 'takes root') without changing meaning. B is nearly a verbatim copy with an emoji. The difference is minor, and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and add no facts or figures. A is nearly a copy of the template with a sprout emoji. B adds \"already\" and \"takes root\", which sounds a bit warmer and more like a friend, but its mid-sentence emoji and lowercase continuation read slightly awkwardly. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-3",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning and add no invented facts. A sounds more like a warm friend (\"three days strong already\") and celebrates showing up, though it drops \"steady\". B is nearly a verbatim copy with comma splices, so it adds little warmth. Both are fine and short, and A's friendlier voice gives it a slight edge without changing the meaning.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning without inventing facts. A stays very close to the template, while B adds a bit more warmth ('three days strong already', 'take root', 'keep going gently') and still keeps the 'gentle' sense. The difference is slight; B reads a touch more like a friend celebrating, but A is equally fit and faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-week-28",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the 28-day streak and the pride, and neither invents facts or pushes eating less. A drops the 'beats being perfect' idea, swapping in 'consistency is everything,' which shifts the meaning slightly. B keeps the full meaning, including showing up over perfection, and still reads as a warm friend's text. B is a bit longer but still easy to read at a glance, so B is the more faithful choice.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the 28-day streak and the pride, and both have a warm friend's voice. Answer A keeps the \"showing up beats being perfect\" idea in full. Answer B drops the contrast with perfection and swaps in \"consistency is everything,\" which shifts the meaning a little. B is slightly shorter, but A is more faithful and still reads easily at a glance.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-week-28",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the 28-day figure and the pride, are warm, and invent nothing. Answer B keeps the full meaning, including \"showing up beats being perfect.\" Answer A drops the \"not perfect\" message and swaps in \"consistency is everything,\" a slight shift that loses the self-compassion point. Both are short, so B is the closer and better rewording.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the 28-day streak and the pride without inventing anything. A keeps the \"showing up beats being perfect\" idea intact, while B drops the not-being-perfect nuance and swaps in \"consistency is everything\", which subtly shifts the meaning toward pressure. Both are warm and short, but A is more faithful to the template.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-week-28",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the 28-day streak and the pride, and both sound warm and friend-like. Answer B keeps the 'showing up beats being perfect' contrast from the template, while A drops it and swaps in 'consistency is everything', which slightly shifts the meaning. A is a bit shorter, but B is still glanceable and is more faithful to the observation.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the 28-day streak and the pride, sound like a warm friend, and invent nothing. A preserves the core 'showing up beats being perfect' meaning explicitly. B drops the perfection contrast and reframes it as 'consistency is everything', which shifts the meaning slightly, though B is shorter. A matches the template's meaning more faithfully while staying brief enough.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-week-7",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, add no invented facts, and sound warm and friend-like. Answer B keeps the 'showing up beats perfect' idea explicitly. Answer A says 'logging in', which slightly shifts the meaning from logging food to opening the app, and it drops the perfection contrast. B is the closer, cleaner rephrase.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps all three parts of the template line: the streak, the idea that showing up beats being perfect, and the pride. It does so in a warm, texting voice. Answer B drops the \"beats being perfect\" contrast, which is a key reassuring part of the meaning. It also says \"logging in\" rather than logging food, a slight shift. Both are short and celebratory, but A is more faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-week-7",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, add no invented facts, and sound warm and friend-like. B keeps the \"showing up beats being perfect\" contrast more faithfully, while A drops the perfection idea and has slightly awkward wording (\"7 days in a row logged\"). B also leaves out \"logged\", but the context makes that clear. The difference is small but favors B.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no new facts, and sound warm and friend-like. A keeps the \"beats being perfect\" contrast explicitly, but drops the word \"logged\". B keeps \"logged\" and softens the perfection contrast into \"the real win\". Both are short, glanceable and celebratory, with no clear quality gap.",
+    "error": null
+   }
+  },
+  {
+   "case": "streak-week-7",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the 7-day streak and the pride, and both sound warm. A drops the 'beats being perfect' idea and swaps in 'consistency is everything', which shifts the meaning a little. B keeps the full meaning, including 'matters more than being perfect', and is still short and friendly.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the 7-day streak and the pride, and both read as warm, friendly lines. A keeps the 'showing up beats being perfect' idea intact. B drops the 'not perfect' framing and replaces it with 'consistency is everything', which shifts the meaning slightly and could feel like pressure. B is shorter, but A is more faithful while still being easy to read at a glance.",
+    "error": null
+   }
+  },
+  {
+   "case": "welcome-back-14",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, add no numbers, and celebrate the return warmly. A is shorter and punchier and reads like a friend's text. B stays closer to the template's structure, but 'so today's a fresh start' is a slightly clunky causal link. A's 'the real win' is upbeat and the line is easier to read at a glance, though the difference is small.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning, add no numbers, and celebrate the return warmly. Answer A's \"hardest part\" slightly shifts the template's \"part most people never do,\" and its \"so today's a fresh start\" reads a bit clunky. Answer B is shorter, punchier and more friend-like, celebrating showing up as \"the real win.\" B is slightly better, but the gap is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "welcome-back-14",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no numbers, and celebrate the return warmly. A keeps the 'fresh start' element from the template, while B drops it but adds a personal 'I'm really glad' touch that reads like a friend. Both are short and fit to show, and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no numbers, and sound warm and friend-like. Answer B is closer to the template: it keeps 'welcome back' and 'today's a fresh start'. Answer A drops the fresh-start element but adds a personal 'I'm really glad you did.' Both are fit to show and neither is clearly better, though B matches the template slightly more fully.",
+    "error": null
+   }
+  },
+  {
+   "case": "welcome-back-14",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the meaning, add no numbers, and sound warm. A stays closer to the template, keeping the \"fresh start\" and \"you just did it\" framing. B is also faithful and friendly, but it drops the fresh-start note and slightly reframes the return as \"the hardest part\", which is close to the original's point about what most people never do. Both are fit to show, and A is only marginally more faithful, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both celebrate the return warmly without numbers or invented facts. Answer B keeps the template's full meaning, including the welcome, the fact that the person just did it, and the fresh-start framing, in a friendly texting tone. Answer A is warm but drops the fresh-start note and reads as slightly generic, though it is still fine. B matches the template meaning more faithfully while staying short.",
+    "error": null
+   }
+  },
+  {
+   "case": "welcome-back-5",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, avoid numbers, and celebrate the return warmly. A keeps the 'fresh start' element but reads a bit clunky ('fresh start starts now'). B is shorter, more natural as a friend's text, and captures the core message, though it drops 'fresh start'. Both are fine, and neither is clearly better, so this is a tie.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, add no numbers, and celebrate the return warmly. A is shorter and reads more naturally as a friend's text, though it drops the 'fresh start' note. B keeps 'fresh start' but has the clunky 'fresh start starts now' and is wordier. A is slightly better at a glance, but the difference is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "welcome-back-5",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no numbers, and celebrate the return warmly. A keeps the \"most people never do\" and \"fresh start\" ideas, but \"fresh start starts now\" is clunky. B is smooth and friendly, but drops the fresh-start note and says \"few days\" rather than giving a number, which is fine. Both are fit to show and the differences are minor, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, celebrate the return, and add no numbers; A's \"a few days away\" is a vague paraphrase rather than an invented figure. A reads more naturally and warmly, but drops the \"fresh start\" element. B keeps every element yet has the awkward \"fresh start starts now\". The differences are minor and both are fit to show, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "welcome-back-5",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no numbers, and celebrate the return warmly, with a fresh-start ending. B stays a bit closer to the template's \"the part most people never do \u2014 and you just did it\" by saying it's the hard part and you did it. A's \"real win\" is equally warm and upbeat. The differences are negligible and neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no numbers, and sound like a warm friend celebrating the return. A keeps the \"you did it\" acknowledgment that's closer to the template's \"you just did it.\" B's \"real win\" framing is equally warm and easy to read. The differences are minor stylistic ones, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-gain",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning and add no invented facts. A is a fresh, warm rewording but drops the explicit 'eating enough' phrasing, which slightly softens the celebration of eating enough. B nearly copies the template yet keeps the full meaning. Neither is clearly better: A has more friend-like energy, B has more fidelity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no facts, and stay warm and short. A sits very close to the template and keeps the explicit 'eating enough' celebration. B reads a bit more like a natural friend's text but drops the 'eating enough' phrasing, though 'nourished yourself so well' carries the same idea. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-gain",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning and add no invented facts. Answer B stays closer to the template by explicitly celebrating 'eating enough', which is the core point. Answer A swaps in 'showed up for yourself' and the vaguer 'nourishing', which slightly dilutes the eating-enough message. Both are warm and short, so B is modestly better for its fidelity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the meaning closely, including the explicit point that eating enough builds strength, in a warm, friend-like tone. Answer B is also warm, but it swaps \"fueled yourself well\" for \"showed up\" and drops the explicit \"eating enough\" message, which weakens the core celebration of eating enough. Both are short and free of invented facts, but A is more faithful.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-gain",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B keeps the meaning (fueled well, eating enough builds strength) in a warm, friendly voice. Answer A swaps \"fueled yourself well\" for a vaguer \"showed up for yourself.\" That drops the explicit celebration of eating enough, which the template centers on. B is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the meaning (fueling well, eating enough builds strength) in a warm friend tone. Answer B swaps \"fueled yourself well\" for a vaguer \"showed up\" and drops the eating-enough celebration. Its \"one meal at a time\" adds a framing the template doesn't contain. A is more faithful while staying warm and brief.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-lose",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps both halves of the meaning, eating well today and that it leads to lasting results. It does soften \"weight comes off\" into \"lasting results,\" but it adds no new fact. Answer B drops the second clause about eating enough being how weight comes off and stays off, so it loses part of the meaning. Both are warm and short, but A is more faithful.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "The template has two parts: you fueled well today, and eating enough is how the weight comes off and stays off. Answer A keeps the first part but drops the link between eating enough and results, which loses part of the meaning. Answer B keeps both parts (\"nourished so well\" and \"exactly how lasting results happen\") in a warm, short line. B preserves the meaning better without inventing anything.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-lose",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the full meaning, including that eating enough supports sustainable weight loss. It is warm and celebratory, though \"it\" is slightly vague without \"the weight.\" Answer B drops the key point linking eating enough to the weight coming off and staying off, so it changes the meaning by omission. A is better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B keeps the full meaning, including the point that eating enough is how the weight comes off and stays off, and it reads as warm and friendly. Answer A drops that core message, so its meaning is weakened, though it is pleasant. B's \"it\" is slightly vague but still clear in context.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-lose",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "The template has two parts: you fueled well, and eating enough is how weight comes off and stays off. Answer A keeps both, rephrasing the second as \"lasting progress\", which is close and adds nothing new. Answer B drops the link between eating enough and lasting results, keeping only a generic \"feel good\" line. Both are warm and short, but A holds the meaning more faithfully.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "The template has two parts: you fueled well today, and eating enough is how the weight comes off and stays off. Answer A keeps the first part but drops the second, losing the link between eating enough and lasting results. Answer B keeps both parts, softening the second to \"lasting progress,\" and stays warm and short with no invented facts. B preserves the meaning more fully and is just as friendly.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-maintain",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no facts, and celebrate eating enough warmly. A swaps \"fueled yourself well\" for \"showed up for yourself,\" which slightly loosens the food link but stays punchy, and its next clause makes the meaning clear. B keeps the food meaning more explicitly but is a bit wordier and less snappy. Neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no facts, and celebrate eating enough warmly. A explicitly ties the care to food (\"took care of yourself with food\"), staying closer to \"fueled yourself well,\" but it is slightly wordier. B's \"showed up for yourself\" is a touch vaguer yet punchier and still anchored by the eating-enough clause. Neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-maintain",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no figures, and celebrate eating enough in a warm tone. A adds \"showed up for yourself\" but keeps \"fueling up enough\", which preserves the eating-enough emphasis. B says \"fed yourself well\" and adds \"energy\", a slight but harmless addition, and drops the explicit \"enough\". Neither is clearly better, so this is a tie.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, stay warm, and add no figures or push to eat less. A drops the explicit \"eating enough\" framing in favour of \"fed yourself well\", which is still implied, and adds \"energy\", a mild, harmless elaboration. B keeps \"fueling up enough\" and adds \"showed up for yourself\", which celebrates showing up. Both are fine and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-maintain",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning, invent no figures, and celebrate eating enough in a warm tone. A stays closer to the template's \"feel good\" idea with \"feeling steady and strong\" and reads like a friendly text. B is slightly clunkier (\"took care of your body with fuel\") and drops the explicit link between eating enough and staying steady, presenting energy as a reward instead. A is a bit better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning and celebrate eating enough without inventing figures. A frames steady energy as a 'reward', which drifts slightly from 'eating enough is how you stay steady', and it drops the 'feel good' part. B keeps the 'how you keep feeling steady' meaning more closely, though 'strong' is a mild addition. B reads more like a warm friend's text and keeps the original meaning better.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-unknown",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no invented facts, and sound warm and friend-like. A explicitly celebrates \"eating enough\" and is shorter, but it drops the \"keep making progress\" part. B keeps the progress idea (\"keep moving forward\") but softens \"eating enough\" into the vaguer \"took care of yourself with food\". The differences are minor and offsetting, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the meaning, add no invented facts, and sound warm. Answer A keeps both parts of the template, feeling your best and keeping on progressing, though it softens the explicit 'eating enough' into 'took care of yourself with food'. Answer B is shorter and names 'eating enough' explicitly, but it drops the 'keep making progress' part. Each has a minor tradeoff, and neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-unknown",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the meaning and add no invented facts. Answer B keeps more of the original: it explicitly celebrates eating enough and includes the progress part. Answer A drops the 'keep making progress' element and doesn't name eating enough, though it is punchier and still warm. B is a slightly more faithful rewording while staying friendly and short, so it is marginally better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the meaning and celebrate eating enough without inventing anything. A retains the explicit 'eating enough' and 'progress/moving forward' parts. B drops the progress element and the explicit 'eating enough' phrase, though it is a bit punchier, and 'exactly what it needed' slightly overstates. A is the more faithful rewording while still being warm and short, so it is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "well-fueled-unknown",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B keeps the full meaning, both feeling your best and continuing progress (\"keep moving forward\"), and keeps the fueled-well framing with \"nourished yourself well.\" Answer A changes \"fueled yourself well\" to \"showed up for yourself,\" which is vaguer, and drops the progress part. Both are warm and short, but B is more faithful to the template while still reading like a friend.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A keeps the full meaning, covering fueling well, feeling your best and progress, in a warm tone. Answer B drops the progress element and shifts 'fueled yourself well' to the vaguer 'showed up,' though it is shorter and punchy. Neither invents anything, but A is more faithful to the template while B loses part of the meaning.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "streak-3",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "streak-3",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "streak-3",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "hydration-streak-5",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "hydration-streak-5",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "hydration-streak-5",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

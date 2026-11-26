@@ -20,7 +20,10 @@ import {
   ANTHROPIC_WEB_SEARCH,
   MAX_OUTPUT_TOKENS,
   OPENAI_IMAGE,
+  OPENAI_MODELS,
+  OPENAI_WEB_SEARCH,
   anthropicCost,
+  openaiCost,
   type Upstream,
 } from "./pricing.js"
 import type { Store } from "./store.js"
@@ -63,6 +66,8 @@ interface Route {
 
 const ROUTES: Record<string, Route> = {
   "/anthropic/v1/messages": { upstream: "anthropic", path: "/v1/messages", kind: "json" },
+  "/openai/v1/responses": { upstream: "openai", path: "/v1/responses", kind: "json" },
+  "/openai/v1/chat/completions": { upstream: "openai", path: "/v1/chat/completions", kind: "json" },
   "/openai/v1/images/edits": { upstream: "openai", path: "/v1/images/edits", kind: "image" },
 }
 
@@ -88,20 +93,54 @@ function clientIp(c: Context): string {
   return c.req.header("x-real-ip") ?? "unknown"
 }
 
-/** Why a Messages body is refused, or undefined when the gateway will pay for it. */
-function refusal(body: Record<string, unknown>): string | undefined {
+/** Why a JSON body is refused, or undefined when the gateway will pay for it. */
+function refusal(route: Route, body: Record<string, unknown>): string | undefined {
   const model = body.model
   if (typeof model !== "string") return "The request names no model."
   if (body.stream === true) return "Streaming is not supported through the gateway."
-  if (!(model in ANTHROPIC_MODELS)) return `The model ${model} is not available through the gateway.`
-  if (typeof body.max_tokens !== "number") return "max_tokens is required."
-  if (body.max_tokens > MAX_OUTPUT_TOKENS) return `max_tokens must be at most ${MAX_OUTPUT_TOKENS}.`
+  const allowed = route.upstream === "anthropic" ? ANTHROPIC_MODELS : OPENAI_MODELS
+  if (!(model in allowed)) return `The model ${model} is not available through the gateway.`
+  for (const key of ["max_tokens", "max_completion_tokens", "max_output_tokens"]) {
+    const v = body[key]
+    if (v !== undefined && (typeof v !== "number" || v > MAX_OUTPUT_TOKENS)) {
+      return `${key} must be at most ${MAX_OUTPUT_TOKENS}.`
+    }
+  }
+  // The output cap each API names (the app always sends it), so no reply runs unbounded.
+  if (route.upstream === "anthropic" && typeof body.max_tokens !== "number") return "max_tokens is required."
+  if (route.path === "/v1/responses" && typeof body.max_output_tokens !== "number") return "max_output_tokens is required."
+  if (route.path === "/v1/chat/completions" && typeof body.max_completion_tokens !== "number" && typeof body.max_tokens !== "number") {
+    return "max_completion_tokens is required."
+  }
+  if (route.upstream === "openai") {
+    // A background response comes back before it has run, with no usage to price.
+    if (body.background === true) return "Background responses are not supported through the gateway."
+    // Priority processing bills above the listed price.
+    if (body.service_tier !== undefined && body.service_tier !== "auto" && body.service_tier !== "default") {
+      return `The service tier ${String(body.service_tier)} is not available through the gateway.`
+    }
+    // A request that may search must bound how many times (the app's research call sends 5).
+    const searches = Array.isArray(body.tools) && (body.tools as Record<string, unknown>[]).some((t) => t?.type === OPENAI_WEB_SEARCH.type)
+    const maxToolCalls = body.max_tool_calls
+    if (searches && maxToolCalls === undefined) {
+      return `A request with web search must set max_tool_calls (at most ${OPENAI_WEB_SEARCH.maxCalls}).`
+    }
+    if (maxToolCalls !== undefined && (typeof maxToolCalls !== "number" || maxToolCalls > OPENAI_WEB_SEARCH.maxCalls)) {
+      return `max_tool_calls must be at most ${OPENAI_WEB_SEARCH.maxCalls}.`
+    }
+  }
   const tools = Array.isArray(body.tools) ? (body.tools as Record<string, unknown>[]) : []
   for (const tool of tools) {
     const type = tool?.type
-    // Client tools carry no type (or "custom"); the only server tool paid for is web search.
-    if (type === undefined || type === "custom") continue
-    if (type === ANTHROPIC_WEB_SEARCH.type && typeof tool.max_uses === "number" && tool.max_uses <= ANTHROPIC_WEB_SEARCH.maxUses) continue
+    if (route.upstream === "anthropic") {
+      // Client tools carry no type (or "custom"); the only server tool paid for is web search.
+      if (type === undefined || type === "custom") continue
+      if (type === ANTHROPIC_WEB_SEARCH.type && typeof tool.max_uses === "number" && tool.max_uses <= ANTHROPIC_WEB_SEARCH.maxUses) continue
+    } else {
+      // Function tools run on the device; the only server tool paid for is web search, on Responses.
+      if (type === "function") continue
+      if (type === OPENAI_WEB_SEARCH.type && route.path === "/v1/responses") continue
+    }
     return `The tool ${String(type)} is not available through the gateway.`
   }
   return undefined
@@ -242,7 +281,7 @@ export function createApp(deps: Deps) {
           return fail(400, "bad_request", "The body is not JSON.")
         }
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return fail(400, "bad_request", "The body is not a JSON object.")
-        const why = refusal(parsed as Record<string, unknown>)
+        const why = refusal(route, parsed as Record<string, unknown>)
         if (why) return fail(400, "not_allowed", why)
         model = (parsed as { model: string }).model
       } else {
@@ -277,9 +316,9 @@ export function createApp(deps: Deps) {
           usd = OPENAI_IMAGE.usdPerCall
         } else {
           try {
-            const usage = (JSON.parse(Buffer.from(responseBytes).toString("utf8")) as { usage?: unknown }).usage
+            const reply = JSON.parse(Buffer.from(responseBytes).toString("utf8")) as { usage?: unknown }
             // Priced by the model we allowed; the provider may echo a dated snapshot name.
-            usd = anthropicCost(model, usage)
+            usd = route.upstream === "anthropic" ? anthropicCost(model, reply.usage) : openaiCost(model, reply)
           } catch {
             usd = 0
           }

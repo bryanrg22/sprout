@@ -1,0 +1,102 @@
+{
+ "run": "20261125-100915-DailyBrief",
+ "tasks": [
+  {
+   "task": "dailyBrief",
+   "dataset": "daily_brief/v1",
+   "cases": 13,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 39,
+     "usable": 38,
+     "passed": 38,
+     "pass_rate": 0.9743589743589743,
+     "ci95_cases": [
+      0.9230769230769231,
+      1.0
+     ],
+     "ci95": [
+      0.8681871352137286,
+      0.9954594139347627
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      0.9230769230769231
+     ],
+     "latency_p50_s": 0.777,
+     "latency_p95_s": 1.18,
+     "mean_uncached_input_tokens": 378.53846153846155,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 70.33333333333333,
+     "mean_cost_usd": 7.302051282051282e-05,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.5526315789473685,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 0.9736842105263158,
+      "headline_one_sentence": 0.5526315789473685,
+      "no_number_invented": 1,
+      "used": 0.9743589743589743,
+      "wrong_person_pronoun": 0
+     },
+     "errors": [
+      "guardrail discarded the rewrite: contains \"make up for\""
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 39,
+     "usable": 39,
+     "passed": 39,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9103301463997611,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 1.342,
+     "latency_p95_s": 1.691,
+     "mean_uncached_input_tokens": 377.53846153846155,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 62.256410256410255,
+     "mean_cost_usd": 0.0013776410256410257,
+     "scores": {
+      "all_numbers_kept": 1,
+      "body_at_most_two_sentences": 0.9743589743589743,
+      "changed_the_wording": 1,
+      "headline_at_most_one_number": 1,
+      "headline_one_sentence": 0.9230769230769231,
+      "no_number_invented": 1,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-haiku-5-5",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "shared_cases": 13,
+     "mean_difference": 0.025641025641025644,
+     "ci95": [
+      0.0,
+      0.07692307692307693
+     ]
+    }
+   ]
+  }
+ ]
+}

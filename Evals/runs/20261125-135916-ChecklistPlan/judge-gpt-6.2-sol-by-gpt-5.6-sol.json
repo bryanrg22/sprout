@@ -1,0 +1,347 @@
+{
+ "task": "checklistPlan",
+ "run": "20261125-135916-ChecklistPlan",
+ "baseline": "anthropic:claude-sonnet-5-5",
+ "candidate": "openai:gpt-6.2-sol",
+ "judge": {
+  "model": "gpt-5.6-sol",
+  "effort": "low",
+  "answered_by": [
+   "gpt-5.6-sol"
+  ],
+  "rubric_sha256": "4a453a9d90920bc8514637cb70cfe28b702166ac969f2688612cae9543da5dcf",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 16,
+ "pairs_skipped": [],
+ "cases": 16,
+ "candidate_wins": 13,
+ "baseline_wins": 2,
+ "ties": 1,
+ "both_bad": 0,
+ "orders_agree_share": 0.9375,
+ "net": 0.6875,
+ "net_ci95_cases": [
+  0.3125,
+  1.0
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 44,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.3474,
+ "verdicts": [
+  {
+   "case": "alex-brand-new",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B stays grounded in the limited data, using a conditional strength session and universal wellness actions without inventing a specific training split. Answer A introduces unsupported activities such as leg day, upper body, and meal prep, and assumes a post-workout recovery need despite no recent workouts being provided. B is also concise, doable, and warm.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays grounded in Alex\u2019s stated strength goal without inventing a specific training split, and its \u201cif planned\u201d phrasing keeps the task gentle and realistic. Answer B invents leg day and upper-body training despite no recent workout details, and \u201cMeal prep\u201d strays into food-related territory. Both include suitable hydration, walking, stretching/rest ideas, but A is safer and more personalized to the available data.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-bio-and-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is more personalized to Alex\u2019s completed leg session, cranky knee, lifting split, hydration, and recovery needs. Its tasks form a sensible post-training plan, while the chips reflect Alex\u2019s actual gym routines plus useful universal options. \u201cSunday meal prep\u201d is slightly less relevant for today, but it is grounded in Alex\u2019s stated routine and does not outweigh A\u2019s stronger specificity.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "B is more tailored to Alex\u2019s completed leg day, cranky knee, late-shift sleep issues, and lifting routine, with sensible recovery and prep tasks. Its \u201cSunday meal prep\u201d chip conflicts with the instruction to avoid food-related items, but the rest of the checklist is notably more useful and personalized than A\u2019s, including knee-friendly mobility and post-leg-day recovery. A is compliant but less thoughtful, and \u201cLog leg day\u201d is less useful since the workout is already recorded.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more focused and appropriately personalized, referencing Alex\u2019s strong leg day and squats while offering sensible recovery actions. Its chips reflect Alex\u2019s actual training split plus universal recovery options. Answer A includes meal prep twice, which violates the explicit instruction to avoid food-related checklist items.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays within movement, recovery, hydration, and rest while using Alex\u2019s actual training split. Its tasks are concise and appropriate after today\u2019s strong leg session, and its chips reflect activities Alex really does plus an early-night option. Answer B is also personalized, but meal prep violates the instruction to include nothing about food, and the specific eight-hour sleep target is unsupported by the input.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-no-training-notes-only",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B stays grounded in Alex\u2019s actual situation: scouting for a gym, recovering after the long commute, hydration, a walk, and an early night. Answer A includes gym and bodyweight workouts Alex has not been shown to do, and its meal-prep and chili chips violate the instruction to include nothing about food. B is also concise, warm, and fully within movement, recovery, prep, and wellness.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays grounded in Alex\u2019s real situation: scouting for a gym, easing stiffness after the long commute, hydration, a walk, and an early night. Answer B invents gym sessions and bodyweight workouts Alex has not been reported doing, and its meal-prep and chili chips conflict with the instruction to keep this checklist away from food. A is therefore more personal, compliant, and realistic for today.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-nothing-logged-today",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B stays within movement, recovery, and wellness, and it sensibly follows today\u2019s 40-minute run with gentle yoga and an early wind-down. Its chips reflect Alex\u2019s actual activities and add appropriate universal options. Answer A includes meal prep despite the explicit ban on food-related items, and adds a strength-session chip not supported by the recent training data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays within movement, recovery, hydration, and rest, while using Alex\u2019s actual activities: running, long runs, and yoga. Its gentle recovery plan is sensible after today\u2019s 40-minute run. Answer B includes meal prep despite the explicit ban on food-related items and invents a strength session that is not supported by the recent training data.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-soccer-bio",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B sensibly prioritizes recovery after yesterday\u2019s 90-minute soccer practice, with gentle, doable wellness tasks and no unsupported hard training. Its chips closely reflect Alex\u2019s actual activities\u2014soccer, legs/core, and running\u2014plus appropriate universal recovery options. Answer A includes meal prep despite the movement/rest-only constraint and proposes leg day immediately after soccer without evidence that it fits today\u2019s recovery needs.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives Alex a sensible recovery-focused day after yesterday\u2019s 90-minute soccer practice, while still reflecting his actual soccer, running, and legs/core activities. Its tasks are gentle, doable, and stay within movement, hydration, recovery, and rest. Answer B includes meal prep despite the explicit ban on food-related checklist items, and a leg day immediately after soccer may not support recovery as well.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-swimmer-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B better reflects a recovery day after yesterday\u2019s swim, with gentle, specific actions like a walk and shoulder stretching. It also uses Alex\u2019s actual activities\u2014masters swimming and cycling\u2014while avoiding Answer A\u2019s unsupported assumption that another swim happens today and its food-related meal prep item. \u201cSolo swim\u201d is slightly less grounded than \u201cSwim,\u201d but the overall plan is still more suitable.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A offers a sensible recovery-focused day after yesterday\u2019s 45-minute swim, while still personalizing the checklist with swim-specific stretching and bag prep. Its chips reflect Alex\u2019s real activities\u2014swimming and cycling\u2014plus universal recovery options. Answer B assumes another swim today and includes meal prep, despite the instruction to keep the checklist away from food.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-brand-new",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B stays within movement, rest, recovery, and wellness, with gentle, doable actions that do not assume sports or workouts absent from Sam\u2019s data. Answer A invents strength training, yoga, and jogging, and includes a nourishing-meal task despite the instruction to avoid food-related checklist items. B is therefore safer and more appropriate, though somewhat generic.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A stays fully within movement, recovery, and wellness, and uses only universal actions supported by the limited data. Answer B invents several activities Sam is not shown to do\u2014strength training, yoga, and jogging\u2014and includes meal prep despite the requested scope excluding food-related checklist content. A is therefore safer and more appropriately personalized to the available information.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-lifter-notes",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A offers a fuller, gentle recovery plan after today\u2019s strong leg session and includes personalized chips for Sam\u2019s actual gym split, walks, hydration, and night-shift routine. Answer B is also good and its \u201cprotect your sleep window\u201d wording suits a night-shift nurse especially well, but it provides fewer useful recovery and wellness options. A\u2019s \u201c8 hours of sleep\u201d is slightly prescriptive, though not enough to outweigh its stronger personalization and variety.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both are warm and tailored to Sam\u2019s strength-training routine. Answer A is more sensible for a post-leg-day recovery plan and avoids assuming Sam has a shift today or prescribing an unsupported \u201c8 hours of sleep,\u201d while still including personal training chips and universal recovery options.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-no-training-bio-only",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is concise, warm, and grounded in Sam\u2019s life with young kids, while sticking to gentle movement, hydration, recovery, and rest. Answer A invents several unsupported activities\u2014such as yoga and home workouts\u2014and includes meal prep despite no evidence that these are activities Sam actually does; its two walk tasks are also repetitive.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is concise, warm, and realistic for Sam\u2019s schedule with two young children. Its tasks and chips stay within movement, hydration, recovery, and rest, while Answer B invents unsupported activities such as stroller walks, home workouts, and yoga, and includes meal prep despite the checklist\u2019s non-food focus.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is complete, polished, and well personalized to Sam\u2019s swimming, cycling, hotel-gym use, and travel-related prep. Its tasks offer a gentle mix of optional movement, hydration, stretching, and rest after yesterday\u2019s swim, while its chips include both Sam\u2019s real activities and universal recovery options. Answer B is sensible but less complete, and the truncated phrase \u201cyesterday\u2019s sw\u201d makes it unfit for display as written.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is more polished and complete, with warm, doable tasks and a useful mix of Sam\u2019s actual activities (swimming, cycling, hotel gym) and universal recovery options. It also includes relevant travel-friendly prep with \u201cPack gym bag.\u201d Answer A has a sensible recovery spin after yesterday\u2019s swim, but the truncated \u201cyesterday\u2019s sw\u201d makes it feel unfinished and less suitable to show in the app.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-runner-bio",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is more grounded in Sam\u2019s actual routine, naming 10K training, runs, long runs, and yoga without inventing unsupported activities. Its recovery-focused tasks sensibly follow today\u2019s 40-minute run, and the walk and early-night chips are appropriate universal options. Answer A is otherwise useful but adds strength training and foam rolling, neither of which appears in Sam\u2019s data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more grounded in Sam\u2019s actual 10K training history, with run, long run, and yoga chips plus sensible recovery after today\u2019s 40-minute run. Answer B has a good recovery focus, but \u201cStrength session\u201d and \u201cFoam roll\u201d are not supported by Sam\u2019s data. Both are warm and avoid food or scale content, but A is more personalized and accurate.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-soccer-maintain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B better respects recovery after yesterday\u2019s 90-minute soccer practice by keeping today\u2019s tasks gentle and avoiding the additional legs-and-core workout proposed in A. Its tasks are short, doable, and wellness-focused, while its chips closely reflect Sam\u2019s actual activities, including Thursday five-a-side, soccer matches, running, and legs/core training. Both are personalized, but B provides the more sensible plan for today.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A gives Sam a sensible recovery-focused day after yesterday\u2019s 90-minute soccer practice, with gentle walking, stretching, hydration prep, and sleep. Its chips accurately reflect Sam\u2019s actual activities, including soccer, running, legs/core, and Thursday five-a-side. Answer B is also personalized, but adding a legs-and-core session today makes the plan less recovery-conscious after a hard soccer day.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-bio-and-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B better reflects that Sam already walked 45 minutes today by keeping the remaining movement gentle: an easy dog walk and stretching after desk time. Its chips are grounded in Sam\u2019s actual routines\u2014lunch walks, dog walks, and Sunday yoga\u2014while Answer A adds unsupported meal prep and may over-prescribe walking with both a lunch walk and two dog walks. Both are warm and avoid restricted topics, but B is the more sensible plan for today.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A better reflects that Sam has already completed a 45-minute walk today, shifting the remaining plan toward an easy dog walk, stretching, hydration, and rest. Its chips are concise and grounded in Sam\u2019s real routines, including lunch walks, dog walks, and Sunday yoga. Answer B is personalized too, but assigning another lunchtime walk plus two dog walks could be excessive or redundant after today\u2019s completed walk, and \u201cMeal prep\u201d is less clearly supported by the data.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-walker-no-bio-no-notes",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B better reflects that Sam already completed a 45-minute walk today by suggesting logging it, then keeps the rest of the day gentle with yoga, hydration, and an early night. Its chips match Sam\u2019s actual activities plus appropriate universal wellness options. Answer A is more repetitive and stacks an evening stroll, yoga, and stretching on top of today\u2019s completed walk without a clear need.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more grounded in Sam\u2019s actual recent activities: walking and yoga, with sensible wellness additions like water and an early night. It also recognizes today\u2019s completed walk by suggesting logging it. Answer B is repetitive and adds stretching and meal prep despite no evidence that Sam does those activities.",
+    "error": null
+   }
+  },
+  {
+   "case": "unnamed-walker",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B better recognizes that today\u2019s 45-minute walk is already complete rather than piling on more walking. Its remaining tasks are gentle, appropriate recovery and wellness actions based on the person\u2019s actual activities, with concise chips for walking, yoga, hydration, and an early night. Answer A is acceptable but repetitive and potentially overprescribes movement with a walk, stretch, yoga, and multiple walk chips.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A fits the day better by acknowledging the already completed 45-minute walk rather than prescribing several more activities. Its yoga, hydration, and bedtime intentions are gentle and grounded in the person\u2019s recent routine. Answer B adds unsupported stretch and meal-prep chips and stacks multiple movement tasks despite today\u2019s walk.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "sam-nothing-logged-today",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-lifter-no-bio-no-notes",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

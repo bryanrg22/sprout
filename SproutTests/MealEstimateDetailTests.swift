@@ -16,13 +16,17 @@ final class MealEstimateDetailTests: XCTestCase {
     // MARK: - Wire formats
 
     private enum Wire: String, CaseIterable {
-        case anthropic, openAIResponses, openAIChat
+        /// `anthropic` is the forced tool call (`claude-sonnet-5`, which meal photos use);
+        /// `anthropicFormat` is the JSON-schema answer of the models that refuse a forced tool
+        /// (`claude-sonnet-5-5`, which a typed meal uses since EVAL_REPORT 39).
+        case anthropic, anthropicFormat, openAIResponses, openAIChat
 
-        var provider: AIProvider { self == .anthropic ? .anthropic : .openai }
+        var provider: AIProvider { self == .anthropic || self == .anthropicFormat ? .anthropic : .openai }
         /// A model that routes to this wire format.
         var model: String? {
             switch self {
-            case .anthropic: return nil
+            case .anthropic: return "claude-sonnet-5"
+            case .anthropicFormat: return "claude-sonnet-5-5"
             case .openAIResponses: return "gpt-5.6-terra"
             case .openAIChat: return "gpt-4.1-mini"
             }
@@ -35,6 +39,9 @@ final class MealEstimateDetailTests: XCTestCase {
             switch self {
             case .anthropic:
                 return ["content": [["type": "tool_use", "id": "tu_1", "name": "log_food", "input": estimate]],
+                        "usage": ["input_tokens": 600, "output_tokens": 140]]
+            case .anthropicFormat:
+                return ["content": [["type": "text", "text": arguments]], "stop_reason": "end_turn",
                         "usage": ["input_tokens": 600, "output_tokens": 140]]
             case .openAIResponses:
                 return ["model": "gpt-5.6-terra", "status": "completed",
@@ -56,6 +63,8 @@ final class MealEstimateDetailTests: XCTestCase {
             let tool = (body["tools"] as? [[String: Any]])?.first
             switch self {
             case .anthropic: return tool?["input_schema"] as? [String: Any]
+            case .anthropicFormat:
+                return ((body["output_config"] as? [String: Any])?["format"] as? [String: Any])?["schema"] as? [String: Any]
             case .openAIResponses: return tool?["parameters"] as? [String: Any]
             case .openAIChat: return (tool?["function"] as? [String: Any])?["parameters"] as? [String: Any]
             }
@@ -63,7 +72,7 @@ final class MealEstimateDetailTests: XCTestCase {
 
         var path: String {
             switch self {
-            case .anthropic: return "/v1/messages"
+            case .anthropic, .anthropicFormat: return "/v1/messages"
             case .openAIResponses: return "/v1/responses"
             case .openAIChat: return "/v1/chat/completions"
             }
@@ -284,6 +293,19 @@ final class MealEstimateDetailTests: XCTestCase {
             } catch {
                 XCTFail("\(wire): expected decoding, got \(error)")
             }
+        }
+    }
+
+    /// The note is one sentence of prose and is shown only when present. A reply without it
+    /// (claude-haiku-5-5 sent one in 66 on 2026-11-25, EVAL_REPORT 37) keeps every number;
+    /// a missing number is still an error (the test above).
+    func testAMissingNoteKeepsTheEstimateOnEveryWire() async throws {
+        var noNote = estimate()
+        noNote["notes"] = nil
+        try await onEveryWire(noNote) { result, wire in
+            XCTAssertEqual(result.total_calories, 520, "\(wire)")
+            XCTAssertEqual(result.total_protein_g, 46, "\(wire)")
+            XCTAssertEqual(result.notes, "", "\(wire)")
         }
     }
 

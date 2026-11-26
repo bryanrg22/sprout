@@ -64,12 +64,30 @@ final class LoggingFlowTests: SproutUITestCase {
 
         openTab(AccessibilityID.Tab.nutrients)
         waitShown(app.scrollViews, AccessibilityID.Nutrients.root)
-        foodRows(named: food).firstMatch.press(forDuration: 1.0)
         // Tap Delete only once the menu has finished appearing: on a slow CI runner a tap
         // the moment the button exists landed during the menu's animation and was lost
-        // (main, 2026-11-23: the same code passed on the pull request and locally).
+        // (main, 2026-11-23: the same code passed on the pull request and locally). And on a
+        // slow runner the long press itself sometimes never opened the menu (main, 2026-11-25),
+        // so it is pressed once the row can be pressed, and pressed again, up to three times,
+        // when the menu has not appeared within ten seconds.
+        let row = foodRows(named: food).firstMatch
         let delete = app.buttons.matching(identifier: AccessibilityID.Nutrients.foodRowDelete).firstMatch
-        wait("the Delete item of the menu to be tappable") { delete.exists && delete.isHittable }
+        func poll(_ seconds: TimeInterval, until condition: () -> Bool) -> Bool {
+            let deadline = Date().addingTimeInterval(seconds)
+            while !condition(), Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.2)) }
+            return condition()
+        }
+        var menuOpen = false
+        for _ in 0..<3 where !menuOpen {
+            // Press again only when no menu is up: an open menu covers the row, so the row is
+            // not hittable then, and pressing would only dismiss it.
+            if !delete.exists {
+                _ = poll(10) { row.exists && row.isHittable }
+                row.press(forDuration: 1.0)
+            }
+            menuOpen = poll(15) { delete.exists && delete.isHittable }
+        }
+        XCTAssertTrue(menuOpen, "the food menu opened within three long presses")
         delete.tap()
         wait("one of the two entries to be gone", timeout: 30) { self.foodRows(named: self.food).count == 1 }
         XCTAssertEqual(app.buttons.matching(identifier: AccessibilityID.Nutrients.foodRow).count, rowsBefore + 1)

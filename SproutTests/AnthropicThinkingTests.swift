@@ -85,7 +85,9 @@ final class AnthropicThinkingTests: XCTestCase {
             let body = transport.body()
             XCTAssertEqual((body["thinking"] as? [String: Any])?["type"] as? String, row.type, row.model)
             XCTAssertEqual(body["thinking"] == nil, row.type == nil, row.model)
-            XCTAssertEqual(body["max_tokens"] as? Int, 80, "the cap is the caller's, unchanged")
+            // The caller's cap, except for a model whose thinking cannot be switched off, which
+            // gets room to think on top (EVAL_REPORT 40).
+            XCTAssertEqual(body["max_tokens"] as? Int, row.model == "claude-opus-5-5" ? 80 + 4096 : 80, row.model)
             XCTAssertNil(body["output_config"], "no effort is sent: haiku-4-5 has none")
         }
     }

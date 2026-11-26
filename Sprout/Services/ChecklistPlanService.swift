@@ -222,11 +222,11 @@ enum ChecklistPlanService {
     // MARK: - Make (build context → call model → validate → decode)
 
     /// Generate the day's personalized plan. Throws `AIConfig.AIError.missingKey` when no key
-    /// is configured (the caller gates on `AIConfig.hasActiveKey` first, but we surface it
+    /// is configured (the caller gates on `AIConfig.hasKey(for: .checklistPlan)` first, but we surface it
     /// cleanly anyway), and `.badResponse` / `.decoding` on transport / parse failures. The
     /// CARD never lets this throw past it — it catches everything and keeps `fallback()`.
     ///
-    /// Provider-aware: forced tool use runs on either vendor via `AIClient.makeFull()`.
+    /// Provider-aware: runs on the vendor this task measured best on (`AIClient.makeFull(for:)`).
     @MainActor
     static func make(profile: UserProfile,
                      foods: [FoodEntry],
@@ -234,7 +234,7 @@ enum ChecklistPlanService {
                      sessions: [WorkoutSession],
                      water: [WaterEntry],
                      memory: CoachMemory?) async throws -> ChecklistPlan {
-        let client = try AIClient.makeFull()
+        let client = try AIClient.makeFull(for: .checklistPlan)
 
         // Pass the user's real Workouts-tab sessions through the `sessions` channel — the legacy
         // `workouts: [WorkoutEntry]` arg never carried real data, so the plan couldn't see training.

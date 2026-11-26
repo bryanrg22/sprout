@@ -30,7 +30,7 @@ enum OnboardingCoachMessage {
     /// template on no-key / network / sanitizer failure. Safe to call from a `Task`.
     static func make(_ inputs: Inputs) async -> String {
         let fallback = template(for: inputs)
-        guard AIConfig.hasActiveKey else { return fallback }
+        guard AIConfig.hasKey(for: .onboardingNote) else { return fallback }
         return await written(inputs) ?? fallback
     }
 
@@ -38,7 +38,7 @@ enum OnboardingCoachMessage {
     /// Either way `make` shows the template, so both mean "not used".
     static func written(_ inputs: Inputs) async -> String? {
         do {
-            let client = try AIClient.make()
+            let client = try AIClient.make(for: .onboardingNote)
             let reply = try await client.chat(
                 system: system,
                 messages: [ChatTurnMsg(role: "user", text: userPrompt(inputs))],

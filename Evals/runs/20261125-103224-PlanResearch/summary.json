@@ -1,0 +1,164 @@
+{
+ "run": "20261125-103224-PlanResearch",
+ "tasks": [
+  {
+   "task": "planResearch",
+   "dataset": "plan_build/v1",
+   "cases": 1,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 1,
+     "usable": 1,
+     "passed": 1,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.20654329147389294,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 15.426,
+     "latency_p95_s": 15.426,
+     "mean_uncached_input_tokens": 84946,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2530,
+     "mean_cost_usd": 0.0097596,
+     "scores": {
+      "brief_chars": 1777,
+      "brief_words": 280,
+      "cited_sources": 0,
+      "mentions_a_rate": 1,
+      "mentions_protein": 1,
+      "searched": 1,
+      "used": 1,
+      "web_search_requests": 5,
+      "web_search_usd": 0.05,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-opus-4-8",
+     "attempts": 1,
+     "usable": 1,
+     "passed": 1,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.20654329147389294,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 29.433,
+     "latency_p95_s": 29.433,
+     "mean_uncached_input_tokens": 85071,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2223,
+     "mean_cost_usd": 0.48093,
+     "scores": {
+      "brief_chars": 4576,
+      "brief_words": 708,
+      "cited_sources": 13,
+      "mentions_a_rate": 1,
+      "mentions_protein": 1,
+      "searched": 1,
+      "used": 1,
+      "web_search_requests": 5,
+      "web_search_usd": 0.05,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "attempts": 1,
+     "usable": 1,
+     "passed": 1,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.20654329147389294,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 24.406,
+     "latency_p95_s": 24.406,
+     "mean_uncached_input_tokens": 86012,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2418,
+     "mean_cost_usd": 0.392408,
+     "scores": {
+      "brief_chars": 3068,
+      "brief_words": 497,
+      "cited_sources": 14,
+      "mentions_a_rate": 1,
+      "mentions_protein": 1,
+      "searched": 1,
+      "used": 1,
+      "web_search_requests": 5,
+      "web_search_usd": 0.05,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 1,
+     "usable": 1,
+     "passed": 1,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.20654329147389294,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 29.253,
+     "latency_p95_s": 29.253,
+     "mean_uncached_input_tokens": 69225,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2641,
+     "mean_cost_usd": 0.16486,
+     "scores": {
+      "brief_chars": 4229,
+      "brief_words": 640,
+      "cited_sources": 13,
+      "mentions_a_rate": 1,
+      "mentions_protein": 1,
+      "searched": 1,
+      "used": 1,
+      "web_search_requests": 5,
+      "web_search_usd": 0.05,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ]
+  }
+ ]
+}

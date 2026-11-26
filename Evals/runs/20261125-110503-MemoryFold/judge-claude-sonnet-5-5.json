@@ -1,0 +1,667 @@
+{
+ "task": "memoryFold",
+ "run": "20261125-110503-MemoryFold",
+ "baseline": "anthropic:claude-sonnet-5",
+ "candidate": "anthropic:claude-sonnet-5-5",
+ "judge": {
+  "model": "claude-opus-5-5",
+  "effort": "low",
+  "answered_by": [
+   "claude-opus-5-5"
+  ],
+  "rubric_sha256": "46d57a9dd05d5197349dd96d916c6af7e56ca0f433e5c6806a03bc2068cac04a",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 36,
+ "pairs_skipped": [],
+ "cases": 12,
+ "candidate_wins": 8,
+ "baseline_wins": 15,
+ "ties": 13,
+ "both_bad": 0,
+ "orders_agree_share": 0.6666666666666666,
+ "net": -0.19444444444444445,
+ "net_ci95_cases": [
+  -0.4444444444444444,
+  0.08333333333333333
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 84,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.4108,
+ "verdicts": [
+  {
+   "case": "alex-existing-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers keep all the lasting facts (tree nut allergy, cilantro dislike, soccer schedule, back strain), store no calorie figure, and drop the boxing class as a plan. Answer B keeps a note about the dropped boxing class, which is a retracted plan and borderline clutter, though it is arguably useful context; its summary also includes the phone-screen chit-chat, which should have been left out. Answer A is cleaner: it leaves out the chit-chat and keeps the boxing mention only in the summary. Answer A is therefore better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep all lasting facts, omit the 2,750 figure, and avoid gendering the user. Answer A keeps a note about the dropped boxing class, which is a retracted plan that should be removed from the notes, and its summary includes the phone chit-chat. Answer B drops boxing from the notes, mentions it only briefly in the summary, and leaves out the phone chit-chat. B is cleaner and better follows the rules for corrections and chit-chat.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-existing-notes",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the key lasting facts: tree nut allergy, cilantro dislike, soccer coaching Tue/Thu, back strain, and boxing dropped. Neither stores the 2,750 figure. Answer B has more problems. Its summary carries phone-repair chit-chat and a reference to the calorie target. It also adds a note that kid's matches take up Saturday mornings, which overstates the input: Alex said only that the class clashes with the matches, not that they are on Saturday mornings. Answer A is cleaner, with no chit-chat and no inferred facts.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep all the lasting facts: the tree-nut allergy, the cilantro dislike, the Tue/Thu coaching, and the back strain. Both drop the boxing class correctly and leave the 2,750 figure out of the notes. A's summary keeps chit-chat (the phone repair), mentions the calorie target, and wrongly says the coaching keeps those gym nights \"free\"; A also adds a speculative note that the kid's matches take up Saturday mornings. B is cleaner, accurate, and free of chit-chat, which makes it more useful to a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-existing-notes",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the lasting facts (tree nut allergy, cilantro, the soccer coaching schedule, the back strain), and neither stores the 2,750 figure. Answer A assumes Alex is male (\"him\", \"he\"), which guesses gender, while Answer B stays neutral. Answer B keeps the retracted boxing class in its notes and includes chit-chat about the phone in its summary, though recording that boxing was dropped is fairly harmless. Guessing gender is the more direct violation, but B's chit-chat and the retracted fact are also faults, so B is better only on balance.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both capture the allergy, the cilantro dislike, the soccer schedule and the back strain, and neither stores the 2,750 figure. Answer B guesses gender (\"him\", \"he\"), which is a fault. Answer A keeps the retracted boxing class as a note, which is mild clutter but accurate, and its summary includes phone chit-chat. B's gender guess is the more serious problem, while A's faults are minor, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-first-fold",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A guesses gender (\"him\", \"his\"), keeps a chit-chat note about enjoying sports, and keeps weather and sports small talk in the summary. Answer B uses neutral pronouns and stores no weight figure; it only mentions that a weigh-in was logged. It does keep rain and game chit-chat in the summary, and its note that Alex \"plays football\" slightly stretches the input, since Alex only mentioned twisting the knee playing football once. Both capture all the key facts and handle the half-marathon withdrawal correctly, but B avoids the gender guess and gives clearer next steps, so it is moderately better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the core facts: the peanut allergy, the night shifts, the knee, oat milk, and the withdrawal from the half marathon with lifting as the new focus. Neither stores the 161.2 weight figure. Answer B guesses Alex's gender (\"him\", \"his\", \"he\") with nothing in the input to support it, and its summary keeps weather and small-talk chit-chat. Answer A uses neutral \"them\", though its summary also mentions the rain, the weigh-in event and the game, and its \"dairy-light\" is a mild stretch; on balance A is better because of B's gender guess.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-first-fold",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the peanut allergy, night shifts, oat milk and the knee, and both drop the half marathon goal; neither stores the 161.2 weight. Answer B's summary mentions a weigh-in and trend, which is app-owned data and borders on transcript, and its line about the game is chit-chat. Answer A puts a flat mood from rain and a sports note into memory, which is also chit-chat, but its notes are clean, and it avoids gendered pronouns with \"them\" as B does. Both are similar in quality, with minor chit-chat faults on each side, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the core facts (peanut allergy, night shifts, knee, oat milk, the withdrawn half marathon) and avoid storing the 161.2 figure. A's notes keep the half marathon as a withdrawal with knee context, which is fine, but its summary mentions the weigh-in and the trend, which is app-owned data, and it adds the chit-chat-ish 'enjoys chatting about games.' B overstates slightly with 'heavy leg work aggravate it' and includes a mood note about the rain, but it is otherwise clean and stores no weight data. B is slightly better overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-first-fold",
+   "repeat": 2,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the key facts: the peanut allergy, the night shifts, the knee, the oat milk and the withdrawal from the half marathon, and neither stores the 161.2 figure. Answer A repeatedly calls Alex \"him\", guessing a gender the input never states, while B uses neutral language. Both include some chit-chat, with B noting the football interest in its notes and A doing the same. B's summary also ends with actionable next steps, so B is the better memory for a coach.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the core facts (peanut allergy, night shifts, knee, oat milk, withdrawn half marathon), and neither stores the 161.2 figure. Both turn the football chit-chat into a note, which is minor and equal in each. Answer B guesses Alex's gender with \"him\" and \"he\", which is a clear fault; Answer A uses neutral \"they\" and adds useful next steps.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A captures all the lasting facts and correctly drops the calorie figure and the parking chit-chat, but it guesses Alex's gender (\"him\", \"his\") throughout, which is a clear fault. Answer B uses neutral language and also omits the 2,700 figure, but it keeps the parking chatter as a note, which the person contradicted anyway with \"parking was easy\". B's summary is also wordier and includes filler such as \"chat has been casual and upbeat\". On balance, guessing gender is the more serious fault, while B's parking note is minor clutter, so B is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers capture the soy allergy, the bakery schedule, sweet potatoes, the ankle sprain and quitting CrossFit, and neither stores the 2,700 kcal figure. Answer A keeps gym-parking chit-chat as a durable note even though Alex later said parking was easy, and its summary pads with parking chatter. Answer B assumes Alex's gender ('him', 'his'), which the input never states, and also overstates 'usual lifting is working well', which was Vita's claim rather than a fact Alex gave. A's flaws are minor noise, while B's gender guess is an explicit fault, so A is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A guesses Alex's gender (\"not for her\"), which is a fault. Answer B uses neutral language and avoids storing the calorie figure. B does keep a minor parking note in its notes, which is chit-chat, but that is less serious than A's gender guess. Both keep the key facts, and neither stores the 2,700 kcal figure.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B guesses the person's gender (\"not for her\"), which the input never states. Answer A keeps all the lasting facts, avoids storing the 2,700 figure, and stays gender-neutral. A does keep some parking chit-chat as a note and its summary is a bit transcript-like, but these are minor next to B's invented gender.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers keep all the lasting facts, correctly record CrossFit as dropped, and leave out the 2,700 kcal figure. Answer B adds a note about gym parking hassle, which is chit-chat (and was contradicted the next day), and its summary is longer, closer to a transcript, and needlessly mentions the calorie-target check. Answer A is cleaner and more focused, though its summary has a small trivial line about parking. On balance A is the better memory for a coach.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep all the lasting facts, handle the CrossFit retraction correctly, and leave out the 2,700 kcal figure. Answer A turns the parking chit-chat into a durable note, and its summary is longer and more transcript-like, including the calorie-check mention. Answer B is tighter and keeps parking only as a passing mention in the summary. Answer B is cleaner overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plan-that-fell-through",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the key facts (wheat allergy, spicy intolerance, rotator cuff, kids' weekends), avoid storing the 3,000 kcal figure, and handle the cancelled Denver move correctly by noting the person is staying put. Neither uses the requested JSON format. Answer B's summary invents \"got it from the app's live data\" and adds filler (\"no specific new goal stated\"), and it calls Alex \"settled into a gym routine,\" which is a mild overreach. Answer A is tighter, with its only flaw being a summary that repeats the notes, so A is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the lasting facts (wheat allergy, no spice, rotator cuff, kids' weekends), drop the retracted Denver move as a current plan, and correctly leave the 3,000 kcal figure out. Both also keep the playlist chit-chat, and neither returns proper JSON. A's summary is longer and adds filler ('settled into a gym routine', 'casual and practical') that the messages don't support, while B's summary is tighter and more useful to a coach. B also states 'no gym access', which slightly overstates 'don't get to the gym', but it is overall the cleaner brief.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plan-that-fell-through",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Neither answer stores the 3,000 kcal figure, and both keep the wheat, spice, rotator cuff, kids-weekend and Denver facts. Answer A says \"no bread, pasta, or wheat-based foods,\" which drops the wheat-free exception, and its playlist note is chit-chat. Answer B keeps the wheat-free exception, uses gender-neutral wording, and is a bit tighter, though its summary also leans on the playlist. B is slightly more accurate.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the lasting facts (wheat allergy, no spicy food, rotator cuff, kids' weekends), correctly avoid storing the 3,000 kcal figure, and handle the retracted Denver move. Both also keep the playlist chit-chat as a note and the defunct Denver plan, which is minor clutter. Answer B drops 'unless wheat-free' and adds 'wheat-based foods', a slight broadening but not harmful; Answer A's summary is a bit wordier and more transcript-like. Overall they are of comparable quality.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-plan-that-fell-through",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the key facts (wheat allergy, no spicy food, rotator cuff injury, the kids' weekends) and correctly leave out the 3,000 kcal figure. Neither returns the requested JSON format, and both keep the playlist chit-chat as a note. They also both mention the Denver move that fell through: B frames it as \"staying put\", while A keeps the dead plan in the notes and its summary narrates it awkwardly. B adds slightly unnecessary tone commentary, but A's \"was considering\" note and its \"not stored here\" meta-remark are comparably minor, so they are essentially equivalent.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the wheat allergy, the spicy-food intolerance, the rotator cuff limit and the kids-weekend schedule. Both avoid storing the calorie figure, and both keep the playlist chit-chat and the failed Denver move, which is borderline. Neither returns valid JSON; both use plain-text headings. B is slightly tighter, and A's summary is a bit more transcript-like (\"Tone so far is casual...\"), but the differences are minor, so neither is clearly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-takes-back-a-saved-note",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers capture all the lasting facts, correctly drop vegetarian, and leave the weight figure out. Answer B guesses Alex's gender with \"He's\" and \"his\" and pads its summary with chit-chat about the movie recommendation exchange. Answer A's summary is cleaner and gender-neutral, though both keep a minor movie note.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep all the lasting facts, correctly replace the vegetarian note, and avoid storing the 159.4 figure. Answer A guesses Alex's gender (\"He's\", \"his\"), which is a stated fault, and its summary leans toward a transcript (\"Vita turned it back\"). Answer B is gender-neutral and its summary is a cleaner brief, though both keep a minor movie note.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-takes-back-a-saved-note",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep all the lasting facts, drop the vegetarian note, and leave out the weight figure. Both also add a movies note, which is mild chit-chat. A's summary is tighter but wrongly calls the egg allergy a correction of earlier info. B's summary is longer and more transcript-like (the weigh-in and Vita's movie reply), but it is still useful and accurate, so the two are roughly equal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers correctly replace vegetarian, add the egg allergy, the post-7pm weekday constraint, the wrist injury and salmon, omit the weight figure, and both keep a minor movie note as chit-chat. B keeps the accurate detail \"last month\" where A vaguely says \"recently\". B's summary is a tighter brief catch-up, while A's summary is longer and more transcript-like, mentioning the weigh-in and Vita's movie reply. B is slightly better as a coach-ready memory.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-takes-back-a-saved-note",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers capture all the lasting facts, correctly remove the vegetarian note, and leave out the 159.4 weight. Both keep the movie chit-chat as a note, a minor fault. A's summary says Alex was 'open to recommendations', which misreads the exchange (Alex asked and Vita turned it back), while B is accurate and adds actionable next steps, though it is a bit transcript-like. B is slightly better for its accuracy and usefulness to a coach.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both notes lists hold the same correct facts: vegetarian removed, egg allergy, the after-7pm weekday constraint, the wrist injury and salmon, with no weight figure stored. Both also keep a minor movies note. A's summary is longer and more transcript-like, mentioning the weigh-in and small talk. B's summary is concise and actionable, though \"open to recommendations\" slightly misreads the exchange. B is the tighter, more useful catch-up for a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-with-a-summary",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the key facts (kiwi allergy, tennis elbow, rice preference, travel schedule) and avoid storing the 2,800 figure. B adds chit-chat to the notes, including the podcast episode due Friday, and fills its summary with small talk and the target check. A's podcast note is minor, and its summary stays tight and focused.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both capture the kiwi allergy, tennis elbow, rice preference, travel and the returned rowing machine, and neither stores the 2,800 figure. Answer A keeps chit-chat (the podcast episode due Friday) and a meta line about the calorie target check, and its summary is wordier and more transcript-like. Answer B is cleaner and more concise, though it also keeps a minor podcast note. B is somewhat better.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-with-a-summary",
+   "repeat": 1,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer A assumes Alex's gender (\"him\", \"he\") and drops the existing summary's goal of eating more without feeling stuffed and the post-training shake suggestion. Its line \"Current calorie target confirmed earlier as a known baseline\" adds nothing. Answer B keeps every lasting fact plus the carried-over goal and uses gender-neutral language. B does keep some podcast chit-chat (the Friday episode), but that is a minor fault, and its summary gives the coach useful next steps.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer B assumes Alex is male (\"him\", \"He\") without any basis in the input, and it drops the eat-more-without-feeling-stuffed goal. B's summary also mentions the calorie target, which is a figure the app owns, even though the number itself is left out. Answer A keeps every lasting fact, stays gender-neutral, and leaves out the 2,800 target, though it keeps some podcast chit-chat (the Friday episode) as a note. A's flaw is minor next to B's.",
+    "error": null
+   }
+  },
+  {
+   "case": "alex-with-a-summary",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both keep the key facts (kiwi allergy, tennis elbow, travel schedule, rice preference, rowing machine returned) and store no target figure; A's 'confirmed daily calorie target' mention is harmless but pointless, and A adds a gratuitous 'Name' note. B additionally keeps the lasting goal of eating more without feeling stuffed as a note and gives a more actionable summary with next steps, though it includes podcast chit-chat like the Friday episode. A's summary is choppier and also keeps podcast trivia in notes. Overall B is somewhat more useful for a coach.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the kiwi allergy, travel, tennis elbow, rice preference and returned rowing machine, and neither stores the 2,800 figure (B only mentions that the target was confirmed). Both keep podcast chit-chat in the notes, and A's summary also includes the Friday episode, which is pure chit-chat. B's notes are cleaner and its summary more concise, while A's summary is longer and repeats the notes. B is slightly better overall, though B's \"training regularly\" is a mild overreach.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-existing-notes",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both capture the core facts (celiac, Wednesday doubles, plantar fasciitis, spicy food) and neither stores the 156.8 figure. Both keep the cancelled spin class as a note, which is a minor flaw, and both mention the weight trend in the summary. A adds an invented mood read (\"upbeat, taking setbacks in stride\"). B's summary is longer and more transcript-like, with traffic chit-chat, and its note that Sam is \"open to finding another activity later\" overstates what was said. On balance A is tighter and more useful as a brief, so it is slightly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep all lasting facts, and both leave the cancelled spin class in the notes as a note rather than dropping it; neither stores the weight figure. A's summary reads more like a transcript, mentions the weigh-in, and keeps the traffic chit-chat. B's summary is tighter, though it adds a mild inference about mood and also mentions traffic. Overall B is more concise and more useful as a catch-up brief.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-existing-notes",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the lasting facts: celiac, Wednesday double shift, plantar fasciitis, and spicy food. Answer A correctly leaves the cancelled spin class out of the notes, while B stores it as a note, which is clutter for a fact that was retracted. B's summary also keeps the traffic chit-chat and reads closer to a transcript. Both mention the weight trend without a figure, so neither breaks the rule on app-owned numbers, but A is cleaner and more useful for a coach.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the lasting facts: celiac disease, the Wednesday double shift, plantar fasciitis and spicy food. Answer A keeps the cancelled spin class as a note, which is a retracted plan, and its summary keeps traffic chit-chat and the weigh-in/trend, so it reads closer to a transcript. Answer B correctly leaves the spin class out of the notes and keeps a tighter summary, though it repeats the weight trend (an app-owned figure, but no number) and softens 'everything' to 'most meals'. B is cleaner overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-existing-notes",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the core facts (celiac, plantar fasciitis, Wednesday double shift, spicy food), keep the existing notes, and leave the specific weight out. B stores the cancelled spin class as a note and adds an invented 'open to finding another activity later' (Vita said that, not Sam). B's summary also reads more like a transcript and includes commute chit-chat. A is cleaner and more accurate, though its summary repeats the notes and mentions the weight trend; B does the same.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer A keeps a note about the cancelled spin class, which is a retracted plan and shouldn't sit in durable notes. Its summary also runs long and includes traffic chit-chat. Answer B drops the cancelled class from its notes, keeps every lasting fact, and has a concise summary; its mention of the weight trend is a minor flaw, but it stores no figure. B is cleaner and more useful for a coach.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-first-fold",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep all the lasting facts, handle the vegetarian retraction correctly, and avoid storing the 1,650 kcal figure. Answer B's summary drifts toward a transcript: it includes the calorie question, the baking show final and \"Early chats covered getting set up,\" which the input does not support. Answer A is tighter and more coach-useful, although its summary somewhat repeats the notes. A is modestly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the same lasting facts (shellfish allergy, retracted vegetarianism with chicken and fish back, school-run breakfast constraint, shoulder injury, Greek yogurt) and neither stores the 1,650 kcal figure. Answer A's summary is more transcript-like, mentioning the calorie question and that night's final, while Answer B's summary is a tighter, more useful catch-up. Both keep a minor baking-show habit note, which is borderline chit-chat but arguably a sleep obstacle. B is slightly better for its concise summary.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-first-fold",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers keep all the lasting facts, handle the vegetarian retraction correctly, and leave out the 1,650 kcal target. A's summary is concise and reads as a useful catch-up, while B's summary drifts toward a transcript with chit-chat ('final was tonight', 'Vita accepted without fuss') and invents a framing ('setting up a realistic routine'). A is slightly cleaner overall, though both keep a baking-show note that is borderline chit-chat.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the lasting facts (shellfish allergy, school-run mornings, sore shoulder, Greek yogurt), correctly drop vegetarianism, omit the 1,650 kcal target, and avoid gendered pronouns. Neither is JSON, which is a shared format fault. A's summary leans toward a transcript (\"final was tonight\", \"Vita accepted without fuss\") and adds speculative next steps. B's summary is tighter and more actionable, and B's notes are equally complete and cleaner.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-first-fold",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers capture the same lasting facts, drop the calorie target, and handle the vegetarian reversal correctly. Both keep the baking-show habit as a note, which is borderline chit-chat but harmless. Answer B's summary leans toward transcript (\"the final is tonight\" and \"tired but fine\" are stale next week), and it uses \"them\" where a name would do, though it does add useful next steps. Answer A's summary is tighter and more of a catch-up, but the differences are small, so this is a tie.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the same lasting facts: the shellfish allergy, the reversed vegetarian choice, the school-run breakfast limit, the shoulder injury and the Greek yogurt preference. Neither stores the calorie target. Answer A's summary is more transcript-like and keeps chit-chat such as the final being tonight. Answer B's summary is tighter and more actionable as a catch-up, so B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-cancelled-booking",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers keep the key lasting facts (fish allergy, Thursday schedule, toe injury, overnight oats, cancelled trainer) and leave out the 157.9 figure, though B mentions that a weight was logged, which is harmless. B keeps chit-chat in its summary (plant knocked over, kitten napping on the laptop), while A has minor issues: it says Sam \"considered\" the trainer when Sam actually booked one, and it ends with a filler line about tone. B's notes stay closer to the source wording, including \"during term\" for the Thursday meeting, but its kitten trivia is a fault, so the two balance out.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the key facts (fish allergy, Thursday meetings, toe injury, overnight oats, cancelled trainer), use \"they\", and store no weight figure, though A's summary mentions that a weight was logged, which is harmless but unneeded. A keeps the \"during term\" qualifier on the Thursday meeting and has fewer kitten anecdotes in its notes, while B drops \"during term\" and puts chit-chat like \"knocks things over\" into its notes. B also inconsistently says the trainer was both \"considered\" and \"briefly hired\", and adds a vague \"overall tone\" line. A is slightly more accurate and cleaner.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-cancelled-booking",
+   "repeat": 1,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep all lasting facts, handle the trainer cancellation correctly, and store no weight figure. Both include the kitten as a note, which is borderline chit-chat. B's summary drifts toward transcript with the kitten knocking plants and sleeping on the laptop, and it repeats existing notes. A's summary is tighter and more actionable, though it is also somewhat redundant with the notes.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep all the lasting facts (fish allergy, Thursday schedule, toe injury, overnight oats, the trainer cancelled over cost), and neither stores the weight figure. Answer A's summary is wordier and includes kitten chit-chat, plus a 'reads like transcript' feel ('friendly chatter about a new kitten knocking over plants and sleeping on the laptop'). Answer B is tighter, though its summary largely duplicates the notes. Both keep the kitten as a note, which is borderline. B is slightly more concise and useful, but the difference is small.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-cancelled-booking",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep all the lasting facts (fish allergy, Thursday late nights, broken toe, overnight oats, trainer cancelled), both omit the weight figure, and neither invents anything. Answer B's summary spends space on kitten chit-chat (the plant, the laptop nap) and mentions the weigh-in, which is app-owned data, though it gives no number. Answer A's summary is a tighter, more useful catch-up, and A's wording of the trainer note (\"was considering\" when Sam actually booked one) is a minor imprecision. A is better overall.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the lasting facts: fish allergy, Thursday late returns, overnight oats, broken toe and the cancelled trainer, and neither stores the weight figure. Answer A's summary spends space on kitten chit-chat (plant, laptop nap) and mentions the weigh-in, which reads closer to a transcript. Answer B's summary is a tighter, more actionable catch-up. Both use slightly odd wording (\"they\" in A, \"was considering\" in B), but B is cleaner overall.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-course-dropped",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers capture the lasting facts, and neither stores the 152.6 figure. A keeps the withdrawn pottery course as a durable note; that is retracted information, though it is framed as withdrawn. B correctly leaves it out of the notes and mentions it only in the summary, but its summary is a bit transcript-like and mentions the weigh-in without the figure. On balance B handles the retraction better, and its notes are cleaner.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers capture the core facts (almond allergy, shift schedule, carpal tunnel, tofu scramble) and leave out the weight figure. B keeps the withdrawn pottery course as a note, which is clutter. B also states Sam is 'planning to see a favorite band again in March', but Sam only said the band is playing again, so that is a mild invention; it also reads 'Tried a pottery course' when Sam only signed up. A handles the retraction better by mentioning it only in the summary as 'no course to plan around', and its summary is a useful catch-up with next steps, though it repeats some notes.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-course-dropped",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the same lasting facts: almond allergy, the Thu-Sun evening shifts with late dinners, carpal tunnel and the tofu scramble breakfast. Both correctly drop pottery from the notes, store no weight figure, and leave out the ringing ears. A's summary is tighter but repeats the notes and says \"weigh-ins are progressing steadily\", a progress judgement the app owns. B's summary is somewhat longer and edges toward a transcript (logged a weigh-in, mentioned a concert), so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both keep the key facts (almond allergy, restaurant schedule, carpal tunnel, tofu scramble), drop the withdrawn pottery course from the notes, and store no weight figure. Both also keep the concert chit-chat as a note, a minor fault they share. B's summary is tighter and more actionable, while A's reads more like a recap of the chat, including the weigh-in and the pottery sign-up. B also has small embellishments (\"enjoys eating it daily\", \"looking forward to a concert in March\") but nothing material is invented, so B is slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-notes-and-a-course-dropped",
+   "repeat": 2,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both keep the same lasting facts, correctly drop the withdrawn pottery course from the notes, and avoid storing the 152.6 figure. Both have a similar summary weakness: neither stores the number, but both mention weigh-in progress. Answer B's summary is longer and more transcript-like, with filler such as \"sharing everyday life context\" and the redundant \"so there is no pottery course\". It also gives the concert too much weight, while A's summary is tighter and more useful as a catch-up.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the same lasting facts, correctly leave the withdrawn pottery course out of the notes, and store no weight figure. Answer A's summary is wordier and somewhat redundant, with filler like 'sharing everyday life context' and the over-explained 'so there is no pottery course'. Answer B's summary is tighter and reads as a useful catch-up, though it repeats the notes and its 'following a band' is a slight stretch. These are minor differences, but B is a bit cleaner to act on.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-takes-back-a-saved-note",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers capture all the lasting facts: the bike ride dropped for hiking, the sesame/tahini allergy, Monday choir, the Achilles, and mushrooms. Neither stores the 1,700 kcal figure. B's summary keeps chit-chat (the drilling neighbours, the calorie question) and runs longer than a brief catch-up should, while A's summary is concise and useful. B does add a reasonable \"evening snacking obstacle\" note, but A stays cleaner overall without dropping anything needed.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers keep all the lasting facts, drop the bike ride, and leave out the calorie figure. A's summary drifts toward a transcript: it mentions the calorie-target question and the drilling chit-chat, which is noise the coach doesn't need. B is cleaner and more concise, and its summary is a proper catch-up with nothing lost. B is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-takes-back-a-saved-note",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers capture the allergy, the mushroom dislike, the choir schedule, the Achilles injury and the bike-ride change, and neither stores the 1,700 kcal figure. A keeps \"dropped the charity bike ride\" as a note, which is slightly odd but still informative. B's summary includes chit-chat (the neighbour drilling) and a calorie-target exchange the coach doesn't need, but B also preserves the evening-snacking work as a note. Both have minor flaws and neither is clearly better, though A's summary is slightly tighter.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers capture the lasting facts: the sesame/tahini allergy, the mushroom dislike, the Monday choir schedule, the Achilles injury, and the swap from the bike ride to hiking, and neither stores the 1,700 kcal figure. Answer A's summary includes chit-chat (the drilling) and a calorie-target exchange framed as 'pointed to the app's current figure', which is inaccurate. Answer B is cleaner, and its summary reads as a tight catch-up. B is better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-takes-back-a-saved-note",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep every lasting fact, drop the bike ride correctly, and leave out the 1,700 kcal target. A is cleaner: its summary skips the drilling chit-chat, while B's summary mentions the neighbours' renovation, which is trivia. B adds a useful note on the evening snacking obstacle, and A's 'Sam:' prefix is slightly odd, but these are small points. Overall the two are close; A's summary is tighter, while B's notes are slightly richer.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers capture the same lasting facts: the bike ride replaced by hiking, the sesame/tahini allergy, the mushroom dislike, Monday choir, the Achilles injury, shared cooking and Sunday prep. Both correctly leave out the 1,700 kcal target, and both use \"their\" rather than guessing gender. Answer A's summary keeps the drilling chit-chat, which a coach doesn't need, and it repeats the snacking item in both the notes and the summary. Answer B is cleaner and more focused, though it opens with \"Sam:\" in a slightly odd way.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-with-a-summary",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers capture the allergy, the Pilates schedule, the hamstring injury and the green tea, and neither stores the 154.2 figure. Answer A invents a claim that Sam \"relies on other ways to stay active on rainy days\", which nothing in the input supports. A also keeps the dropped treadmill as a note with extra framing. B is cleaner, records the protein-at-breakfast goal as a note, and invents nothing, though it also keeps the dropped treadmill and some wedding chit-chat.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both keep the core facts: the strawberry allergy, Pilates on Tuesdays and Fridays, the hamstring injury and green tea. Neither stores the 154.2 weight figure, though both mention that weight was logged as steady. Answer B invents 'relies on other ways to stay active on rainy days' and 'avoid high-impact,' neither of which Sam said, and its 'Name: Sam' note adds little. Answer A sticks to what was said and also captures the breakfast-protein goal as a lasting note, which makes it slightly better.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-with-a-summary",
+   "repeat": 1,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both keep the core facts (strawberry allergy, Pilates schedule, hamstring, green tea, treadmill dropped) and neither stores the 154.2 weight. A keeps the wedding chit-chat as a note, and its \"danced all night\" slightly misstates \"until midnight.\" B invents a generalization (\"Enjoys social events and dancing\") and its summary still carries chit-chat (the weigh-in, the photo), though it usefully adds the breakfast-protein goal as a note. The faults roughly balance, so neither is clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both answers keep the allergy, the Pilates schedule, the hamstring injury, the green tea and the dropped treadmill, and neither stores the 154.2 weight. A keeps the breakfast-protein goal as a durable note, though its \"enjoys social events and dancing\" note is an inference from chit-chat, and its summary mentions the weigh-in without the figure. B stores the wedding and photo chit-chat as a durable note and adds \"high-impact,\" a mild extrapolation from \"no sprinting,\" but it misses the protein goal in the notes. Overall A is slightly better because the protein goal is lasting and actionable, while B's wedding note is pure chit-chat.",
+    "error": null
+   }
+  },
+  {
+   "case": "sam-with-a-summary",
+   "repeat": 2,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers keep the allergy, Pilates schedule, hamstring, green tea and the treadmill decision, and both correctly leave out the 154.2 weight. A's notes are tight, but its summary repeats the notes and stores the wedding as a vague 'enjoys social events' fact. B uses the neutral 'Sam' throughout, carries the breakfast-protein goal into the notes, and ends its summary with a useful next-steps line. The wedding chit-chat in B's notes is a minor flaw, but B is slightly more actionable, so B is marginally better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both keep the lasting facts (strawberry allergy, Pilates schedule, hamstring injury, green tea, treadmill dropped), omit the weight figure, and invent nothing. Answer A's notes include the wedding and the photo offer, which is chit-chat. Its summary is also more transcript-like, with details such as dancing until midnight, though it adds a useful \"next up\" line. Answer B is slightly cleaner, but it also keeps a weak \"enjoys weddings/dancing\" note, so the difference is small and neither is clearly better.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "alex-with-a-summary",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-with-a-summary",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-with-a-summary",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "alex-notes-and-a-short-lived-plan",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

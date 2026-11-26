@@ -29,6 +29,25 @@ final class LiveEvals: XCTestCase {
         }
     }
 
+    /// The same task on `meal_describe/v4`: the foods described in household measures with no
+    /// weight ("a medium banana", "half a salmon fillet"), so the model has to know the portion.
+    /// The truth is USDA's own gram weight for that measure of that record (`build_v4.py`).
+    func testMealDescribeHousehold() async throws {
+        try EvalEnv.requireLive()
+        let cases = try EvalDataset.load("meal_describe/v4.jsonl", as: Graders.MealTruth.self)
+        try await EvalRunner.run(task: .mealDescribe, dataset: "meal_describe/v4", cases: cases,
+                                 caseID: { $0.id }) { truth in
+            do {
+                let estimate = try await FoodPhotoAnalyzer.analyze(description: truth.description)
+                let graded = Graders.meal(estimate, truth: truth)
+                let output = (try? JSONEncoder().encode(estimate)).map { String(decoding: $0, as: UTF8.self) } ?? ""
+                return EvalOutcome(ok: true, error: nil, scores: graded.scores, pass: graded.pass, output: output)
+            } catch {
+                return .failed(error)
+            }
+        }
+    }
+
     // MARK: - coachTurn: first turn of a chat → the right tool, with the right arguments, or prose
 
     func testCoachToolChoice() async throws {

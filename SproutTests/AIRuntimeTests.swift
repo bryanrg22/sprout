@@ -275,8 +275,11 @@ final class AIRuntimeTests: XCTestCase {
             "total_protein_g": 1.3, "total_carbs_g": 27, "total_fat_g": 0.4,
             "confidence": "high", "notes": "One medium banana.",
         ]
+        // A typed meal runs on claude-sonnet-5-5 (EVAL_REPORT 39), which refuses a forced tool
+        // call, so the estimate is asked for as a JSON-schema answer and comes back as text.
+        let json = String(decoding: try JSONSerialization.data(withJSONObject: estimate), as: UTF8.self)
         let transport = ScriptedTransport([.json(200, [
-            "content": [["type": "tool_use", "id": "tu_1", "name": "log_food", "input": estimate]],
+            "content": [["type": "text", "text": json]], "stop_reason": "end_turn",
             "usage": ["input_tokens": 300, "output_tokens": 90],
         ])])
         let result = try await AIRuntime.$current.withValue(runtime(.anthropic, transport)) {
@@ -287,8 +290,9 @@ final class AIRuntimeTests: XCTestCase {
         XCTAssertEqual(result.confidenceLevel, .high)
         let body = transport.body()
         XCTAssertEqual(body["model"] as? String, AIConfig.model(for: .mealDescribe, provider: .anthropic))
-        XCTAssertEqual((body["tool_choice"] as? [String: Any])?["name"] as? String, "log_food",
-                       "the estimate is a forced tool call")
+        XCTAssertEqual(body["model"] as? String, "claude-sonnet-5-5")
+        XCTAssertNil(body["tool_choice"], "no forced tool for this model")
+        XCTAssertNotNil((body["output_config"] as? [String: Any])?["format"], "the schema goes as the answer's format")
     }
 
     func testMealDescriptionWithMissingFieldIsADecodingError() async {

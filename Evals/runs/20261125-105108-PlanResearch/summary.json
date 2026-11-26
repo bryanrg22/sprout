@@ -1,0 +1,194 @@
+{
+ "run": "20261125-105108-PlanResearch",
+ "tasks": [
+  {
+   "task": "planResearch",
+   "dataset": "plan_build/v1",
+   "cases": 8,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 8,
+     "usable": 8,
+     "passed": 8,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.6755843804891231,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 15.057,
+     "latency_p95_s": 16.722,
+     "mean_uncached_input_tokens": 70417,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2499.875,
+     "mean_cost_usd": 0.0082916375,
+     "scores": {
+      "brief_chars": 929.75,
+      "brief_words": 152.875,
+      "cited_sources": 2.375,
+      "mentions_a_rate": 0.875,
+      "mentions_protein": 0.5,
+      "searched": 1,
+      "used": 1,
+      "web_search_requests": 4.625,
+      "web_search_usd": 0.04625,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-opus-4-8",
+     "attempts": 8,
+     "usable": 8,
+     "passed": 8,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.6755843804891231,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 29.654,
+     "latency_p95_s": 32.043,
+     "mean_uncached_input_tokens": 77466.625,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2216.75,
+     "mean_cost_usd": 0.442751875,
+     "scores": {
+      "brief_chars": 4461.125,
+      "brief_words": 679.125,
+      "cited_sources": 12.25,
+      "mentions_a_rate": 1,
+      "mentions_protein": 0.875,
+      "searched": 1,
+      "used": 1,
+      "web_search_requests": 4.75,
+      "web_search_usd": 0.0475,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "attempts": 8,
+     "usable": 8,
+     "passed": 8,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.6755843804891231,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 23.795,
+     "latency_p95_s": 24.619,
+     "mean_uncached_input_tokens": 82241.875,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2390.125,
+     "mean_cost_usd": 0.37677,
+     "scores": {
+      "brief_chars": 3400.625,
+      "brief_words": 542.25,
+      "cited_sources": 12.375,
+      "mentions_a_rate": 1,
+      "mentions_protein": 0.875,
+      "searched": 1,
+      "used": 1,
+      "web_search_requests": 5,
+      "web_search_usd": 0.05,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 8,
+     "usable": 8,
+     "passed": 8,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.6755843804891231,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0
+     ],
+     "latency_p50_s": 27.762,
+     "latency_p95_s": 31.94,
+     "mean_uncached_input_tokens": 80717.125,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2588.125,
+     "mean_cost_usd": 0.1873155,
+     "scores": {
+      "brief_chars": 4356.125,
+      "brief_words": 658.25,
+      "cited_sources": 10.375,
+      "mentions_a_rate": 1,
+      "mentions_protein": 0.875,
+      "searched": 1,
+      "used": 1,
+      "web_search_requests": 5,
+      "web_search_usd": 0.05,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-opus-4-8",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "shared_cases": 8,
+     "mean_difference": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "shared_cases": 8,
+     "mean_difference": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "shared_cases": 8,
+     "mean_difference": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    }
+   ]
+  }
+ ]
+}

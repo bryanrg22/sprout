@@ -1,0 +1,122 @@
+{
+ "run": "20261125-102319-MemoryFold",
+ "tasks": [
+  {
+   "task": "memoryFold",
+   "dataset": "memory_fold/v1",
+   "cases": 12,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-haiku-5-5",
+     "attempts": 36,
+     "usable": 36,
+     "passed": 36,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9035781695514236,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 2.289,
+     "latency_p95_s": 2.972,
+     "mean_uncached_input_tokens": 1352,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 422.94444444444446,
+     "mean_cost_usd": 0.00034667222222222225,
+     "scores": {
+      "all_facts_kept": 1,
+      "bare_json": 1,
+      "both_fields_returned": 1,
+      "existing_notes_kept": 1,
+      "facts_kept_share": 1,
+      "kept_allergy": 1,
+      "kept_injury": 1,
+      "kept_preference": 1,
+      "kept_schedule": 1,
+      "no_app_owned_number_stored": 1,
+      "no_gendered_pronoun": 1,
+      "notes_chars": 531.3888888888889,
+      "notes_within_budget": 1,
+      "parses": 1,
+      "retracted_fact_absent": 1,
+      "small_talk_not_kept": 0.4444444444444444,
+      "summary_chars": 586.9444444444445,
+      "summary_within_budget": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 36,
+     "usable": 36,
+     "passed": 36,
+     "pass_rate": 1.0,
+     "ci95_cases": [
+      1.0,
+      1.0
+     ],
+     "ci95": [
+      0.9035781695514236,
+      1.0
+     ],
+     "per_repeat_pass": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "latency_p50_s": 4.322,
+     "latency_p95_s": 5.229,
+     "mean_uncached_input_tokens": 1351,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 389.0833333333333,
+     "mean_cost_usd": 0.006592833333333333,
+     "scores": {
+      "all_facts_kept": 1,
+      "bare_json": 1,
+      "both_fields_returned": 1,
+      "existing_notes_kept": 1,
+      "facts_kept_share": 1,
+      "kept_allergy": 1,
+      "kept_injury": 1,
+      "kept_preference": 1,
+      "kept_schedule": 1,
+      "no_app_owned_number_stored": 1,
+      "no_gendered_pronoun": 0.9444444444444444,
+      "notes_chars": 502.6388888888889,
+      "notes_within_budget": 1,
+      "parses": 1,
+      "retracted_fact_absent": 1,
+      "small_talk_not_kept": 0.3888888888888889,
+      "summary_chars": 502.1388888888889,
+      "summary_within_budget": 1,
+      "wrong_person_pronoun": 0.05555555555555555
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-haiku-5-5",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "shared_cases": 12,
+     "mean_difference": 0.0,
+     "ci95": [
+      0.0,
+      0.0
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -164,7 +164,7 @@ struct FoodPhotoAnalyzer {
 
     /// Shared call + decode for both the photo and text paths.
     private static func run(task: AITask, system: String, content: [[String: Any]]) async throws -> Estimate {
-        let client = try AIClient.makeFull()
+        let client = try AIClient.makeFull(for: task)
         let dict = try await client.structured(
             system: system,
             userContent: content,
@@ -234,7 +234,9 @@ extension FoodPhotoAnalyzer.Estimate {
             total_carbs_g: try c.decode(Double.self, forKey: .total_carbs_g),
             total_fat_g: try c.decode(Double.self, forKey: .total_fat_g),
             confidence: try c.decode(String.self, forKey: .confidence),
-            notes: try c.decode(String.self, forKey: .notes),
+            // One sentence of prose, shown only when present: a reply without it (claude-haiku-5-5
+            // sent one in 66, EVAL_REPORT 37) keeps its calories and macros.
+            notes: (try? c.decodeIfPresent(String.self, forKey: .notes)) ?? "",
             total_fiber_g: Self.amount(c, .total_fiber_g, .fiber),
             total_sugars_g: Self.amount(c, .total_sugars_g, .sugars),
             total_saturated_fat_g: Self.amount(c, .total_saturated_fat_g, .saturatedFat),

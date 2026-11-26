@@ -1,0 +1,124 @@
+{
+ "run": "20261125-135350-MemoryFold",
+ "tasks": [
+  {
+   "task": "memoryFold",
+   "dataset": "memory_fold/v1",
+   "cases": 12,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-sonnet-5",
+     "attempts": 36,
+     "usable": 35,
+     "passed": 35,
+     "pass_rate": 0.9722222222222222,
+     "ci95_cases": [
+      0.9166666666666666,
+      1.0
+     ],
+     "ci95": [
+      0.8582996626496918,
+      0.9950797197044302
+     ],
+     "per_repeat_pass": [
+      1.0,
+      0.9166666666666666,
+      1.0
+     ],
+     "latency_p50_s": 4.36,
+     "latency_p95_s": 5.305,
+     "mean_uncached_input_tokens": 1351,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 393.6388888888889,
+     "mean_cost_usd": 0.006638388888888889,
+     "scores": {
+      "all_facts_kept": 1,
+      "bare_json": 1,
+      "both_fields_returned": 1,
+      "existing_notes_kept": 1,
+      "facts_kept_share": 1,
+      "kept_allergy": 1,
+      "kept_injury": 1,
+      "kept_preference": 1,
+      "kept_schedule": 1,
+      "no_app_owned_number_stored": 1,
+      "no_gendered_pronoun": 0.8571428571428571,
+      "notes_chars": 508.51428571428573,
+      "notes_within_budget": 1,
+      "parses": 0.9722222222222222,
+      "retracted_fact_absent": 1,
+      "small_talk_not_kept": 0.45714285714285713,
+      "summary_chars": 507.45714285714286,
+      "summary_within_budget": 1,
+      "wrong_person_pronoun": 0.02857142857142857
+     },
+     "errors": [
+      "the reply did not parse as {notes, summary}"
+     ]
+    },
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "attempts": 36,
+     "usable": 36,
+     "passed": 10,
+     "pass_rate": 0.2777777777777778,
+     "ci95_cases": [
+      0.05555555555555555,
+      0.5277777777777778
+     ],
+     "ci95": [
+      0.15848170025813796,
+      0.43992800216345146
+     ],
+     "per_repeat_pass": [
+      0.25,
+      0.25,
+      0.3333333333333333
+     ],
+     "latency_p50_s": 4.137,
+     "latency_p95_s": 5.309,
+     "mean_uncached_input_tokens": 826.1666666666666,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 147.77777777777777,
+     "mean_cost_usd": 0.0031301111111111113,
+     "scores": {
+      "all_facts_kept": 0.2777777777777778,
+      "bare_json": 1,
+      "both_fields_returned": 1,
+      "existing_notes_kept": 0.9444444444444444,
+      "facts_kept_share": 0.8194444444444444,
+      "kept_allergy": 1,
+      "kept_injury": 0.2777777777777778,
+      "kept_preference": 1,
+      "kept_schedule": 1,
+      "no_app_owned_number_stored": 1,
+      "no_gendered_pronoun": 1,
+      "notes_chars": 301.05555555555554,
+      "notes_within_budget": 1,
+      "parses": 1,
+      "retracted_fact_absent": 1,
+      "small_talk_not_kept": 0.8333333333333334,
+      "summary_chars": 336.27777777777777,
+      "summary_within_budget": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-sonnet-5",
+   "paired": [
+    {
+     "candidate": "openai:gpt-6.2-sol",
+     "shared_cases": 12,
+     "mean_difference": -0.6944444444444445,
+     "ci95": [
+      -0.9444444444444445,
+      -0.3888888888888889
+     ]
+    }
+   ]
+  }
+ ]
+}

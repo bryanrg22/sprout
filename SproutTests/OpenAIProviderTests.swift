@@ -273,6 +273,25 @@ final class OpenAIProviderTests: XCTestCase {
         XCTAssertFalse(out.usedSearch)
     }
 
+    /// The research request bounds its searches at five; the gateway refuses web search
+    /// without a limit (EVAL_REPORT 41).
+    func testTheResearchRequestBoundsItsSearches() async throws {
+        let transport = ScriptedTransport([.json(200, [
+            "output": [["type": "message", "role": "assistant", "status": "completed",
+                        "content": [["type": "output_text", "text": "Aim for 1.6 g/kg."]]]],
+            "usage": ["input_tokens": 100, "output_tokens": 20],
+        ])])
+        let runtime = AIRuntime(provider: .openai, apiKey: "test-key-not-real", transport: transport)
+        let out = try await AIRuntime.$current.withValue(runtime) {
+            try await OpenAIClient().research(system: "s", userContent: "u", model: "gpt-5.6-sol")
+        }
+        XCTAssertEqual(out.text, "Aim for 1.6 g/kg.")
+        let body = transport.body()
+        XCTAssertEqual(body["max_tool_calls"] as? Int, 5)
+        XCTAssertEqual((body["tools"] as? [[String: Any]])?.first?["type"] as? String, "web_search")
+        XCTAssertEqual(transport.requests.first?.url?.path, "/v1/responses")
+    }
+
     // MARK: - Provider routing
 
     func testPlanModelFollowsProvider() {

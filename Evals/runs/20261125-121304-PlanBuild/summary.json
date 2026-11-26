@@ -1,0 +1,132 @@
+{
+ "run": "20261125-121304-PlanBuild",
+ "tasks": [
+  {
+   "task": "planBuild",
+   "dataset": "plan_build/v1",
+   "cases": 15,
+   "candidates": [
+    {
+     "candidate": "anthropic:claude-opus-4-8",
+     "attempts": 30,
+     "usable": 30,
+     "passed": 29,
+     "pass_rate": 0.9666666666666667,
+     "ci95_cases": [
+      0.9,
+      1.0
+     ],
+     "ci95": [
+      0.8332924860304112,
+      0.9940915620051425
+     ],
+     "per_repeat_pass": [
+      0.9333333333333333,
+      1.0
+     ],
+     "latency_p50_s": 22.404,
+     "latency_p95_s": 25.577,
+     "mean_uncached_input_tokens": 3069.133333333333,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 1484.2333333333333,
+     "mean_cost_usd": 0.0524515,
+     "scores": {
+      "about_you_written": 1,
+      "assessment_words": 73.23333333333333,
+      "calorie_min_at_or_above_floor": 1,
+      "changelog_note_written": 1,
+      "has_range": 1,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 5,
+      "insight_tones_valid_as_written": 1,
+      "insights_three_to_five": 1,
+      "logged_days": 17.066666666666666,
+      "no_number_outside_the_input": 0,
+      "numbers_outside_that_are_sums_or_differences": 2.6666666666666665,
+      "numbers_outside_the_input": 4.4,
+      "prose_present": 1,
+      "protein_g_per_lb": 0.8276666666666667,
+      "protein_in_sane_band": 1,
+      "protein_set": 1,
+      "range_contains_app_target": 0.7,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -59.266666666666666,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 185.16666666666666,
+      "strategy_words": 105.96666666666667,
+      "used": 1,
+      "wrong_person_pronoun": 0.03333333333333333
+     },
+     "errors": []
+    },
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "attempts": 30,
+     "usable": 30,
+     "passed": 29,
+     "pass_rate": 0.9666666666666667,
+     "ci95_cases": [
+      0.9,
+      1.0
+     ],
+     "ci95": [
+      0.8332924860304112,
+      0.9940915620051425
+     ],
+     "per_repeat_pass": [
+      0.9333333333333333,
+      1.0
+     ],
+     "latency_p50_s": 24.109,
+     "latency_p95_s": 27.595,
+     "mean_uncached_input_tokens": 2903.6,
+     "mean_cache_read_tokens": 0,
+     "mean_cache_write_tokens": 0,
+     "mean_output_tokens": 2071.2,
+     "mean_cost_usd": 0.0530384,
+     "scores": {
+      "about_you_written": 0.9666666666666667,
+      "assessment_words": 81.13333333333334,
+      "calorie_min_at_or_above_floor": 0.9666666666666667,
+      "changelog_note_written": 0.9666666666666667,
+      "has_range": 0.9666666666666667,
+      "hedges_on_an_early_read": 1,
+      "insight_count": 4.833333333333333,
+      "insight_tones_valid_as_written": 0.9666666666666667,
+      "insights_three_to_five": 0.9666666666666667,
+      "logged_days": 17.066666666666666,
+      "no_number_outside_the_input": 0.03333333333333333,
+      "numbers_outside_that_are_sums_or_differences": 8.633333333333333,
+      "numbers_outside_the_input": 12.033333333333333,
+      "prose_present": 0.9666666666666667,
+      "protein_g_per_lb": 0.81,
+      "protein_in_sane_band": 1,
+      "protein_set": 0.9666666666666667,
+      "range_contains_app_target": 0.4482758620689655,
+      "range_direction_fits_goal": 1,
+      "range_mid_minus_maintenance_kcal": -64.37931034482759,
+      "range_ordered_as_written": 1,
+      "range_width_kcal": 190.51724137931035,
+      "strategy_words": 122.36666666666666,
+      "used": 1,
+      "wrong_person_pronoun": 0
+     },
+     "errors": []
+    }
+   ],
+   "baseline": "anthropic:claude-opus-4-8",
+   "paired": [
+    {
+     "candidate": "anthropic:claude-opus-5-5",
+     "shared_cases": 15,
+     "mean_difference": 0.0,
+     "ci95": [
+      -0.1,
+      0.1
+     ]
+    }
+   ]
+  }
+ ]
+}

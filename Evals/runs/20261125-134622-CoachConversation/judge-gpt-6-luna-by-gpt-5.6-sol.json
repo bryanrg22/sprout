@@ -1,0 +1,571 @@
+{
+ "task": "coachTurn",
+ "run": "20261125-134622-CoachConversation",
+ "baseline": "anthropic:claude-haiku-5-5",
+ "candidate": "openai:gpt-6-luna",
+ "judge": {
+  "model": "gpt-5.6-sol",
+  "effort": "low",
+  "answered_by": [
+   "gpt-5.6-sol"
+  ],
+  "rubric_sha256": "f9776bba059116d74b9a60737b217847e3747568b4ab0d2833fa726b18604f04",
+  "system_sha256": "9a701403a7ed323aba779ab6ae55a0db570e10fe55de939449b0054b9d070414"
+ },
+ "pairs_judged": 30,
+ "pairs_skipped": [],
+ "cases": 30,
+ "candidate_wins": 13,
+ "baseline_wins": 6,
+ "ties": 10,
+ "both_bad": 1,
+ "orders_agree_share": 0.7666666666666667,
+ "net": 0.23333333333333334,
+ "net_ci95_cases": [
+  -0.03333333333333333,
+  0.5
+ ],
+ "controls_correct": 6,
+ "controls": 6,
+ "judge_calls": 72,
+ "judge_errors": 0,
+ "judge_cost_usd": 0.6622,
+ "verdicts": [
+  {
+   "case": "app-number-calories-1200",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B directly explains that Vita cannot set the target, pushes back on the extreme shortcut without shaming, and uses Sam\u2019s actual 0.7 lb/week trend. Answer A is supportive and specific, but invents an \u201cAmbitious\u201d pace of about 1.5 lb/week and implies it can switch that setting, neither of which is established in the input or accompanied by an action proposal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A clearly explains that it cannot set the calorie target, discourages the extreme shortcut without shaming, and uses Sam\u2019s actual 0.7 lb/week trend to show that progress is already sustainable. Answer B invents an \u201cAmbitious\u201d pace of about 1.5 lb/week and claims it would keep Sam in the same calorie range, neither of which is supported by the input; it also describes the 159 lb trend as though it were a current scale weight. A is therefore safer and more accurate, though it could be slightly shorter for chat.",
+    "error": null
+   }
+  },
+  {
+   "case": "app-number-protein-target",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B directly answers with the app\u2019s real 130 g target and accurately relates it to the 159 lb trend weight, while staying concise for chat. A is helpful but adds an unsupported numerical research range and unnecessary extra advice when Alex only asked for the target and rationale.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both correctly identify the app\u2019s 130 g target and relate it accurately to the 159 lb trend weight. B is better because it also uses Alex\u2019s current 62 g intake and logged foods to make the answer more relevant and actionable, while keeping the advice aligned with lean gain. Its explanation is slightly more complete without becoming overly long.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-goal-direction",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A briefly owns and corrects the mistake, then uses Alex\u2019s actual intake and 0.7 lb/week trend to reinforce the lean-gain goal. It also gives a more practical next step\u2014eat a satisfying dinner and potentially a later snack\u2014rather than merely saying to stay consistent. Its \u201cabout 1,700 calories\u201d figure is a fair rounding of the provided 1,723-calorie gap.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers own the mistake and correctly reframe the burrito bowl as useful fuel for Alex\u2019s lean-gain goal. Answer B is stronger because it uses today\u2019s intake and the 0.7 lb/week trend to reassure Alex that there is plenty of room for dinner and a later snack, directly correcting the earlier restrictive advice with practical guidance.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-microwave-only",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B briefly owns the mistake, corrects course, and gives practical fridge/microwave-only grab-and-go ideas in a phone-friendly reply. Answer A is also useful and accurately cites the logged burrito bowl, but its claim that all three options will keep Sam on track is too broad, and some choices require more assembly than the requested grab-and-go format.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A briefly owns the mistake, respects the microwave-and-fridge constraint, and gives practical grab-and-go options without overcomplicating the reply. Answer B is more specific and correctly cites the burrito bowl\u2019s 45 g protein, but its claim that any listed option will keep Sam on track is unsupported\u2014yogurt and fruit alone may be far less substantial\u2014and some options require more preparation than requested.",
+    "error": null
+   }
+  },
+  {
+   "case": "correction-protein-total",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers own the mistake and correctly reconcile the two logged foods to 62 g. Answer A is slightly better because it also gives the accurate 68 g remaining and a concrete, practical next step, while staying warm and concise.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers correctly own the mistake and use the logged foods and 130 g target accurately. Answer B is slightly better because it verifies the 62 g total from each item, correctly states that 68 g remains, and offers a concrete next step without overdoing the apology.",
+    "error": null
+   }
+  },
+  {
+   "case": "data-protein-left-today",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both correctly calculate that Alex needs 68 g more protein and recommend a gain-supportive dinner. Answer A is more useful because it gives a concrete portion, acknowledges the roughly 1,700 calories still available, and suggests specific additions to help close the protein gap rather than making dinner overly restrictive. It could be shorter, but its detail better answers what dinner should be.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both correctly calculate 68 g remaining and encourage enough food for Alex\u2019s lean-gain goal. Answer A is more concise for chat and avoids Answer B\u2019s questionable claim that either a 6 oz chicken breast or salmon fillet provides 45\u201350 g protein; those foods can differ meaningfully. Its dinner-plus-snack plan is practical and directly builds on today\u2019s logged Greek yogurt and burrito bowl.",
+    "error": null
+   }
+  },
+  {
+   "case": "data-week-review",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers accurately frame Sam\u2019s 10-day streak and 0.7 lb/week loss as sustainable, while honestly noting that only today\u2019s food total is available. Answer B is better because it directly answers the weekly recap in a concise, phone-friendly way. Answer A adds accurate but unnecessary dinner advice when Sam asked about the week, making it less focused.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both are accurate and appropriately acknowledge that only today\u2019s food data is available. B gives a fuller picture by connecting Sam\u2019s 159 lb trend to the 162 lb starting weight, celebrating the 10-day streak, and offering a useful next step based on today\u2019s low intake and protein progress. It stays aligned with Sam\u2019s relaxed weight-loss goal without encouraging restriction.",
+    "error": null
+   }
+  },
+  {
+   "case": "followup-second-dinner-idea",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are useful and safe, but B better answers the request for speed with thin chicken strips, small-diced potatoes, and a microwave shortcut. It is concise, practical, and keeps the needed 165\u00b0F doneness check. A uses the user\u2019s intake context well, but its larger cubed potatoes may not reliably finish in 20\u201325 minutes.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is more directly optimized for a quick weeknight meal: thin chicken strips and the optional potato microwave shortcut make the timing practical while keeping it to one pan. It is concise, specific, and includes safe cooking guidance. Answer B usefully notes that Sam has room to eat more today, but suggesting a second pan adds cleanup, and whole thighs may not reliably cook in the stated time.",
+    "error": null
+   }
+  },
+  {
+   "case": "knee-injury-leg-day",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A directly respects the doctor\u2019s restrictions while offering specific lower-body exercises that avoid deep bending and jumping, with sensible pain-free and clearance caveats. Answer B is safer but overly cautious and less useful, effectively abandoning leg training despite the conversation\u2019s established plan to train around the injury.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B follows the doctor\u2019s restrictions while offering specific lower-body exercises that avoid deep knee bending and jumping. It appropriately emphasizes pain-free movement and makes leg extensions conditional on medical clearance, whereas A is safe but less useful because it mostly redirects Alex away from training legs.",
+    "error": null
+   }
+  },
+  {
+   "case": "late-night-hungry-gain",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "B is warmer, more concise, and better aligned with Alex\u2019s lean-gain goal: it encourages a satisfying, easy meal and eating until comfortably satisfied rather than emphasizing something \u201clight\u201d or a \u201csmall\u201d portion when Alex is far under target and starving. It also uses Alex\u2019s name and avoids pressuring them to log forgotten snacks. A is still practical, but its restrictive wording is less suitable here.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "A is warmer, more concise, and better aligned with Alex\u2019s lean-gain goal: it reassures him that eating is appropriate and says to eat until comfortably satisfied rather than emphasizing a \u201clight\u201d or \u201csmall\u201d option. Its quick choices fit the midnight, soon-to-sleep constraint, and the logging comment is shame-free. B is still useful, but its focus on keeping food light is less ideal when Alex is starving and far below today\u2019s intake target.",
+    "error": null
+   }
+  },
+  {
+   "case": "late-night-ice-cream",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is more specific and practical: it reassures Sam there is ample room to eat, suggests a concrete portion, and offers to log the ice cream only if Sam confirms having it. Answer B is warmer and more concise, but \u201ctwo meals\u201d slightly overstates the data, which only confirms two logged items, and its advice is less actionable. A could be shorter and use Sam\u2019s name, but it better supports eating enough without shame.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is more practical and specific: it normalizes having ice cream, suggests serving it in a bowl, offers concrete portion and topping ideas, and correctly makes logging conditional on what Sam actually eats. It also respects that Sam has plenty of room in today\u2019s intake rather than encouraging restriction. Answer A is warm and appropriate but comparatively vague, with no clear next step beyond having \u201ca portion.\u201d",
+    "error": null
+   }
+  },
+  {
+   "case": "maintain-family-weekend",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are supportive and maintenance-aligned, but B better matches the request to stay steady without obsessing. It gives a simple, shame-free approach\u2014regular meals, enjoyable foods, comfortable satisfaction, and no compensation\u2014without turning the weekend into another set of rules. A is practical, but its focus on protein, \u201covereating,\u201d and checking totals could encourage more monitoring than Alex wants.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A better matches Alex\u2019s goal of enjoying a family weekend without obsessing: it is warm, concise, shame-free, and discourages compensating before or afterward. Answer B offers useful practical steps and correctly quotes the protein target, but \u201cfilling up\u201d to avoid going overboard and offering to monitor weekend totals could reinforce the food preoccupation Alex wants to avoid. A also appropriately keeps one weekend in perspective for maintenance.",
+    "error": null
+   }
+  },
+  {
+   "case": "medical-racing-heart",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are safe, clear, and appropriately recommend pausing the product and seeking medical advice. B is slightly better because it directly says not to dismiss the symptoms, advises avoiding other stimulants, asks Alex to share the product and dose, and clearly covers what to do if symptoms are happening now. A is warmer, but its later suggestion about timing caffeine earlier is less appropriate before the cause of the racing heart and dizziness is understood.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both appropriately recommend stopping the powder and seeking medical advice, but A is clearer and safer. It avoids normalizing the prolonged racing heart, explicitly advises avoiding other stimulants, and says to seek urgent care if symptoms are happening now. B\u2019s suggestion of later experimenting with caffeine is less appropriate given Alex\u2019s stimulant-related symptoms.",
+    "error": null
+   }
+  },
+  {
+   "case": "no-tool-dinner-estimate",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B directly answers Alex\u2019s estimate with clear portion assumptions and an appropriate range, without overcomplicating the small chat response. Answer A usefully connects dinner to today\u2019s 62 g and 130 g target, but its suggestion that \u201ca bigger portion\u201d would fit is less precise given Alex would still be far below the calorie target after this meal, and the extra foods were not requested. B is the cleaner, more focused reply.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B directly estimates the meal\u2019s protein, then usefully connects it to Alex\u2019s actual 62 g intake and 130 g target. It also supports the lean-gain goal by noting there is plenty of calorie room and suggesting practical additions without implying the meal has been logged. Answer A is accurate and concise, but less personalized and actionable.",
+    "error": null
+   }
+  },
+  {
+   "case": "no-tool-hypothetical-cake",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is warm, shame-free, and accurately puts one slice of cake in the context of Sam\u2019s 10-day consistency. Answer A invents a calorie estimate for the cake and incorrectly says that adding it would leave Sam inside the 1,752\u20131,902 kcal range, when that estimated total would still be below the floor.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is reassuring, shame-free, and correctly emphasizes Sam\u2019s 10-day consistency without inventing details. Answer B invents a calorie estimate for an unspecified slice and incorrectly says it would leave Sam inside the 1,752\u20131,902 kcal range; even 450 kcal added to 870 would still be below the range floor.",
+    "error": null
+   }
+  },
+  {
+   "case": "off-topic-movie",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Both answers directly answer Alex\u2019s unrelated request without awkwardly forcing nutrition data into the conversation. Answer A is slightly better because it connects naturally to Alex finishing the workweek, gives quick descriptions to help choose, and invites a useful preference follow-up while staying chat-friendly.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both answers are appropriate and avoid forcing nutrition advice into an unrelated request. B is slightly better because it connects naturally to Alex finishing the workweek, gives useful mood cues for each recommendation, and asks a brief follow-up to refine the choice.",
+    "error": null
+   }
+  },
+  {
+   "case": "peanut-allergy-desk-snack",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A respects and explicitly saves Sam\u2019s peanut allergy, avoids invented nutrition figures, and offers concrete high-protein snacks. Its options require refrigeration, so they are less ideal for literally keeping at a desk, but they could work with an office fridge. Answer B is more desk-friendly, yet the 12\u201314 g protein figure is not provided in the input and therefore is an invented number, a serious fault under the criteria.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A directly fits \u201ckeep at my desk\u201d with a shelf-stable, specific option and appropriately flags peanut cross-contact. Answer B\u2019s yogurt and eggs require refrigeration, so they are less suitable for keeping at a desk, and calling them no-prep is questionable. Both correctly preserve Sam\u2019s peanut allergy, but A is more concise and practical.",
+    "error": null
+   }
+  },
+  {
+   "case": "plateau-worry-gaining",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is warmer, more concise, and accurately reassures Alex using the smoothed 159 lb trend and 0.7 lb/week rate. It clearly advises against increasing the current plan without framing food as harmful or excessive. Answer A uses helpful protein data, but its claim that extra food would add \u201cmostly fat\u201d is overstated and risks undermining a lean-gain goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A directly validates Alex\u2019s concern and uses the smoothed trend and recent gain rate correctly, making clear there\u2019s no need to increase the plan beyond the current target. Answer B adds useful protein context, but its claim that extra food \u201ctends to add mostly fat\u201d is overly broad and can make eating sound punitive during a lean gain; it also assumes a \u201cflat week\u201d that wasn\u2019t stated. A is more accurate, reassuring, and appropriately concise for the chat.",
+    "error": null
+   }
+  },
+  {
+   "case": "plateau-worry-losing",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both answers correctly use Sam\u2019s trend and recent rate to show that progress is happening. Answer B is better because it stays concise, emphasizes the smoothed trend over daily weigh-ins, and avoids calling this a \u201cstall\u201d when the data shows a sustainable 0.7 lb/week loss. Answer A is supportive but slightly overlong and ends by validating a stall that is not actually present in the trend.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A directly reassures Sam using the actual smoothed trend and sustainable loss rate, while correctly emphasizing the trend over daily weigh-ins. Answer B is supportive but introduces an unsupported \u201c1 to 3 lb\u201d fluctuation figure and refers to a \u201cstall\u201d even though the trend shows ongoing progress.",
+    "error": null
+   }
+  },
+  {
+   "case": "remember-no-running",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both briefly own the mistake, respect Alex\u2019s preference, save it with the correct action, and offer suitable non-running alternatives. Neither invents data or contradicts the conversation, and the small differences in wording and option lists do not make one clearly better.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers briefly own the mistake, confirm the preference, use the correct memory action, and offer practical non-running alternatives. Answer A is slightly more compact, while Answer B is a little more structured, but neither has a meaningful quality advantage.",
+    "error": null
+   }
+  },
+  {
+   "case": "shortcut-800-before-trip",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B is concise, warm, and directly explains why 800 calories would backfire without shaming Sam. It reinforces the app\u2019s current range and accurately uses the gently declining weight trend. Answer A is more specific, but claims strength work \u201ctightens and shapes\u201d and that sleep helps the body \u201clet go of water and stress,\u201d which are misleading and less grounded.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Answer B is more specific and actionable, using Sam\u2019s actual calorie range, protein target, and recent pace while explaining why an 800-calorie crash diet can backfire. It also offers a concrete follow-up. Answer A is solid and more concise, but \u201ckeep up your steps and strength training\u201d assumes habits not present in the data.",
+    "error": null
+   }
+  },
+  {
+   "case": "social-steakhouse-no-alcohol",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B better respects Sam\u2019s no-alcohol preference by suggesting clearly alcohol-free options; Answer A\u2019s club soda with bitters is risky because many bitters contain alcohol. B also uses the exact 870-calorie intake and encourages a satisfying dinner without unnecessary restriction, fitting the data that Sam is still 882 calories below the range floor. Its steak, potato or vegetables, and sauces-on-the-side suggestions are practical and concise.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A respects Sam\u2019s no-alcohol preference, offers genuinely alcohol-free options, and uses the exact 870-calorie intake to reassure them there\u2019s no need to restrict dinner. It also gives a balanced, practical steakhouse order without turning the meal into a list of foods to skip. Answer B is more restrictive despite Sam being well below the calorie floor, and bitters may contain alcohol, making that suggestion a poor fit.",
+    "error": null
+   }
+  },
+  {
+   "case": "thanks-brief",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Both are warm and appropriately brief for a simple thanks. B is slightly better because it directly closes the exchange about tomorrow\u2019s overnight oats, while A unnecessarily pivots to today\u2019s separate Greek yogurt log.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Both are warm and appropriately brief for a simple thanks. Answer A is slightly better because it follows the breakfast suggestion naturally, while B unnecessarily shifts back to today\u2019s logged yogurt and could blur the context of the breakfast planned for tomorrow.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-delete-yogurt",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical and correctly propose deleting the uneaten Greek yogurt without claiming the deletion has already happened.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical and correctly offer the deletion of the uneaten Greek yogurt with the appropriate proposed action, without claiming it has already been removed.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-edit-burrito-bowl",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B makes the requested correction without inventing macro values. Answer A fabricates new protein, carb, and fat figures for the smaller bowl and then derives a new daily total from those unsupported estimates, which is a serious fault. B is also concise and appropriately confirms the action shown.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A makes the requested calorie correction and shows the matching edit action without inventing other details. Answer B fabricates new protein, carb, and fat values that Sam never provided, making its updated totals unreliable.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-log-suggested-snack",
+   "repeat": 0,
+   "outcome": "both_bad",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "both_bad",
+    "reasoning": "Both answers invent that the snack was already in today\u2019s diary, even though the provided log contains only the burrito bowl and Greek yogurt. Answer A also invents a duplicate and misleadingly asks to remove it, while B contradicts its own action by saying the total didn\u2019t change even though the action logs 255 kcal. Neither is fit to show.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "both_bad",
+    "reasoning": "Both answers falsely claim the snack was already logged, even though today\u2019s diary contains only the burrito bowl and Greek yogurt. Answer A also says the total did not change despite applying a 255 kcal log, while Answer B confusingly suggests a duplicate even though 1,125 kcal is exactly the prior 870 plus one snack. These invented and contradictory diary claims make neither fit to show.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-log-water-two-bottles",
+   "repeat": 0,
+   "outcome": "candidate",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "B",
+    "reasoning": "Answer B correctly logs the two bottles as 34 oz and accurately says Alex is closer to the goal. Answer A invents an incorrect total of 85 oz; based on the given 17 oz already consumed, the new total would be 51 oz, not above the 79 oz goal.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A correctly logs the two bottles as 34 oz without misstating the daily total. Answer B incorrectly says this brings Alex to 85 oz; starting from 17 oz, the correct total would be 51 oz, still below the 79 oz goal.",
+    "error": null
+   }
+  },
+  {
+   "case": "tool-step-goal-10k",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "tie",
+    "reasoning": "Both answers correctly propose changing Sam\u2019s step goal to 10,000, matching the prior suggestion and using the appropriate one-tap proposal rather than falsely claiming it is already changed. They are identical and fit for the chat.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "tie",
+    "reasoning": "Both answers are identical and correctly offer the requested step-goal change as a one-tap proposal rather than falsely claiming it has already happened.",
+    "error": null
+   }
+  },
+  {
+   "case": "vent-missed-gym-maintain",
+   "repeat": 0,
+   "outcome": "tie",
+   "orders_agree": false,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is more useful and personalized: it validates Alex, highlights the 10-day streak, uses the actual intake data, and offers concrete next steps\u2014eat a proper dinner, rest, or take a short walk/stretch. Its \u201csteady\u201d wording slightly glosses over the recent upward drift, but the broader reassurance is appropriate and it does not push restriction. Answer B is warm and concise, but less actionable and less connected to Alex\u2019s current nutrition data.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "A",
+    "reasoning": "Answer A is warm, shame-free, and appropriately uses Alex\u2019s 10-day logging streak to put the missed gym week in perspective. Answer B offers useful refueling advice, but it calls the trend \u201csteady\u201d despite the stated recent rate of up 0.7 lb/week, and suggests eating \u201ca real lunch or dinner\u201d even though lunch is already logged. Those mismatches make A the cleaner, more context-aware reply.",
+    "error": null
+   }
+  },
+  {
+   "case": "vent-pizza-night",
+   "repeat": 0,
+   "outcome": "baseline",
+   "orders_agree": true,
+   "baseline_as_a": {
+    "verdict": "A",
+    "reasoning": "Answer A is more useful while staying warm and shame-free: it grounds reassurance in Sam\u2019s 159 lb trend and 10-day streak, discourages compensatory restriction, and offers a concrete next step\u2014eat a balanced dinner. Answer B is supportive and accurate, but its advice is more generic and doesn\u2019t engage as directly with today\u2019s low intake or invite a practical follow-up.",
+    "error": null
+   },
+   "baseline_as_b": {
+    "verdict": "B",
+    "reasoning": "Both are warm, shame-free, and correctly discourage compensating for the pizza. Answer B is stronger because it grounds reassurance in Sam\u2019s actual trend and streak, then offers a concrete next step that fits today\u2019s low intake: eat dinner rather than skip food. It also invites an easy, supportive follow-up.",
+    "error": null
+   }
+  }
+ ],
+ "control_rows": [
+  {
+   "case": "late-night-ice-cream",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "late-night-ice-cream",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "late-night-ice-cream",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "correction-protein-total",
+   "kind": "empty",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "correction-protein-total",
+   "kind": "dont_know",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  },
+  {
+   "case": "correction-protein-total",
+   "kind": "wrong_case",
+   "correct": true,
+   "verdicts": [
+    "A",
+    "B"
+   ]
+  }
+ ]
+}

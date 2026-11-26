@@ -25,6 +25,21 @@ enum AnthropicModelProfile {
         return nil
     }
 
+    /// Models whose thinking cannot be switched off (effort is their only control). Their
+    /// `max_tokens` counts the thinking too, so the reply needs room on top: `claude-opus-5-5`
+    /// was cut off at the plan's 2,200 in 17 of 30 builds, thinking up to 1,191 tokens first
+    /// (EVAL_REPORT 40).
+    static let alwaysThinks = ["claude-opus-5-5", "claude-fable-5-2"]
+
+    /// Room for thinking on top of what a call asked for, about three times the most seen.
+    static let thinkingHeadroom = 4096
+
+    /// The `max_tokens` to send: what the call asked for, plus `thinkingHeadroom` for a model
+    /// that always thinks. A ceiling, not a cost: only the tokens used are billed.
+    static func maxTokens(_ requested: Int, for model: String) -> Int {
+        alwaysThinks.contains { isModel(model, $0) } ? requested + thinkingHeadroom : requested
+    }
+
     /// The scoped `reasoningEffort` value that leaves thinking at the model's own default.
     static let keepModelDefault = "default"
 
@@ -59,7 +74,7 @@ struct AnthropicClient {
         let model = AIRuntime.resolve(model: model)
         var body: [String: Any] = [
             "model": model,
-            "max_tokens": maxTokens,
+            "max_tokens": AnthropicModelProfile.maxTokens(maxTokens, for: model),
             "system": system,
             "messages": messages.map { ["role": $0.role, "content": $0.content] },
         ]
@@ -163,7 +178,7 @@ struct AnthropicClient {
         let model = AIRuntime.resolve(model: model)
         var body: [String: Any] = [
             "model": model,
-            "max_tokens": maxTokens,
+            "max_tokens": AnthropicModelProfile.maxTokens(maxTokens, for: model),
             "system": Self.systemValue(system, cachedPrefix: cachedSystemPrefix),
             "messages": messages.map { ["role": $0.role, "content": $0.content] },
         ]
@@ -262,7 +277,7 @@ struct AnthropicClient {
         ]
         let body: [String: Any] = [
             "model": model,
-            "max_tokens": maxTokens,
+            "max_tokens": AnthropicModelProfile.maxTokens(maxTokens, for: model),
             "system": system,
             "tools": [tool],
             "tool_choice": ["type": "tool", "name": toolName],
@@ -292,7 +307,7 @@ struct AnthropicClient {
                                     model: String, maxTokens: Int) async throws -> [String: Any] {
         var body: [String: Any] = [
             "model": model,
-            "max_tokens": maxTokens,
+            "max_tokens": AnthropicModelProfile.maxTokens(maxTokens, for: model),
             "system": system,
             "messages": [["role": "user", "content": userContent]],
             "output_config": ["format": ["type": "json_schema",
@@ -340,7 +355,7 @@ struct AnthropicClient {
         let model = AIRuntime.resolve(model: model)
         let body: [String: Any] = [
             "model": model,
-            "max_tokens": maxTokens,
+            "max_tokens": AnthropicModelProfile.maxTokens(maxTokens, for: model),
             "system": system,
             "tools": [["type": "web_search_20250305", "name": "web_search", "max_uses": maxUses]],
             "messages": [["role": "user", "content": userContent]],

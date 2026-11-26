@@ -9,7 +9,7 @@ import Foundation
 /// - Forced tool use for strict JSON, decoded into `[String]` via a `Payload` envelope.
 /// - Grounded in the same factual `CoachContext.summary(...)` the coach reasons over (plus her
 ///   bio + Vita's durable notes), so the chips read like HER ("How's my soccer week going?").
-/// - Degrades gracefully: gated on `AIConfig.hasActiveKey`; on no-key / network / parse /
+/// - Degrades gracefully: gated on `AIConfig.hasKey(for: .coachPrompts)`; on no-key / network / parse /
 ///   guardrail failure it returns the fixed list and NEVER throws (like `WeeklyReflection`), so
 ///   the chip row is never empty and the chat never waits on the network.
 /// - A light banned-word `sanitize` pass (same approach as `WeeklyReflection.sanitize` /
@@ -161,7 +161,7 @@ enum CoachPromptService {
     /// network. On no-key / any failure / rejected output it returns `fixedPrompts()` — it NEVER
     /// throws and NEVER blocks the chat (same contract as `WeeklyReflection.make`).
     ///
-    /// Provider-aware: forced tool use runs on either vendor via `AIClient.makeFull()`.
+    /// Provider-aware: runs on the vendor this task measured best on (`AIClient.makeFull(for:)`).
     @MainActor
     static func prompts(profile: UserProfile,
                         foods: [FoodEntry],
@@ -183,7 +183,7 @@ enum CoachPromptService {
 
         // No key → just the fixed list. (Caching nothing here is deliberate: the moment she adds
         // a key, the next open personalizes — we don't want a no-key bucket to suppress that.)
-        guard AIConfig.hasActiveKey else { return fallback }
+        guard AIConfig.hasKey(for: .coachPrompts) else { return fallback }
 
         do {
             let personalized = try await generate(profile: profile, foods: foods, weights: weights,
@@ -206,7 +206,7 @@ enum CoachPromptService {
                          sessions: [WorkoutSession],
                          water: [WaterEntry],
                          memory: CoachMemory?) async throws -> [String] {
-        let client = try AIClient.makeFull()
+        let client = try AIClient.makeFull(for: .coachPrompts)
 
         let dataSummary = CoachContext.summary(profile: profile, foods: foods,
                                                weights: weights, water: water, sessions: sessions)
