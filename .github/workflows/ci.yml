@@ -127,7 +127,9 @@ jobs:
   # here cannot hide a unit-test result.
   ui-tests:
     runs-on: macos-26
-    timeout-minutes: 40
+    # The UI flows took about 37 of 40 minutes, and the job ran out of time once the VoiceOver
+    # flows were added (EVAL_REPORT 43).
+    timeout-minutes: 50
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
     steps:

@@ -93,11 +93,13 @@ final class ChatPagingFlowTests: SproutUITestCase {
     }
 
     /// The same in the layout VoiceOver gets: a plain stack instead of the lazy one (issue #7).
+    /// One page: XCUITest reads every row of a plain stack, so three took 239 s locally and the
+    /// UI job ran past its time limit on CI.
     func testLoadingEarlierMessagesKeepsTheTopMessageInPlaceInTheVoiceOverLayout() throws {
-        try loadingEarlierKeepsTheTopMessageInPlace(extraArguments: ["--ui-test-voiceover-layout"])
+        try loadingEarlierKeepsTheTopMessageInPlace(pages: 1, extraArguments: ["--ui-test-voiceover-layout"])
     }
 
-    private func loadingEarlierKeepsTheTopMessageInPlace(extraArguments: [String] = []) throws {
+    private func loadingEarlierKeepsTheTopMessageInPlace(pages: Int = 3, extraArguments: [String] = []) throws {
         app.launchArguments = ["--ui-testing", "--ui-test-fresh-defaults", "--seed-demo", "--demo-gain",
                                "--demo-tab", "coach", "--demo-long-chat", "201", "--chat-debug-do", "hold"]
             + extraArguments
@@ -105,7 +107,7 @@ final class ChatPagingFlowTests: SproutUITestCase {
         wait("the conversation") { self.messages.count > 0 }
 
         var shifts: [CGFloat] = []
-        for page in 1...3 {
+        for page in 1...pages {
             var swipes = 0
             while !(loadEarlier.exists && loadEarlier.isHittable), swipes < 40 {
                 app.swipeDown(velocity: .fast)

@@ -2711,8 +2711,10 @@ VoiceOver layout.
   failure, so it fails the day the bar moves.
 - Loading three earlier pages moves the top message 0, 0, 0 pt in both layouts.
 - All eight chat flows pass.
-- The paging flow took 239 s in the VoiceOver layout against 95 s. Most of that is XCUITest
-  reading every row of a plain stack, so it is not a measure of the app's speed.
+- The paging flow took 239 s in the VoiceOver layout against 95 s for three pages. Most of
+  that is XCUITest reading every row of a plain stack, so it is not a measure of the app's
+  speed. On CI it pushed the UI job past its 40-minute limit (it was cancelled), so the
+  VoiceOver variant loads one page and the limit is now 50 minutes.
 - Unit tests: the priorities are strictly ordered, and the switch works only with `--ui-testing`
   in a DEBUG build.
 
